@@ -1,0 +1,19 @@
+# Node / frontend
+node_modules/
+dist/
+build/
+*.log
+
+# Python / backend
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Variables de entorno (nunca subir secretos reales)
+.env
+.env.local
+backend/.env
+
+# Editor / SO
+.DS_Store
