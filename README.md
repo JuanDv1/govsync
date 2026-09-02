@@ -15,3 +15,4 @@ Monorepo — ver [`backend/`](./backend) y [`frontend/`](./frontend).
 ## Documentación
 
 Ver [CONTRIBUTING.md](./CONTRIBUTING.md) para el flujo de trabajo de desarrollo, convención de ramas/commits y mecánica de sprints.
+test 
