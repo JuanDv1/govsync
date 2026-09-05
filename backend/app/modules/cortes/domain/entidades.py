@@ -30,15 +30,17 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import date
-from enum import Enum
+
+# from enum import Enum
+from enum import StrEnum
 
 
-class EstadoCorte(str, Enum):
+class EstadoCorte(StrEnum):
     BORRADOR = "BORRADOR"
     REGISTRADO = "REGISTRADO"
 
 
-class TipoArchivoFuente(str, Enum):
+class TipoArchivoFuente(StrEnum):
     PDT = "PDT"
     EJECUCION = "EJECUCION"
     PROYECTOS = "PROYECTOS"
@@ -102,5 +104,3 @@ class Corte:
     def puede_reutilizar(self, tipo: TipoArchivoFuente) -> bool:
         """HU-01/CA-7: el archivo de ejecución nunca se reutiliza."""
         raise NotImplementedError("[HU-01][BE-04] Regla de reutilización")
-
-import sqlalchemy

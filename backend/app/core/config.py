@@ -4,6 +4,7 @@ Capa: núcleo transversal. No contiene reglas de negocio.
 Todos los secretos se leen de variables de entorno; ninguno tiene un valor
 por defecto utilizable en producción (ver validación de `secret_key`).
 """
+
 from functools import lru_cache
 from typing import Literal
 
@@ -12,9 +13,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     environment: Literal["development", "test", "production"] = "development"
 

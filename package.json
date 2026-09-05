@@ -4,7 +4,9 @@
   "description": "Sistema de consolidación y validación cruzada de información de planeación, ejecución presupuestal y proyectos de inversión para municipios de categoría 6 en Colombia. Piloto: Santa Rosa (Cauca).",
   "type": "module",
   "private": true,
-  "workspaces": ["frontend"],
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
     "prepare": "husky",
     "dev": "npm run dev --workspace=frontend",
@@ -31,8 +33,16 @@
     "prettier": "^3.9.6"
   },
   "lint-staged": {
-    "frontend/**/*.{js,jsx}": ["eslint --fix", "prettier --write"],
-    "backend/**/*.py": ["ruff check --fix", "ruff format"],
-    "*.{json,md,css,html,yml,yaml,js,cjs,mjs}": ["prettier --write"]
+    "frontend/**/*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "backend/**/*.py": [
+      "backend/.venv/Scripts/ruff.exe check --fix",
+      "backend/.venv/Scripts/ruff.exe format"
+    ],
+    "*.{json,md,css,html,yml,yaml,js,cjs,mjs}": [
+      "prettier --write"
+    ]
   }
 }

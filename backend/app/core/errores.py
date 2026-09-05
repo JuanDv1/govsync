@@ -30,8 +30,8 @@ _MAPA_HTTP: dict[type[GovSyncError], int] = {
     CredencialesInvalidas: status.HTTP_401_UNAUTHORIZED,
     OperacionNoPermitida: status.HTTP_409_CONFLICT,
     RecursoNoEncontrado: status.HTTP_404_NOT_FOUND,
-    ReglaDeNegocioViolada: status.HTTP_422_UNPROCESSABLE_ENTITY,
-    ArchivoInvalido: status.HTTP_422_UNPROCESSABLE_ENTITY,
+    ReglaDeNegocioViolada: status.HTTP_422_UNPROCESSABLE_CONTENT,
+    ArchivoInvalido: status.HTTP_422_UNPROCESSABLE_CONTENT,
 }
 
 

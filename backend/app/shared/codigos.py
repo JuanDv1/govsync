@@ -67,12 +67,12 @@ class CodigoIndicadorProducto:
         raise NotImplementedError("[TRANS-01] Validar formato de 9 dígitos")
 
     @classmethod
-    def desde_crudo(cls, crudo: object) -> "CodigoIndicadorProducto | None":
+    def desde_crudo(cls, crudo: object) -> CodigoIndicadorProducto | None:
         """Normaliza un valor de Excel. Devuelve None si no es un código válido."""
         raise NotImplementedError("[TRANS-01] Normalización desde celda de Excel")
 
     @classmethod
-    def extraer_todos(cls, texto: object) -> list["CodigoIndicadorProducto"]:
+    def extraer_todos(cls, texto: object) -> list[CodigoIndicadorProducto]:
         """Separa los indicadores multivalor de una sola celda (HU-04/CA-4).
 
         La celda real del archivo de Proyectos contiene bloques como:
@@ -101,5 +101,5 @@ class CodigoBpin:
         raise NotImplementedError("[TRANS-01] Validar formato de 15 dígitos")
 
     @classmethod
-    def desde_crudo(cls, crudo: object) -> "CodigoBpin | None":
+    def desde_crudo(cls, crudo: object) -> CodigoBpin | None:
         raise NotImplementedError("[TRANS-01] Normalización de BPIN")

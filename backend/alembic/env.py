@@ -9,9 +9,9 @@ Cada módulo nuevo que declare tablas agrega su import abajo.
 
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from alembic import context
 from app.core.config import get_settings
 from app.core.database import Base
 
@@ -19,7 +19,7 @@ from app.core.database import Base
 from app.modules.cortes.persistence import models as _cortes  # noqa: F401
 
 # TODO Si se revoca [REF-05] y entra el módulo de identidad, agregar aquí:
-#     from app.modules.identidad.persistence import models as _identidad  # noqa: F401
+#     from app.modules.identidad.persistence import models as _identidad
 
 config = context.config
 if config.config_file_name is not None:

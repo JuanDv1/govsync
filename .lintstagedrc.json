@@ -1,0 +1,8 @@
+{
+  "frontend/**/*.{js,jsx}": ["eslint --fix", "prettier --write"],
+  "backend/**/*.py": [
+    "backend/.venv/Scripts/ruff.exe check --fix",
+    "backend/.venv/Scripts/ruff.exe format"
+  ],
+  "*.{json,md,css,html,yml,yaml,js,cjs,mjs}": ["prettier --write"]
+}
