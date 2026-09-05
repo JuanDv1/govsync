@@ -17,3 +17,4 @@ backend/.env
 
 # Editor / SO
 .DS_Store
+.vercel

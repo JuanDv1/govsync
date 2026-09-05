@@ -8,7 +8,7 @@
     "frontend"
   ],
   "scripts": {
-    "prepare": "husky",
+    "prepare": "husky install",
     "dev": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
     "lint": "eslint frontend/src --no-error-on-unmatched-pattern",
@@ -44,5 +44,8 @@
     "*.{json,md,css,html,yml,yaml,js,cjs,mjs}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "tar": "^7.5.22"
   }
 }
