@@ -1,0 +1,20 @@
+# Rangos, no versiones exactas: así pip elige una versión con «wheel»
+# precompilado para la versión de Python de cada quien. Fijar versiones
+# exactas obliga a compilar desde código fuente cuando el intérprete es más
+# nuevo que la versión fijada, y eso falla en Windows sin compilador de C.
+# La reproducibilidad exacta se consigue con un lockfile (pendiente Sprint 2),
+# no bloqueando el rango en el archivo de dependencias directas.
+
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.32
+sqlalchemy>=2.0.36,<3.0
+alembic>=1.14
+psycopg[binary]>=3.2
+pydantic>=2.10,<3.0
+pydantic-settings>=2.7
+python-multipart>=0.0.20
+pyjwt>=2.10
+bcrypt>=4.2
+pandas>=2.2
+openpyxl>=3.1
+email-validator>=2.2
