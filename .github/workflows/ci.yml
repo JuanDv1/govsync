@@ -59,3 +59,5 @@ jobs:
           node-version: 22
       - run: npm ci
       - uses: wagoid/commitlint-github-action@v6
+        with:
+          commitDepth: 1
