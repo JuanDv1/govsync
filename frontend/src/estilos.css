@@ -1,0 +1,68 @@
+/* GovSync — tokens de diseño y reset.
+   TARJETA: [UX-01] Layout base
+
+   Sin framework de CSS: la interfaz del Sprint 1 son cuatro pantallas y una
+   tabla; agregar Tailwind o MUI sería peso sin beneficio.
+
+   Aquí quedan solo los tokens y el reset, para que las cuatro pantallas se
+   vean como un mismo producto. Las clases de cada componente las escribe quien
+   hace la tarjeta correspondiente. */
+
+:root {
+  --tinta: #16202c;
+  --tinta-suave: #5b6b7c;
+  --borde: #dde3ea;
+  --fondo: #f5f7fa;
+  --superficie: #ffffff;
+  --primario: #1f5f8b;
+  --primario-oscuro: #17486a;
+  --exito: #17694a;
+  --exito-fondo: #e6f4ed;
+  --alerta: #8a5a00;
+  --alerta-fondo: #fdf3e0;
+  --error: #a32a29;
+  --error-fondo: #fdeceb;
+  --radio: 8px;
+  --sombra: 0 1px 3px rgba(22, 32, 44, 0.08);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--tinta);
+  background: var(--fondo);
+}
+
+/* Accesibilidad: foco visible en todo elemento interactivo. */
+:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Los códigos van en fuente monoespaciada: hace visible el cero a la
+   izquierda, que es exactamente el dato que no se puede perder. */
+.codigo {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  white-space: nowrap;
+}

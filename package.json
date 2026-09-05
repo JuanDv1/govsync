@@ -4,45 +4,48 @@
   "description": "Sistema de consolidación y validación cruzada de información de planeación, ejecución presupuestal y proyectos de inversión para municipios de categoría 6 en Colombia. Piloto: Santa Rosa (Cauca).",
   "type": "module",
   "private": true,
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "prepare": "husky",
-    "lint": "eslint frontend --no-error-on-unmatched-pattern",
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "eslint frontend/src --no-error-on-unmatched-pattern",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "test": "echo \"agregar comando de test real\" && exit 0",
-    "build": "echo \"agregar comando de build real\" && exit 0"
+    "format:check": "prettier --check ."
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JuanDv1/govsync.git"
   },
-  "keywords": [],
-  "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/JuanDv1/govsync/issues"
-  },
-  "homepage": "https://github.com/JuanDv1/govsync#readme",
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^9.39.5",
-    "eslint": "^9.39.5",
+    "eslint": "9.7.0",
     "eslint-plugin-react": "^7.37.0",
     "eslint-plugin-react-hooks": "^7.0.0",
     "globals": "^15.0.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "prettier": "^3.9.6",
-    "typescript-eslint": "^8.0.0"
+    "prettier": "^3.9.6"
   },
   "lint-staged": {
-    "frontend/**/*.{js,jsx,ts,tsx}": [
+    "frontend/**/*.{js,jsx}": [
       "eslint --fix",
       "prettier --write"
+    ],
+    "backend/**/*.py": [
+      "backend/.venv/Scripts/ruff.exe check --fix",
+      "backend/.venv/Scripts/ruff.exe format"
     ],
     "*.{json,md,css,html,yml,yaml,js,cjs,mjs}": [
       "prettier --write"
     ]
+  },
+  "dependencies": {
+    "tar": "^7.5.22"
   }
 }
