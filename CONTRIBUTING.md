@@ -1,25 +1,64 @@
-# Guía de contribución — GovSync
+# Estándar de Ramas
 
-## Flujo de trabajo
+## Formato
 
-1. Cada Historia de Usuario (HU) tiene un Issue en GitHub, agrupado en un Milestone por sprint.
-2. Crea una rama desde `main` nombrada según la HU: `feature/E-02-HU-01-crear-corte` (épica-HU-slug descriptivo). Para tareas que no corresponden a una HU (configuración, documentación), usa `chore/<slug>`; para arreglos, `fix/<slug>`.
-3. Haz commits siguiendo [Conventional Commits](https://www.conventionalcommits.org/) (validado automáticamente), referenciando el issue: `feat: cargar PDT (refs #12)`.
-4. Abre un Pull Request hacia `main`. Usa `Closes #<numero>` en la descripción para cerrar el issue automáticamente al mergear.
-5. El PR necesita: CI en verde + al menos 1 aprobación (por defecto, de un dev core vía CODEOWNERS).
-6. Usa "Squash and merge" al integrar (mantiene el historial de `main` limpio).
-
-## Despliegue
-
-- **Frontend**: Vercel despliega automáticamente al mergear a `main` (integración nativa con GitHub, "Root Directory" configurado en `frontend/`).
-- **Backend + Base de datos**: Render en fase de piloto/desarrollo, AWS Lightsail en producción. El mecanismo de despliegue automático aún no está definido — por ahora es manual, se documentará aquí cuando se decida.
-
-## Antes de tu primer commit
-
-```bash
-npm install
+```
+<tipo>/<identificador-opcional>/<descripcion-corta>
 ```
 
-Esto activa los hooks locales (Husky) automáticamente vía el script `prepare`. Nota: esto solo instala el tooling de gobernanza (lint/format/commits) para el frontend — para trabajar en el backend, sigue además las instrucciones de `backend/README.md` (entorno virtual de Python, dependencias) cuando existan.
+## Tipos
 
-## Convención de commits
+| Tipo       | Propósito           | Ejemplo                          |
+| ---------- | ------------------- | -------------------------------- |
+| `feature`  | Nueva funcionalidad | `feature/crear-endpoint-ordenes` |
+| `bugfix`   | Corrección de bug   | `bugfix/validacion-fecha`        |
+| `refactor` | Mejora de código    | `refactor/simplificar-auth`      |
+| `docs`     | Documentación       | `docs/actualizar-readme`         |
+| `test`     | Tests               | `test/dashboard-filters`         |
+| `chore`    | Mantenimiento       | `chore/actualizar-deps`          |
+
+## Reglas
+
+- Minúsculas, palabras separadas por guiones (`-`).
+- Se crea siempre desde la rama de integración del equipo (`develop`).
+- Nunca se commitea directo en la rama de integración ni en producción (`main`).
+- El identificador de historia/issue (`E-XX-HU-XX`) es opcional pero recomendado.
+
+```bash
+<!-- ejemplo de flujo -->
+git checkout develop
+git pull origin develop
+git checkout -b feature/nombre-de-la-tarea
+```
+
+---
+
+# Formato de Commits
+
+Basado en [Conventional Commits](https://www.conventionalcommits.org/).
+
+## Estructura
+
+```
+<tipo>(<alcance opcional>): <descripción en presente, minúscula>
+```
+
+## Tipos permitidos
+
+| Tipo       | Cuándo usarlo                                  |
+| ---------- | ---------------------------------------------- |
+| `feat`     | Nueva funcionalidad                            |
+| `fix`      | Corrección de bug                              |
+| `docs`     | Solo documentación                             |
+| `style`    | Formato, sin cambio de lógica                  |
+| `refactor` | Cambio de código sin alterar el comportamiento |
+| `test`     | Agregar o corregir tests                       |
+| `chore`    | Mantenimiento, dependencias, config            |
+| `perf`     | Mejora de rendimiento                          |
+
+## Ejemplo
+
+```bash
+<!-- ejemplo de commit -->
+git commit -m "feat(orders): agregar endpoint de creación de orden"
+```

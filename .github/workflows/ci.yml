@@ -58,4 +58,4 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - uses: wagoid/commitlint-github-action@v6
+      - run: git log -1 --pretty=%B | npx commitlint --config commitlint.config.cjs

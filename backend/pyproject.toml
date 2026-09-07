@@ -1,0 +1,42 @@
+[project]
+name = "govsync-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+# OJO: usar `extend-exclude`, NO `exclude`.
+# `exclude` REEMPLAZA la lista de exclusiones por defecto de Ruff (que incluye
+# .venv, .git, __pycache__, node_modules...). Al escribirla se pierden esas
+# exclusiones y Ruff termina revisando las dependencias instaladas: miles de
+# archivos que no son del proyecto. `extend-exclude` se suma a las por defecto.
+extend-exclude = ["alembic/versions", ".venv", "venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM", "RUF"]
+# B008    : FastAPI usa llamadas en los valores por defecto (Depends, File, Path).
+# RUF001-3: caracteres "ambiguos" que en español son legítimos (tildes, ñ, «»).
+# N818    : exige que las excepciones terminen en "Error". El dominio de
+#           GovSync está escrito en español y sus excepciones se leen como
+#           frases (`ReglaDeNegocioViolada`, `ArchivoInvalido`); forzar
+#           `ArchivoInvalidoError` mezclaría dos idiomas en un mismo nombre.
+#           La clase raíz sí conserva el sufijo: `GovSyncError`.
+ignore = ["B008", "RUF001", "RUF002", "RUF003", "N818"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# `pythonpath` pone la raíz del backend en sys.path para que `import app`
+# funcione sin instalar el paquete ni depender de dónde se invoque pytest.
+# Sin esto, `pytest` desde backend/ falla con ModuleNotFoundError: app.
+pythonpath = ["."]
+addopts = "-q --cov=app --cov-report=term-missing --cov-report=xml"
+filterwarnings = ["ignore::UserWarning"]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/main.py", "alembic/*"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "alembic"]

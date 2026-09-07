@@ -1,0 +1,22 @@
+# Levanta la base de datos de desarrollo. El backend y el frontend se ejecutan
+# localmente (ver README) para conservar la recarga en caliente.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: govsync-postgres
+    environment:
+      POSTGRES_USER: govsync
+      POSTGRES_PASSWORD: govsync
+      POSTGRES_DB: govsync
+    ports:
+      - "5432:5432"
+    volumes:
+      - datos_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U govsync -d govsync"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  datos_postgres:
