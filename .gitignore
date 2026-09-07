@@ -18,3 +18,7 @@ backend/.env
 # Editor / SO
 .DS_Store
 .vercel
+
+# Test artifacts
+backend/.coverage
+backend/coverage.xml
