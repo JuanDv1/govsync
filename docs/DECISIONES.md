@@ -22,9 +22,11 @@ generar la migración a partir de él — descartada porque el equipo ya tiene e
 hábito de trabajar con `alembic revision --autogenerate`, y mantener dos
 fuentes sincronizadas a mano es más frágil que tener una sola.
 
-**Estado:** PENDIENTE DE RATIFICAR — responsable: Cristhian (`[REF-01]`).
+**Estado:** RATIFICADA — el equipo confirmó la propuesta (`[REF-01]`, tarjeta
+movida a "Tareas hechas" en Trello).
 
-**Registrado:** 2026-09-08 (a partir del análisis de `PLANDETRABAJO.md`).
+**Registrado:** 2026-09-08 (propuesta, a partir del análisis de `PLANDETRABAJO.md`).
+**Ratificado:** 2026-09-08 por el equipo.
 
 ---
 
