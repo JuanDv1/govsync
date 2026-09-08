@@ -288,20 +288,19 @@ columnas mínimas. No se debe portar aquí la severidad de HU-02-CA04/HU-03-CA05
 ## HU-07 — Visualizar la matriz de relación del corte actual
 
 **CA cubiertos: HU07-CA01 a CA08 (reconciliados el 2026-09-08 con el checklist
-de Trello y con `Levantamiento de Requisitos.md`) más HU07-CA09, contenido
-heredado del Excel original sin tarjeta propia en Trello — ver
-`docs/DECISIONES.md`, D5.**
+de Trello y con `Levantamiento de Requisitos.md`) — ver `docs/DECISIONES.md`,
+D5.**
 
 Antes de la reconciliación, `Levantamiento de Requisitos.md` solo tenía
 HU07-CA01 y HU07-CA04, y el código (`consultas.py`, `trazabilidad/api/router.py`)
 referenciaba "CA-2 a CA-8" como si ya existieran formalmente. No eran
 criterios inventados: sí existían, en el checklist "Criterios de aceptación"
 de la tarjeta de Trello de HU-07, solo que nunca se habían volcado al
-documento de requisitos. Ya se corrigió esa numeración en las tres fuentes
-(Trello ya la tenía correcta; Excel y esta especificación se ajustaron). Sigue
-pendiente que el Product Owner confirme si HU07-CA09 (unificación de nombres
-de columna del indicador) queda como CA independiente o se fusiona con
-HU07-CA02 / HU03-CA02, que ya cubren el mismo hecho de forma implícita.
+documento de requisitos. Ya se corrigió esa numeración en las tres fuentes.
+Lo que existía como "HU07-CA04" original (unificación de nombres de columna
+del indicador) se fusionó con CA-2 por decisión del equipo: es la misma regla
+que HU03-CA02, ya garantizada en la ingesta — la matriz solo lee un dato ya
+unificado, no unifica nada por su cuenta.
 
 ### Endpoint y método
 
@@ -364,7 +363,7 @@ Excel originales.
 | Todos los JOIN son LEFT | CA-8 | Ninguna asociación ficticia; el `NULL` explícito es el insumo de las alertas de E-04/HU-05 |
 | No colapsar relaciones múltiples (prohibido `DISTINCT`, `LIMIT 1`, `first()` sobre el resultado final) | CA-7 | Un indicador con 2 BPIN debe mostrar ambos; un BPIN con 3 indicadores, los tres. El *único* `DISTINCT` permitido es sobre el puente `(rubro_id, contrato_id)` de `registro_presupuestal`, para no generar fan-out por los 1..N registros presupuestales de un mismo contrato (no es una violación de la regla: la deduplicación es sobre el puente, no sobre las columnas que expone la matriz) |
 | Acotar `proyecto_indicador` al `corte_id` **dentro** de la subconsulta de proyectos, no encadenando LEFT JOIN sueltos | Regla de negocio (evita fila fantasma cruzando cortes) | `proyecto_indicador` no tiene `corte_id` propio; lo hereda de `proyecto` |
-| Unificar `CodigoIndicadorCcpet`/`Cod Indicador Ccpet` sin duplicar columnas ni perder filas | CA-9 (pendiente de confirmar si es CA independiente) | Ya resuelto en la capa de ingesta (HU-03/CA-02, D-01); esta consulta solo lee la columna ya unificada |
+| Unificar `CodigoIndicadorCcpet`/`Cod Indicador Ccpet` sin duplicar columnas ni perder filas | CA-2 (fusionada con la unificación de HU03-CA02) | Ya resuelto en la capa de ingesta (HU-03/CA-02, D-01); esta consulta solo lee la columna ya unificada — no vuelve a unificar nada |
 
 ### Comportamiento ante error
 
@@ -400,9 +399,10 @@ traceback interno al cliente (mismo principio de `[SEC-03]` en
 | # | Gap | Por qué importa | A quién le toca decidir |
 |---|---|---|---|
 | 1 | `pdt.OBLIGATORIAS` y las dos `OBLIGATORIAS_*` de `ejecucion.py` están declaradas vacías (`{}`) en el esqueleto | Sin completarlas, `exigir_columnas` no puede rechazar nada — HU02-CA02 y HU03-CA04 quedarían sin cumplir aunque el resto del lector esté implementado | Quien tome esas tarjetas (`[HU-02][BE-02]`, `[HU-03][BE-04]`) — completarlas con los alias reales documentados en los propios docstrings de esos archivos |
-| 2 | HU07-CA09 (unificación de nombres de columna, heredado del Excel original) no tiene tarjeta propia en Trello ni ítem de checklist | Puede perderse de vista al planear el sprint si solo se sigue el tablero de Trello | Product Owner — decidir si se agrega como ítem del checklist de Trello o se fusiona formalmente con CA-2/HU03-CA02 (ver `docs/DECISIONES.md`, D5) |
 
-Ninguno de estos dos puntos es ambigüedad CRÍTICA de esquema, seguridad o
-regla financiera, así que no bloquean empezar a codificar, pero deben quedar
-resueltos antes de dar por terminada HU-02/HU-03 (gap 1) y HU-07 (gap 2),
-según la Definición de Terminado del proyecto.
+No quedan gaps abiertos sobre la numeración de CA de HU-01/HU-07: se
+reconciliaron con Trello y la fila que existía como "HU07-CA04" original se
+fusionó con CA-2 (ver `docs/DECISIONES.md`, D5). El gap 1 no es ambigüedad
+CRÍTICA de esquema, seguridad o regla financiera, así que no bloquea empezar
+a codificar, pero debe quedar resuelto antes de dar por terminadas HU-02 y
+HU-03, según la Definición de Terminado del proyecto.

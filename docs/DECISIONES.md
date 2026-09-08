@@ -137,13 +137,18 @@ los checklists de Trello. La única fila sin equivalente en Trello es
 HU07-CA04 original (unificación de nombres de columna de indicador al
 construir la matriz), que se conservó renumerada como **HU07-CA09**.
 
-**Pendiente:** el Product Owner debe confirmar si HU07-CA09 queda como
-Criterio independiente (y se agrega también como ítem de checklist en la
-tarjeta de Trello, para que quede en las tres fuentes) o si se considera ya
-cubierto implícitamente por HU07-CA02 ("usa información ya procesada") y
-HU03-CA02 (la unificación ya ocurrió al ingerir el archivo presupuestal).
+**Decisión sobre HU07-CA09 (2026-09-08):** el equipo confirmó que NO se
+mantiene como Criterio independiente. Es la misma regla que HU03-CA02
+(equivalencia de nombres de columna de indicador), aplicada en un momento
+posterior del pipeline: para cuando la matriz se construye, la unificación
+ya ocurrió en la ingesta y persiste como una sola columna — la consulta de
+HU-07 no unifica nada, solo lee un dato ya unificado. Mantenerla como CA
+propia duplicaba la regla en dos Historias de Usuario sin comportamiento
+nuevo verificable (sobreingeniería de especificación). Se retiró de
+`Levantamiento de Requisitos.md`; el caso de prueba concreto queda como nota
+de regresión bajo HU07-CA02 en `docs/TRAZABILIDAD.md`. El Trello no cambia:
+nunca tuvo tarjeta ni ítem de checklist para esta regla.
 
-**Estado:** VIGENTE la reconciliación de numeración; PENDIENTE la decisión
-sobre HU07-CA09.
+**Estado:** VIGENTE — decisión tomada, sin pendientes.
 
 **Registrado:** 2026-09-08.
