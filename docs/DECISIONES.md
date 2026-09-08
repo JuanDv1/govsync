@@ -138,7 +138,7 @@ HU07-CA04 original (unificación de nombres de columna de indicador al
 construir la matriz), que se conservó renumerada como **HU07-CA09**.
 
 **Decisión sobre HU07-CA09 (2026-09-08):** el equipo confirmó que NO se
-mantiene como Criterio independiente. Es la misma regla que HU03-CA02
+mantiene como Criterio independiente. Es la misma regla que HU03-CA03
 (equivalencia de nombres de columna de indicador), aplicada en un momento
 posterior del pipeline: para cuando la matriz se construye, la unificación
 ya ocurrió en la ingesta y persiste como una sola columna — la consulta de
@@ -148,6 +148,52 @@ nuevo verificable (sobreingeniería de especificación). Se retiró de
 `Levantamiento de Requisitos.md`; el caso de prueba concreto queda como nota
 de regresión bajo HU07-CA02 en `docs/TRAZABILIDAD.md`. El Trello no cambia:
 nunca tuvo tarjeta ni ítem de checklist para esta regla.
+
+**Estado:** VIGENTE — decisión tomada, sin pendientes.
+
+**Registrado:** 2026-09-08.
+
+
+---
+
+## D6 · Reconciliación de numeración de CA entre Excel, Trello y PLANDETRABAJO.md (HU-02, HU-03, HU-04)
+
+**Hallazgo:** al revisar un export actualizado de Trello, se encontró el mismo
+patrón que motivó D5, ahora en HU-02, HU-03 y HU-04: el checklist de Trello
+tiene un primer criterio de acceso/carga del archivo ("la administradora
+puede seleccionar/cargar el archivo X correspondiente al corte") que
+`Levantamiento de Requisitos.md` nunca capturó. `PLANDETRABAJO.md` ya asigna
+`CA-1` a las tarjetas de acceso de las tres historias (`casos_uso.py::
+cargar_archivo` y `cortes/api/router.py`), y el código ya escrito confirma la
+misma numeración: `pdt.py` cubre "CA-2, CA-3, CA-4, CA-6" (salta CA-1 y CA-5),
+`ejecucion.py` cubre "CA-2, CA-4, CA-5, CA-7" (salta CA-1, CA-3 y CA-6),
+`_comun.py::mapear_columnas` cita explícitamente "(HU-03/CA-3, HU-07)", y
+`proyectos.py` cubre "CA-2, CA-3, CA-4, CA-5" (salta CA-1). Las tres fuentes
+(Trello, PLANDETRABAJO.md, código) coincidían entre sí; solo el documento de
+requisitos estaba desactualizado.
+
+**Decisión:** se agregó CA-1 (acceso) a HU-02, HU-03 y HU-04 en
+`Levantamiento de Requisitos.md`, y se renumeraron los CA existentes para
+que coincidan con Trello/PLANDETRABAJO.md/código:
+
+- **HU-02** (antes 5 CA, ahora 6): CA-1 acceso (nuevo) · CA-2 reconoce
+  pestaña (antes CA-1) · CA-3 rechazo columnas faltantes (antes CA-2) · CA-4
+  rechazo archivo incorrecto (antes CA-4, sin cambio) · CA-5 confirmación
+  visual (antes CA-3) · CA-6 alimenta matriz (antes CA-5).
+- **HU-03** (antes 6 CA, ahora 7): CA-1 acceso (nuevo) · CA-2 procesa ambas
+  pestañas (antes CA-1) · CA-3 equivalencia de nombres (antes CA-2) · CA-4
+  rechazo pestaña faltante (antes CA-4, sin cambio) · CA-5 rechazo archivo
+  incorrecto (antes CA-5, sin cambio) · CA-6 alimenta matriz (antes CA-6,
+  sin cambio) · CA-7 preserva ceros a la izquierda (antes CA-3, se mueve al
+  final).
+- **HU-04** (antes 4 CA, ahora 5): CA-1 acceso (nuevo) · CA-2 carga tal cual
+  (antes CA-1) · CA-3 extracción acotada (antes CA-2) · CA-4 separación
+  multivalor (antes CA-3) · CA-5 alimenta matriz (antes CA-4).
+
+Se ajustaron `docs/TRAZABILIDAD.md` (HU-02 reescrita completa; HU-04 con la
+fila CA-5 agregada, faltaba) y `docs/ESPECIFICACIONES_TECNICAS.md` en
+consecuencia. `docs/SEGURIDAD.md` no cita estos CA, no requirió cambios. El
+Trello no se modifica: ya tenía la numeración correcta.
 
 **Estado:** VIGENTE — decisión tomada, sin pendientes.
 

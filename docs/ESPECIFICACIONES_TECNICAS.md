@@ -24,7 +24,7 @@ error.
 
 ## HU-01 — Crear un corte de seguimiento
 
-**CA cubiertos (aprobados):** HU01-CA01 a CA07.
+**CA cubiertos (aprobados):** HU01-CA01 a CA08.
 **Tarjetas:** `[HU-01][BE-03]` `crear_corte`, `[HU-01][BE-04]` reutilización de
 fuentes, `[HU-01][BE-05]` registro/transición a REGISTRADO.
 
@@ -96,10 +96,11 @@ lectura al reutilizar). Ver `cortes/persistence/models.py`.
 
 ## HU-02 — Cargar el Plan Indicativo (PDT)
 
-**CA cubiertos (aprobados):** HU02-CA01 a CA05.
-**Tarjetas:** `[HU-02][BE-01]` localización de pestaña, `[BE-02]` validación
-de columnas, `[BE-03]` detección de archivo incorrecto, `[BE-04]`
-`cargar_archivo`.
+**CA cubiertos (aprobados):** HU02-CA01 a CA06 (renumerados el 2026-09-08 —
+CA-1 es nuevo, ver `docs/DECISIONES.md`, D6).
+**Tarjetas:** `[HU-02][FE-01]`/`[BE-04]` acceso y carga (CA-1), `[BE-01]`
+localización de pestaña (CA-2), `[BE-02]` validación de columnas (CA-3),
+`[BE-03]` detección de archivo incorrecto (CA-4).
 
 ### Endpoint y método
 
@@ -121,7 +122,7 @@ identificador funcional, solo se sanitiza por seguridad ([SEC-03]).
   "advertencias": []
 }
 ```
-`metas_reconocidas` es el número que CA-3 exige mostrar («confirma
+`metas_reconocidas` es el número que CA-5 exige mostrar («confirma
 visualmente cuántas metas fueron reconocidas»).
 
 ### Tablas que toca
@@ -134,16 +135,17 @@ de confirmar con la clienta qué significa "Principal" en el dominio**).
 
 | Regla | CA | Dónde vive |
 |---|---|---|
-| Reconocer específicamente la pestaña **"Plan indicativo - Productos"** entre las 6 que trae el archivo real; no interpretar las otras 5 | CA-1 | `lectores/_comun.resolver_hoja` + `pdt.ALIAS_HOJA` |
+| La administradora puede seleccionar el Plan Indicativo del corte | CA-1 | `cortes/api/router.py`, `casos_uso.py::cargar_archivo` |
+| Reconocer específicamente la pestaña **"Plan indicativo - Productos"** entre las 6 que trae el archivo real; no interpretar las otras 5 | CA-2 | `lectores/_comun.resolver_hoja` + `pdt.ALIAS_HOJA` |
 | El encabezado real está en una fila variable (fila 2 en el archivo medido); localizarlo buscando las columnas requeridas, no un número de fila fijo | Regla de negocio (peculiaridad 1 de `_comun.py`) | `_comun.localizar_fila_encabezado` |
-| Columnas mínimas: código de indicador (MGA), meta programada por vigencia, marca "Principal" | CA-2 | `pdt.OBLIGATORIAS` (**pendiente de completar en código** — hoy es `{}`) + `_comun.exigir_columnas` |
+| Columnas mínimas: código de indicador (MGA), meta programada por vigencia, marca "Principal" | CA-3 | `pdt.OBLIGATORIAS` (**pendiente de completar en código** — hoy es `{}`) + `_comun.exigir_columnas` |
 | Toda lectura de columnas de código con `dtype=str` (preserva ceros a la izquierda: 4 códigos reales empiezan en 0) | D-02 | `_comun` (lector) |
 
 ### Comportamiento ante error
 
 | Caso | CA | Código | Excepción |
 |---|---|---|---|
-| Falta alguna columna mínima | CA-2 | `422` | `ArchivoInvalido` — mensaje indica **qué columna(s)** faltan; rechazo **total**, sin datos parciales |
+| Falta alguna columna mínima | CA-3 | `422` | `ArchivoInvalido` — mensaje indica **qué columna(s)** faltan; rechazo **total**, sin datos parciales |
 | El archivo no es un PDT (p. ej. suben el de ejecución) | CA-4 | `422` | `ArchivoInvalido` — mensaje indica que no corresponde al formato esperado, **sin adivinar contenido** |
 | Extensión/firma de archivo inválida, tamaño excedido, macros (`.xlsm`) | [SEC-03] | `422` | `ArchivoInvalido` |
 | Corte no existe o no está en `BORRADOR` | — | `404` / `409` | `RecursoNoEncontrado` / `OperacionNoPermitida` |
@@ -152,15 +154,18 @@ de confirmar con la clienta qué significa "Principal" en el dominio**).
 
 ## HU-03 — Cargar el archivo presupuestal (ejecución + contratación)
 
-**CA cubiertos (aprobados):** HU03-CA01 a CA06.
-**Tarjetas:** `[HU-03][BE-01]` lector de dos pestañas, `[BE-02]` ceros a la
-izquierda, `[BE-03]` unificación de nombres de columna, `[BE-04]` validación
-de ambas pestañas, `[BE-05]` archivo incorrecto, `[BE-06]` `cargar_archivo`.
+**CA cubiertos (aprobados):** HU03-CA01 a CA07 (renumerados el 2026-09-08 —
+CA-1 es nuevo, `CA-7` [ceros a la izquierda] se movió al final; ver
+`docs/DECISIONES.md`, D6).
+**Tarjetas:** `[HU-03][BE-06]`/`[FE-01]` acceso y carga (CA-1), `[BE-01]` lector
+de dos pestañas (CA-2), `[BE-03]` unificación de nombres de columna (CA-3),
+`[BE-04]` validación de ambas pestañas (CA-4), `[BE-05]` archivo incorrecto
+(CA-5), `[BE-02]` ceros a la izquierda (CA-7).
 
 ### Endpoint y método
 
 `POST /cortes/{id}/archivos/EJECUCION` — `multipart/form-data`, campo
-`archivo`. Un solo archivo con dos pestañas, **no dos endpoints** (CA-1: "sin
+`archivo`. Un solo archivo con dos pestañas, **no dos endpoints** (CA-2: "sin
 exigir que se carguen por separado"). Éxito: `200`/`201` igual que HU-02.
 
 ### Esquema de entrada
@@ -197,9 +202,10 @@ Tesorería/clienta si es un defecto de origen o un caso válido).
 
 | Regla | CA | Dónde vive |
 |---|---|---|
-| Procesar EJECUCION y CONTRATACION como conjuntos independientes, en la misma carga | CA-1 | `ejecucion.py` |
-| Tratar `CodigoIndicadorCcpet` (ejecución) y `Cod Indicador Ccpet` (contratación) como el mismo dato, sin duplicar columnas | CA-2 | `_comun.mapear_columnas` por alias |
-| Preservar ceros a la izquierda del código de indicador (9 dígitos) | CA-3 | `dtype=str` en toda la lectura (D-02) |
+| La administradora puede cargar el archivo presupuestal del corte | CA-1 | `cortes/api/router.py`, `casos_uso.py` |
+| Procesar EJECUCION y CONTRATACION como conjuntos independientes, en la misma carga | CA-2 | `ejecucion.py` |
+| Tratar `CodigoIndicadorCcpet` (ejecución) y `Cod Indicador Ccpet` (contratación) como el mismo dato, sin duplicar columnas | CA-3 | `_comun.mapear_columnas` por alias |
+| Preservar ceros a la izquierda del código de indicador (9 dígitos) | CA-7 | `dtype=str` en toda la lectura (D-02) |
 | Resolver la pestaña de ejecución por alias/prefijo, no por nombre exacto (el archivo real trunca a 31 caracteres) | D-14 | `_comun.resolver_hoja` |
 | Montos en formato colombiano (`$ 1.218.264.452`, `133200000`) se parsean a `Decimal`, nunca `float` | Regla de negocio (peculiaridad 5) | `_comun.numero` |
 
@@ -215,14 +221,15 @@ Tesorería/clienta si es un defecto de origen o un caso válido).
 
 ## HU-04 — Cargar la plantilla de proyectos BPIN
 
-**CA cubiertos (aprobados):** HU04-CA01 a CA04.
-**Tarjetas:** `[HU-04][BE-01]` almacenamiento tal cual, `[BE-02]` extracción
-acotada, `[BE-03]` separación de celdas combinadas, `[BE-04]`
-`cargar_archivo`.
+**CA cubiertos (aprobados):** HU04-CA01 a CA05 (renumerados el 2026-09-08 —
+CA-1 es nuevo; ver `docs/DECISIONES.md`, D6).
+**Tarjetas:** `[HU-04][FE-01]`/`[BE-04]` acceso y carga (CA-1), `[BE-01]`
+almacenamiento tal cual (CA-2), `[BE-02]` extracción acotada (CA-3), `[BE-03]`
+separación de celdas combinadas (CA-4).
 
-Este lector es **deliberadamente más permisivo** que los otros dos: CA-1 exige
+Este lector es **deliberadamente más permisivo** que los otros dos: CA-2 exige
 almacenar el archivo «tal cual», «incluso si su estructura interna no está
-completamente estandarizada», y CA-2 acota la extracción a BPIN + indicador de
+completamente estandarizada», y CA-3 acota la extracción a BPIN + indicador de
 producto «sin validar el resto». La tarjeta lleva la etiqueta *"Pendiente de
 estandarización de fuente"* — esto es una regla de negocio confirmada, no una
 laxitud accidental del lector.
@@ -257,7 +264,8 @@ valiosa de esa pantalla» (comentario del propio lector).
 ### Tablas que toca
 
 `proyecto` (INSERT, BPIN sin normalizar — uno de los 38 reales no cumple el
-formato de 15 dígitos y se conserva tal cual, CA-2) y `proyecto_indicador`
+formato de 15 dígitos y se conserva tal cual, CA-2 — sin cambio, ya era CA-2 en
+el código original) y `proyecto_indicador`
 (INSERT, N:M entre proyecto e indicador — D-07: la separación de celdas
 multivalor **no** es un `split("\n")` ingenuo, sino extracción por patrón de 9
 dígitos aislados, para no confundir nombres/montos con códigos, ni un BPIN de
@@ -267,19 +275,20 @@ dígitos aislados, para no confundir nombres/montos con códigos, ni un BPIN de
 
 | Regla | CA | Dónde vive |
 |---|---|---|
-| Extraer solo BPIN e indicador de producto; no validar ni rechazar por el resto de columnas | CA-2 | `proyectos.OBLIGATORIAS` (ya declaradas en código: `bpin`, `indicador_producto_raw`) |
-| Separar automáticamente indicadores multivalor de una celda | CA-3 | `_comun.rellenar_celdas_combinadas` + extracción por patrón (D-07) |
+| La administradora puede cargar la plantilla BPIN del corte | CA-1 | `cortes/api/router.py`, `casos_uso.py` |
+| Extraer solo BPIN e indicador de producto; no validar ni rechazar por el resto de columnas | CA-3 | `proyectos.OBLIGATORIAS` (ya declaradas en código: `bpin`, `indicador_producto_raw`) |
+| Separar automáticamente indicadores multivalor de una celda | CA-4 | `_comun.rellenar_celdas_combinadas` + extracción por patrón (D-07) |
 | Propagar hacia abajo el valor de celdas combinadas verticalmente (una fila de proyecto + N filas de solo-contrato) | Regla de negocio (221 rangos combinados medidos) | `_comun.rellenar_celdas_combinadas` |
 
 ### Comportamiento ante error
 
 | Caso | CA | Código | Excepción |
 |---|---|---|---|
-| No se puede ubicar BPIN o indicador de producto en ninguna hoja | CA-1/CA-2 (implícito: sin esas dos columnas no hay «tal cual» útil) | `422` | `ArchivoInvalido` |
+| No se puede ubicar BPIN o indicador de producto en ninguna hoja | CA-2/CA-3 (implícito: sin esas dos columnas no hay «tal cual» útil) | `422` | `ArchivoInvalido` |
 | Corte no existe / no está en `BORRADOR` | — | `404` / `409` | `RecursoNoEncontrado` / `OperacionNoPermitida` |
 
 **Nota:** a diferencia de HU-02/HU-03, este archivo **no se rechaza** por
-estructura interna no estandarizada (CA-1) — solo por no poder ubicar las dos
+estructura interna no estandarizada (CA-2) — solo por no poder ubicar las dos
 columnas mínimas. No se debe portar aquí la severidad de HU-02-CA04/HU-03-CA05
 ("archivo incorrecto"): no está en los CA aprobados para HU-04.
 

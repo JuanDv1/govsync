@@ -25,13 +25,17 @@ pruebas de ese CA pasan) · `Bloqueado` (anotar por qué en Evidencia).
 
 ## E-02 / HU-02 — Cargar Plan Indicativo (3 SP)
 
+> Numeración reconciliada el 2026-09-08 con Trello, `PLANDETRABAJO.md` y el
+> código (faltaba CA-1 y CA-3/CA-4 estaban invertidos).
+
 | CA | Tarjeta(s) | Archivo | Estado | Prueba | Evidencia |
 | --- | --- | --- | --- | --- | --- |
-| CA-1 (reconoce pestaña "Plan indicativo - Productos") | `[HU-02][BE-01]` | `ingesta/persistence/lectores/pdt.py` | Pendiente | — | — |
-| CA-2 (rechazo por columnas faltantes, nombradas) | `[HU-02][BE-02]` | `lectores/pdt.py::OBLIGATORIAS` | Pendiente | — | — |
-| CA-3 (confirmación visual de metas cargadas) | `[HU-02][FE-02]` | `pages/NuevoCorte.jsx` paso 2 | Pendiente | — | — |
+| CA-1 (acceso: seleccionar el Plan Indicativo del corte) | `[HU-02][FE-01]`, `[HU-02][BE-04]` | `cortes/api/router.py`, `casos_uso.py::cargar_archivo` | Pendiente | — | — |
+| CA-2 (reconoce pestaña "Plan indicativo - Productos") | `[HU-02][BE-01]` | `ingesta/persistence/lectores/pdt.py` | Pendiente | — | — |
+| CA-3 (rechazo por columnas faltantes, nombradas) | `[HU-02][BE-02]` | `lectores/pdt.py::OBLIGATORIAS` | Pendiente | — | — |
 | CA-4 (rechazo por archivo incorrecto) | `[HU-02][BE-03]` | `lectores/pdt.py::leer` | Pendiente | — | — |
-| CA-5 (alimenta matriz de relación) | `[HU-02][BE-04]` | `casos_uso.py::cargar_archivo` | Pendiente | — | — |
+| CA-5 (confirmación visual de metas cargadas) | `[HU-02][FE-02]` | `pages/NuevoCorte.jsx` paso 2 | Pendiente | — | — |
+| CA-6 (alimenta matriz de relación) | `[HU-02][BE-04]` | `casos_uso.py::cargar_archivo` | Pendiente | — | — |
 
 ## E-02 / HU-03 — Cargar información presupuestal y contractual (8 SP)
 
@@ -47,12 +51,15 @@ pruebas de ese CA pasan) · `Bloqueado` (anotar por qué en Evidencia).
 
 ## E-02 / HU-04 — Cargar plantilla de proyectos BPIN (13 SP)
 
+> CA-5 agregado el 2026-09-08 (alimenta matriz), faltaba en esta tabla.
+
 | CA | Tarjeta(s) | Archivo | Estado | Prueba | Evidencia |
 | --- | --- | --- | --- | --- | --- |
 | CA-1 (endpoint) | `[HU-04][FE-01]` | `cortes/api/router.py` | Pendiente | — | — |
 | CA-2 (carga tal cual, sin exigir estructura estandarizada) | `[HU-04][BE-01]` | `lectores/proyectos.py` | Pendiente | — | — |
 | CA-3 (extracción acotada de columnas) | `[HU-04][BE-02]` | `lectores/proyectos.py::OBLIGATORIAS` | Pendiente | — | — |
 | CA-4 (separa indicadores multivalor automáticamente) | `[HU-04][BE-03]` | `shared/codigos.py::extraer_todos` | Pendiente | — | — |
+| CA-5 (alimenta matriz de relación) | `[HU-04][BE-04]` | `casos_uso.py::cargar_archivo` | Pendiente | — | — |
 
 ## E-02 / HU-07 — Visualizar matriz de relación del corte (5 SP)
 
