@@ -198,3 +198,36 @@ Trello no se modifica: ya tenía la numeración correcta.
 **Estado:** VIGENTE — decisión tomada, sin pendientes.
 
 **Registrado:** 2026-09-08.
+
+---
+
+## D7 · La entidad Corte tiene dos estados: BORRADOR y REGISTRADO
+
+**Decisión:** `Corte` modela explícitamente dos estados — `BORRADOR` (creado
+solo con vigencia y fecha, acepta cargas de archivos) y `REGISTRADO` (las
+tres fuentes obligatorias presentes, entra al histórico). El paso de uno a
+otro es la transición que exige HU-01/CA-4.
+
+**Motivo:** sin un estado explícito, HU-01/CA-3 ("no se registra sin
+archivos completos") y las cargas de HU-02/HU-03/HU-04 ("subir archivos
+contra un corte que ya existe") son incompatibles entre sí — no se puede
+exigir que el corte esté completo para existir, y a la vez que exista antes
+de estar completo. El estado resuelve la contradicción.
+
+**Origen:** este supuesto se identificó como `S-1` en una consolidación
+anterior del plan de Trello (`SUPUESTO — confirmar en la próxima reunión`,
+marcado explícitamente como algo que **afecta el esquema de BD**). No existía
+ninguna entrada en este documento que lo ratificara, aunque el esqueleto de
+código (`backend/app/modules/cortes/domain/entidades.py`, con
+`EstadoCorte.BORRADOR`/`REGISTRADO`) y `PLANDETRABAJO.md` ya lo dan por
+sentado, sin marcarlo como pendiente. Se ratifica aquí para cerrar esa
+inconsistencia entre lo que el código ya asume y lo que estaba documentado
+como abierto.
+
+**Alternativas consideradas:** ninguna evaluada aparte — el propio código ya
+estaba construido sobre este diseño antes de que se detectara el vacío
+documental.
+
+**Estado:** RATIFICADA.
+
+**Registrado:** 2026-09-08.
