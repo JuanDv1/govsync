@@ -1,2 +1,16 @@
-# Los 2 devs core revisan por defecto todo el código.
-*       @CrisCamUO @JuanDv1
+# Regla general: los 2 devs core del backend revisan por defecto.
+*       @CrisCamUO @JEMG2004
+
+# Reparto por capa (PLANDETRABAJO.md §2) — aprobación obligatoria:
+# Dominio y casos de uso (Juan Esteban escribe) -> aprueba Cristhian
+backend/app/modules/*/domain/**       @CrisCamUO
+backend/app/modules/*/application/**  @CrisCamUO
+backend/alembic/**                    @CrisCamUO
+
+# Persistencia, ETL, CI/seguridad (Cristhian escribe) -> aprueba Juan Esteban
+backend/app/modules/*/persistence/**  @JEMG2004
+backend/app/shared/**                 @JEMG2004
+.github/workflows/**                  @JEMG2004
+
+# Frontend (Karold / Juan David) -> regla de REF-06: backend revisa frontend
+frontend/**                           @CrisCamUO @JEMG2004
