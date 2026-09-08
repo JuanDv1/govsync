@@ -56,13 +56,22 @@ pruebas de ese CA pasan) · `Bloqueado` (anotar por qué en Evidencia).
 
 ## E-02 / HU-07 — Visualizar matriz de relación del corte (5 SP)
 
+> Numeración reconciliada el 2026-09-08 con el checklist de Trello y con
+> `Levantamiento de Requisitos.md` (antes esta tabla mezclaba dos numeraciones
+> distintas para el mismo CA-4). CA-9 es la única fila sin tarjeta propia en
+> Trello — ver nota en `docs/DECISIONES.md`.
+
 | CA | Tarjeta(s) | Archivo | Estado | Prueba | Evidencia |
 | --- | --- | --- | --- | --- | --- |
-| CA-1 (visualización con las 6 columnas confirmadas) | `[HU-07][BE-01]`, `[HU-07][FE-01]` | `trazabilidad/persistence/consultas.py`, `api/router.py` | Pendiente | — | — |
-| CA-2..CA-6 (consulta y filtros de la matriz) | `[HU-07][BE-01]`, `[HU-07][FE-02]` | idem, `pages/MatrizRelacion.jsx` | Pendiente | — | — |
-| CA-4 (unificación de nombres de columna de indicador) | `[HU-07][BE-02]` | `consultas.py` | Pendiente | — | — |
-| CA-7 | `[HU-07][BE-02]` | idem | Pendiente | — ver caso frontera documentado en el docstring de `consultas.py` | — |
-| CA-8 (conteo total contrastado con el cálculo manual) | `[HU-07][BE-03]`, `[HU-07][FE-03]` | idem, `pages/MatrizRelacion.jsx` | Pendiente | Debe dar: 144 metas · 119 con ejecución · 67 con BPIN · 24 sin cruce (ver `docs/DECISIONES.md`, D4) | — |
+| CA-1 (acceso a la matriz del corte actual) | `[HU-07][FE-01]` | `trazabilidad/api/router.py` | Pendiente | — | — |
+| CA-2 (usa información ya procesada, no relee los Excel) | `[HU-07][BE-01]` | `trazabilidad/persistence/consultas.py` | Pendiente | — | — |
+| CA-3 (visualiza código BPIN) | `[HU-07][BE-01]`, `[HU-07][FE-02]` | `consultas.py`, `pages/MatrizRelacion.jsx` | Pendiente | — | — |
+| CA-4 (visualiza indicador y/o producto) | `[HU-07][BE-01]`, `[HU-07][FE-02]` | idem | Pendiente | — | — |
+| CA-5 (visualiza información de ejecución) | `[HU-07][BE-01]`, `[HU-07][FE-02]` | idem | Pendiente | — | — |
+| CA-6 (visualiza número y descripción del contrato) | `[HU-07][BE-01]`, `[HU-07][FE-02]` | idem | Pendiente | — | — |
+| CA-7 (no colapsa relaciones múltiples) | `[HU-07][BE-02]`, `[HU-07][FE-03]` | `consultas.py` | Pendiente | — ver caso frontera documentado en el docstring de `consultas.py` (deduplicar el puente, no el resultado) | — |
+| CA-8 (sin asociación ficticia; NULL explícito) | `[HU-07][BE-03]`, `[HU-07][FE-03]` | idem, `pages/MatrizRelacion.jsx` | Pendiente | Debe dar: 144 metas · 119 con ejecución · 67 con BPIN · 24 sin cruce (ver `docs/DECISIONES.md`, D4) | — |
+| CA-9 (unificación de nombres de columna de indicador, heredado del Excel — sin tarjeta propia en Trello) | `[HU-07][BE-01]` (implícito en CA-2) | `consultas.py` | Pendiente — PO debe confirmar si es CA independiente o se fusiona con CA-2/HU03-CA02 | — | — |
 
 ---
 

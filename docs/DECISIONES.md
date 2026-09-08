@@ -115,3 +115,35 @@ medición de los 60 s / 4 s sea comparable entre sprints.
 **Estado:** VIGENTE.
 
 **Registrado:** 2026-09-08.
+
+
+---
+
+## D5 · Reconciliación de numeración de CA entre Excel y Trello (HU-01, HU-07)
+
+**Hallazgo:** `Levantamiento de Requisitos.md` tenía menos Criterios de
+Aceptación de los que ya estaban definidos y en uso: HU-01 llegaba solo hasta
+CA-7 y HU-07 solo tenía CA-1 y CA-4, mientras que el checklist "Criterios de
+aceptación" de las tarjetas de Trello ya tenía el contenido completo (8 CA
+para HU-01, 8 CA para HU-07) y `PLANDETRABAJO.md` y el código-esqueleto
+(`casos_uso.py`, `consultas.py`, `trazabilidad/api/router.py`) ya referencian
+esa numeración completa. No eran criterios inventados: existían en Trello,
+solo nunca se habían volcado al documento de requisitos.
+
+**Decisión:** Trello es la fuente más completa y `Levantamiento de
+Requisitos.md` se corrigió para reconciliarse con él — se agregaron
+HU01-CA08 y HU07-CA02, CA03, CA05, CA06, CA07, CA08 con el texto ya escrito en
+los checklists de Trello. La única fila sin equivalente en Trello es
+HU07-CA04 original (unificación de nombres de columna de indicador al
+construir la matriz), que se conservó renumerada como **HU07-CA09**.
+
+**Pendiente:** el Product Owner debe confirmar si HU07-CA09 queda como
+Criterio independiente (y se agrega también como ítem de checklist en la
+tarjeta de Trello, para que quede en las tres fuentes) o si se considera ya
+cubierto implícitamente por HU07-CA02 ("usa información ya procesada") y
+HU03-CA02 (la unificación ya ocurrió al ingerir el archivo presupuestal).
+
+**Estado:** VIGENTE la reconciliación de numeración; PENDIENTE la decisión
+sobre HU07-CA09.
+
+**Registrado:** 2026-09-08.

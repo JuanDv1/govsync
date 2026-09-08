@@ -287,18 +287,21 @@ columnas mínimas. No se debe portar aquí la severidad de HU-02-CA04/HU-03-CA05
 
 ## HU-07 — Visualizar la matriz de relación del corte actual
 
-**CA cubiertos (aprobados): solo HU07-CA01 y HU07-CA04.**
+**CA cubiertos: HU07-CA01 a CA08 (reconciliados el 2026-09-08 con el checklist
+de Trello y con `Levantamiento de Requisitos.md`) más HU07-CA09, contenido
+heredado del Excel original sin tarjeta propia en Trello — ver
+`docs/DECISIONES.md`, D5.**
 
-**GAP heredado, ya documentado por el equipo (`Sprint1_Decisiones_de_Diseno.md`,
-tabla de pendientes, decisión de quién resuelve: Product Owner):** el código
-(`consultas.py` y `trazabilidad/api/router.py`) referencia "HU-07 / CA-2 a
-CA-8" y reglas de paginación, filtrado de subtotales y no-colapso de
-relaciones múltiples como si fueran CA numerados, pero **CA02, CA03 y CA05 a
-CA08 no existen en `Levantamiento de Requisitos.md`**. Lo que sigue describe
-el comportamiento tal como está escrito en el código-esqueleto (que es
-correcto y necesario, según D-08/D-09), pero se marca como **SUPUESTO**
-donde no hay CA aprobado que lo respalde — el Product Owner debe decidir si
-formaliza esos CA o si el comportamiento cambia.
+Antes de la reconciliación, `Levantamiento de Requisitos.md` solo tenía
+HU07-CA01 y HU07-CA04, y el código (`consultas.py`, `trazabilidad/api/router.py`)
+referenciaba "CA-2 a CA-8" como si ya existieran formalmente. No eran
+criterios inventados: sí existían, en el checklist "Criterios de aceptación"
+de la tarjeta de Trello de HU-07, solo que nunca se habían volcado al
+documento de requisitos. Ya se corrigió esa numeración en las tres fuentes
+(Trello ya la tenía correcta; Excel y esta especificación se ajustaron). Sigue
+pendiente que el Product Owner confirme si HU07-CA09 (unificación de nombres
+de columna del indicador) queda como CA independiente o se fusiona con
+HU07-CA02 / HU03-CA02, que ya cubren el mismo hecho de forma implícita.
 
 ### Endpoint y método
 
@@ -307,9 +310,9 @@ formaliza esos CA o si el comportamiento cambia.
 | Matriz del corte actual | `GET` | `/matriz-relacion/actual?pagina=&tamano_pagina=` | `200 OK` |
 | Matriz de un corte específico | `GET` | `/matriz-relacion/{corte_id}?pagina=&tamano_pagina=` | `200 OK` |
 
-Paginación del lado del servidor — **SUPUESTO** (rendimiento, no hay CA que la
-exija explícitamente, pero el cruce real produce miles de combinaciones; D-08
-la respalda como necesidad técnica).
+Implementa CA-1 (acceso a la matriz del corte actual). La paginación en sí
+no tiene un CA propio, pero es la forma en que CA-1 se cumple sin romper
+rendimiento: el cruce real produce miles de combinaciones (D-08).
 
 ### Esquema de entrada
 
@@ -335,31 +338,33 @@ Query params: `pagina` (default 1), `tamano_pagina` (default 50).
   ]
 }
 ```
-Seis columnas confirmadas por CA-1 (BPIN, código y nombre del indicador
-SisPT/MGA, código de indicador en ejecución, número y descripción del
-contrato). `null` explícito (nunca `""`, `0` ni `"N/A"`) cuando no hubo
-correspondencia — regla `LEFT JOIN` de CA-8 en el código, hoy **SUPUESTO** sin
-CA formal, pero ya validada con datos reales: de 144 metas, 119 tienen
-ejecución, 67 tienen proyecto con BPIN, 40 tienen contrato, **24 no cruzan con
-ninguna fuente** (D-01) y deben seguir apareciendo en la matriz.
+Las seis columnas cubren CA-3 (BPIN), CA-4 (indicador/producto), CA-5
+(ejecución) y CA-6 (contrato) por separado. `null` explícito (nunca `""`, `0`
+ni `"N/A"`) cuando no hubo correspondencia — regla de CA-8, ya validada con
+datos reales: de 144 metas, 119 tienen ejecución, 67 tienen proyecto con
+BPIN, 40 tienen contrato, **24 no cruzan con ninguna fuente** (D-01) y deben
+seguir apareciendo en la matriz.
 
 ### Tablas que toca (solo lectura — es una consulta, no una tabla, D-08)
 
 `meta` JOIN `proyecto_indicador`/`proyecto` (por `cod_indicador_producto`),
 LEFT JOIN `rubro` (filtrado por `ultimo_nivel = true`, D-09) LEFT JOIN
 `registro_presupuestal` (deduplicado por `(rubro_id, contrato_id)`, no por
-`DISTINCT` sobre el resultado final — ver regla 3 más abajo) LEFT JOIN
-`contrato`. Todo acotado a un `corte_id`.
+`DISTINCT` sobre el resultado final — ver regla de CA-7 más abajo) LEFT JOIN
+`contrato`. Todo acotado a un `corte_id`. La lectura de las fuentes ya
+procesadas (CA-2) implica que esta consulta nunca vuelve a abrir los archivos
+Excel originales.
 
 ### Reglas de validación / construcción
 
-| Regla | Origen | Detalle |
+| Regla | CA | Detalle |
 |---|---|---|
-| Filtrar `ultimo_nivel = true` en `rubro` | D-09 (confirmada con evidencia) | Sin el filtro, cada meta se emparejaría también con el subtotal que la contiene — infla la matriz y el dinero en cualquier suma posterior |
-| Todos los JOIN son LEFT | CA-8 en código, **SUPUESTO sin CA formal** | Ninguna asociación ficticia; el `NULL` explícito es el insumo de las alertas de E-04/HU-05 |
-| No colapsar relaciones múltiples (prohibido `DISTINCT`, `LIMIT 1`, `first()` sobre el resultado final) | CA-7 en código, **SUPUESTO sin CA formal** | Un indicador con 2 BPIN debe mostrar ambos; un BPIN con 3 indicadores, los tres. El *único* `DISTINCT` permitido es sobre el puente `(rubro_id, contrato_id)` de `registro_presupuestal`, para no generar fan-out por los 1..N registros presupuestales de un mismo contrato (no es una violación de la regla: la deduplicación es sobre el puente, no sobre las columnas que expone la matriz) |
+| Usar información ya procesada y persistida de las fuentes, sin releer los Excel | CA-2 | La consulta solo lee tablas ya cargadas por HU-02/03/04 |
+| Filtrar `ultimo_nivel = true` en `rubro` | Regla de negocio (D-09, confirmada con evidencia) | Sin el filtro, cada meta se emparejaría también con el subtotal que la contiene — infla la matriz y el dinero en cualquier suma posterior |
+| Todos los JOIN son LEFT | CA-8 | Ninguna asociación ficticia; el `NULL` explícito es el insumo de las alertas de E-04/HU-05 |
+| No colapsar relaciones múltiples (prohibido `DISTINCT`, `LIMIT 1`, `first()` sobre el resultado final) | CA-7 | Un indicador con 2 BPIN debe mostrar ambos; un BPIN con 3 indicadores, los tres. El *único* `DISTINCT` permitido es sobre el puente `(rubro_id, contrato_id)` de `registro_presupuestal`, para no generar fan-out por los 1..N registros presupuestales de un mismo contrato (no es una violación de la regla: la deduplicación es sobre el puente, no sobre las columnas que expone la matriz) |
 | Acotar `proyecto_indicador` al `corte_id` **dentro** de la subconsulta de proyectos, no encadenando LEFT JOIN sueltos | Regla de negocio (evita fila fantasma cruzando cortes) | `proyecto_indicador` no tiene `corte_id` propio; lo hereda de `proyecto` |
-| CA-4: unificar `CodigoIndicadorCcpet`/`Cod Indicador Ccpet` sin duplicar columnas ni perder filas | CA-4 (aprobado) | Ya resuelto en la capa de ingesta (HU-03/D-01); la consulta solo lee la columna ya unificada |
+| Unificar `CodigoIndicadorCcpet`/`Cod Indicador Ccpet` sin duplicar columnas ni perder filas | CA-9 (pendiente de confirmar si es CA independiente) | Ya resuelto en la capa de ingesta (HU-03/CA-02, D-01); esta consulta solo lee la columna ya unificada |
 
 ### Comportamiento ante error
 
@@ -394,11 +399,10 @@ traceback interno al cliente (mismo principio de `[SEC-03]` en
 
 | # | Gap | Por qué importa | A quién le toca decidir |
 |---|---|---|---|
-| 1 | `casos_uso.py` referencia `HU-01/CA-8` en el docstring de `crear_corte`, pero `Levantamiento de Requisitos.md` solo llega hasta CA-7 | Un desarrollador podría implementar una regla que no existe formalmente, o dejar sin cubrir una que el código insinúa | Product Owner — confirmar si falta un CA por escribir o si es un error de comentario |
-| 2 | `trazabilidad/api/router.py` y `consultas.py` referencian "HU-07 / CA-2 a CA-8", pero solo CA-1 y CA-4 existen | Las reglas de LEFT JOIN, no-colapso y paginación son técnicamente correctas y necesarias, pero no tienen un CA aprobado que las respalde ante el profesor/cliente | Product Owner (ya está en la tabla de pendientes de `Sprint1_Decisiones_de_Diseno.md`) |
-| 3 | `pdt.OBLIGATORIAS` y las dos `OBLIGATORIAS_*` de `ejecucion.py` están declaradas vacías (`{}`) en el esqueleto | Sin completarlas, `exigir_columnas` no puede rechazar nada — HU02-CA02 y HU03-CA04 quedarían sin cumplir aunque el resto del lector esté implementado | Quien tome esas tarjetas (`[HU-02][BE-02]`, `[HU-03][BE-04]`) — completarlas con los alias reales documentados en los propios docstrings de esos archivos |
+| 1 | `pdt.OBLIGATORIAS` y las dos `OBLIGATORIAS_*` de `ejecucion.py` están declaradas vacías (`{}`) en el esqueleto | Sin completarlas, `exigir_columnas` no puede rechazar nada — HU02-CA02 y HU03-CA04 quedarían sin cumplir aunque el resto del lector esté implementado | Quien tome esas tarjetas (`[HU-02][BE-02]`, `[HU-03][BE-04]`) — completarlas con los alias reales documentados en los propios docstrings de esos archivos |
+| 2 | HU07-CA09 (unificación de nombres de columna, heredado del Excel original) no tiene tarjeta propia en Trello ni ítem de checklist | Puede perderse de vista al planear el sprint si solo se sigue el tablero de Trello | Product Owner — decidir si se agrega como ítem del checklist de Trello o se fusiona formalmente con CA-2/HU03-CA02 (ver `docs/DECISIONES.md`, D5) |
 
-Estos tres puntos no bloquean empezar a codificar (ninguno es ambigüedad
-CRÍTICA de esquema, seguridad o regla financiera), pero deben quedar
-resueltos antes de dar por terminada HU-01 y HU-07 respectivamente, según la
-Definición de Terminado del proyecto.
+Ninguno de estos dos puntos es ambigüedad CRÍTICA de esquema, seguridad o
+regla financiera, así que no bloquean empezar a codificar, pero deben quedar
+resueltos antes de dar por terminada HU-02/HU-03 (gap 1) y HU-07 (gap 2),
+según la Definición de Terminado del proyecto.
