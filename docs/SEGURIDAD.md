@@ -7,14 +7,14 @@ proyecto).
 
 ## Tabla 4 de la rúbrica — OWASP Top 10
 
-| Verificación | Estado | Evidencia / tarjeta responsable |
-| --- | --- | --- |
-| SQL Injection | Pendiente | El acceso a datos pasa por SQLAlchemy con parámetros (no SQL crudo concatenado) — confirmar en `[BD-02]`, `[HU-07][BE-01]` |
-| XSS (Cross-Site Scripting) | Pendiente | React escapa por defecto; verificar que ningún componente use `dangerouslySetInnerHTML` con datos de usuario |
-| CSRF | N/A por ahora | La API es stateless (Bearer JWT, no cookies de sesión) — CSRF aplica a autenticación basada en cookies, que no existe en Sprint 1 (ver `docs/DECISIONES.md`, D2). Revisar de nuevo si Sprint 2 introduce cookies |
-| Autenticación | N/A este sprint | Diferida a Sprint 2 — ver `docs/DECISIONES.md`, D2 |
-| Autorización | N/A este sprint | Diferida a Sprint 2 — ver `docs/DECISIONES.md`, D2 |
-| Datos sensibles encriptados | Pendiente | Verificar TLS en despliegue (`[DEV-07]`) y que no haya secretos ni datos personales en logs |
+| Verificación                | Estado          | Evidencia / tarjeta responsable                                                                                                                                                                                  |
+| --------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SQL Injection               | Pendiente       | El acceso a datos pasa por SQLAlchemy con parámetros (no SQL crudo concatenado) — confirmar en `[BD-02]`, `[HU-07][BE-01]`                                                                                       |
+| XSS (Cross-Site Scripting)  | Pendiente       | React escapa por defecto; verificar que ningún componente use `dangerouslySetInnerHTML` con datos de usuario                                                                                                     |
+| CSRF                        | N/A por ahora   | La API es stateless (Bearer JWT, no cookies de sesión) — CSRF aplica a autenticación basada en cookies, que no existe en Sprint 1 (ver `docs/DECISIONES.md`, D2). Revisar de nuevo si Sprint 2 introduce cookies |
+| Autenticación               | N/A este sprint | Diferida a Sprint 2 — ver `docs/DECISIONES.md`, D2                                                                                                                                                               |
+| Autorización                | N/A este sprint | Diferida a Sprint 2 — ver `docs/DECISIONES.md`, D2                                                                                                                                                               |
+| Datos sensibles encriptados | Pendiente       | Verificar TLS en despliegue (`[DEV-07]`) y que no haya secretos ni datos personales en logs                                                                                                                      |
 
 ## Específico de GovSync — validación de archivos cargados (`[SEC-03]`)
 

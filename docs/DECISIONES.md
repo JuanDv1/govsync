@@ -90,14 +90,14 @@ menos de 60 s, carga de vistas en menos de 4 s) es el corte real de la
 vigencia usada durante el desarrollo del Sprint 1, con los siguientes
 volúmenes verificados contra los archivos reales de la clienta:
 
-| Magnitud | Valor |
-| --- | --- |
-| Metas totales (Plan Indicativo) | 144 |
-| Metas con ejecución presupuestal asociada | 119 |
-| Metas con BPIN asociado | 67 |
-| Metas sin ningún cruce (alerta de trazabilidad) | 24 |
-| Subtotales de ejecución excluidos del cruce (`ultimo_nivel = true`) | 111 |
-| Proyectos BPIN en la plantilla del municipio | 38 (de 134 filas, por celdas combinadas) |
+| Magnitud                                                            | Valor                                    |
+| ------------------------------------------------------------------- | ---------------------------------------- |
+| Metas totales (Plan Indicativo)                                     | 144                                      |
+| Metas con ejecución presupuestal asociada                           | 119                                      |
+| Metas con BPIN asociado                                             | 67                                       |
+| Metas sin ningún cruce (alerta de trazabilidad)                     | 24                                       |
+| Subtotales de ejecución excluidos del cruce (`ultimo_nivel = true`) | 111                                      |
+| Proyectos BPIN en la plantilla del municipio                        | 38 (de 134 filas, por celdas combinadas) |
 
 **Motivo:** el docente advirtió explícitamente en la revisión de la Entrega 1
 que "un umbral sin caso de prueba no es un atributo de calidad" y pidió fijar
@@ -115,7 +115,6 @@ medición de los 60 s / 4 s sea comparable entre sprints.
 **Estado:** VIGENTE.
 
 **Registrado:** 2026-09-08.
-
 
 ---
 
@@ -152,7 +151,6 @@ nunca tuvo tarjeta ni ítem de checklist para esta regla.
 **Estado:** VIGENTE — decisión tomada, sin pendientes.
 
 **Registrado:** 2026-09-08.
-
 
 ---
 
