@@ -34,6 +34,8 @@ from datetime import date
 # from enum import Enum
 from enum import StrEnum
 
+from app.shared.errors import ReglaDeNegocioViolada
+
 
 class EstadoCorte(StrEnum):
     BORRADOR = "BORRADOR"
@@ -83,14 +85,22 @@ class Corte:
     @staticmethod
     def validar_fecha(fecha_corte: date, hoy: date) -> None:
         """HU-01/CA-2: no se aceptan cortes con fecha futura."""
-        raise NotImplementedError("[HU-01][BE-01] Invariante de fecha no futura")
+        if fecha_corte > hoy:
+            raise ReglaDeNegocioViolada(
+                f"La fecha de corte ({fecha_corte.isoformat()}) no puede ser "
+                f"posterior a hoy ({hoy.isoformat()}).",
+                detalles={
+                    "fecha_corte": fecha_corte.isoformat(),
+                    "hoy": hoy.isoformat(),
+                },
+            )
 
     def archivos_faltantes(self) -> list[TipoArchivoFuente]:
         """Tipos obligatorios que aún no están cargados ni reutilizados."""
-        raise NotImplementedError("[HU-01][BE-01] Regla de completitud")
+        return [tipo for tipo in ARCHIVOS_OBLIGATORIOS if tipo not in self.archivos]
 
     def esta_completo(self) -> bool:
-        raise NotImplementedError("[HU-01][BE-01] Regla de completitud")
+        return not self.archivos_faltantes()
 
     def registrar(self) -> None:
         """HU-01/CA-3 y CA-4: transición BORRADOR -> REGISTRADO.
