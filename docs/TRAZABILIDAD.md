@@ -14,7 +14,7 @@ pruebas de ese CA pasan) · `Bloqueado` (anotar por qué en Evidencia).
 
 | CA                                              | Tarjeta(s)                         | Archivo                                            | Estado                       | Prueba | Evidencia |
 | ----------------------------------------------- | ---------------------------------- | -------------------------------------------------- | ---------------------------- | ------ | --------- |
-| CA-1 (registro exitoso, parcial)                | `[HU-01][BE-03]`                   | `cortes/application/casos_uso.py`                  | Pendiente                    | —      | —         |
+| CA-1 (registro exitoso, parcial)                | `[HU-01][BE-03]`                   | `cortes/application/casos_uso.py`                  | En progreso                  | `test_casos_uso_cortes.py` (3 pruebas) | Pendiente correr en local |
 | CA-2 (rechaza fecha futura)                     | `[HU-01][BE-01]`                   | `cortes/domain/entidades.py::Corte.validar_fecha`  | Pendiente                    | —      | —         |
 | CA-3 (no registra sin archivos completos)       | `[HU-01][BE-05]`                   | `cortes/application/casos_uso.py::registrar_corte` | Pendiente                    | —      | —         |
 | CA-4 (registro exitoso completo)                | `[HU-01][BE-01]`, `[HU-01][BE-05]` | `entidades.py`, `casos_uso.py`                     | Pendiente                    | —      | —         |
