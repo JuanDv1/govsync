@@ -14,7 +14,7 @@ pruebas de ese CA pasan) · `Bloqueado` (anotar por qué en Evidencia).
 
 | CA                                              | Tarjeta(s)                         | Archivo                                            | Estado                       | Prueba | Evidencia |
 | ----------------------------------------------- | ---------------------------------- | -------------------------------------------------- | ---------------------------- | ------ | --------- |
-| CA-1 (registro exitoso, parcial)                | `[HU-01][BE-03]`                   | `cortes/application/casos_uso.py`                  | En progreso                  | `test_casos_uso_cortes.py` (3 pruebas) | Pendiente correr en local |
+| CA-1 (registro exitoso, parcial)                | `[HU-01][BE-03]`                   | `cortes/application/casos_uso.py`                  | Probado                      | `test_casos_uso_cortes.py` (3 pruebas) | 23 passed en local (2026-09-09) |
 | CA-2 (rechaza fecha futura)                     | `[HU-01][BE-01]`                   | `cortes/domain/entidades.py::Corte.validar_fecha`  | Probado                      | `test_cortes.py::test_rechaza_fecha_futura_con_motivo` | 19 passed en local (2026-09-08) |
 | CA-3 (no registra sin archivos completos)       | `[HU-01][BE-05]`                   | `cortes/application/casos_uso.py::registrar_corte` | Pendiente                    | —      | —         |
 | CA-4 (registro exitoso completo)                | `[HU-01][BE-01]`, `[HU-01][BE-05]` | `entidades.py`, `casos_uso.py`                     | En progreso (BE-01 probado, BE-05 falta) | `test_cortes.py::test_archivos_faltantes_en_corte_nuevo_devuelve_los_tres` (19 passed, 2026-09-08) | `registrar()` sigue NotImplementedError, es BE-05 |
