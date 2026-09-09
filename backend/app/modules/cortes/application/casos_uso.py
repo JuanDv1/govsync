@@ -41,6 +41,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from app.modules.cortes.domain.entidades import Corte
 from app.modules.cortes.domain.puertos import RepositorioCortes, RepositorioDatosCorte
 
 
@@ -59,9 +60,23 @@ class ServicioCortes:
         self._rollback = revertir_transaccion
         self._hoy = hoy or date.today()
 
-    def crear_corte(self, vigencia: int, fecha_corte: date):
-        """HU-01 / CA-1, CA-2, CA-5, CA-7, CA-8."""
-        raise NotImplementedError("[HU-01][BE-03]")
+    def crear_corte(self, vigencia: int, fecha_corte: date) -> Corte:
+        """HU-01 / CA-1, CA-8.
+
+        La validacion de fecha futura (CA-2) se delega al dominio, no se
+        reimplementa aqui. La reutilizacion de fuentes (CA-5, CA-7) es
+        [HU-01][BE-04], no esta tarjeta: un corte recien creado siempre
+        queda con los 3 archivos faltantes.
+        """
+        Corte.validar_fecha(fecha_corte, self._hoy)
+        corte = Corte(vigencia=vigencia, fecha_corte=fecha_corte)
+        try:
+            corte_guardado = self._cortes.guardar(corte)
+            self._commit()
+        except Exception:
+            self._rollback()
+            raise
+        return corte_guardado
 
     def cargar_archivo(self, corte_id, tipo, contenido: bytes, nombre_archivo: str):
         """HU-02, HU-03, HU-04 y HU-06 (reemplazo del archivo)."""
@@ -71,5 +86,5 @@ class ServicioCortes:
         """HU-01 / CA-3 y CA-4."""
         raise NotImplementedError("[HU-01][BE-05]")
 
-    def listar_cortes(self):
-        raise NotImplementedError("[HU-01][BE-03]")
+    def listar_cortes(self) -> list[Corte]:
+        return self._cortes.listar()
