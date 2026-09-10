@@ -22,12 +22,73 @@ export function Vacio({ titulo, descripcion, accion }) {
   // TODO [UX-04]
   return null;
 }
+*/
+
+// [UX-03] Este componente se llama igual que el `Error` nativo de JS. Si el
+// archivo que lo consume también hace `throw new Error(...)`, importar con
+// alias: import { Error as EstadoError } from "./Estados.jsx".
+
+//: Claves de `detalles` documentadas hoy (ver comentario de api/cliente.js).
+// Cualquier clave nueva que el backend agregue se muestra igual, con una
+// etiqueta genérica — nunca se descarta en silencio.
+const ETIQUETAS_DETALLE_CONOCIDAS = {
+  columnas_faltantes: "Columnas faltantes",
+  pestanas_faltantes: "Pestañas faltantes",
+  archivos_faltantes: "Archivos faltantes",
+};
+
+function etiquetaGenerica(clave) {
+  const texto = clave.replaceAll("_", " ");
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+function listarDetalles(detalles) {
+  return Object.entries(detalles)
+    .filter(([, valor]) =>
+      Array.isArray(valor) ? valor.length > 0 : Boolean(valor),
+    )
+    .map(([clave, valor]) => {
+      const etiqueta =
+        ETIQUETAS_DETALLE_CONOCIDAS[clave] ?? etiquetaGenerica(clave);
+      const texto = Array.isArray(valor) ? valor.join(", ") : String(valor);
+      return { clave, texto: `${etiqueta}: ${texto}` };
+    });
+}
 
 export function Error({ error, onReintentar }) {
-  // TODO [UX-03] Traducir error.detalles a una lista legible:
-  //   columnas_faltantes -> "Columnas faltantes: ..."
-  //   pestanas_faltantes -> "Pestañas faltantes: ..."
-  //   archivos_faltantes -> "Archivos faltantes: ..."
-  return null;
+  if (!error) return null;
+
+  const mensaje = error.message || "Ocurrió un error inesperado.";
+  const detalles = error.detalles ?? {};
+  const items = listarDetalles(detalles);
+
+  return (
+    <div className="estado-error" role="alert">
+      <p className="estado-error-mensaje">{mensaje}</p>
+
+      {error.codigo && (
+        <p className="estado-error-codigo">
+          Código: <span className="codigo">{error.codigo}</span>
+        </p>
+      )}
+
+      {items.length > 0 && (
+        <ul className="estado-error-detalles">
+          {items.map(({ clave, texto }) => (
+            <li key={clave}>{texto}</li>
+          ))}
+        </ul>
+      )}
+
+      {onReintentar && (
+        <button
+          type="button"
+          className="estado-error-reintentar"
+          onClick={onReintentar}
+        >
+          Reintentar
+        </button>
+      )}
+    </div>
+  );
 }
-*/
