@@ -22,3 +22,5 @@ backend/.env
 # Test artifacts
 backend/.coverage
 backend/coverage.xml
+
+graphify-out/cost.json
