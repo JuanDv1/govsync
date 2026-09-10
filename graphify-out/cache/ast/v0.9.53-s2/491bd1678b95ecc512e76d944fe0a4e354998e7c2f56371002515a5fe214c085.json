@@ -1,0 +1,458 @@
+{
+  "nodes": [
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "label": "entidades.py",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_estadocorte",
+      "label": "EstadoCorte",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L40",
+      "_callable": true,
+      "_callable_class": true
+    },
+    {
+      "id": "strenum",
+      "label": "StrEnum",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "origin_file": "$graphify-root$/backend/app/modules/cortes/domain/entidades.py"
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_tipoarchivofuente",
+      "label": "TipoArchivoFuente",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L45",
+      "_callable": true,
+      "_callable_class": true
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_archivofuente",
+      "label": "ArchivoFuente",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L67",
+      "_callable": true,
+      "_callable_class": true
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte",
+      "label": "Corte",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L76",
+      "_callable": true,
+      "_callable_class": true
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "label": ".validar_fecha()",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L86",
+      "_callable": true
+    },
+    {
+      "id": "date",
+      "label": "date",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "origin_file": "$graphify-root$/backend/app/modules/cortes/domain/entidades.py"
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_archivos_faltantes",
+      "label": ".archivos_faltantes()",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L98",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_esta_completo",
+      "label": ".esta_completo()",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L102",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_registrar",
+      "label": ".registrar()",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L105",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_puede_reutilizar",
+      "label": ".puede_reutilizar()",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L114",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_1",
+      "label": "Entidades y reglas de negocio del m\u00f3dulo de cortes. CAPA: Dominio TARJETA:\u2026",
+      "file_type": "rationale",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_77",
+      "label": "Agrupaci\u00f3n de fuentes y resultados de un momento de seguimiento.",
+      "file_type": "rationale",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L77"
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_87",
+      "label": "HU-01/CA-2: no se aceptan cortes con fecha futura.",
+      "file_type": "rationale",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L87"
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_99",
+      "label": "Tipos obligatorios que a\u00fan no est\u00e1n cargados ni reutilizados.",
+      "file_type": "rationale",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L99"
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_106",
+      "label": "HU-01/CA-3 y CA-4: transici\u00f3n BORRADOR -> REGISTRADO. Si falta alg\u00fan archivo\u2026",
+      "file_type": "rationale",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L106"
+    },
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_115",
+      "label": "HU-01/CA-7: el archivo de ejecuci\u00f3n nunca se reutiliza.",
+      "file_type": "rationale",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L115"
+    }
+  ],
+  "edges": [
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "target": "uuid",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "target": "dataclasses",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "target": "datetime",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L32",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "target": "enum",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "target": "app_shared_errors",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L37",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_estadocorte",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_estadocorte",
+      "target": "strenum",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_tipoarchivofuente",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_tipoarchivofuente",
+      "target": "strenum",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_archivofuente",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L67",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L76",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "target": "date",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "target": "date",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_archivos_faltantes",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_archivos_faltantes",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_tipoarchivofuente",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L98",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_esta_completo",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L102",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_registrar",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L105",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_puede_reutilizar",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_puede_reutilizar",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_tipoarchivofuente",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_esta_completo",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_archivos_faltantes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_1",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_77",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_87",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_99",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_archivos_faltantes",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L99",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_106",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_registrar",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L106",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_app_modules_cortes_domain_entidades_rationale_115",
+      "target": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_puede_reutilizar",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L115",
+      "weight": 1.0
+    }
+  ],
+  "raw_calls": [
+    {
+      "caller_nid": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "callee": "ReglaDeNegocioViolada",
+      "is_member_call": false,
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L89",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "callee": "isoformat",
+      "is_member_call": true,
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L90",
+      "receiver": "fecha_corte"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "callee": "isoformat",
+      "is_member_call": true,
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L91",
+      "receiver": "hoy"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "callee": "isoformat",
+      "is_member_call": true,
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L93",
+      "receiver": "fecha_corte"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_validar_fecha",
+      "callee": "isoformat",
+      "is_member_call": true,
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L94",
+      "receiver": "hoy"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_registrar",
+      "callee": "NotImplementedError",
+      "is_member_call": false,
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L112",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_app_modules_cortes_domain_entidades_corte_puede_reutilizar",
+      "callee": "NotImplementedError",
+      "is_member_call": false,
+      "source_file": "backend/app/modules/cortes/domain/entidades.py",
+      "source_location": "L116",
+      "receiver": null
+    }
+  ]
+}

@@ -1,0 +1,1097 @@
+{
+  "version": "31.4.2",
+  "data": "<mxfile host=\"app.diagrams.net\"><diagram name=\"Entidad/Relacion NUEVO\" id=\"Jj9uKndARb6ILxKIsEom\"><mxGraphModel dx=\"1253\" dy=\"1094\" grid=\"0\" gridSize=\"10\" guides=\"1\" tooltips=\"1\" connect=\"1\" arrows=\"1\" fold=\"1\" page=\"0\" pageScale=\"1\" pageWidth=\"850\" pageHeight=\"1100\" math=\"0\" shadow=\"0\"><root><mxCell id=\"uiZpLrnN1aZP_v7AxbL3-0\"/><mxCell id=\"uiZpLrnN1aZP_v7AxbL3-1\" parent=\"uiZpLrnN1aZP_v7AxbL3-0\"/><mxCell id=\"nSgtWmAMOuoBubxxUtsf-13\" parent=\"uiZpLrnN1aZP_v7AxbL3-1\" style=\"shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;\" value=\"archivo_fuente\" vertex=\"1\"><mxGeometry height=\"238\" width=\"211\" x=\"656\" y=\"-137\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-14\" parent=\"nSgtWmAMOuoBubxxUtsf-13\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"28\" width=\"211\" y=\"30\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-15\" parent=\"nSgtWmAMOuoBubxxUtsf-14\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"PK\" vertex=\"1\"><mxGeometry height=\"28\" width=\"60\" as=\"geometry\"><mxRectangle height=\"28\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-16\" parent=\"nSgtWmAMOuoBubxxUtsf-14\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"id (uuid)\" vertex=\"1\"><mxGeometry height=\"28\" width=\"151\" x=\"60\" as=\"geometry\"><mxRectangle height=\"28\" width=\"151\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-17\" parent=\"nSgtWmAMOuoBubxxUtsf-13\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"211\" y=\"58\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-18\" parent=\"nSgtWmAMOuoBubxxUtsf-17\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-19\" parent=\"nSgtWmAMOuoBubxxUtsf-17\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"corte_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"151\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"151\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-20\" parent=\"nSgtWmAMOuoBubxxUtsf-13\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"211\" y=\"88\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-21\" parent=\"nSgtWmAMOuoBubxxUtsf-20\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-22\" parent=\"nSgtWmAMOuoBubxxUtsf-20\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"tipo (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"151\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"151\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-23\" parent=\"nSgtWmAMOuoBubxxUtsf-13\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"211\" y=\"118\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-24\" parent=\"nSgtWmAMOuoBubxxUtsf-23\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-25\" parent=\"nSgtWmAMOuoBubxxUtsf-23\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"reutilizado (boolean)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"151\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"151\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-26\" parent=\"nSgtWmAMOuoBubxxUtsf-13\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"211\" y=\"148\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-27\" parent=\"nSgtWmAMOuoBubxxUtsf-26\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-28\" parent=\"nSgtWmAMOuoBubxxUtsf-26\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"corte_origen_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"151\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"151\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-29\" parent=\"nSgtWmAMOuoBubxxUtsf-13\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"211\" y=\"178\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-30\" parent=\"nSgtWmAMOuoBubxxUtsf-29\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-31\" parent=\"nSgtWmAMOuoBubxxUtsf-29\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"nombre_archivo (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"151\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"151\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-32\" parent=\"nSgtWmAMOuoBubxxUtsf-13\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"211\" y=\"208\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-33\" parent=\"nSgtWmAMOuoBubxxUtsf-32\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-34\" parent=\"nSgtWmAMOuoBubxxUtsf-32\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"fecha_carga (timestamp)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"151\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"151\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-0\" parent=\"uiZpLrnN1aZP_v7AxbL3-1\" style=\"shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;\" value=\"corte\" vertex=\"1\"><mxGeometry height=\"149\" width=\"236\" x=\"346\" y=\"-139\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-1\" parent=\"nSgtWmAMOuoBubxxUtsf-0\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"29\" width=\"236\" y=\"30\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-2\" parent=\"nSgtWmAMOuoBubxxUtsf-1\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"PK\" vertex=\"1\"><mxGeometry height=\"29\" width=\"59.971452985491\" as=\"geometry\"><mxRectangle height=\"29\" width=\"59.971452985491\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-3\" parent=\"nSgtWmAMOuoBubxxUtsf-1\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"id (uuid)\" vertex=\"1\"><mxGeometry height=\"29\" width=\"176.028547014509\" x=\"59.971452985491\" as=\"geometry\"><mxRectangle height=\"29\" width=\"176.028547014509\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-4\" parent=\"nSgtWmAMOuoBubxxUtsf-0\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" y=\"59\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-5\" parent=\"nSgtWmAMOuoBubxxUtsf-4\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"59.971452985491\" as=\"geometry\"><mxRectangle height=\"30\" width=\"59.971452985491\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-6\" parent=\"nSgtWmAMOuoBubxxUtsf-4\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"176.028547014509\" x=\"59.971452985491\" as=\"geometry\"><mxRectangle height=\"30\" width=\"176.028547014509\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-7\" parent=\"nSgtWmAMOuoBubxxUtsf-0\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" y=\"89\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-8\" parent=\"nSgtWmAMOuoBubxxUtsf-7\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"59.971452985491\" as=\"geometry\"><mxRectangle height=\"30\" width=\"59.971452985491\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-9\" parent=\"nSgtWmAMOuoBubxxUtsf-7\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"vigencia (date)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"176.028547014509\" x=\"59.971452985491\" as=\"geometry\"><mxRectangle height=\"30\" width=\"176.028547014509\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-10\" parent=\"nSgtWmAMOuoBubxxUtsf-0\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" y=\"119\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-11\" parent=\"nSgtWmAMOuoBubxxUtsf-10\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"59.971452985491\" as=\"geometry\"><mxRectangle height=\"30\" width=\"59.971452985491\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-12\" parent=\"nSgtWmAMOuoBubxxUtsf-10\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"fecha_creacion (timestamp)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"176.028547014509\" x=\"59.971452985491\" as=\"geometry\"><mxRectangle height=\"30\" width=\"176.028547014509\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-35\" parent=\"uiZpLrnN1aZP_v7AxbL3-1\" style=\"shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;\" value=\"meta\" vertex=\"1\"><mxGeometry height=\"298\" width=\"296\" x=\"968\" y=\"-133\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-36\" parent=\"nSgtWmAMOuoBubxxUtsf-35\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"28\" width=\"296\" y=\"30\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-37\" parent=\"nSgtWmAMOuoBubxxUtsf-36\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"PK\" vertex=\"1\"><mxGeometry height=\"28\" width=\"60\" as=\"geometry\"><mxRectangle height=\"28\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-38\" parent=\"nSgtWmAMOuoBubxxUtsf-36\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"id (uuid)\" vertex=\"1\"><mxGeometry height=\"28\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"28\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-39\" parent=\"nSgtWmAMOuoBubxxUtsf-35\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"58\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-40\" parent=\"nSgtWmAMOuoBubxxUtsf-39\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-41\" parent=\"nSgtWmAMOuoBubxxUtsf-39\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"corte_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-42\" parent=\"nSgtWmAMOuoBubxxUtsf-35\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"88\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-43\" parent=\"nSgtWmAMOuoBubxxUtsf-42\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-44\" parent=\"nSgtWmAMOuoBubxxUtsf-42\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"cod_sistp (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-45\" parent=\"nSgtWmAMOuoBubxxUtsf-35\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"118\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-46\" parent=\"nSgtWmAMOuoBubxxUtsf-45\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-47\" parent=\"nSgtWmAMOuoBubxxUtsf-45\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"cod_mga (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-48\" parent=\"nSgtWmAMOuoBubxxUtsf-35\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"148\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-49\" parent=\"nSgtWmAMOuoBubxxUtsf-48\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-50\" parent=\"nSgtWmAMOuoBubxxUtsf-48\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"codigo_producto_mga (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-51\" parent=\"nSgtWmAMOuoBubxxUtsf-35\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"178\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-52\" parent=\"nSgtWmAMOuoBubxxUtsf-51\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-53\" parent=\"nSgtWmAMOuoBubxxUtsf-51\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"nombre_producto (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-54\" parent=\"nSgtWmAMOuoBubxxUtsf-35\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"208\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-55\" parent=\"nSgtWmAMOuoBubxxUtsf-54\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-56\" parent=\"nSgtWmAMOuoBubxxUtsf-54\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"unidad_medida (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-57\" parent=\"nSgtWmAMOuoBubxxUtsf-35\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"238\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-58\" parent=\"nSgtWmAMOuoBubxxUtsf-57\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-59\" parent=\"nSgtWmAMOuoBubxxUtsf-57\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"meta_cuatrenio (numeric)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-60\" parent=\"nSgtWmAMOuoBubxxUtsf-35\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"268\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-61\" parent=\"nSgtWmAMOuoBubxxUtsf-60\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-62\" parent=\"nSgtWmAMOuoBubxxUtsf-60\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"bpin_relacionados (text)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-63\" parent=\"uiZpLrnN1aZP_v7AxbL3-1\" style=\"shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;\" value=\"meta_programacion_fisica\" vertex=\"1\"><mxGeometry height=\"148\" width=\"296\" x=\"1337\" y=\"-127\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-64\" parent=\"nSgtWmAMOuoBubxxUtsf-63\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"28\" width=\"296\" y=\"30\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-65\" parent=\"nSgtWmAMOuoBubxxUtsf-64\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"PK\" vertex=\"1\"><mxGeometry height=\"28\" width=\"60\" as=\"geometry\"><mxRectangle height=\"28\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-66\" parent=\"nSgtWmAMOuoBubxxUtsf-64\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"id (uuid)\" vertex=\"1\"><mxGeometry height=\"28\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"28\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-67\" parent=\"nSgtWmAMOuoBubxxUtsf-63\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"58\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-68\" parent=\"nSgtWmAMOuoBubxxUtsf-67\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-69\" parent=\"nSgtWmAMOuoBubxxUtsf-67\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"meta_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-70\" parent=\"nSgtWmAMOuoBubxxUtsf-63\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"88\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-71\" parent=\"nSgtWmAMOuoBubxxUtsf-70\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-72\" parent=\"nSgtWmAMOuoBubxxUtsf-70\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"anio (integer)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-73\" parent=\"nSgtWmAMOuoBubxxUtsf-63\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"118\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-74\" parent=\"nSgtWmAMOuoBubxxUtsf-73\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-75\" parent=\"nSgtWmAMOuoBubxxUtsf-73\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"valor_programado (numeric)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-91\" parent=\"uiZpLrnN1aZP_v7AxbL3-1\" style=\"shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;\" value=\"programacion_financiera\" vertex=\"1\"><mxGeometry height=\"213\" width=\"296\" x=\"1704\" y=\"-119\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-92\" parent=\"nSgtWmAMOuoBubxxUtsf-91\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"33\" width=\"296\" y=\"30\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-93\" parent=\"nSgtWmAMOuoBubxxUtsf-92\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"PK\" vertex=\"1\"><mxGeometry height=\"33\" width=\"60\" as=\"geometry\"><mxRectangle height=\"33\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-94\" parent=\"nSgtWmAMOuoBubxxUtsf-92\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"id (uuid)\" vertex=\"1\"><mxGeometry height=\"33\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"33\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-95\" parent=\"nSgtWmAMOuoBubxxUtsf-91\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;strokeColor=inherit;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"63\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-96\" parent=\"nSgtWmAMOuoBubxxUtsf-95\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-97\" parent=\"nSgtWmAMOuoBubxxUtsf-95\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;strokeColor=default;dashed=1;dashPattern=1 4;\" value=\"meta_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-104\" parent=\"nSgtWmAMOuoBubxxUtsf-91\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"93\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-105\" parent=\"nSgtWmAMOuoBubxxUtsf-104\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-106\" parent=\"nSgtWmAMOuoBubxxUtsf-104\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"proyecto_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-98\" parent=\"nSgtWmAMOuoBubxxUtsf-91\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"123\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-99\" parent=\"nSgtWmAMOuoBubxxUtsf-98\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-100\" parent=\"nSgtWmAMOuoBubxxUtsf-98\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"fuente (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-101\" parent=\"nSgtWmAMOuoBubxxUtsf-91\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"153\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-102\" parent=\"nSgtWmAMOuoBubxxUtsf-101\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-103\" parent=\"nSgtWmAMOuoBubxxUtsf-101\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"anio (integer)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-110\" parent=\"nSgtWmAMOuoBubxxUtsf-91\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"183\" as=\"geometry\"/></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-111\" parent=\"nSgtWmAMOuoBubxxUtsf-110\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"nSgtWmAMOuoBubxxUtsf-112\" parent=\"nSgtWmAMOuoBubxxUtsf-110\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"valor_programado (numeric)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-0\" parent=\"uiZpLrnN1aZP_v7AxbL3-1\" style=\"shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;\" value=\"proyecto\" vertex=\"1\"><mxGeometry height=\"185\" width=\"296\" x=\"2068\" y=\"-112\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-1\" parent=\"k4rbIWu04N83kaWUz1HJ-0\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"35\" width=\"296\" y=\"30\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-2\" parent=\"k4rbIWu04N83kaWUz1HJ-1\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"PK\" vertex=\"1\"><mxGeometry height=\"35\" width=\"60\" as=\"geometry\"><mxRectangle height=\"35\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-3\" parent=\"k4rbIWu04N83kaWUz1HJ-1\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"id (uuid)\" vertex=\"1\"><mxGeometry height=\"35\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"35\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-7\" parent=\"k4rbIWu04N83kaWUz1HJ-0\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"65\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-8\" parent=\"k4rbIWu04N83kaWUz1HJ-7\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-9\" parent=\"k4rbIWu04N83kaWUz1HJ-7\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"corte_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-10\" parent=\"k4rbIWu04N83kaWUz1HJ-0\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"95\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-11\" parent=\"k4rbIWu04N83kaWUz1HJ-10\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-12\" parent=\"k4rbIWu04N83kaWUz1HJ-10\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"bpin (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-13\" parent=\"k4rbIWu04N83kaWUz1HJ-0\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"125\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-14\" parent=\"k4rbIWu04N83kaWUz1HJ-13\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-15\" parent=\"k4rbIWu04N83kaWUz1HJ-13\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"nombre_proyecto (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-16\" parent=\"k4rbIWu04N83kaWUz1HJ-0\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"155\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-17\" parent=\"k4rbIWu04N83kaWUz1HJ-16\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-18\" parent=\"k4rbIWu04N83kaWUz1HJ-16\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"indicador_producto_raw (text)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-19\" parent=\"uiZpLrnN1aZP_v7AxbL3-1\" style=\"shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;\" value=\"rubro\" vertex=\"1\"><mxGeometry height=\"427\" width=\"296\" x=\"2458\" y=\"-108\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-20\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"35\" width=\"296\" y=\"30\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-21\" parent=\"k4rbIWu04N83kaWUz1HJ-20\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"PK\" vertex=\"1\"><mxGeometry height=\"35\" width=\"60\" as=\"geometry\"><mxRectangle height=\"35\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-22\" parent=\"k4rbIWu04N83kaWUz1HJ-20\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"id (uuid)\" vertex=\"1\"><mxGeometry height=\"35\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"35\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-23\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"65\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-24\" parent=\"k4rbIWu04N83kaWUz1HJ-23\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-25\" parent=\"k4rbIWu04N83kaWUz1HJ-23\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"corte_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-26\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"95\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-27\" parent=\"k4rbIWu04N83kaWUz1HJ-26\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-28\" parent=\"k4rbIWu04N83kaWUz1HJ-26\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"codigo_rubro_completo (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-29\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"125\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-30\" parent=\"k4rbIWu04N83kaWUz1HJ-29\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-31\" parent=\"k4rbIWu04N83kaWUz1HJ-29\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"codigo_indicador_ccpet (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-32\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"155\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-33\" parent=\"k4rbIWu04N83kaWUz1HJ-32\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-34\" parent=\"k4rbIWu04N83kaWUz1HJ-32\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"codigo_producto_ccpet (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-35\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"185\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-36\" parent=\"k4rbIWu04N83kaWUz1HJ-35\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-37\" parent=\"k4rbIWu04N83kaWUz1HJ-35\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"nombre_financiacion (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-38\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"215\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-39\" parent=\"k4rbIWu04N83kaWUz1HJ-38\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-40\" parent=\"k4rbIWu04N83kaWUz1HJ-38\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"nombre_financiacion (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-41\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"245\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-42\" parent=\"k4rbIWu04N83kaWUz1HJ-41\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-43\" parent=\"k4rbIWu04N83kaWUz1HJ-41\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"ultimo_nivel (boolean)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-44\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"275\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-45\" parent=\"k4rbIWu04N83kaWUz1HJ-44\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-46\" parent=\"k4rbIWu04N83kaWUz1HJ-44\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"codigo_tipo_gasto (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-47\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"32\" width=\"296\" y=\"305\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-48\" parent=\"k4rbIWu04N83kaWUz1HJ-47\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"32\" width=\"60\" as=\"geometry\"><mxRectangle height=\"32\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-49\" parent=\"k4rbIWu04N83kaWUz1HJ-47\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"apropiacion_definitiva (numeric)\" vertex=\"1\"><mxGeometry height=\"32\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"32\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-50\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"337\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-51\" parent=\"k4rbIWu04N83kaWUz1HJ-50\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-52\" parent=\"k4rbIWu04N83kaWUz1HJ-50\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"compromiso_acumulado (numeric)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-53\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"367\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-54\" parent=\"k4rbIWu04N83kaWUz1HJ-53\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-55\" parent=\"k4rbIWu04N83kaWUz1HJ-53\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"pago_acumulado (numeric)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-56\" parent=\"k4rbIWu04N83kaWUz1HJ-19\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"397\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-57\" parent=\"k4rbIWu04N83kaWUz1HJ-56\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-58\" parent=\"k4rbIWu04N83kaWUz1HJ-56\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"saldo_disponible (numeric)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-59\" parent=\"uiZpLrnN1aZP_v7AxbL3-1\" style=\"shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;\" value=\"contrato\" vertex=\"1\"><mxGeometry height=\"305\" width=\"296\" x=\"2859\" y=\"-99\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-60\" parent=\"k4rbIWu04N83kaWUz1HJ-59\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"35\" width=\"296\" y=\"30\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-61\" parent=\"k4rbIWu04N83kaWUz1HJ-60\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"PK\" vertex=\"1\"><mxGeometry height=\"35\" width=\"60\" as=\"geometry\"><mxRectangle height=\"35\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-62\" parent=\"k4rbIWu04N83kaWUz1HJ-60\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"id (uuid)\" vertex=\"1\"><mxGeometry height=\"35\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"35\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-99\" parent=\"k4rbIWu04N83kaWUz1HJ-59\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"65\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-100\" parent=\"k4rbIWu04N83kaWUz1HJ-99\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-101\" parent=\"k4rbIWu04N83kaWUz1HJ-99\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"corte_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-63\" parent=\"k4rbIWu04N83kaWUz1HJ-59\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"95\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-64\" parent=\"k4rbIWu04N83kaWUz1HJ-63\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-65\" parent=\"k4rbIWu04N83kaWUz1HJ-63\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"proyecto_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-66\" parent=\"k4rbIWu04N83kaWUz1HJ-59\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"125\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-67\" parent=\"k4rbIWu04N83kaWUz1HJ-66\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-68\" parent=\"k4rbIWu04N83kaWUz1HJ-66\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"numero_contrato (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-69\" parent=\"k4rbIWu04N83kaWUz1HJ-59\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"155\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-70\" parent=\"k4rbIWu04N83kaWUz1HJ-69\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-71\" parent=\"k4rbIWu04N83kaWUz1HJ-69\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"objeto (text)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-72\" parent=\"k4rbIWu04N83kaWUz1HJ-59\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"185\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-73\" parent=\"k4rbIWu04N83kaWUz1HJ-72\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-74\" parent=\"k4rbIWu04N83kaWUz1HJ-72\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"tipo_gasto (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-75\" parent=\"k4rbIWu04N83kaWUz1HJ-59\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"215\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-76\" parent=\"k4rbIWu04N83kaWUz1HJ-75\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-77\" parent=\"k4rbIWu04N83kaWUz1HJ-75\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"valor_contrato (numeric)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-78\" parent=\"k4rbIWu04N83kaWUz1HJ-59\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"245\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-79\" parent=\"k4rbIWu04N83kaWUz1HJ-78\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-80\" parent=\"k4rbIWu04N83kaWUz1HJ-78\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"valor_pagado (numeric)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-81\" parent=\"k4rbIWu04N83kaWUz1HJ-59\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"275\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-82\" parent=\"k4rbIWu04N83kaWUz1HJ-81\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-83\" parent=\"k4rbIWu04N83kaWUz1HJ-81\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"bpin (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-102\" parent=\"uiZpLrnN1aZP_v7AxbL3-1\" style=\"shape=table;startSize=30;container=1;collapsible=1;childLayout=tableLayout;fixedRows=1;rowLines=0;fontStyle=1;align=center;resizeLast=1;html=1;whiteSpace=wrap;\" value=\"registro_presupuestal\" vertex=\"1\"><mxGeometry height=\"215\" width=\"296\" x=\"3237\" y=\"-96\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-103\" parent=\"k4rbIWu04N83kaWUz1HJ-102\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"35\" width=\"296\" y=\"30\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-104\" parent=\"k4rbIWu04N83kaWUz1HJ-103\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"PK\" vertex=\"1\"><mxGeometry height=\"35\" width=\"60\" as=\"geometry\"><mxRectangle height=\"35\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-105\" parent=\"k4rbIWu04N83kaWUz1HJ-103\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"id (uuid)\" vertex=\"1\"><mxGeometry height=\"35\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"35\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-106\" parent=\"k4rbIWu04N83kaWUz1HJ-102\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"65\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-107\" parent=\"k4rbIWu04N83kaWUz1HJ-106\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-108\" parent=\"k4rbIWu04N83kaWUz1HJ-106\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"contrato_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-109\" parent=\"k4rbIWu04N83kaWUz1HJ-102\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=1;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"95\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-110\" parent=\"k4rbIWu04N83kaWUz1HJ-109\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;fontStyle=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"FK\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-111\" parent=\"k4rbIWu04N83kaWUz1HJ-109\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;fontStyle=5;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"rubro_id (uuid)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-112\" parent=\"k4rbIWu04N83kaWUz1HJ-102\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"125\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-113\" parent=\"k4rbIWu04N83kaWUz1HJ-112\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-114\" parent=\"k4rbIWu04N83kaWUz1HJ-112\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"numero_cdp (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-115\" parent=\"k4rbIWu04N83kaWUz1HJ-102\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"155\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-116\" parent=\"k4rbIWu04N83kaWUz1HJ-115\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-117\" parent=\"k4rbIWu04N83kaWUz1HJ-115\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"numero_registro (varchar)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-118\" parent=\"k4rbIWu04N83kaWUz1HJ-102\" style=\"shape=tableRow;horizontal=0;startSize=0;swimlaneHead=0;swimlaneBody=0;fillColor=none;collapsible=0;dropTarget=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;top=0;left=0;right=0;bottom=0;html=1;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"296\" y=\"185\" as=\"geometry\"/></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-119\" parent=\"k4rbIWu04N83kaWUz1HJ-118\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;editable=1;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"\" vertex=\"1\"><mxGeometry height=\"30\" width=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"60\" as=\"alternateBounds\"/></mxGeometry></mxCell><mxCell id=\"k4rbIWu04N83kaWUz1HJ-120\" parent=\"k4rbIWu04N83kaWUz1HJ-118\" style=\"shape=partialRectangle;connectable=0;fillColor=none;top=0;left=0;bottom=0;right=0;align=left;spacingLeft=6;overflow=hidden;html=1;whiteSpace=wrap;\" value=\"valor_registro_ptal (numeric)\" vertex=\"1\"><mxGeometry height=\"30\" width=\"236\" x=\"60\" as=\"geometry\"><mxRectangle height=\"30\" width=\"236\" as=\"alternateBounds\"/></mxGeometry></mxCell></root></mxGraphModel></diagram></mxfile>",
+  "pages": [
+    {
+      "id": "Jj9uKndARb6ILxKIsEom",
+      "name": "Entidad/Relacion NUEVO",
+      "cells": [
+        {
+          "id": "uiZpLrnN1aZP_v7AxbL3-1",
+          "type": "layer"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-13",
+          "type": "node",
+          "parent": "uiZpLrnN1aZP_v7AxbL3-1",
+          "label": "archivo_fuente"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-14",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-13"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-15",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-14",
+          "label": "PK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-16",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-14",
+          "label": "id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-17",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-13"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-18",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-17",
+          "label": "FK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-19",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-17",
+          "label": "corte_id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-20",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-13"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-21",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-20"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-22",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-20",
+          "label": "tipo (varchar)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-23",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-13"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-24",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-23"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-25",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-23",
+          "label": "reutilizado (boolean)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-26",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-13"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-27",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-26"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-28",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-26",
+          "label": "corte_origen_id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-29",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-13"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-30",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-29"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-31",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-29",
+          "label": "nombre_archivo (varchar)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-32",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-13"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-33",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-32"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-34",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-32",
+          "label": "fecha_carga (timestamp)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-0",
+          "type": "node",
+          "parent": "uiZpLrnN1aZP_v7AxbL3-1",
+          "label": "corte"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-1",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-0"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-2",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-1",
+          "label": "PK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-3",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-1",
+          "label": "id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-4",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-0"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-5",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-4"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-6",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-4"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-7",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-0"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-8",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-7"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-9",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-7",
+          "label": "vigencia (date)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-10",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-0"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-11",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-10"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-12",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-10",
+          "label": "fecha_creacion (timestamp)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-35",
+          "type": "node",
+          "parent": "uiZpLrnN1aZP_v7AxbL3-1",
+          "label": "meta"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-36",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-35"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-37",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-36",
+          "label": "PK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-38",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-36",
+          "label": "id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-39",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-35"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-40",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-39",
+          "label": "FK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-41",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-39",
+          "label": "corte_id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-42",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-35"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-43",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-42"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-44",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-42",
+          "label": "cod_sistp (varchar)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-45",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-35"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-46",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-45"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-47",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-45",
+          "label": "cod_mga (varchar)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-48",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-35"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-49",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-48"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-50",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-48",
+          "label": "codigo_producto_mga (varchar)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-51",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-35"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-52",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-51"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-53",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-51",
+          "label": "nombre_producto (varchar)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-54",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-35"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-55",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-54"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-56",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-54",
+          "label": "unidad_medida (varchar)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-57",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-35"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-58",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-57"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-59",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-57",
+          "label": "meta_cuatrenio (numeric)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-60",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-35"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-61",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-60"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-62",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-60",
+          "label": "bpin_relacionados (text)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-63",
+          "type": "node",
+          "parent": "uiZpLrnN1aZP_v7AxbL3-1",
+          "label": "meta_programacion_fisica"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-64",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-63"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-65",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-64",
+          "label": "PK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-66",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-64",
+          "label": "id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-67",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-63"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-68",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-67",
+          "label": "FK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-69",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-67",
+          "label": "meta_id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-70",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-63"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-71",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-70"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-72",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-70",
+          "label": "anio (integer)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-73",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-63"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-74",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-73"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-75",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-73",
+          "label": "valor_programado (numeric)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-91",
+          "type": "node",
+          "parent": "uiZpLrnN1aZP_v7AxbL3-1",
+          "label": "programacion_financiera"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-92",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-91"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-93",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-92",
+          "label": "PK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-94",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-92",
+          "label": "id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-95",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-91"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-96",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-95",
+          "label": "FK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-97",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-95",
+          "label": "meta_id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-104",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-91"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-105",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-104",
+          "label": "FK"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-106",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-104",
+          "label": "proyecto_id (uuid)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-98",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-91"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-99",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-98"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-100",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-98",
+          "label": "fuente (varchar)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-101",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-91"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-102",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-101"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-103",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-101",
+          "label": "anio (integer)"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-110",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-91"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-111",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-110"
+        },
+        {
+          "id": "nSgtWmAMOuoBubxxUtsf-112",
+          "type": "node",
+          "parent": "nSgtWmAMOuoBubxxUtsf-110",
+          "label": "valor_programado (numeric)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-0",
+          "type": "node",
+          "parent": "uiZpLrnN1aZP_v7AxbL3-1",
+          "label": "proyecto"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-1",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-0"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-2",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-1",
+          "label": "PK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-3",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-1",
+          "label": "id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-7",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-0"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-8",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-7",
+          "label": "FK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-9",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-7",
+          "label": "corte_id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-10",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-0"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-11",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-10"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-12",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-10",
+          "label": "bpin (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-13",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-0"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-14",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-13"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-15",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-13",
+          "label": "nombre_proyecto (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-16",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-0"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-17",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-16"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-18",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-16",
+          "label": "indicador_producto_raw (text)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-19",
+          "type": "node",
+          "parent": "uiZpLrnN1aZP_v7AxbL3-1",
+          "label": "rubro"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-20",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-21",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-20",
+          "label": "PK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-22",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-20",
+          "label": "id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-23",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-24",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-23",
+          "label": "FK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-25",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-23",
+          "label": "corte_id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-26",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-27",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-26"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-28",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-26",
+          "label": "codigo_rubro_completo (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-29",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-30",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-29"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-31",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-29",
+          "label": "codigo_indicador_ccpet (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-32",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-33",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-32"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-34",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-32",
+          "label": "codigo_producto_ccpet (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-35",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-36",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-35"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-37",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-35",
+          "label": "nombre_financiacion (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-38",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-39",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-38"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-40",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-38",
+          "label": "nombre_financiacion (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-41",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-42",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-41"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-43",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-41",
+          "label": "ultimo_nivel (boolean)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-44",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-45",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-44"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-46",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-44",
+          "label": "codigo_tipo_gasto (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-47",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-48",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-47"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-49",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-47",
+          "label": "apropiacion_definitiva (numeric)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-50",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-51",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-50"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-52",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-50",
+          "label": "compromiso_acumulado (numeric)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-53",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-54",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-53"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-55",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-53",
+          "label": "pago_acumulado (numeric)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-56",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-19"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-57",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-56"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-58",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-56",
+          "label": "saldo_disponible (numeric)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-59",
+          "type": "node",
+          "parent": "uiZpLrnN1aZP_v7AxbL3-1",
+          "label": "contrato"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-60",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-59"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-61",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-60",
+          "label": "PK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-62",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-60",
+          "label": "id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-99",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-59"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-100",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-99",
+          "label": "FK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-101",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-99",
+          "label": "corte_id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-63",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-59"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-64",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-63",
+          "label": "FK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-65",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-63",
+          "label": "proyecto_id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-66",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-59"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-67",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-66"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-68",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-66",
+          "label": "numero_contrato (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-69",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-59"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-70",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-69"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-71",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-69",
+          "label": "objeto (text)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-72",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-59"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-73",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-72"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-74",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-72",
+          "label": "tipo_gasto (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-75",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-59"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-76",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-75"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-77",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-75",
+          "label": "valor_contrato (numeric)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-78",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-59"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-79",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-78"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-80",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-78",
+          "label": "valor_pagado (numeric)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-81",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-59"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-82",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-81"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-83",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-81",
+          "label": "bpin (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-102",
+          "type": "node",
+          "parent": "uiZpLrnN1aZP_v7AxbL3-1",
+          "label": "registro_presupuestal"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-103",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-102"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-104",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-103",
+          "label": "PK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-105",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-103",
+          "label": "id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-106",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-102"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-107",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-106",
+          "label": "FK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-108",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-106",
+          "label": "contrato_id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-109",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-102"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-110",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-109",
+          "label": "FK"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-111",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-109",
+          "label": "rubro_id (uuid)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-112",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-102"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-113",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-112"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-114",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-112",
+          "label": "numero_cdp (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-115",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-102"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-116",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-115"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-117",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-115",
+          "label": "numero_registro (varchar)"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-118",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-102"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-119",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-118"
+        },
+        {
+          "id": "k4rbIWu04N83kaWUz1HJ-120",
+          "type": "node",
+          "parent": "k4rbIWu04N83kaWUz1HJ-118",
+          "label": "valor_registro_ptal (numeric)"
+        }
+      ]
+    }
+  ]
+}

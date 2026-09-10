@@ -22,3 +22,6 @@ backend/.env
 # Test artifacts
 backend/.coverage
 backend/coverage.xml
+
+# Carpeta de graphify
+./govsync-graphify

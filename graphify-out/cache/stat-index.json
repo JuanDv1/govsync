@@ -1,0 +1,1112 @@
+{
+  ".github/ISSUE_TEMPLATE/bug_report.md": {
+    "size": 222,
+    "mtime_ns": 1788570944225349600,
+    "indexed_at_ns": 1788976703544007600,
+    "word_count": 26,
+    "hashes": {
+      ".github/issue_template/bug_report.md": "bc196b4cc858637950e4d82e5f350d55775966ecb5b8750bc49d23c1ba3d2873"
+    }
+  },
+  ".github/ISSUE_TEMPLATE/feature_request.md": {
+    "size": 184,
+    "mtime_ns": 1788570944225349600,
+    "indexed_at_ns": 1788976703544661100,
+    "word_count": 19,
+    "hashes": {
+      ".github/issue_template/feature_request.md": "7c50b143157fc284bfe10dfa60e47ec4b84554ff5d82d88d02095a904475d221"
+    }
+  },
+  ".github/ISSUE_TEMPLATE/historia_usuario.md": {
+    "size": 279,
+    "mtime_ns": 1788570944226354300,
+    "indexed_at_ns": 1788976703545081300,
+    "word_count": 39,
+    "hashes": {
+      ".github/issue_template/historia_usuario.md": "1e8093a030bfcf4d0001a9d09ecfc99238629d4655abfa667c6c1762380c41bf"
+    }
+  },
+  ".github/dependabot.yml": {
+    "size": 445,
+    "mtime_ns": 1788570944227348800,
+    "indexed_at_ns": 1788976703545452800,
+    "word_count": 32,
+    "hashes": {
+      ".github/dependabot.yml": "0a8175c7dd55a4673696c4ce467def5a2c246e0bde62ae65710206eee616d151"
+    }
+  },
+  ".github/pull_request_template.md": {
+    "size": 1214,
+    "mtime_ns": 1788970468001636500,
+    "indexed_at_ns": 1788976703545814700,
+    "word_count": 214,
+    "hashes": {
+      ".github/pull_request_template.md": "b388036355ee45782cb1664c7cffca0b56fddfd6de22e7db2af3f2631c67e67c"
+    }
+  },
+  ".github/workflows/ci.yml": {
+    "size": 1333,
+    "mtime_ns": 1788894978670362100,
+    "indexed_at_ns": 1788976703546195600,
+    "word_count": 134,
+    "hashes": {
+      ".github/workflows/ci.yml": "ff7b302ae8ae5391dedb4fdbfacfdbc4cd48c75070229d73373ff35bd06d3f59"
+    }
+  },
+  ".husky/commit-msg": {
+    "size": 47,
+    "mtime_ns": 1788894978671797900,
+    "indexed_at_ns": 1788976702242234700,
+    "word_count": 7,
+    "hashes": {
+      ".husky/commit-msg": "a623967d0f9b50855d2d4b18a630314b8d99eb4fe7730a2c2f8fe570a2618114"
+    }
+  },
+  ".husky/pre-commit": {
+    "size": 28,
+    "mtime_ns": 1788584333186613900,
+    "indexed_at_ns": 1788976702244788400,
+    "word_count": 3,
+    "hashes": {
+      ".husky/pre-commit": "5330796b984598e27ee94be9fc005917722feedbe77a711e60075dda323bb796"
+    }
+  },
+  ".lintstagedrc.json": {
+    "size": 259,
+    "mtime_ns": 1788584801126495700,
+    "indexed_at_ns": 1788976702245442300,
+    "word_count": 18,
+    "hashes": {
+      ".lintstagedrc.json": "2bf090e0cd5759c776c81a6a53d7ba9e1b8423cfa748098aae3b9738eecaacff"
+    }
+  },
+  ".vscode/extensions.json": {
+    "size": 81,
+    "mtime_ns": 1788570944229349700,
+    "indexed_at_ns": 1788976702246174300,
+    "word_count": 5,
+    "hashes": {
+      ".vscode/extensions.json": "65fac3aa17d9dbf4d7b346d735e48a66c80f6890db7866afe47db2d1558ee0a1"
+    }
+  },
+  ".vscode/settings.json": {
+    "size": 556,
+    "mtime_ns": 1788570944230350700,
+    "indexed_at_ns": 1788976702246813500,
+    "word_count": 36,
+    "hashes": {
+      ".vscode/settings.json": "b09fc32072bae95132261daa4bc1194e7e921855a6e3036fbffae56dd8a37858"
+    }
+  },
+  "CLAUDE.md": {
+    "size": 5665,
+    "mtime_ns": 1788894978673061500,
+    "indexed_at_ns": 1788976703546547200,
+    "word_count": 686,
+    "hashes": {
+      "claude.md": "c9001e9c6530a9046523d49fcf626c03fc2f38a740f0de467d7d87eaf83f6624"
+    }
+  },
+  "CONTRIBUTING.md": {
+    "size": 2093,
+    "mtime_ns": 1788637028643361500,
+    "indexed_at_ns": 1788976703546936400,
+    "word_count": 248,
+    "hashes": {
+      "contributing.md": "5f2d37941eb2b32d2a02aeff01d948f5784110fda6174354fe4953c02f99078c"
+    }
+  },
+  "PLANDETRABAJO.md": {
+    "size": 27481,
+    "mtime_ns": 1788636917450010400,
+    "indexed_at_ns": 1788976703547310000,
+    "word_count": 3822,
+    "hashes": {
+      "plandetrabajo.md": "e2a25760e13574e628a537496d74ca09143be0b0689b8cb8a70bdec9b27c2adc"
+    }
+  },
+  "README.md": {
+    "size": 577,
+    "mtime_ns": 1788570944231349900,
+    "indexed_at_ns": 1788976703547696100,
+    "word_count": 72,
+    "hashes": {
+      "readme.md": "3ffe731230d7621fb5a6056a128e0c904d04ac20f67a41e4b1cb71920070d299"
+    }
+  },
+  "backend/alembic/env.py": {
+    "size": 1954,
+    "mtime_ns": 1788584333187890900,
+    "indexed_at_ns": 1788976702247412000,
+    "word_count": 168,
+    "hashes": {
+      "backend/alembic/env.py": "b58225d321f79c5624f17a4fafdca29a25f87763f92114cae96d8079aa2c4a83"
+    }
+  },
+  "backend/app/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702248674600,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/__init__.py": "61261ceb48b7496d0f846788518361958ab5b533d78246abff5ac5a3a6e615d8"
+    }
+  },
+  "backend/app/core/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702249401900,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/core/__init__.py": "a9acb6dc9d1bd4f7925fb8271e5380797fcc8171174e375d0e4556fc23ef90fd"
+    }
+  },
+  "backend/app/core/config.py": {
+    "size": 2774,
+    "mtime_ns": 1788584333189013300,
+    "indexed_at_ns": 1788976702249998800,
+    "word_count": 291,
+    "hashes": {
+      "backend/app/core/config.py": "2632001f7da92bdb6c8f1756d3fe3400b64ce74df7484ba0b2a1e5c3593895ae"
+    }
+  },
+  "backend/app/core/database.py": {
+    "size": 920,
+    "mtime_ns": 1788556037621171300,
+    "indexed_at_ns": 1788976702251026800,
+    "word_count": 86,
+    "hashes": {
+      "backend/app/core/database.py": "92345d02029564684f404a4c32d8e4aeee350e0355f589a485c1327145b74cd9"
+    }
+  },
+  "backend/app/core/dependencias.py": {
+    "size": 1741,
+    "mtime_ns": 1788556037619161600,
+    "indexed_at_ns": 1788976702252866700,
+    "word_count": 183,
+    "hashes": {
+      "backend/app/core/dependencias.py": "7bf15be78f2c9e4c43a12d583f6e9a57ed909a71d4e2fee313945f14006e769b"
+    }
+  },
+  "backend/app/core/errores.py": {
+    "size": 2203,
+    "mtime_ns": 1788584333190011100,
+    "indexed_at_ns": 1788976702253718500,
+    "word_count": 187,
+    "hashes": {
+      "backend/app/core/errores.py": "1921c57614885c4c16a2701a3e4a603375877eef399eb7726be25626ada4b2dd"
+    }
+  },
+  "backend/app/main.py": {
+    "size": 1669,
+    "mtime_ns": 1788556037619161600,
+    "indexed_at_ns": 1788976702254560400,
+    "word_count": 157,
+    "hashes": {
+      "backend/app/main.py": "32b2f26092d7ea1348411869d3400e702675c2fb03e1a32ded711d7c1a6693af"
+    }
+  },
+  "backend/app/modules/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702255736400,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/__init__.py": "37def3a816ec2a54ee20b939dbea3ce7781e42db2e0d73ea349ff9549ff1960a"
+    }
+  },
+  "backend/app/modules/cortes/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702256547500,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/cortes/__init__.py": "585b9ad0ef4689d9245e8430d42d41f8c079b1905e0c18be51ec47f3d86cac9a"
+    }
+  },
+  "backend/app/modules/cortes/api/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702257152500,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/cortes/api/__init__.py": "4d556f28327803cc426a824a43a37db12af1dda3cda7611aa6ef01228a90d9c9"
+    }
+  },
+  "backend/app/modules/cortes/api/router.py": {
+    "size": 1327,
+    "mtime_ns": 1788556037619161600,
+    "indexed_at_ns": 1788976702257739600,
+    "word_count": 171,
+    "hashes": {
+      "backend/app/modules/cortes/api/router.py": "5397d892cbd2f79035ec97e588b2620a85570650fc1e53a065c10aacc4d7ecf9"
+    }
+  },
+  "backend/app/modules/cortes/application/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702258820300,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/cortes/application/__init__.py": "08caa59312827aaa43968a62582cda7d5d60bfc8bf3cc11356b6b9cfd7cd8f0c"
+    }
+  },
+  "backend/app/modules/cortes/application/casos_uso.py": {
+    "size": 3714,
+    "mtime_ns": 1788970468001636500,
+    "indexed_at_ns": 1788976702259451200,
+    "word_count": 363,
+    "hashes": {
+      "backend/app/modules/cortes/application/casos_uso.py": "478a6ca9bfe7abf67b935dc9f30603da87b039821532f34f03613281e0da5624"
+    }
+  },
+  "backend/app/modules/cortes/domain/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702260114100,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/cortes/domain/__init__.py": "d686bf886d5c2c2f192724075b42d47be85da96685acfeb9fdae2c4b75010114"
+    }
+  },
+  "backend/app/modules/cortes/domain/entidades.py": {
+    "size": 4392,
+    "mtime_ns": 1788970468002643300,
+    "indexed_at_ns": 1788976702260765700,
+    "word_count": 473,
+    "hashes": {
+      "backend/app/modules/cortes/domain/entidades.py": "491bd1678b95ecc512e76d944fe0a4e354998e7c2f56371002515a5fe214c085"
+    }
+  },
+  "backend/app/modules/cortes/domain/puertos.py": {
+    "size": 3001,
+    "mtime_ns": 1788556037633290000,
+    "indexed_at_ns": 1788976702261387300,
+    "word_count": 365,
+    "hashes": {
+      "backend/app/modules/cortes/domain/puertos.py": "cd6561582c92b87f8022cf0e1f8650a47d087a54b7d5d75bd5e9922e0b79fce7"
+    }
+  },
+  "backend/app/modules/cortes/persistence/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702262338800,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/cortes/persistence/__init__.py": "95593265da2db5fd8193e8386d56ea26f2eb0b2af4a19608b1ca726b427d8195"
+    }
+  },
+  "backend/app/modules/cortes/persistence/models.py": {
+    "size": 3383,
+    "mtime_ns": 1788556037619161600,
+    "indexed_at_ns": 1788976702263014300,
+    "word_count": 386,
+    "hashes": {
+      "backend/app/modules/cortes/persistence/models.py": "9d92359f60d3fa991681f5c4c10554c40c9cd5a1ca0e9043d59be1fde3afccbc"
+    }
+  },
+  "backend/app/modules/cortes/persistence/repositorios.py": {
+    "size": 2075,
+    "mtime_ns": 1788556037623162800,
+    "indexed_at_ns": 1788976702264112900,
+    "word_count": 270,
+    "hashes": {
+      "backend/app/modules/cortes/persistence/repositorios.py": "53d08dfed8b90ea91420209437a08ff6a476c4f6bbd03736faa6e78cfa37a8a6"
+    }
+  },
+  "backend/app/modules/ingesta/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702265532700,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/ingesta/__init__.py": "2983882f49c0e0643414c31195bd6d6218b1816b3d155a2fc5cc4de0c07a0ed4"
+    }
+  },
+  "backend/app/modules/ingesta/api/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702266238200,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/ingesta/api/__init__.py": "13e2ad4f73392a28aeaba9e23b7f712eac941beabc888e6b2a5e6b7365979e29"
+    }
+  },
+  "backend/app/modules/ingesta/application/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702266852900,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/ingesta/application/__init__.py": "c5237d5312b350ddc93d58146b6b9610443245ee22cf55d625b59eeb59d6b354"
+    }
+  },
+  "backend/app/modules/ingesta/domain/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702267556300,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/ingesta/domain/__init__.py": "c213174d78ac6238a652795d3084f97f3894dea893747e91e805023cef82ff8b"
+    }
+  },
+  "backend/app/modules/ingesta/domain/contratos.py": {
+    "size": 1813,
+    "mtime_ns": 1788556037619161600,
+    "indexed_at_ns": 1788976702268184500,
+    "word_count": 212,
+    "hashes": {
+      "backend/app/modules/ingesta/domain/contratos.py": "70807169a9da0ad0deed9f7095fb32652480780a0babd665ef59357cc8ecf5c3"
+    }
+  },
+  "backend/app/modules/ingesta/persistence/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702269220100,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/ingesta/persistence/__init__.py": "911343dddd7afe0e142176233fec4cfeb2ddb9a139a5f36e3a823aee6888f9df"
+    }
+  },
+  "backend/app/modules/ingesta/persistence/lectores/__init__.py": {
+    "size": 1053,
+    "mtime_ns": 1788556037622160100,
+    "indexed_at_ns": 1788976702269853700,
+    "word_count": 105,
+    "hashes": {
+      "backend/app/modules/ingesta/persistence/lectores/__init__.py": "16b826f3d977178cd86e09a8d38c3bdd91139be0e657cbeeccc1ab97cf460521"
+    }
+  },
+  "backend/app/modules/ingesta/persistence/lectores/_comun.py": {
+    "size": 5074,
+    "mtime_ns": 1788556037626235000,
+    "indexed_at_ns": 1788976702270947500,
+    "word_count": 605,
+    "hashes": {
+      "backend/app/modules/ingesta/persistence/lectores/_comun.py": "b187cf1b1f88b59ea566e0c3438e8a7fb9f422bd451c18c1dc1296bd337f78d0"
+    }
+  },
+  "backend/app/modules/ingesta/persistence/lectores/ejecucion.py": {
+    "size": 3149,
+    "mtime_ns": 1788556037644852700,
+    "indexed_at_ns": 1788976702271970900,
+    "word_count": 371,
+    "hashes": {
+      "backend/app/modules/ingesta/persistence/lectores/ejecucion.py": "902c0d376b249fbc5a94b98739dcd35db5cba9f211d70e3ef4deb0c28e682aa0"
+    }
+  },
+  "backend/app/modules/ingesta/persistence/lectores/pdt.py": {
+    "size": 2310,
+    "mtime_ns": 1788556037621171300,
+    "indexed_at_ns": 1788976702273205100,
+    "word_count": 254,
+    "hashes": {
+      "backend/app/modules/ingesta/persistence/lectores/pdt.py": "bdd1386268137a9aea7483347645b8b5f232b6093e5feac7002125b97a2da6e3"
+    }
+  },
+  "backend/app/modules/ingesta/persistence/lectores/proyectos.py": {
+    "size": 3012,
+    "mtime_ns": 1788556037626235000,
+    "indexed_at_ns": 1788976702274356800,
+    "word_count": 339,
+    "hashes": {
+      "backend/app/modules/ingesta/persistence/lectores/proyectos.py": "882e5b68b869320bacd59c8418e5357095e2f2a9efeb8e704e44c679d8e01270"
+    }
+  },
+  "backend/app/modules/trazabilidad/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702275765100,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/trazabilidad/__init__.py": "0a1df083db48e8a6e9743b0f08a03b9fdcd525a06501482904c7679575172701"
+    }
+  },
+  "backend/app/modules/trazabilidad/api/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702276394000,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/trazabilidad/api/__init__.py": "e4e621b64a9be174bf18799406a977a34c877c2f33f362220824d2190c930b1f"
+    }
+  },
+  "backend/app/modules/trazabilidad/api/router.py": {
+    "size": 1254,
+    "mtime_ns": 1788556037624163400,
+    "indexed_at_ns": 1788976702276986600,
+    "word_count": 134,
+    "hashes": {
+      "backend/app/modules/trazabilidad/api/router.py": "466d1668bf3766b944820c4c51114a998b574bff79b886ad4738d5ba60996616"
+    }
+  },
+  "backend/app/modules/trazabilidad/application/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702279318900,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/trazabilidad/application/__init__.py": "e78924b2fc4db8362efb400772617007e99e88dd8792f74138dcb55abf405a63"
+    }
+  },
+  "backend/app/modules/trazabilidad/domain/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702280006500,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/trazabilidad/domain/__init__.py": "8a8295c50690c791026add7949b73cff0e6023fd696e29b0eced30d8d0aed26c"
+    }
+  },
+  "backend/app/modules/trazabilidad/persistence/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702280603200,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/modules/trazabilidad/persistence/__init__.py": "cad257fb7e186bf422239f457fe3b4a1b04baa3d4880ed0ae01121259ec450e7"
+    }
+  },
+  "backend/app/modules/trazabilidad/persistence/consultas.py": {
+    "size": 4167,
+    "mtime_ns": 1788556037620159400,
+    "indexed_at_ns": 1788976702281235600,
+    "word_count": 513,
+    "hashes": {
+      "backend/app/modules/trazabilidad/persistence/consultas.py": "c207370702da874370406f44e9984641ee96d660833870863a3dc2d9b17464cb"
+    }
+  },
+  "backend/app/shared/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702282380200,
+    "word_count": 0,
+    "hashes": {
+      "backend/app/shared/__init__.py": "9c958e886a46ea083511a1a84458ee3ce87fdbb2a9be91fc643384e5a5dadd93"
+    }
+  },
+  "backend/app/shared/codigos.py": {
+    "size": 4370,
+    "mtime_ns": 1788584333191010700,
+    "indexed_at_ns": 1788976702283265700,
+    "word_count": 494,
+    "hashes": {
+      "backend/app/shared/codigos.py": "5e2804075d95c69dfbfdfc2f93f05c208f9d9336ae01014b7803b2fdb6dee188"
+    }
+  },
+  "backend/app/shared/errors.py": {
+    "size": 1136,
+    "mtime_ns": 1788556037625684800,
+    "indexed_at_ns": 1788976702284691100,
+    "word_count": 117,
+    "hashes": {
+      "backend/app/shared/errors.py": "7536c14df370a8f05c9d9ae0df1956f43674d5239ab6693b5461122cce755908"
+    }
+  },
+  "backend/pyproject.toml": {
+    "size": 1748,
+    "mtime_ns": 1788556496237967200,
+    "indexed_at_ns": 1788976702286285600,
+    "word_count": 235,
+    "hashes": {
+      "backend/pyproject.toml": "4117f0a123a4350c601d70b7b0835f2d3186baa948bee96fb9ec638f0d7b2267"
+    }
+  },
+  "backend/requirements-dev.txt": {
+    "size": 83,
+    "mtime_ns": 1788553805000000000,
+    "indexed_at_ns": 1788976703548066600,
+    "word_count": 7,
+    "hashes": {
+      "backend/requirements-dev.txt": "39df01aec4420de77b2347728be8abc17f5293581a7033c2dddde4dc244e8d41"
+    }
+  },
+  "backend/requirements.txt": {
+    "size": 727,
+    "mtime_ns": 1788894978674068800,
+    "indexed_at_ns": 1788976703548416300,
+    "word_count": 39,
+    "hashes": {
+      "backend/requirements.txt": "24bfec8953359158ea79076954b508a54818170fa1efe2e6317835f450de5f71"
+    }
+  },
+  "backend/tests/__init__.py": {
+    "size": 0,
+    "mtime_ns": 1788553844000000000,
+    "indexed_at_ns": 1788976702286966200,
+    "word_count": 0,
+    "hashes": {
+      "backend/tests/__init__.py": "14ce2c9d4a7e4c0451cd3cba5cc4a8bbb6aa8901979d8f60dae318f4022737c0"
+    }
+  },
+  "backend/tests/conftest.py": {
+    "size": 2415,
+    "mtime_ns": 1788556230043396400,
+    "indexed_at_ns": 1788976702287585900,
+    "word_count": 241,
+    "hashes": {
+      "backend/tests/conftest.py": "156bf6f75d9a29ca5aace33b5f714ab9762b1d43b9dfabc088197085cdc69392"
+    }
+  },
+  "backend/tests/fabricas.py": {
+    "size": 2148,
+    "mtime_ns": 1788556037624163400,
+    "indexed_at_ns": 1788976702288617100,
+    "word_count": 300,
+    "hashes": {
+      "backend/tests/fabricas.py": "3bfc7fb406199474d3df392063d2e0c806cd9f16d9302d5ddf1640ba9b595af9"
+    }
+  },
+  "backend/tests/test_arquitectura.py": {
+    "size": 6103,
+    "mtime_ns": 1788556230043396400,
+    "indexed_at_ns": 1788976702289538800,
+    "word_count": 588,
+    "hashes": {
+      "backend/tests/test_arquitectura.py": "dabc5a650b034ac7639f1ea4560d1f075a4c79efa14c49569d97fbb8cbc2ecf2"
+    }
+  },
+  "backend/tests/test_casos_uso_cortes.py": {
+    "size": 4162,
+    "mtime_ns": 1788970468002643300,
+    "indexed_at_ns": 1788976702290620300,
+    "word_count": 350,
+    "hashes": {
+      "backend/tests/test_casos_uso_cortes.py": "19f826df8964d2c2890d6fd9e1d34607ecfe094ce6f50d41488d5362a6659b84"
+    }
+  },
+  "backend/tests/test_cortes.py": {
+    "size": 1297,
+    "mtime_ns": 1788970468002643300,
+    "indexed_at_ns": 1788976702291333400,
+    "word_count": 109,
+    "hashes": {
+      "backend/tests/test_cortes.py": "0b90a079a54714410185991c059733b623d31c833209f69f81a1810dfc1f58cc"
+    }
+  },
+  "backend/tests/test_salud.py": {
+    "size": 388,
+    "mtime_ns": 1788556037625684800,
+    "indexed_at_ns": 1788976702291941800,
+    "word_count": 49,
+    "hashes": {
+      "backend/tests/test_salud.py": "0267d3949a9fe645418f75a40d0693e826b933444900f41d7568543064ae901a"
+    }
+  },
+  "commitlint.config.cjs": {
+    "size": 180,
+    "mtime_ns": 1788553805000000000,
+    "indexed_at_ns": 1788972983649768000,
+    "word_count": 17
+  },
+  "docker-compose.yml": {
+    "size": 593,
+    "mtime_ns": 1788553805000000000,
+    "indexed_at_ns": 1788976703548793800,
+    "word_count": 60,
+    "hashes": {
+      "docker-compose.yml": "8b17621adf55bc384b945551828822573e50930637412375b6f7579ab64d3728"
+    }
+  },
+  "docs/DECISIONES.md": {
+    "size": 12270,
+    "mtime_ns": 1788970468004031200,
+    "indexed_at_ns": 1788976703549169900,
+    "word_count": 1692,
+    "hashes": {
+      "docs/decisiones.md": "2f4723d76c07525b500a726fedc4a18ac94a44f961e8986fa2b79ea4f55a26cc"
+    }
+  },
+  "docs/ESPECIFICACIONES_TECNICAS.md": {
+    "size": 31650,
+    "mtime_ns": 1788970468005035700,
+    "indexed_at_ns": 1788976703549547000,
+    "word_count": 3087,
+    "hashes": {
+      "docs/especificaciones_tecnicas.md": "875b7457e9369aed04c31fb70011f1f86e39aa11884cb081f4665dc1b81a2d36"
+    }
+  },
+  "docs/SEGURIDAD.md": {
+    "size": 4448,
+    "mtime_ns": 1788970468005035700,
+    "indexed_at_ns": 1788976703549959200,
+    "word_count": 526,
+    "hashes": {
+      "docs/seguridad.md": "febe4b59080fc2cbb79040abc81eb1cd4b260d8e5a43c4cc7a416175bc0b03ee"
+    }
+  },
+  "docs/TRAZABILIDAD.md": {
+    "size": 13312,
+    "mtime_ns": 1788970468006610800,
+    "indexed_at_ns": 1788976703550328400,
+    "word_count": 1183,
+    "hashes": {
+      "docs/trazabilidad.md": "7f7eee1a1ef6d113d54aa4f2b80a40bddb45a51cf277dd7af6de6d6b15f60c55"
+    }
+  },
+  "documentacion_swagger.md": {
+    "size": 1402,
+    "mtime_ns": 1788636917539426300,
+    "indexed_at_ns": 1788976703550707200,
+    "word_count": 184,
+    "hashes": {
+      "documentacion_swagger.md": "489c92b266d92007a5e1bbd43a200060c3ba43e59174fd04f3de3f3301f818c9"
+    }
+  },
+  "eslint.config.js": {
+    "size": 827,
+    "mtime_ns": 1788553805000000000,
+    "indexed_at_ns": 1788972983704037700,
+    "word_count": 78
+  },
+  "frontend/index.html": {
+    "size": 332,
+    "mtime_ns": 1788584801159502800,
+    "indexed_at_ns": 1788976703551060400,
+    "word_count": 29,
+    "hashes": {
+      "frontend/index.html": "707cdd7eae3d980b76d722ee4a602f441370eebbde9bfc5973c7587f6af9f67f"
+    }
+  },
+  "frontend/package.json": {
+    "size": 443,
+    "mtime_ns": 1788590613188766300,
+    "indexed_at_ns": 1788976702292734900,
+    "word_count": 42,
+    "hashes": {
+      "frontend/package.json": "3f1417e24b9d54e9787bbd8f22e69c8dc12ee96bafb381e42758adb827f768dc"
+    }
+  },
+  "frontend/src/App.jsx": {
+    "size": 1220,
+    "mtime_ns": 1788584803040814100,
+    "indexed_at_ns": 1788972983728526200,
+    "word_count": 150
+  },
+  "frontend/src/api/cliente.js": {
+    "size": 1520,
+    "mtime_ns": 1788584801188424200,
+    "indexed_at_ns": 1788972983743378300,
+    "word_count": 224
+  },
+  "frontend/src/components/CargaDeArchivo.jsx": {
+    "size": 851,
+    "mtime_ns": 1788584803059157000,
+    "indexed_at_ns": 1788972983744198900,
+    "word_count": 128
+  },
+  "frontend/src/components/Estados.jsx": {
+    "size": 1096,
+    "mtime_ns": 1788584803063157800,
+    "indexed_at_ns": 1788972983755190200,
+    "word_count": 157
+  },
+  "frontend/src/main.jsx": {
+    "size": 336,
+    "mtime_ns": 1788584803069632400,
+    "indexed_at_ns": 1788972983768036100,
+    "word_count": 28
+  },
+  "frontend/src/pages/Cortes.jsx": {
+    "size": 265,
+    "mtime_ns": 1788584803070688000,
+    "indexed_at_ns": 1788972983775836300,
+    "word_count": 40
+  },
+  "frontend/src/pages/MatrizRelacion.jsx": {
+    "size": 997,
+    "mtime_ns": 1788584803080149200,
+    "indexed_at_ns": 1788972983785121400,
+    "word_count": 164
+  },
+  "frontend/src/pages/NuevoCorte.jsx": {
+    "size": 1083,
+    "mtime_ns": 1788584803084146500,
+    "indexed_at_ns": 1788972983796279000,
+    "word_count": 159
+  },
+  "frontend/vite.config.js": {
+    "size": 553,
+    "mtime_ns": 1788591026631838900,
+    "indexed_at_ns": 1788972983807993300,
+    "word_count": 66
+  },
+  "govsync-graphify/actores/administradora-de-planeacion.md": {
+    "size": 2407,
+    "mtime_ns": 1788477773528570900,
+    "indexed_at_ns": 1788976703551488900,
+    "word_count": 322,
+    "hashes": {
+      "govsync-graphify/actores/administradora-de-planeacion.md": "7537a1d79e9cd5acd0e3ac794948eb11a623bb1b203d5b33349feb38c824613d"
+    }
+  },
+  "govsync-graphify/actores/alcalde.md": {
+    "size": 1217,
+    "mtime_ns": 1788477773546573000,
+    "indexed_at_ns": 1788976703551890900,
+    "word_count": 171,
+    "hashes": {
+      "govsync-graphify/actores/alcalde.md": "210727c60ad7f49974ee0707b2e48b079a68590d247827ab019a6b5b260911cc"
+    }
+  },
+  "govsync-graphify/actores/supervisor-sectorial.md": {
+    "size": 620,
+    "mtime_ns": 1788477773557605000,
+    "indexed_at_ns": 1788976703552266600,
+    "word_count": 85,
+    "hashes": {
+      "govsync-graphify/actores/supervisor-sectorial.md": "5dea0e1f6063085485dc19ec8bbc3045c541479f38fe2abe2c87aa0712c84697"
+    }
+  },
+  "govsync-graphify/actores/usuario-autorizado.md": {
+    "size": 347,
+    "mtime_ns": 1788477773568640400,
+    "indexed_at_ns": 1788976703553192300,
+    "word_count": 46,
+    "hashes": {
+      "govsync-graphify/actores/usuario-autorizado.md": "7e5da7a28df3c848cc849e5e6f334a7eab95b73ff0b79c60b076982dd7820c37"
+    }
+  },
+  "govsync-graphify/arquitectura_base.md": {
+    "size": 3882,
+    "mtime_ns": 1788472264588819900,
+    "indexed_at_ns": 1788976703553614100,
+    "word_count": 566,
+    "hashes": {
+      "govsync-graphify/arquitectura_base.md": "95abbf07e7e0a49a6a9d2d30784f19532ff3f99fa7baad1e89b8b5831e60daba"
+    }
+  },
+  "govsync-graphify/backlog/backlog_sprint1.md": {
+    "size": 2806,
+    "mtime_ns": 1788472347894872900,
+    "indexed_at_ns": 1788976703554025400,
+    "word_count": 441,
+    "hashes": {
+      "govsync-graphify/backlog/backlog_sprint1.md": "7a889889e7cd32aa6bff1638d0b450f097b5336bf6c3bd4dcbe211a7a106881e"
+    }
+  },
+  "govsync-graphify/diagrama_despliegue.svg": {
+    "size": 825163,
+    "mtime_ns": 1788473703610530300,
+    "indexed_at_ns": 1788976703566802900,
+    "word_count": 2404,
+    "hashes": {
+      "govsync-graphify/diagrama_despliegue.svg": "f7f374569333de340c9e426ce2405f683c95a45051c1200c9a705253d572560f"
+    }
+  },
+  "govsync-graphify/diagrama_paquetes.svg": {
+    "size": 861711,
+    "mtime_ns": 1788481711073713400,
+    "indexed_at_ns": 1788976703577975100,
+    "word_count": 4338,
+    "hashes": {
+      "govsync-graphify/diagrama_paquetes.svg": "d7fb6734c150374b2bacbbea2744ce968299e27907d9514f944dac565042b45d"
+    }
+  },
+  "govsync-graphify/epicas/E-01.md": {
+    "size": 740,
+    "mtime_ns": 1788477773586224700,
+    "indexed_at_ns": 1788976703554787300,
+    "word_count": 103,
+    "hashes": {
+      "govsync-graphify/epicas/e-01.md": "be4882e155b44e069ad9730778a6a1d336603f68e3256bed360039d0258f8a79"
+    }
+  },
+  "govsync-graphify/epicas/E-02.md": {
+    "size": 1523,
+    "mtime_ns": 1788477773597239200,
+    "indexed_at_ns": 1788976703555684000,
+    "word_count": 202,
+    "hashes": {
+      "govsync-graphify/epicas/e-02.md": "aa7e304d0d8a708c406212935372d1c63db04656e95af361eed78766f5448612"
+    }
+  },
+  "govsync-graphify/epicas/E-03.md": {
+    "size": 765,
+    "mtime_ns": 1788477773607772900,
+    "indexed_at_ns": 1788976703556084100,
+    "word_count": 101,
+    "hashes": {
+      "govsync-graphify/epicas/e-03.md": "6a07c811e7f81ec27b75ee5d71a5d776dd3cf8560ad365b99153e87b7c509ac2"
+    }
+  },
+  "govsync-graphify/epicas/E-04.md": {
+    "size": 1304,
+    "mtime_ns": 1788477773618307000,
+    "indexed_at_ns": 1788976703556425800,
+    "word_count": 174,
+    "hashes": {
+      "govsync-graphify/epicas/e-04.md": "80e08b49fd06185fdd1c853022fdb89b770e6c140fdc82450842a4455bc93016"
+    }
+  },
+  "govsync-graphify/historias/E-01-HU-01.md": {
+    "size": 500,
+    "mtime_ns": 1788477773633334400,
+    "indexed_at_ns": 1788976703556767900,
+    "word_count": 60,
+    "hashes": {
+      "govsync-graphify/historias/e-01-hu-01.md": "e0bb1d4804785e020e22358ce17760a7b01e1c5cabc8993dc0ae248881b1bbfe"
+    }
+  },
+  "govsync-graphify/historias/E-01-HU-02.md": {
+    "size": 577,
+    "mtime_ns": 1788477773643312000,
+    "indexed_at_ns": 1788976703557132900,
+    "word_count": 70,
+    "hashes": {
+      "govsync-graphify/historias/e-01-hu-02.md": "201faeccbcfe61b53d039c3aea4f6d394641a5aedc0cfe20d72f335dd8c467f8"
+    }
+  },
+  "govsync-graphify/historias/E-01-HU-04.md": {
+    "size": 524,
+    "mtime_ns": 1788477773654464300,
+    "indexed_at_ns": 1788976703557463500,
+    "word_count": 71,
+    "hashes": {
+      "govsync-graphify/historias/e-01-hu-04.md": "0c1cbaae98dba2cd1d4a043aad9a7d14960239c4661ad19610715f1c32b9fd6d"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-01.md": {
+    "size": 3227,
+    "mtime_ns": 1788477773663468000,
+    "indexed_at_ns": 1788976703557804000,
+    "word_count": 513,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-01.md": "0b6dda5d81f7a07bfcf5305abc939f7277a98ab30a575609f4dc015929f730a9"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-02.md": {
+    "size": 2413,
+    "mtime_ns": 1788477773672679400,
+    "indexed_at_ns": 1788976703558148700,
+    "word_count": 377,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-02.md": "bb0141121b24851f618c90f1755233cb568111fbd979440388c31fd29a57fbbc"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-03.md": {
+    "size": 2765,
+    "mtime_ns": 1788477773684720000,
+    "indexed_at_ns": 1788976703558480500,
+    "word_count": 435,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-03.md": "5c5b77b9e4bfb64e7813793e8cd04892bbd29460888c7f27c8eecb219b3ebef1"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-04.md": {
+    "size": 1865,
+    "mtime_ns": 1788477773694330200,
+    "indexed_at_ns": 1788976703558827900,
+    "word_count": 287,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-04.md": "7872fed293172883973ccca59224d6a54ba52eeb3ed2684ac5059edeb5e93551"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-05.md": {
+    "size": 561,
+    "mtime_ns": 1788477773711498400,
+    "indexed_at_ns": 1788976703559183200,
+    "word_count": 66,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-05.md": "c0c4ff80169a10a07482352d94df7ee89fcb5402f2d61052aa8dfe034fd43928"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-06.md": {
+    "size": 576,
+    "mtime_ns": 1788477773724795400,
+    "indexed_at_ns": 1788976703559524800,
+    "word_count": 69,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-06.md": "ec1efeaa343581e8c6503952dcdf8cf8a6d830af347dcabc53166fa857f3326b"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-07.md": {
+    "size": 1512,
+    "mtime_ns": 1788477773735855500,
+    "indexed_at_ns": 1788976703559852600,
+    "word_count": 229,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-07.md": "ba0fa6c43d99c7a994b822c9ba55ab3fe5e27b5caac9861b628a1e215baaa508"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-08.md": {
+    "size": 496,
+    "mtime_ns": 1788477773746844200,
+    "indexed_at_ns": 1788976703560207100,
+    "word_count": 57,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-08.md": "69e4ed1a8c7f2c629bd16173a0573a3f2c52f1519b7105a0f3ebf2e88475f002"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-09.md": {
+    "size": 590,
+    "mtime_ns": 1788477773759881000,
+    "indexed_at_ns": 1788976703560537400,
+    "word_count": 66,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-09.md": "a1e4fc3242d42beb95a10d71ef88a385cd67535398e106ce615128cae6ba8a5c"
+    }
+  },
+  "govsync-graphify/historias/E-02-HU-10.md": {
+    "size": 604,
+    "mtime_ns": 1788477773769904900,
+    "indexed_at_ns": 1788976703560870800,
+    "word_count": 69,
+    "hashes": {
+      "govsync-graphify/historias/e-02-hu-10.md": "5af3107a99b25729b674590f08568a2e27f28adfa24b1d86b356fd27d44fa79c"
+    }
+  },
+  "govsync-graphify/historias/E-03-HU-01.md": {
+    "size": 614,
+    "mtime_ns": 1788477773779324800,
+    "indexed_at_ns": 1788976703561195100,
+    "word_count": 75,
+    "hashes": {
+      "govsync-graphify/historias/e-03-hu-01.md": "8d8fea95e9933f9faf9b7ce8e60fd8ee7ff757163f57521470ff0f96f8e8413b"
+    }
+  },
+  "govsync-graphify/historias/E-03-HU-02.md": {
+    "size": 574,
+    "mtime_ns": 1788477773789318900,
+    "indexed_at_ns": 1788976703561533200,
+    "word_count": 77,
+    "hashes": {
+      "govsync-graphify/historias/e-03-hu-02.md": "cccc72485cdb0c31b8ad73153697bc279abd5499bcb136ac56e5b9bdc518d94c"
+    }
+  },
+  "govsync-graphify/historias/E-03-HU-03.md": {
+    "size": 517,
+    "mtime_ns": 1788477773799405000,
+    "indexed_at_ns": 1788976703561933300,
+    "word_count": 63,
+    "hashes": {
+      "govsync-graphify/historias/e-03-hu-03.md": "3116f69a6c9ee45b41d5e462658b467aea1c217870adc572c2f28f95d247e8d9"
+    }
+  },
+  "govsync-graphify/historias/E-04-HU-01.md": {
+    "size": 832,
+    "mtime_ns": 1788477773809411100,
+    "indexed_at_ns": 1788976703562350900,
+    "word_count": 102,
+    "hashes": {
+      "govsync-graphify/historias/e-04-hu-01.md": "f488ee6bb5850f60726a659364891c8a06f54fb295e8cdace0ed0aa0ef0d5d42"
+    }
+  },
+  "govsync-graphify/historias/E-04-HU-02.md": {
+    "size": 645,
+    "mtime_ns": 1788477773818919200,
+    "indexed_at_ns": 1788976703562735300,
+    "word_count": 79,
+    "hashes": {
+      "govsync-graphify/historias/e-04-hu-02.md": "b119ff5faea5fbab849eca4f777b604a1dbdea267860c55bbf08bf1d0c7c578c"
+    }
+  },
+  "govsync-graphify/historias/E-04-HU-03.md": {
+    "size": 570,
+    "mtime_ns": 1788477773830927900,
+    "indexed_at_ns": 1788976703563147100,
+    "word_count": 68,
+    "hashes": {
+      "govsync-graphify/historias/e-04-hu-03.md": "db8bd8012d43c587e14850c0700bc5d5d0191f8fb2d3b4773ef7ab96f893c3d5"
+    }
+  },
+  "govsync-graphify/historias/E-04-HU-04.md": {
+    "size": 558,
+    "mtime_ns": 1788477773840918300,
+    "indexed_at_ns": 1788976703563554900,
+    "word_count": 67,
+    "hashes": {
+      "govsync-graphify/historias/e-04-hu-04.md": "873ca6c23725bd757232c8dfe4ff7320ff7913252e789fd16ebaf5264462181e"
+    }
+  },
+  "govsync-graphify/historias/E-04-HU-05.md": {
+    "size": 777,
+    "mtime_ns": 1788477773852047000,
+    "indexed_at_ns": 1788976703563945400,
+    "word_count": 95,
+    "hashes": {
+      "govsync-graphify/historias/e-04-hu-05.md": "f59a83f59e17964ed21defe42ca776a90e1df6927c85a1216f7991ad23578caa"
+    }
+  },
+  "govsync-graphify/historias/E-04-HU-07.md": {
+    "size": 775,
+    "mtime_ns": 1788477773862049700,
+    "indexed_at_ns": 1788976703564383900,
+    "word_count": 87,
+    "hashes": {
+      "govsync-graphify/historias/e-04-hu-07.md": "ad5b43123ee96cbc1ed58d30b657cc06a337d04e9662e33fc5959f6b3a4ff731"
+    }
+  },
+  "govsync-graphify/historias/E-04-HU-09.md": {
+    "size": 594,
+    "mtime_ns": 1788477773872930800,
+    "indexed_at_ns": 1788976703564865500,
+    "word_count": 69,
+    "hashes": {
+      "govsync-graphify/historias/e-04-hu-09.md": "3c96906c8a4e61881398d856e6b3278e0d248145234a8d69ef2bc5cdfae26bbc"
+    }
+  },
+  "govsync-graphify/modelo-clases-conceptual.json": {
+    "size": 96043,
+    "mtime_ns": 1788471511616261600,
+    "indexed_at_ns": 1788976702293360700,
+    "word_count": 3651,
+    "hashes": {
+      "govsync-graphify/modelo-clases-conceptual.json": "b217b71be175f22af2f28ce3e33815b3a899ceae6e4abc62ff56144bf0703b54"
+    }
+  },
+  "govsync-graphify/modelo_clases_conceptual.md": {
+    "size": 9209,
+    "mtime_ns": 1788480955834313200,
+    "indexed_at_ns": 1788976703565238100,
+    "word_count": 1233,
+    "hashes": {
+      "govsync-graphify/modelo_clases_conceptual.md": "00fec2e893bd5f3ae927519d29ee2c3e920e171d2d1389db5b87538eb0c3ff51"
+    }
+  },
+  "govsync-graphify/modelo_entidad_relacion.json": {
+    "size": 110156,
+    "mtime_ns": 1788471548213384500,
+    "indexed_at_ns": 1788976702294443300,
+    "word_count": 4044,
+    "hashes": {
+      "govsync-graphify/modelo_entidad_relacion.json": "53ddde46929d8cac59f0cedf3e7de59f8428decd0136c4b2bb9cd5abe4460b33"
+    }
+  },
+  "govsync-graphify/modelo_entidad_relacion.md": {
+    "size": 3662,
+    "mtime_ns": 1788479190507058600,
+    "indexed_at_ns": 1788976703565656000,
+    "word_count": 689,
+    "hashes": {
+      "govsync-graphify/modelo_entidad_relacion.md": "0f983b5c80917af54d20687d9facb0ef205e7e275060783dbfb124170bfb2c5c"
+    }
+  },
+  "govsync-graphify/restricciones_calidad.md": {
+    "size": 2620,
+    "mtime_ns": 1788472336415289600,
+    "indexed_at_ns": 1788976703566035700,
+    "word_count": 394,
+    "hashes": {
+      "govsync-graphify/restricciones_calidad.md": "8cf81e1bfb23446e017b762d27d6f66960d297ba03b775c3bdc9a91dd0bc8f44"
+    }
+  },
+  "govsync-graphify/seleccion_tecnologia.md": {
+    "size": 4546,
+    "mtime_ns": 1788472389060106900,
+    "indexed_at_ns": 1788976703566405100,
+    "word_count": 650,
+    "hashes": {
+      "govsync-graphify/seleccion_tecnologia.md": "070708fb999e320a5d13760ad81bab9889aac8c50ef074ce614f0eece96b35ba"
+    }
+  },
+  "package.json": {
+    "size": 1548,
+    "mtime_ns": 1788970468008616600,
+    "indexed_at_ns": 1788976702296080000,
+    "word_count": 133,
+    "hashes": {
+      "package.json": "5486157c2318ac101b3175a72c1669b34ed1b5a17c928742cc09cbd271b96f81"
+    }
+  }
+}

@@ -56,6 +56,61 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.shared.errors import ReglaDeNegocioViolada
+
+#: Longitud canónica del código de indicador de producto (MGA / CCPET).
+LONGITUD_INDICADOR = 9
+#: Longitud canónica del BPIN vigente (los de 13 dígitos anteriores a 2025 se
+#: tratarán en la ingesta / HU-04, no en este objeto de valor).
+LONGITUD_BPIN = 15
+#: Máximo relleno de ceros a la izquierda tolerado: solo recupera el cero que
+#: Excel pudo comerse al leer un código de 9 dígitos como número (9 -> 8).
+TOLERANCIA_CERO_PERDIDO = 1
+
+
+def _es_cadena_de_digitos(valor: object, longitud: int) -> bool:
+    """True si `valor` es un str de exactamente `longitud` dígitos ASCII."""
+    return isinstance(valor, str) and len(valor) == longitud and valor.isascii() and valor.isdigit()
+
+
+def _a_texto(crudo: object) -> str | None:
+    """Normaliza un valor de celda de Excel a texto de dígitos, o None.
+
+    Acepta lo que pandas suele entregar (str, int, float, NaN, None). NO limpia
+    separadores ni símbolos: "$ 1.218.264.452" debe quedar descartado más
+    adelante por no ser solo dígitos.
+    """
+    if crudo is None or isinstance(crudo, bool):
+        return None
+    if isinstance(crudo, int):
+        return str(crudo)
+    if isinstance(crudo, float):
+        if crudo != crudo:  # NaN
+            return None
+        if not crudo.is_integer():
+            return None
+        return str(int(crudo))
+    if isinstance(crudo, str):
+        return crudo.strip() or None
+    return None
+
+
+def _normalizar_a_longitud(texto: str, longitud: int, *, tolerancia: int = 0) -> str | None:
+    """Devuelve `texto` ajustado a `longitud` dígitos, o None si no es válido.
+
+    - Exactamente `longitud` dígitos: se devuelve tal cual.
+    - Entre `longitud - tolerancia` y `longitud - 1` dígitos: se rellena con
+      ceros a la izquierda (recupera el cero que Excel comió).
+    - Cualquier otro caso: None (no se fabrican códigos que no existen).
+    """
+    if not (texto.isascii() and texto.isdigit()):
+        return None
+    if len(texto) == longitud:
+        return texto
+    if longitud - tolerancia <= len(texto) < longitud:
+        return texto.zfill(longitud)
+    return None
+
 
 @dataclass(frozen=True, slots=True)
 class CodigoIndicadorProducto:
@@ -64,12 +119,24 @@ class CodigoIndicadorProducto:
     valor: str
 
     def __post_init__(self) -> None:
-        raise NotImplementedError("[TRANS-01] Validar formato de 9 dígitos")
+        if not _es_cadena_de_digitos(self.valor, LONGITUD_INDICADOR):
+            raise ReglaDeNegocioViolada(
+                f"Código de indicador de producto inválido: {self.valor!r}. "
+                f"Se esperan {LONGITUD_INDICADOR} dígitos como texto.",
+            )
 
     @classmethod
     def desde_crudo(cls, crudo: object) -> CodigoIndicadorProducto | None:
         """Normaliza un valor de Excel. Devuelve None si no es un código válido."""
-        raise NotImplementedError("[TRANS-01] Normalización desde celda de Excel")
+        texto = _a_texto(crudo)
+        if texto is None:
+            return None
+        normalizado = _normalizar_a_longitud(
+            texto, LONGITUD_INDICADOR, tolerancia=TOLERANCIA_CERO_PERDIDO
+        )
+        if normalizado is None:
+            return None
+        return cls(normalizado)
 
     @classmethod
     def extraer_todos(cls, texto: object) -> list[CodigoIndicadorProducto]:
@@ -98,8 +165,18 @@ class CodigoBpin:
     valor: str
 
     def __post_init__(self) -> None:
-        raise NotImplementedError("[TRANS-01] Validar formato de 15 dígitos")
+        if not _es_cadena_de_digitos(self.valor, LONGITUD_BPIN):
+            raise ReglaDeNegocioViolada(
+                f"Código BPIN inválido: {self.valor!r}. "
+                f"Se esperan {LONGITUD_BPIN} dígitos como texto.",
+            )
 
     @classmethod
     def desde_crudo(cls, crudo: object) -> CodigoBpin | None:
-        raise NotImplementedError("[TRANS-01] Normalización de BPIN")
+        texto = _a_texto(crudo)
+        if texto is None:
+            return None
+        normalizado = _normalizar_a_longitud(texto, LONGITUD_BPIN)
+        if normalizado is None:
+            return None
+        return cls(normalizado)

@@ -1,0 +1,813 @@
+{
+  "nodes": [
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "label": "test_casos_uso_cortes.py",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "label": "RepositorioCortesEnMemoria",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L25",
+      "_callable": true,
+      "_callable_class": true
+    },
+    {
+      "id": "repositoriocortes",
+      "label": "RepositorioCortes",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "origin_file": "$graphify-root$/backend/tests/test_casos_uso_cortes.py"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_init",
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L26",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_guardar",
+      "label": ".guardar()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L29",
+      "_callable": true
+    },
+    {
+      "id": "corte",
+      "label": "Corte",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "origin_file": "$graphify-root$/backend/tests/test_casos_uso_cortes.py"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_obtener",
+      "label": ".obtener()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L33",
+      "_callable": true
+    },
+    {
+      "id": "uuid",
+      "label": "UUID",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "origin_file": "$graphify-root$/backend/tests/test_casos_uso_cortes.py"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_ultimo_registrado",
+      "label": ".ultimo_registrado()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L36",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_listar",
+      "label": ".listar()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L42",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_registrar_archivo",
+      "label": ".registrar_archivo()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L45",
+      "_callable": true
+    },
+    {
+      "id": "archivofuente",
+      "label": "ArchivoFuente",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "origin_file": "$graphify-root$/backend/tests/test_casos_uso_cortes.py"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_confirmar_registro",
+      "label": ".confirmar_registro()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L48",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria",
+      "label": "RepositorioDatosCorteEnMemoria",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L52",
+      "_callable": true,
+      "_callable_class": true
+    },
+    {
+      "id": "repositoriodatoscorte",
+      "label": "RepositorioDatosCorte",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "origin_file": "$graphify-root$/backend/tests/test_casos_uso_cortes.py"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_metas",
+      "label": ".reemplazar_metas()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L55",
+      "_callable": true
+    },
+    {
+      "id": "any",
+      "label": "Any",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "origin_file": "$graphify-root$/backend/tests/test_casos_uso_cortes.py"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_presupuesto",
+      "label": ".reemplazar_presupuesto()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L58",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_proyectos",
+      "label": ".reemplazar_proyectos()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L61",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_copiar_datos",
+      "label": ".copiar_datos()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L64",
+      "_callable": true
+    },
+    {
+      "id": "fixture",
+      "label": "fixture",
+      "file_type": "code",
+      "source_file": "",
+      "source_location": "",
+      "origin_file": "$graphify-root$/backend/tests/test_casos_uso_cortes.py"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_servicio",
+      "label": "servicio()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L69",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_queda_en_borrador_con_los_tres_archivos_faltantes",
+      "label": "test_crear_corte_queda_en_borrador_con_los_tres_archivos_faltantes()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L82",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_rechaza_fecha_futura_sin_persistir_nada",
+      "label": "test_crear_corte_rechaza_fecha_futura_sin_persistir_nada()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L95",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_listar_cortes_devuelve_lo_creado",
+      "label": "test_listar_cortes_devuelve_lo_creado()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L103",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_rationale_1",
+      "label": "Pruebas del caso de uso CrearCorte (aplicacion), sin base de datos. TARJETA:\u2026",
+      "file_type": "rationale",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_casos_uso_cortes_rationale_53",
+      "label": "No se ejercita en estas pruebas: crear_corte y listar_cortes no lo usan.",
+      "file_type": "rationale",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L53"
+    }
+  ],
+  "edges": [
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "uuid",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "datetime",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "typing",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "pytest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "app_modules_cortes_application_casos_uso",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "app_modules_cortes_domain_entidades",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "app_modules_cortes_domain_puertos",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "app_shared_errors",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "target": "repositoriocortes",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L25",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_init",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L26",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_guardar",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_guardar",
+      "target": "corte",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_guardar",
+      "target": "corte",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L29",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_obtener",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_obtener",
+      "target": "uuid",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_obtener",
+      "target": "corte",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L33",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_ultimo_registrado",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_ultimo_registrado",
+      "target": "corte",
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_listar",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_listar",
+      "target": "corte",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_registrar_archivo",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_registrar_archivo",
+      "target": "uuid",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_registrar_archivo",
+      "target": "archivofuente",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_confirmar_registro",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_confirmar_registro",
+      "target": "corte",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L48",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria",
+      "target": "repositoriodatoscorte",
+      "relation": "inherits",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L52",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_metas",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_metas",
+      "target": "uuid",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_metas",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_presupuesto",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L58",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_proyectos",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_proyectos",
+      "target": "uuid",
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_reemplazar_proyectos",
+      "target": "any",
+      "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L61",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria_copiar_datos",
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L64",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_servicio",
+      "target": "fixture",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "context": "decorator"
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_servicio",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_queda_en_borrador_con_los_tres_archivos_faltantes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_rechaza_fecha_futura_sin_persistir_nada",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L95",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_listar_cortes_devuelve_lo_creado",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L103",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_servicio",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L72",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_servicio",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L73",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_rationale_1",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_casos_uso_cortes_rationale_53",
+      "target": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriodatoscorteenmemoria",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L53",
+      "weight": 1.0
+    }
+  ],
+  "raw_calls": [
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_obtener",
+      "callee": "get",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L34",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_ultimo_registrado",
+      "callee": "values",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L37",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_repositoriocortesenmemoria_listar",
+      "callee": "values",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L43",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_servicio",
+      "callee": "ServicioCortes",
+      "is_member_call": false,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L71",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_servicio",
+      "callee": "__setitem__",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L74",
+      "receiver": "llamadas"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_servicio",
+      "callee": "__setitem__",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L75",
+      "receiver": "llamadas"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_servicio",
+      "callee": "date",
+      "is_member_call": false,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L76",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_queda_en_borrador_con_los_tres_archivos_faltantes",
+      "callee": "crear_corte",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L83",
+      "receiver": "servicio"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_queda_en_borrador_con_los_tres_archivos_faltantes",
+      "callee": "date",
+      "is_member_call": false,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L83",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_queda_en_borrador_con_los_tres_archivos_faltantes",
+      "callee": "archivos_faltantes",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L86",
+      "receiver": "corte"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_rechaza_fecha_futura_sin_persistir_nada",
+      "callee": "raises",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L96",
+      "receiver": "pytest"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_rechaza_fecha_futura_sin_persistir_nada",
+      "callee": "ReglaDeNegocioViolada",
+      "is_member_call": false,
+      "indirect": true,
+      "context": "argument",
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L96"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_rechaza_fecha_futura_sin_persistir_nada",
+      "callee": "crear_corte",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L97",
+      "receiver": "servicio"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_rechaza_fecha_futura_sin_persistir_nada",
+      "callee": "date",
+      "is_member_call": false,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L97",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_crear_corte_rechaza_fecha_futura_sin_persistir_nada",
+      "callee": "listar_cortes",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L99",
+      "receiver": "servicio"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_listar_cortes_devuelve_lo_creado",
+      "callee": "crear_corte",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L104",
+      "receiver": "servicio"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_listar_cortes_devuelve_lo_creado",
+      "callee": "date",
+      "is_member_call": false,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L104",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_listar_cortes_devuelve_lo_creado",
+      "callee": "crear_corte",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L105",
+      "receiver": "servicio"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_listar_cortes_devuelve_lo_creado",
+      "callee": "date",
+      "is_member_call": false,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L105",
+      "receiver": null
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_casos_uso_cortes_test_listar_cortes_devuelve_lo_creado",
+      "callee": "listar_cortes",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_casos_uso_cortes.py",
+      "source_location": "L107",
+      "receiver": "servicio"
+    }
+  ]
+}

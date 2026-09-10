@@ -1,0 +1,64 @@
+{
+  "nodes": [
+    {
+      "id": "$graphify-root$_backend_tests_test_salud_py",
+      "label": "test_salud.py",
+      "file_type": "code",
+      "source_file": "backend/tests/test_salud.py",
+      "source_location": "L1"
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_salud_test_la_aplicacion_responde",
+      "label": "test_la_aplicacion_responde()",
+      "file_type": "code",
+      "source_file": "backend/tests/test_salud.py",
+      "source_location": "L10",
+      "_callable": true
+    },
+    {
+      "id": "$graphify-root$_backend_tests_test_salud_rationale_1",
+      "label": "Prueba de humo: la aplicaci\u00f3n arranca y responde. Es la primera prueba del\u2026",
+      "file_type": "rationale",
+      "source_file": "backend/tests/test_salud.py",
+      "source_location": "L1"
+    }
+  ],
+  "edges": [
+    {
+      "source": "$graphify-root$_backend_tests_test_salud_py",
+      "target": "$graphify-root$_backend_tests_test_salud_test_la_aplicacion_responde",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_salud.py",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "$graphify-root$_backend_tests_test_salud_rationale_1",
+      "target": "$graphify-root$_backend_tests_test_salud_py",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "backend/tests/test_salud.py",
+      "source_location": "L1",
+      "weight": 1.0
+    }
+  ],
+  "raw_calls": [
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_salud_test_la_aplicacion_responde",
+      "callee": "get",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_salud.py",
+      "source_location": "L11",
+      "receiver": "cliente"
+    },
+    {
+      "caller_nid": "$graphify-root$_backend_tests_test_salud_test_la_aplicacion_responde",
+      "callee": "json",
+      "is_member_call": true,
+      "source_file": "backend/tests/test_salud.py",
+      "source_location": "L13",
+      "receiver": "respuesta"
+    }
+  ]
+}

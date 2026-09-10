@@ -1,0 +1,13 @@
+{
+  "nodes": [
+    {
+      "id": "$graphify-root$_backend_app_modules_cortes_api_init_py",
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "backend/app/modules/cortes/api/__init__.py",
+      "source_location": "L1"
+    }
+  ],
+  "edges": [],
+  "raw_calls": []
+}
