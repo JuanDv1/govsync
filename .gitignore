@@ -24,4 +24,5 @@ backend/.coverage
 backend/coverage.xml
 
 # Carpeta de graphify
-./govsync-graphify
+govsync-graphify/
+graphify-out/
