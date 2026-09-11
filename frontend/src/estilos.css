@@ -66,3 +66,39 @@ body {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   white-space: nowrap;
 }
+
+/* [UX-03] Estado de error accionable (Estados.jsx::Error). */
+.estado-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radio);
+  background: var(--error-fondo);
+  color: var(--error);
+}
+
+.estado-error-mensaje {
+  margin: 0;
+  font-weight: 600;
+}
+
+.estado-error-detalles {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.estado-error-reintentar {
+  align-self: flex-start;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--error);
+  cursor: pointer;
+}
+
+.estado-error-reintentar:hover {
+  background: var(--error-fondo);
+}
