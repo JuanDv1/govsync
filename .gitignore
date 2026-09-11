@@ -23,4 +23,5 @@ backend/.env
 backend/.coverage
 backend/coverage.xml
 
-graphify-out/cost.json
+# Artefactos derivados de Graphify (rutas absolutas por máquina; se regenera)
+graphify-out/
