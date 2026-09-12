@@ -48,6 +48,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.modules.cortes.domain.entidades import ArchivoFuente, Corte, EstadoCorte, TipoArchivoFuente
 from app.modules.cortes.domain.puertos import RepositorioCortes, RepositorioDatosCorte
 from app.modules.cortes.persistence.models import ArchivoFuenteORM, CorteORM
+from app.shared.errors import RecursoNoEncontrado
 
 
 def _archivo_a_dominio(o: ArchivoFuenteORM) -> ArchivoFuente:
@@ -153,7 +154,10 @@ class RepositorioCortesSQL(RepositorioCortes):
         """Persiste el paso a estado REGISTRADO (la transición la valida el dominio)."""
         orm = self._s.get(CorteORM, corte.id)
         if orm is None:
-            raise LookupError(f"No existe el corte {corte.id} que se intenta registrar.")
+            raise RecursoNoEncontrado(
+                f"No existe el corte {corte.id} que se intenta registrar.",
+                detalles={"motivo": "corte_no_encontrado", "corte_id": str(corte.id)},
+            )
         orm.estado = corte.estado
         self._s.flush()
 

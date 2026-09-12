@@ -26,6 +26,7 @@ from app.modules.cortes.domain.entidades import (
 )
 from app.modules.cortes.persistence.models import ArchivoFuenteORM
 from app.modules.cortes.persistence.repositorios import RepositorioCortesSQL
+from app.shared.errors import RecursoNoEncontrado
 
 
 @pytest.fixture()
@@ -129,6 +130,16 @@ def test_confirmar_registro_persiste_el_estado(repo) -> None:
     repo.confirmar_registro(corte)
 
     assert repo.obtener(corte.id).estado == EstadoCorte.REGISTRADO
+
+
+def test_confirmar_registro_de_corte_inexistente_lanza_recurso_no_encontrado(repo) -> None:
+    corte = Corte(vigencia=2026, fecha_corte=date(2026, 6, 30))
+    corte.estado = EstadoCorte.REGISTRADO
+
+    with pytest.raises(RecursoNoEncontrado) as exc:
+        repo.confirmar_registro(corte)
+
+    assert exc.value.detalles["motivo"] == "corte_no_encontrado"
 
 
 def test_el_repositorio_no_hace_commit(repo, sesion) -> None:
