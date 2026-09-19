@@ -354,3 +354,37 @@ cliente es más conservador, no lo reemplaza ni lo duplica.
 
 **Registrado:** 2026-09-15.
 **Ratificado:** 2026-09-15, acordado con Cristhian.
+
+---
+
+## D13 · `[HU-04][BE-03]` marcada Probado sin cumplir dos de sus propios requisitos
+
+**Hallazgo:** `docs/TRAZABILIDAD.md` (HU-04/CA-4) marcaba `[HU-04][BE-03]`
+como "Probado", con evidencia de 6 pruebas en `test_codigos.py`. Verificado
+el código real (`shared/codigos.py:158-181`,
+`CodigoIndicadorProducto.extraer_todos`) y las 6 pruebas
+(`test_codigos.py:79-128`) contra el texto literal de la tarjeta: **dos
+requisitos no se cumplen.**
+
+1. _"Todo código descartado queda registrado con su motivo"_ — `extraer_todos`
+   descarta cualquier candidato inválido sin registrar nada en ningún
+   lado: no hay `logging`, no hay lista de descartes, ningún efecto
+   secundario. Es un `if` sin `else` — la línea simplemente se salta.
+2. Separadores más allá de salto de línea (coma, punto y coma, guion,
+   espacio) y segmentación de códigos concatenados sin separador (cuando
+   el total de dígitos es múltiplo de 9) — ninguno de los dos está
+   implementado en el código ni cubierto por los 6 tests existentes, que
+   usan exclusivamente `\n` como separador.
+
+**Decisión:** se reabre `[HU-04][BE-03]` (Juan Esteban) para cubrir ambos
+puntos. No se crea una tarjeta nueva: ambos son requisitos textuales de la
+tarjeta original, no alcance adicional — crear una tarjeta aparte
+duplicaría trabajo ya comprometido bajo el mismo número.
+
+**Motivo:** mismo patrón que D5/D6/D8 — un documento de seguimiento se
+adelantó a marcar como cerrado algo que solo cumple una parte de lo que
+el criterio exige.
+
+**Estado:** VIGENTE.
+
+**Registrado:** 2026-09-19.
