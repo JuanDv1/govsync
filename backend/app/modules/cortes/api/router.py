@@ -119,10 +119,12 @@ class DescarteRespuesta(BaseModel):
 class ArchivoFuenteRespuestaParcial(BaseModel):
     """Forma PROVISIONAL de la respuesta de POST /cortes/{id}/archivos/{tipo}.
 
-    `descartes` ya cierra ([HU-04][FE-03], PR #77 propagó
-    `ArchivoFuente.descartes` desde `ResultadoLectura`) — `[]` para
-    PDT/EJECUCION (no producen descartes de código) y para archivos
-    reutilizados, comportamiento correcto, no una limitación.
+    `descartes` y `codigos` ya cierran las dos mitades de [HU-04][FE-03]
+    ("vista previa de códigos extraídos y descartados"): `descartes`
+    desde PR #77 (D14), `codigos` desde PR #87 (D16, deduplicado por
+    `.valor` en orden de primera aparición) — `[]` para PDT/EJECUCION
+    (no producen códigos de indicador) y para archivos reutilizados,
+    comportamiento correcto, no una limitación.
 
     Sigue sin ser el contrato completo de docs/ESPECIFICACIONES_TECNICAS.md:
     para PROYECTOS esa especificación también pide `proyectos_reconocidos`/
@@ -142,6 +144,7 @@ class ArchivoFuenteRespuestaParcial(BaseModel):
     filas_reconocidas: int
     filas_ejecucion_reconocidas: int | None = None
     filas_contratacion_reconocidas: int | None = None
+    codigos: list[str]
     descartes: list[DescarteRespuesta]
 
 
@@ -223,6 +226,7 @@ async def cargar_archivo(
         filas_reconocidas=resultado.filas_reconocidas,
         filas_ejecucion_reconocidas=resultado.conteos.get("ejecucion"),
         filas_contratacion_reconocidas=resultado.conteos.get("contratacion"),
+        codigos=[c.valor for c in resultado.codigos],
         descartes=[
             DescarteRespuesta(
                 valor_crudo=descarte.valor_crudo,

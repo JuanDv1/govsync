@@ -40,7 +40,7 @@ from app.modules.ingesta.domain.contratos import (
     ResultadoLectura,
     TipoArchivo,
 )
-from app.shared.codigos import CategoriaDescarte, DescarteIndicador
+from app.shared.codigos import CategoriaDescarte, CodigoIndicadorProducto, DescarteIndicador
 
 HOY = date(2026, 9, 8)
 
@@ -145,10 +145,11 @@ class LectorProyectosFalso(LectorArchivoFuente):
     cableado real está en `test_lectores_proyectos.py`, aquí solo se
     prueba router -> cargar_archivo -> reemplazar_proyectos -> 201.
 
-    Incluye un descarte fabricado (D14, [HU-04][FE-03]) para probar el
-    cableado `ResultadoLectura.descartes` -> `ArchivoFuente.descartes` ->
-    `DescarteRespuesta` de punta a punta, sin depender de que
-    `LectorProyectos` real ya lo produzca (eso es
+    Incluye un descarte fabricado (D14, [HU-04][FE-03]) y un código
+    fabricado (D16, [HU-04][FE-03]) para probar el cableado
+    `ResultadoLectura.descartes`/`.codigos` -> `ArchivoFuente.descartes`/
+    `.codigos` -> `DescarteRespuesta`/`codigos` de punta a punta, sin
+    depender de que `LectorProyectos` real ya lo produzca (eso es
     `test_lectores_proyectos.py`)."""
 
     tipo = TipoArchivo.PROYECTOS
@@ -158,6 +159,7 @@ class LectorProyectosFalso(LectorArchivoFuente):
             tipo=TipoArchivo.PROYECTOS,
             filas={"proyectos": [{"bpin": "459903100000000"}]},
             conteos={"proyectos": 1},
+            codigos=[CodigoIndicadorProducto("459903100")],
             descartes=[
                 DescarteIndicador(
                     valor_crudo="2026",
@@ -387,8 +389,9 @@ def test_post_archivos_pdt_devuelve_201(cliente_con_lectores):
     assert cuerpo["tipo"] == "PDT"
     assert cuerpo["nombre_archivo"] == "plan.xlsx"
     assert cuerpo["filas_reconocidas"] == 1
-    # D14/[HU-04][FE-03]: PDT no produce descartes de código.
+    # D14/[HU-04][FE-03]: PDT no produce descartes ni códigos de indicador.
     assert cuerpo["descartes"] == []
+    assert cuerpo["codigos"] == []
     # [HU-03][FE-01]: filas por pestaña no aplica a PDT.
     assert cuerpo["filas_ejecucion_reconocidas"] is None
     assert cuerpo["filas_contratacion_reconocidas"] is None
@@ -416,8 +419,9 @@ def test_post_archivos_ejecucion_devuelve_201(cliente_con_lectores):
     assert cuerpo["tipo"] == "EJECUCION"
     # 1 rubro + 1 contrato + 1 registro, ver LectorEjecucionFalso.
     assert cuerpo["filas_reconocidas"] == 3
-    # D14/[HU-04][FE-03]: EJECUCION no produce descartes de código.
+    # D14/[HU-04][FE-03]: EJECUCION no produce descartes ni códigos de indicador.
     assert cuerpo["descartes"] == []
+    assert cuerpo["codigos"] == []
     # [HU-03][FE-01]: conteos por pestaña, ver LectorEjecucionFalso
     # (conteos={"ejecucion": 1, "contratacion": 1}).
     assert cuerpo["filas_ejecucion_reconocidas"] == 1
@@ -458,6 +462,9 @@ def test_post_archivos_proyectos_devuelve_201(cliente_con_lectores):
             "categoria": "longitud_corta",
         }
     ]
+    # D16/[HU-04][FE-03]: el código fabricado por LectorProyectosFalso llega
+    # intacto, como str (`.valor`), no como CodigoIndicadorProducto.
+    assert cuerpo["codigos"] == ["459903100"]
 
 
 def test_post_archivos_tipo_fuera_del_enum_devuelve_422(cliente):
