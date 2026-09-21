@@ -54,14 +54,19 @@ respuesta exitosa de GET/POST /cortes.
 from __future__ import annotations
 
 from datetime import date
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, UploadFile, status
+from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel
+from starlette.datastructures import UploadFile
+from starlette.formparsers import MultiPartException
 
+from app.core.config import Settings, get_settings
 from app.core.dependencias import ServicioCortesDep
 from app.modules.cortes.domain.entidades import Corte, TipoArchivoFuente
 from app.shared.codigos import CategoriaDescarte
+from app.shared.errors import ArchivoInvalido
 
 router = APIRouter(prefix="/cortes", tags=["Cortes de seguimiento"])
 
@@ -204,8 +209,9 @@ def obtener_corte(corte_id: UUID, servicio: ServicioCortesDep) -> CorteRespuesta
 async def cargar_archivo(
     corte_id: UUID,
     tipo: TipoArchivoFuente,
+    request: Request,
     servicio: ServicioCortesDep,
-    archivo: UploadFile,
+    configuracion: Annotated[Settings, Depends(get_settings)],
 ) -> ArchivoFuenteRespuestaParcial:
     """HU-02/CA-1, HU-03/CA-1, HU-04/CA-1: los 3 tipos cierran de punta a punta.
 
@@ -217,7 +223,76 @@ async def cargar_archivo(
     reemplazar_presupuesto` (`[HU-03][BE-06]`) y `LectorProyectos.leer`
     (`[HU-04][BE-01]`) ya no lanzan `NotImplementedError` en `develop`.
     Ver docs/TRAZABILIDAD.md (HU-03/CA-1, HU-04/CA-1) para la evidencia.
+
+    Hallazgo transversal a HU-02/03/04, 2026-09-20 (corregido aquí y en
+    `main.py`): antes se leía `archivo: UploadFile` completo a memoria
+    (`await archivo.read()`) antes de que
+    `validacion_archivos.py::_verificar_tamano` revisara el tamaño -- y
+    además, sin overridear `max_part_size`, FastAPI llama `request.form()`
+    con el límite de 1 MB por defecto de Starlette
+    (`starlette/formparsers.py`), muy por debajo de `max_upload_bytes`
+    (25 MB, `core/config.py`), y ese rechazo salía como un 400 genérico de
+    Starlette en vez del 422/`ArchivoInvalido` de SEC-03.
+
+    El corte real es de dos capas, no una sola (ver docs/SEGURIDAD.md,
+    sección SEC-03):
+
+    1. AQUÍ (esta función): filtro por `Content-Length` -- si el cliente
+       declara el tamaño y ya excede el límite, se rechaza sin leer nada,
+       con el 422/`ArchivoInvalido` estructurado de siempre (mismo
+       `detalles` que produce `_verificar_tamano`, el frontend no ve
+       ningún cambio de forma). Cubre el caso común y honesto.
+    2. `main.py::crear_app` (`RequestBodyLimitMiddleware`, de
+       `starlette.middleware.body_limit`): respaldo autoritativo a nivel
+       ASGI, envuelve el `receive()` mismo y corta apenas se exceden los
+       bytes reales, sin importar si `Content-Length` falta o miente
+       (`chunked transfer-encoding` incluido) -- streaming real, nunca
+       bufferea el body completo. Ese caso SÍ cambia de forma: responde
+       413 con texto plano, no pasa por `ArchivoInvalido` (ver el
+       comentario junto a `app.add_middleware(RequestBodyLimitMiddleware,
+       ...)` en `main.py::crear_app` para el porqué). Es deliberado, no un
+       descuido: es el único caso (cliente adversarial o con encoding sin
+       `Content-Length`) donde no se pudo preservar el contrato 422 sin
+       reimplementar el parseo multipart a mano.
+
+    NOTA: `max_part_size` de `request.form()` NO protege archivos en la
+    versión de Starlette instalada (`formparsers.py::on_part_data` solo
+    aplica ese límite a campos de formulario sin `filename`, nunca a la
+    parte que tiene un archivo -- verificado leyendo el código, no
+    asumido) -- por eso el respaldo autoritativo vive en el middleware de
+    `main.py`, no aquí. `request.form()` se llama sin ese parámetro,
+    reemplazando el `archivo: UploadFile` inyectado automáticamente por
+    FastAPI (que ya había disparado el límite roto de 1 MB antes de que
+    este código pudiera ejecutarse).
     """
+    limite = configuracion.max_upload_bytes
+
+    content_length = request.headers.get("content-length")
+    if content_length is not None and int(content_length) > limite:
+        raise ArchivoInvalido(
+            f"El archivo pesa {content_length} bytes; el máximo es {limite}.",
+            detalles={
+                "motivo": "tamano_excedido",
+                "tamano": int(content_length),
+                "tamano_max": limite,
+            },
+        )
+
+    try:
+        formulario = await request.form(max_files=1)
+    except MultiPartException as exc:
+        raise ArchivoInvalido(
+            f"No se pudo interpretar la petición como un archivo válido: {exc}.",
+            detalles={"motivo": "peticion_multipart_invalida"},
+        ) from exc
+
+    archivo = formulario.get("archivo")
+    if not isinstance(archivo, UploadFile):
+        raise ArchivoInvalido(
+            "No se recibió un archivo en el campo 'archivo'.",
+            detalles={"motivo": "archivo_vacio"},
+        )
+
     contenido = await archivo.read()
     resultado = servicio.cargar_archivo(corte_id, tipo, contenido, archivo.filename)
     return ArchivoFuenteRespuestaParcial(
