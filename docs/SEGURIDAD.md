@@ -25,8 +25,35 @@ todavía) sino la carga de archivos Excel. Checklist de `[SEC-03]`:
       extensión del nombre de archivo) — `validacion_archivos.py::_verificar_extension` + `_verificar_estructura_y_macros` valida la firma real de ZIP (`PK\x03\x04`),
       no solo el sufijo del nombre
 - [x] Tamaño máximo verificado **antes** de leer el archivo completo en
-      memoria — `_verificar_tamano`, revalidado como defensa en profundidad
-      (el corte por streaming vive en el router)
+      memoria (corregido 2026-09-20 — la nota anterior de esta fila decía
+      que "el corte por streaming vive en el router" pero eso nunca se
+      había implementado: `cargar_archivo` hacía
+      `contenido = await archivo.read()` completo antes de que
+      `_verificar_tamano` revisara nada). Ahora es de dos capas: 1. `cortes/api/router.py::cargar_archivo` — filtro por
+      `Content-Length`, rechaza sin leer nada si el cliente declara el
+      tamaño y ya excede `max_upload_bytes`. Cubre el caso común
+      (cliente honesto); responde 422 estructurado
+      (`ArchivoInvalido`, `detalles.motivo == "tamano_excedido"`). 2. `main.py::crear_app` (`RequestBodyLimitMiddleware`, de
+      `starlette.middleware.body_limit`) — respaldo autoritativo a
+      nivel ASGI: envuelve `receive()` y corta apenas se exceden los
+      bytes reales, sin importar si `Content-Length` falta (`chunked
+       transfer-encoding`) o miente. **No** pasa por `ArchivoInvalido`:
+      responde `413 Content Too Large` en texto plano — excepción
+      deliberada al contrato 422 de SEC-03, documentada aquí y en el
+      docstring de `cargar_archivo`, porque reimplementar el parseo
+      multipart a mano para preservar el 422 en ese único caso
+      adversarial no se justificó frente al costo.
+      `_verificar_tamano` (`validacion_archivos.py`) sigue como defensa
+      en profundidad real (esta vez sí, ambas capas anteriores usan el
+      mismo `max_upload_bytes`, `core/config.py`) para cualquier archivo
+      que sí llegue completo a la capa de aplicación.
+      NOTA: se probó primero pasar `max_part_size` a `request.form()`
+      esperando que cortara archivos grandes durante el parseo — no
+      funciona: en la versión instalada de Starlette (1.6.0),
+      `MultiPartParser.on_part_data` solo aplica ese límite a campos de
+      formulario sin `filename`, nunca a la parte que es un archivo
+      (verificado leyendo `formparsers.py`, no asumido). Por eso el
+      respaldo real es el middleware, no una opción del parser
 - [x] Sanitización del nombre de archivo (rechazar path traversal, ej.
       `../../etc/passwd`) — `validacion_archivos.py::sanitizar_nombre`
 - [x] Rechazo explícito de libros con macros (`.xlsm`) — `_verificar_estructura_y_macros`

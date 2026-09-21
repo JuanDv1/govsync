@@ -3,9 +3,14 @@
 CAPA: API
 TARJETA: [HU-07][FE-01] Endpoint de la matriz con paginación
 
-Sugerencia de diseño: enviar las COLUMNAS junto con los datos, para que el
-contrato de las seis columnas confirmadas viva en un solo lugar y el frontend
-no pueda desalinearse de él en silencio.
+Se intentó enviar las columnas junto con los datos (constante `COLUMNAS`,
+para que el contrato de las seis columnas confirmadas viviera en un solo
+lugar) pero `MatrizRespuesta` nunca llegó a usarla — quedó como código
+muerto y se borró el 2026-09-21 (ver docs/TRAZABILIDAD.md, nota
+2026-09-19, y la fila HU-07 en la tabla de infraestructura). Confirmado
+con Cristhian y Karold: el frontend no depende de recibirlas desde la
+API (`MatrizRelacion.jsx` ya las fija localmente). No reintroducir sin
+resolver primero cómo se consumiría realmente.
 
 ALCANCE: GET /matriz-relacion/{corte_id} y GET /matriz-relacion/actual
 (este último, 2026-09-21, cierra el TODO que dependía de
@@ -32,20 +37,6 @@ from app.modules.trazabilidad.persistence.consultas import construir_matriz
 from app.shared.errors import OperacionNoPermitida
 
 router = APIRouter(prefix="/matriz-relacion", tags=["Trazabilidad"])
-
-#: Las seis columnas confirmadas (HU-07 / CA-3 a CA-6).
-COLUMNAS: list[dict[str, str]] = [
-    {"clave": "cod_bpin", "titulo": "Cód. BPIN", "fuente": "Proyectos"},
-    {"clave": "cod_indicador_producto", "titulo": "Cód. indicador (SisPT)", "fuente": "PDT"},
-    {"clave": "nombre_producto", "titulo": "Nombre del producto", "fuente": "PDT"},
-    {
-        "clave": "cod_indicador_ejecucion",
-        "titulo": "Cód. indicador (ejecución)",
-        "fuente": "Ejecución",
-    },
-    {"clave": "numero_contrato", "titulo": "Núm. contrato", "fuente": "Contratación"},
-    {"clave": "descripcion_contrato", "titulo": "Descripción", "fuente": "Contratación"},
-]
 
 
 # --- DTOs (Pydantic, nunca la entidad de dominio/ORM) -----------------------

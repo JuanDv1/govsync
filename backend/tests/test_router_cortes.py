@@ -25,6 +25,7 @@ import pytest
 from fastapi.testclient import TestClient
 from openpyxl import Workbook
 
+from app.core.config import Settings, get_settings
 from app.core.dependencias import obtener_servicio_cortes
 from app.main import crear_app
 from app.modules.cortes.application.casos_uso import ServicioCortes
@@ -465,6 +466,119 @@ def test_post_archivos_proyectos_devuelve_201(cliente_con_lectores):
     # D16/[HU-04][FE-03]: el código fabricado por LectorProyectosFalso llega
     # intacto, como str (`.valor`), no como CodigoIndicadorProducto.
     assert cuerpo["codigos"] == ["459903100"]
+
+
+def test_post_archivos_tamano_excedido_por_content_length_devuelve_422(
+    cliente_con_lectores,
+):
+    """Hallazgo transversal a HU-02/03/04, 2026-09-20: `cargar_archivo`
+    rechaza por `Content-Length` ANTES de leer el archivo (antes se leía
+    completo a memoria primero, sin ningún chequeo previo). `get_settings`
+    se sobreescribe con un límite minúsculo para no tener que generar un
+    archivo grande de verdad -- `_xlsx_minimo()` (unos KB) ya lo excede de
+    sobra. Cubre el caso común (cliente declara `Content-Length` de forma
+    honesta): sigue dando el 422 estructurado de siempre, mismo `detalles`
+    que ya producía `_verificar_tamano`."""
+    corte_id = _crear_corte_borrador(cliente_con_lectores)
+    cliente_con_lectores.app.dependency_overrides[get_settings] = lambda: Settings(
+        max_upload_bytes=32
+    )
+
+    respuesta = cliente_con_lectores.post(
+        f"/api/v1/cortes/{corte_id}/archivos/PDT",
+        files={
+            "archivo": (
+                "plan.xlsx",
+                _xlsx_minimo(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+
+    assert respuesta.status_code == 422
+    cuerpo = respuesta.json()
+    assert cuerpo["codigo"] == "archivo_invalido"
+    assert cuerpo["detalles"]["motivo"] == "tamano_excedido"
+    assert cuerpo["detalles"]["tamano_max"] == 32
+
+
+def test_post_archivos_tamano_excedido_sin_content_length_devuelve_413(monkeypatch):
+    """Hallazgo transversal a HU-02/03/04, 2026-09-20: respaldo
+    autoritativo (`RequestBodyLimitMiddleware`, `main.py::crear_app`) para
+    el caso que el chequeo de `Content-Length` del router NO cubre -- un
+    cliente que no lo declara (`chunked transfer-encoding`, simulado aquí
+    con un generador) o miente. Es la única forma de ejercitar esta rama:
+    `max_body_size` se hornea en el middleware al construir la app (no es
+    un `Depends`), así que no se puede sobreescribir con
+    `app.dependency_overrides` como el resto de las pruebas de este
+    archivo -- se usa `MAX_UPLOAD_BYTES` por variable de entorno antes de
+    `crear_app()`, con `get_settings.cache_clear()` porque está decorado
+    con `@lru_cache`.
+
+    A diferencia de la prueba anterior, responde 413 con texto plano, NO
+    el 422 estructurado de `ArchivoInvalido` -- documentado como
+    excepción deliberada en el docstring de `cargar_archivo` y en
+    docs/SEGURIDAD.md (sección SEC-03): es el único caso (cliente
+    adversarial o con un encoding que no declara `Content-Length`) donde
+    no se preservó el contrato 422 sin reimplementar el parseo multipart
+    a mano.
+    """
+    repo_cortes = RepositorioCortesEnMemoria()
+    servicio = ServicioCortes(
+        repo_cortes=repo_cortes,
+        repo_datos=RepositorioDatosCorteEnMemoria(),
+        confirmar_transaccion=lambda: None,
+        revertir_transaccion=lambda: None,
+        lectores={
+            TipoArchivoFuente.PDT: LectorPDTFalso(),
+            TipoArchivoFuente.EJECUCION: LectorEjecucionFalso(),
+            TipoArchivoFuente.PROYECTOS: LectorProyectosFalso(),
+        },
+        hoy=HOY,
+    )
+    # El corte se crea con el límite POR DEFECTO (una app aparte, antes de
+    # bajar MAX_UPLOAD_BYTES): con el límite minúsculo activo, hasta el
+    # POST /cortes normal (un JSON de unos 40 bytes) ya lo excedería --
+    # RequestBodyLimitMiddleware aplica a TODA la app, no solo a este
+    # endpoint. `servicio`/`repo_cortes` se reutilizan entre las dos apps
+    # porque son objetos Python independientes del `FastAPI` que los envuelve.
+    app_normal = crear_app()
+    app_normal.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+    corte_id = _crear_corte_borrador(TestClient(app_normal))
+
+    monkeypatch.setenv("MAX_UPLOAD_BYTES", "20")
+    get_settings.cache_clear()
+    try:
+        app = crear_app()
+        app.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+        cliente = TestClient(app)
+
+        boundary = "boundaryDePrueba"
+        cuerpo_multipart = (
+            f"--{boundary}\r\n"
+            'Content-Disposition: form-data; name="archivo"; filename="a.xlsx"\r\n'
+            "Content-Type: application/octet-stream\r\n\r\n"
+            + "A" * 5000
+            + f"\r\n--{boundary}--\r\n"
+        ).encode()
+
+        def cuerpo_en_chunks():
+            # Un generador (tamaño desconocido) hace que httpx envíe
+            # `Transfer-Encoding: chunked` en vez de `Content-Length` --
+            # es la única forma de forzar esta rama; el Content-Length
+            # honesto ya lo cubre la prueba anterior.
+            for inicio in range(0, len(cuerpo_multipart), 100):
+                yield cuerpo_multipart[inicio : inicio + 100]
+
+        respuesta = cliente.post(
+            f"/api/v1/cortes/{corte_id}/archivos/PDT",
+            content=cuerpo_en_chunks(),
+            headers={"content-type": f"multipart/form-data; boundary={boundary}"},
+        )
+
+        assert respuesta.status_code == 413
+    finally:
+        get_settings.cache_clear()
 
 
 def test_post_archivos_tipo_fuera_del_enum_devuelve_422(cliente):

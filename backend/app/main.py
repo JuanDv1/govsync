@@ -13,6 +13,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.body_limit import RequestBodyLimitMiddleware
 
 from app.core.config import get_settings
 from app.core.errores import registrar_manejadores
@@ -38,6 +39,22 @@ def crear_app() -> FastAPI:
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type"],
     )
+
+    # [SEC-03] Respaldo autoritativo del tamaño máximo de subida (docs/
+    # SEGURIDAD.md, sección SEC-03; hallazgo transversal a HU-02/03/04,
+    # 2026-09-20): `max_upload_bytes` (25 MB por defecto) también se revisa
+    # en `cortes/api/router.py::cargar_archivo` vía Content-Length, pero ese
+    # header lo declara el cliente y puede faltar (`chunked
+    # transfer-encoding`) o mentir. Este middleware envuelve el `receive()`
+    # de ASGI mismo: cuenta los bytes reales que van llegando y corta la
+    # conexión apenas se excede el límite, sin importar el encoding ni si
+    # el header es honesto -- streaming real, nunca bufferea el body
+    # completo antes de rechazar. Responde 413 con texto plano (no pasa por
+    # `core/errores.py`/`ArchivoInvalido`), a diferencia del 422 estructurado
+    # que sí da el router para el caso común (Content-Length correcto). Ver
+    # también `app/modules/cortes/api/router.py::cargar_archivo` para la
+    # otra mitad del diseño.
+    app.add_middleware(RequestBodyLimitMiddleware, max_body_size=settings.max_upload_bytes)
 
     registrar_manejadores(app)
 
