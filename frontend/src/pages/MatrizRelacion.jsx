@@ -8,12 +8,14 @@
  * ALCANCE DE FE-02 (CA-3 a CA-6): tabla con las seis columnas confirmadas
  * (código BPIN, indicador y/o producto, ejecución, contrato).
  *
- * CORRECCIÓN DE CONTRATO (2026-09-19): esta nota decía que el backend envía
- * las columnas junto con los datos. No es así: `GET /matriz-relacion/{id}`
- * (`trazabilidad/api/router.py::MatrizRespuesta`) solo devuelve `filas`; la
- * lista `COLUMNAS` del router es hoy una constante interna que no viaja en
- * el JSON. Los encabezados de abajo están fijos en este archivo, en el
- * mismo orden y claves que esa constante. Si el backend llega a exponer
+ * CORRECCIÓN DE CONTRATO (2026-09-19, actualizada 2026-09-21): esta nota
+ * decía que el backend envía las columnas junto con los datos. No es así:
+ * `GET /matriz-relacion/{id}` (`trazabilidad/api/router.py::MatrizRespuesta`)
+ * solo devuelve `filas`. El router llegó a tener una constante `COLUMNAS`
+ * pensada para centralizar este contrato, pero nunca se usó (código muerto)
+ * y se borró el 2026-09-21 (ver docs/TRAZABILIDAD.md). Los encabezados de
+ * abajo quedan fijos en este archivo, en el mismo orden y claves que el
+ * contrato confirmado en HU-07/CA-3..CA-6. Si el backend llega a exponer
  * `columnas` en la respuesta, este archivo debe pasar a consumirla en vez
  * de mantener su propia copia.
  *
@@ -48,8 +50,9 @@ import {
   Vacio,
 } from "../components/Estados.jsx";
 
-//: Mismo orden y claves que `trazabilidad/api/router.py::COLUMNAS` — ver
-//: la nota de corrección de contrato arriba.
+//: Mismo orden y claves que el contrato confirmado en HU-07/CA-3..CA-6 — ver
+//: la nota de corrección de contrato arriba (la constante `COLUMNAS` del
+//: router era código muerto y se borró el 2026-09-21).
 const COLUMNAS = [
   { clave: "cod_bpin", titulo: "Cód. BPIN" },
   { clave: "cod_indicador_producto", titulo: "Cód. indicador (SisPT)" },
