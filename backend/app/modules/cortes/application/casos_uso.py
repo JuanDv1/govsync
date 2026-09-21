@@ -316,3 +316,16 @@ class ServicioCortes:
         if corte is None:
             raise RecursoNoEncontrado(f"No existe un corte con id {corte_id}.")
         return corte
+
+    def obtener_corte_actual(self) -> Corte:
+        """[HU-07][FE-01] GET /matriz-relacion/actual: corte REGISTRADO más
+        reciente, global (sin filtro de vigencia) -- mismo criterio que D11
+        usa para existe_borrador_activo(). Wrapper de una línea sobre
+        RepositorioCortes.ultimo_registrado() (puertos.py), ya implementado
+        en SQL y ya usado en producción por _reutilizar_fuentes() (con
+        filtro de vigencia; aquí se llama sin argumento, a propósito).
+        """
+        corte = self._cortes.ultimo_registrado()
+        if corte is None:
+            raise RecursoNoEncontrado("No hay ningún corte registrado todavía.")
+        return corte

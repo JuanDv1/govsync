@@ -21,11 +21,15 @@ from app.modules.cortes.domain.entidades import EstadoCorte, TipoArchivoFuente
 from app.modules.cortes.persistence.models import ArchivoFuenteORM, CorteORM, MetaORM
 
 
-def _crear_corte(sesion, *, vigencia: int = 2026, fecha: date = date(2026, 1, 1)) -> uuid.UUID:
+def _crear_corte(
+    sesion,
+    *,
+    vigencia: int = 2026,
+    fecha: date = date(2026, 1, 1),
+    estado: EstadoCorte = EstadoCorte.BORRADOR,
+) -> uuid.UUID:
     corte_id = uuid.uuid4()
-    sesion.add(
-        CorteORM(id=corte_id, vigencia=vigencia, fecha_corte=fecha, estado=EstadoCorte.BORRADOR)
-    )
+    sesion.add(CorteORM(id=corte_id, vigencia=vigencia, fecha_corte=fecha, estado=estado))
     sesion.flush()
     return corte_id
 
@@ -122,3 +126,71 @@ def test_matriz_pagina_vacia_devuelve_200_con_filas_vacias(cliente, sesion):
     cuerpo = respuesta.json()
     assert cuerpo["total_filas"] == 0
     assert cuerpo["filas"] == []
+
+
+# --- GET /matriz-relacion/actual --------------------------------------------
+
+
+def test_matriz_actual_devuelve_404_si_no_hay_ningun_corte_registrado(cliente, sesion):
+    """Sin ningún corte REGISTRADO (aunque existan BORRADOR): 404, mismo
+    codigo que /{corte_id} con un id inexistente."""
+    _crear_corte(sesion)  # BORRADOR por defecto -- no cuenta como "actual".
+    sesion.commit()
+
+    respuesta = cliente.get("/api/v1/matriz-relacion/actual")
+
+    assert respuesta.status_code == 404
+    assert respuesta.json()["codigo"] == "recurso_no_encontrado"
+
+
+def test_matriz_actual_devuelve_409_si_al_mas_reciente_le_falta_una_fuente(cliente, sesion):
+    corte_id = _crear_corte(sesion, estado=EstadoCorte.REGISTRADO)
+    _marcar_archivo_cargado(sesion, corte_id, TipoArchivoFuente.PDT)
+    _marcar_archivo_cargado(sesion, corte_id, TipoArchivoFuente.EJECUCION)
+    # PROYECTOS falta a propósito.
+    sesion.commit()
+
+    respuesta = cliente.get("/api/v1/matriz-relacion/actual")
+
+    assert respuesta.status_code == 409
+    cuerpo = respuesta.json()
+    assert cuerpo["codigo"] == "operacion_no_permitida"
+    assert cuerpo["detalles"]["archivos_faltantes"] == ["PROYECTOS"]
+
+
+def test_matriz_actual_devuelve_200_con_el_corte_registrado_mas_reciente(cliente, sesion):
+    """Dos cortes REGISTRADO de vigencias distintas: trae el de
+    fecha_corte más reciente, GLOBAL -- ignora vigencia, mismo criterio
+    que D11 usa para existe_borrador_activo(). El más reciente es el de
+    2025 (fecha posterior), aunque su vigencia (2025) sea "menor" que la
+    del otro corte (2026) -- confirma que el corte devuelto no es
+    simplemente "el de mayor vigencia".
+    """
+    corte_viejo_id = _crear_corte(
+        sesion, vigencia=2026, fecha=date(2024, 1, 1), estado=EstadoCorte.REGISTRADO
+    )
+    for tipo in TipoArchivoFuente:
+        _marcar_archivo_cargado(sesion, corte_viejo_id, tipo)
+
+    corte_reciente_id = _crear_corte(
+        sesion, vigencia=2025, fecha=date(2025, 6, 1), estado=EstadoCorte.REGISTRADO
+    )
+    for tipo in TipoArchivoFuente:
+        _marcar_archivo_cargado(sesion, corte_reciente_id, tipo)
+    sesion.add(
+        MetaORM(
+            id=uuid.uuid4(),
+            corte_id=corte_reciente_id,
+            cod_indicador_producto="040110500",
+            nombre_producto="Vías pavimentadas",
+            es_principal=True,
+        )
+    )
+    sesion.commit()
+
+    respuesta = cliente.get("/api/v1/matriz-relacion/actual")
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["corte_id"] == str(corte_reciente_id)
+    assert cuerpo["total_filas"] == 1
