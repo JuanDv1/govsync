@@ -562,3 +562,45 @@ deduplicación y orden acordado explícitamente antes de escribir código.
 
 **Quién y cuándo:** Juan David (propuesta), Juan Esteban (deduplicación
 por orden de aparición), 2026-09-20.
+
+---
+
+## D17 · Se adopta Tailwind CSS para las pantallas nuevas del frontend
+
+**Decisión:** a partir de esta tarjeta (estilo visual de Login y Nuevo
+corte), el frontend usa Tailwind CSS para las pantallas y componentes que
+se construyan o restilicen de aquí en adelante. Las pantallas y
+componentes ya existentes antes de esta fecha (`Estados.jsx`,
+`VistaPreviaDescartes.jsx`, la tabla de `MatrizRelacion.jsx`) **no se
+migran** solo por consistencia cosmética — siguen con las clases BEM de
+`estilos.css`. Los tokens de color/radio/tipografía que ya vivían como
+variables CSS en `:root` se actualizaron a la paleta de la guía de estilo
+recibida, así esos componentes heredan los mismos colores sin tocar su
+JSX (ver comentario al inicio de `estilos.css`).
+
+**Motivo:** `estilos.css` documentaba explícitamente la decisión contraria
+("agregar Tailwind o MUI sería peso sin beneficio para cuatro pantallas").
+Esa decisión fue razonable cuando el alcance era 4 pantallas sin guía de
+diseño. Cambia el contexto: (1) la guía de estilo que el equipo recibió
+está escrita en su totalidad como clases utilitarias de Tailwind — traducir
+cada valor arbitrario a mano (`text-[#1A3A6B]`, `tracking-[0.12em]`,
+`w-[42%]`) a CSS plano es más lento y con más riesgo de desviarse del
+pixel-spec; (2) hay un dashboard con más pantallas planeado a futuro, y
+adoptar Tailwind ahora (2 pantallas) es más barato que migrar después con
+10+ pantallas ya escritas en CSS plano.
+
+**Alternativas consideradas:** traducir la guía a CSS plano extendiendo
+`estilos.css` con el mismo patrón BEM — descartada por el punto (2)
+anterior; se prefirió no posponer la migración a un momento con más
+superficie de código que reescribir.
+
+**Costo aceptado:** el frontend queda con dos sistemas de estilos
+coexistiendo (Tailwind en pantallas nuevas, CSS plano en las anteriores)
+hasta que alguien decida migrar el resto — no forma parte de esta
+tarjeta.
+
+**Estado:** PROPUESTA — implementada directamente por no bloquear la
+tarjeta de estilo visual, pendiente de que el equipo la ratifique como las
+demás decisiones de arquitectura de este documento.
+
+**Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).

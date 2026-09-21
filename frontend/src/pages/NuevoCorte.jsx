@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Check } from "lucide-react";
 import { api } from "../api/cliente.js";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
 import { Cargando, Error as EstadoError } from "../components/Estados.jsx";
@@ -177,180 +178,257 @@ export default function NuevoCorte() {
     }
 
     return (
-      <section>
-        <h1>Cargar archivos del corte</h1>
-        <p>
-          Corte de vigencia {corte.vigencia}, fecha {corte.fecha_corte} — estado{" "}
-          {corte.estado}.
-        </p>
+      <section className="mx-auto max-w-4xl px-6 py-8">
+        <header className="mb-5">
+          <h1 className="text-base font-semibold text-gray-800">
+            Cargar archivos del corte
+          </h1>
+          <p className="mt-0.5 text-[11px] text-gray-500">
+            Corte de vigencia {corte.vigencia}, fecha{" "}
+            <span className="font-mono">{corte.fecha_corte}</span> — estado{" "}
+            <span className="font-semibold">{corte.estado}</span>.
+          </p>
+        </header>
 
-        <div
-          className="nuevo-corte-fuentes"
-          aria-label="Estado de fuentes obligatorias"
-        >
-          <h2>Fuentes obligatorias</h2>
-          <ul>
-            <li>
-              <strong>Plan Indicativo:</strong>{" "}
-              {estadoFuente(archivoPdt, resultadoPdt)}
-            </li>
-            <li>
-              <strong>Plantilla de proyectos BPIN:</strong>{" "}
-              {estadoFuente(archivoProyectos, resultadoProyectos)}
-            </li>
-            <li>
-              <strong>Ejecución presupuestal:</strong>{" "}
-              {estadoFuente(archivoEjecucion, resultadoEjecucion)}
-            </li>
+        <div className="mb-5 rounded-sm border border-gray-200 bg-white p-5">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+            Fuentes obligatorias
+          </p>
+          <ul
+            className="flex flex-col gap-2"
+            aria-label="Estado de fuentes obligatorias"
+          >
+            {[
+              ["Plan Indicativo", estadoFuente(archivoPdt, resultadoPdt)],
+              [
+                "Plantilla de proyectos BPIN",
+                estadoFuente(archivoProyectos, resultadoProyectos),
+              ],
+              [
+                "Ejecución presupuestal",
+                estadoFuente(archivoEjecucion, resultadoEjecucion),
+              ],
+            ].map(([etiquetaFuente, estado]) => (
+              <li
+                key={etiquetaFuente}
+                className="flex items-center justify-between text-xs"
+              >
+                <span className="font-medium text-gray-700">
+                  {etiquetaFuente}
+                </span>
+                <span
+                  className={`rounded-sm border px-2 py-0.5 text-[11px] font-medium ${
+                    estado === "Cargada en este corte"
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : estado === "Reutilizada del corte anterior"
+                        ? "border-blue-200 bg-blue-50 text-azul"
+                        : "border-gray-200 bg-gray-50 text-gray-500"
+                  }`}
+                >
+                  {estado}
+                </span>
+              </li>
+            ))}
           </ul>
         </div>
 
-        <CargaDeArchivo
-          tipo="PDT"
-          etiqueta="Plan Indicativo"
-          cargado={pdtDisponible}
-          resultado={
-            resultadoPdt &&
-            // HU-02/CA-5: "confirma visualmente cuántas metas fueron
-            // reconocidas" — `filas_reconocidas` es el conteo genérico que
-            // expone `ArchivoFuenteRespuestaParcial`; esta pantalla es la
-            // que sabe que para PDT esas filas son "metas" (el componente
-            // compartido no lo interpreta, ver su docstring).
-            `${resultadoPdt.filas_reconocidas} metas reconocidas.`
-          }
-          error={errorPdt}
-          onCargar={subirPdt}
-        />
+        <div className="flex flex-col gap-5">
+          <CargaDeArchivo
+            tipo="PDT"
+            etiqueta="Plan Indicativo"
+            cargado={pdtDisponible}
+            resultado={
+              resultadoPdt &&
+              // HU-02/CA-5: "confirma visualmente cuántas metas fueron
+              // reconocidas" — `filas_reconocidas` es el conteo genérico que
+              // expone `ArchivoFuenteRespuestaParcial`; esta pantalla es la
+              // que sabe que para PDT esas filas son "metas" (el componente
+              // compartido no lo interpreta, ver su docstring).
+              `${resultadoPdt.filas_reconocidas} metas reconocidas.`
+            }
+            error={errorPdt}
+            onCargar={subirPdt}
+          />
 
-        <CargaDeArchivo
-          tipo="EJECUCION"
-          etiqueta="Ejecución presupuestal"
-          cargado={ejecucionDisponible}
-          resultado={
-            resultadoEjecucion &&
-            // [HU-03][FE-02]: el backend ya distingue ejecución de
-            // contratación (`filas_ejecucion_reconocidas`/
-            // `filas_contratacion_reconocidas`, ver cortes/api/router.py) —
-            // se muestran por separado en vez del total genérico, que
-            // mezclaría dos fuentes distintas en un solo número.
-            `${resultadoEjecucion.filas_ejecucion_reconocidas ?? 0} filas de ejecución y ` +
-              `${resultadoEjecucion.filas_contratacion_reconocidas ?? 0} de contratación reconocidas.`
-          }
-          error={errorEjecucion}
-          onCargar={subirEjecucion}
-        />
+          <CargaDeArchivo
+            tipo="EJECUCION"
+            etiqueta="Ejecución presupuestal"
+            cargado={ejecucionDisponible}
+            resultado={
+              resultadoEjecucion &&
+              // [HU-03][FE-02]: el backend ya distingue ejecución de
+              // contratación (`filas_ejecucion_reconocidas`/
+              // `filas_contratacion_reconocidas`, ver cortes/api/router.py) —
+              // se muestran por separado en vez del total genérico, que
+              // mezclaría dos fuentes distintas en un solo número.
+              `${resultadoEjecucion.filas_ejecucion_reconocidas ?? 0} filas de ejecución y ` +
+                `${resultadoEjecucion.filas_contratacion_reconocidas ?? 0} de contratación reconocidas.`
+            }
+            error={errorEjecucion}
+            onCargar={subirEjecucion}
+          />
 
-        <CargaDeArchivo
-          tipo="PROYECTOS"
-          etiqueta="Plantilla de proyectos BPIN"
-          cargado={proyectosDisponibles}
-          resultado={
-            resultadoProyectos && (
-              <>
-                {/* [HU-04][FE-02]: confirmación del conteo genérico, mismo
+          <CargaDeArchivo
+            tipo="PROYECTOS"
+            etiqueta="Plantilla de proyectos BPIN"
+            cargado={proyectosDisponibles}
+            resultado={
+              resultadoProyectos && (
+                <>
+                  {/* [HU-04][FE-02]: confirmación del conteo genérico, mismo
                     criterio que ya usa PDT — esta pantalla es la que sabe
                     que para PROYECTOS esas filas son "proyectos". */}
-                <p>
-                  {resultadoProyectos.filas_reconocidas} proyectos reconocidos.
-                </p>
+                  <p className="text-xs text-gray-600">
+                    {resultadoProyectos.filas_reconocidas} proyectos
+                    reconocidos.
+                  </p>
 
-                {/* [HU-04][FE-02]/CA-2: mensaje explícito exigido por la
+                  {/* [HU-04][FE-02]/CA-2: mensaje explícito exigido por la
                     tarjeta — evita que la administradora crea que el
                     sistema rechazó el archivo por no tener estructura
                     estándar. El backend ya lo conserva tal cual
                     (HU-04/CA-2, lectores/proyectos.py), esto solo lo
                     comunica. */}
-                <p className="carga-de-archivo-nota">
-                  El archivo se conservó tal cual fue cargado, aunque su
-                  estructura no sea estándar.
-                </p>
+                  <p className="carga-de-archivo-nota mt-1 text-xs">
+                    El archivo se conservó tal cual fue cargado, aunque su
+                    estructura no sea estándar.
+                  </p>
 
-                {/* [HU-04][FE-03], Opción B: lista simple, sin componente
+                  {/* [HU-04][FE-03], Opción B: lista simple, sin componente
                     nuevo ni agrupación -- los códigos descartados sí la
                     necesitan (categoria), los válidos no aportan nada
                     agrupándolos. */}
-                {resultadoProyectos.codigos.length > 0 && (
-                  <ul>
-                    {resultadoProyectos.codigos.map((codigo) => (
-                      <li key={codigo} className="codigo">
-                        {codigo}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                  {resultadoProyectos.codigos.length > 0 && (
+                    <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                      {resultadoProyectos.codigos.map((codigo) => (
+                        <li key={codigo} className="codigo text-xs">
+                          {codigo}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
-                {/* [HU-04][FE-03]: ya construido en PR #79, solo se integra. */}
-                <VistaPreviaDescartes
-                  descartes={resultadoProyectos.descartes}
-                />
+                  {/* [HU-04][FE-03]: ya construido en PR #79, solo se integra. */}
+                  <VistaPreviaDescartes
+                    descartes={resultadoProyectos.descartes}
+                  />
+                </>
+              )
+            }
+            error={errorProyectos}
+            onCargar={subirProyectos}
+          />
+
+          <div className="flex items-center justify-between border-t border-gray-100 pt-5">
+            {yaRegistrado ? (
+              <>
+                <div className="flex items-center gap-2 rounded-sm border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
+                  <Check size={13} />
+                  Corte registrado
+                </div>
+                <Link
+                  to={`/matriz/${corte.id}`}
+                  className="rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover"
+                >
+                  Ver matriz de relación
+                </Link>
               </>
-            )
-          }
-          error={errorProyectos}
-          onCargar={subirProyectos}
-        />
-
-        <div className="nuevo-corte-registro">
-          {yaRegistrado ? (
-            <p>
-              Corte registrado.{" "}
-              <Link to={`/matriz/${corte.id}`}>Ver matriz de relación</Link>
-            </p>
-          ) : (
-            <>
-              <button
-                type="button"
-                disabled={!todosCargados || registrando}
-                onClick={manejarRegistro}
-              >
-                Registrar corte
-              </button>
-              {registrando && <Cargando mensaje="Registrando corte…" />}
-              <EstadoError error={errorRegistro} />
-            </>
-          )}
+            ) : (
+              <div className="flex flex-1 flex-col gap-2">
+                <button
+                  type="button"
+                  disabled={!todosCargados || registrando}
+                  onClick={manejarRegistro}
+                  className="self-start rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Registrar corte
+                </button>
+                {!todosCargados && (
+                  <p className="text-[11px] italic text-gray-400">
+                    Cargue los tres archivos para registrar el corte.
+                  </p>
+                )}
+                {registrando && <Cargando mensaje="Registrando corte…" />}
+                <EstadoError error={errorRegistro} />
+              </div>
+            )}
+          </div>
         </div>
       </section>
     );
   }
 
   return (
-    <section>
-      <form onSubmit={manejarEnvio}>
-        <h1>Crear corte de seguimiento</h1>
+    <section className="mx-auto max-w-4xl px-6 py-8">
+      <header className="mb-5">
+        <h1 className="text-base font-semibold text-gray-800">Nuevo corte</h1>
+        <p className="mt-0.5 text-[11px] text-gray-500">
+          Configure los datos del corte para habilitar la carga de archivos.
+        </p>
+      </header>
 
-        <div>
-          <label htmlFor="vigencia">Vigencia</label>
-          <input
-            id="vigencia"
-            name="vigencia"
-            type="number"
-            value={vigencia}
-            onChange={(evento) => setVigencia(evento.target.value)}
-            required
-          />
+      <form
+        onSubmit={manejarEnvio}
+        className="rounded-sm border border-gray-200 bg-white p-5"
+      >
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+          Datos del corte
+        </p>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label
+              htmlFor="vigencia"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
+            >
+              Vigencia
+            </label>
+            <input
+              id="vigencia"
+              name="vigencia"
+              type="number"
+              value={vigencia}
+              onChange={(evento) => setVigencia(evento.target.value)}
+              required
+              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="fecha-corte"
+              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
+            >
+              Fecha del corte
+            </label>
+            <input
+              id="fecha-corte"
+              name="fechaCorte"
+              type="date"
+              max={fechaMaxima}
+              value={fechaCorte}
+              onChange={(evento) => {
+                const nuevaFecha = evento.target.value;
+                if (nuevaFecha <= fechaMaxima) {
+                  setFechaCorte(nuevaFecha);
+                }
+              }}
+              required
+              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 font-mono text-sm focus:border-azul focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-end">
+            <button
+              type="submit"
+              disabled={enviando}
+              className="rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Continuar
+            </button>
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="fecha-corte">Fecha del corte</label>
-          <input
-            id="fecha-corte"
-            name="fechaCorte"
-            type="date"
-            max={fechaMaxima}
-            value={fechaCorte}
-            onChange={(evento) => {
-              const nuevaFecha = evento.target.value;
-              if (nuevaFecha <= fechaMaxima) {
-                setFechaCorte(nuevaFecha);
-              }
-            }}
-            required
-          />
-        </div>
-        <button type="submit" disabled={enviando}>
-          Continuar
-        </button>
         {enviando && <Cargando mensaje="Creando corte…" />}
         <EstadoError error={error} />
       </form>

@@ -1,30 +1,40 @@
 /* GovSync — tokens de diseño y reset.
    TARJETA: [UX-01] Layout base
 
-   Sin framework de CSS: la interfaz del Sprint 1 son cuatro pantallas y una
-   tabla; agregar Tailwind o MUI sería peso sin beneficio.
+   Actualizado (docs/DECISIONES.md D17): el equipo adoptó Tailwind para las
+   pantallas nuevas (Login, Nuevo corte y lo que siga) — ver esa entrada para
+   el motivo completo. Las pantallas construidas antes de D17 (Estados.jsx,
+   VistaPreviaDescartes.jsx, la tabla de matriz) siguen usando las clases BEM
+   de este archivo; no se migran solo por consistencia cosmética. Los tokens
+   de :root de abajo sí se actualizaron a la paleta de la guía de estilo, así
+   esas pantallas heredan los mismos colores sin tocar su JSX. */
 
-   Aquí quedan solo los tokens y el reset, para que las cuatro pantallas se
-   vean como un mismo producto. Las clases de cada componente las escribe quien
-   hace la tarjeta correspondiente. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --tinta: #16202c;
   --tinta-suave: #5b6b7c;
-  --borde: #dde3ea;
-  --fondo: #f5f7fa;
+  --borde: #e5e7eb;
+  --fondo: #eef1f5;
   --superficie: #ffffff;
-  --primario: #1f5f8b;
-  --primario-oscuro: #17486a;
-  --exito: #17694a;
-  --exito-fondo: #e6f4ed;
-  --alerta: #8a5a00;
-  --alerta-fondo: #fdf3e0;
-  --error: #a32a29;
+  --primario: #1a3a6b;
+  --primario-oscuro: #2c5282;
+  --interactivo: #2b6cb0;
+  --exito: #15803d;
+  --exito-fondo: #f0fdf4;
+  --alerta: #92400e;
+  --alerta-fondo: #fffbeb;
+  --error: #c53030;
   --error-fondo: #fdeceb;
-  --radio: 8px;
+  --radio: 2px;
   --sombra: 0 1px 3px rgba(22, 32, 44, 0.08);
   color-scheme: light;
+}
+
+html {
+  font-size: 14px;
 }
 
 * {
@@ -34,12 +44,12 @@
 body {
   margin: 0;
   font-family:
+    "Inter",
     system-ui,
     -apple-system,
     "Segoe UI",
     Roboto,
     sans-serif;
-  font-size: 15px;
   line-height: 1.5;
   color: var(--tinta);
   background: var(--fondo);
@@ -63,7 +73,7 @@ body {
 /* Los códigos van en fuente monoespaciada: hace visible el cero a la
    izquierda, que es exactamente el dato que no se puede perder. */
 .codigo {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   white-space: nowrap;
 }
 

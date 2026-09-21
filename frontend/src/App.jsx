@@ -10,6 +10,7 @@
 import { Route, Routes } from "react-router-dom";
 import NuevoCorte from "./pages/NuevoCorte.jsx";
 import Cortes from "./pages/Cortes.jsx";
+import Login from "./pages/Login.jsx";
 
 import Disposicion from "./components/Disposicion.jsx";
 import MatrizRelacion from "./pages/MatrizRelacion.jsx";
@@ -35,6 +36,8 @@ function Pendiente() {
 export default function App() {
   return (
     <Routes>
+      <Route path="/login" element={<Login />} />
+
       <Route element={<Disposicion />}>
         <Route path="/cortes" element={<Cortes />} />
         <Route path="/cortes/nuevo" element={<NuevoCorte />} />
