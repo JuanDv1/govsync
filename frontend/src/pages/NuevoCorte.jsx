@@ -34,11 +34,12 @@ import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
  *   Paso 2  carga de los tres archivos obligatorios: PDT ([HU-02][FE-02]),
  *           PROYECTOS ([HU-04][FE-02]/[FE-03], Karold) y EJECUCION
  *           ([HU-03][FE-02]) contra `POST /cortes/{id}/archivos/{tipo}`, que
- *           ya cierra de punta a punta para los tres tipos. Tampoco se
- *           adelanta la reutilización automática de un corte anterior
- *           (HU-01/CA-5, CA-6): eso es [HU-01][FE-03].
+ *           ya cierra de punta a punta para los tres tipos. [HU-01][FE-03]
+ *           muestra las fuentes reutilizadas automáticamente por el backend y
+ *           permite reemplazar PDT/PROYECTOS desde los mismos controles.
  *   Paso 3  registrar (`POST /cortes/{id}/registrar`, HU-01/CA-3, CA-4):
- *           solo se habilita cuando los tres archivos están cargados. Al
+ *           solo se habilita cuando las tres fuentes están disponibles
+ *           (cargadas o reutilizadas). Al
  *           registrar con éxito se ofrece un enlace directo a la matriz de
  *           relación del corte.
  *
@@ -144,10 +145,36 @@ export default function NuevoCorte() {
   }
 
   if (corte) {
-    const todosCargados = Boolean(
-      resultadoPdt && resultadoProyectos && resultadoEjecucion,
+    const archivos = corte.archivos ?? [];
+    const archivoPdt = archivos.find((archivo) => archivo.tipo === "PDT");
+    const archivoProyectos = archivos.find(
+      (archivo) => archivo.tipo === "PROYECTOS",
     );
+    const archivoEjecucion = archivos.find(
+      (archivo) => archivo.tipo === "EJECUCION",
+    );
+
+    // Si una fuente fue reemplazada durante esta sesión, `resultado*` tiene
+    // prioridad sobre el estado inicial recibido al crear el corte.
+    const pdtDisponible = Boolean(resultadoPdt || archivoPdt);
+    const proyectosDisponibles = Boolean(
+      resultadoProyectos || archivoProyectos,
+    );
+    const ejecucionDisponible = Boolean(resultadoEjecucion || archivoEjecucion);
+
+    const todosCargados =
+      pdtDisponible && proyectosDisponibles && ejecucionDisponible;
     const yaRegistrado = corte.estado === "REGISTRADO";
+
+    function estadoFuente(archivo, resultado) {
+      if (resultado || (archivo && !archivo.reutilizado)) {
+        return "Cargada en este corte";
+      }
+      if (archivo?.reutilizado) {
+        return "Reutilizada del corte anterior";
+      }
+      return "Pendiente";
+    }
 
     return (
       <section>
@@ -157,10 +184,31 @@ export default function NuevoCorte() {
           {corte.estado}.
         </p>
 
+        <div
+          className="nuevo-corte-fuentes"
+          aria-label="Estado de fuentes obligatorias"
+        >
+          <h2>Fuentes obligatorias</h2>
+          <ul>
+            <li>
+              <strong>Plan Indicativo:</strong>{" "}
+              {estadoFuente(archivoPdt, resultadoPdt)}
+            </li>
+            <li>
+              <strong>Plantilla de proyectos BPIN:</strong>{" "}
+              {estadoFuente(archivoProyectos, resultadoProyectos)}
+            </li>
+            <li>
+              <strong>Ejecución presupuestal:</strong>{" "}
+              {estadoFuente(archivoEjecucion, resultadoEjecucion)}
+            </li>
+          </ul>
+        </div>
+
         <CargaDeArchivo
           tipo="PDT"
           etiqueta="Plan Indicativo"
-          cargado={Boolean(resultadoPdt)}
+          cargado={pdtDisponible}
           resultado={
             resultadoPdt &&
             // HU-02/CA-5: "confirma visualmente cuántas metas fueron
@@ -177,7 +225,7 @@ export default function NuevoCorte() {
         <CargaDeArchivo
           tipo="EJECUCION"
           etiqueta="Ejecución presupuestal"
-          cargado={Boolean(resultadoEjecucion)}
+          cargado={ejecucionDisponible}
           resultado={
             resultadoEjecucion &&
             // [HU-03][FE-02]: el backend ya distingue ejecución de
@@ -195,7 +243,7 @@ export default function NuevoCorte() {
         <CargaDeArchivo
           tipo="PROYECTOS"
           etiqueta="Plantilla de proyectos BPIN"
-          cargado={Boolean(resultadoProyectos)}
+          cargado={proyectosDisponibles}
           resultado={
             resultadoProyectos && (
               <>

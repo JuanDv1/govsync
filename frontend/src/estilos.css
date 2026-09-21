@@ -200,3 +200,46 @@ body {
   background: var(--superficie);
   box-shadow: inset 0 -1px 0 var(--borde);
 }
+
+/* [HU-01][FE-03] Estado de las tres fuentes obligatorias del corte. */
+.nuevo-corte-fuentes {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+}
+
+.nuevo-corte-fuentes h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.nuevo-corte-fuentes ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+/* [HU-01][FE-03] Histórico de cortes. El orden ya viene definido por backend. */
+.historico-cortes {
+  overflow-x: auto;
+}
+
+.cortes-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--superficie);
+}
+
+.cortes-tabla th,
+.cortes-tabla td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cortes-tabla th {
+  font-weight: 600;
+}
