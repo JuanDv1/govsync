@@ -9,6 +9,7 @@
  */
 import { Route, Routes } from "react-router-dom";
 import NuevoCorte from "./pages/NuevoCorte.jsx";
+import Cortes from "./pages/Cortes.jsx";
 
 import Disposicion from "./components/Disposicion.jsx";
 import MatrizRelacion from "./pages/MatrizRelacion.jsx";
@@ -35,7 +36,7 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Disposicion />}>
-        {/* TODO [HU-01][FE-02] <Route path="/cortes" element={<Cortes />} /> */}
+        <Route path="/cortes" element={<Cortes />} />
         <Route path="/cortes/nuevo" element={<NuevoCorte />} />
         <Route path="/matriz/:corteId?" element={<MatrizRelacion />} />
         <Route path="*" element={<Pendiente />} />
