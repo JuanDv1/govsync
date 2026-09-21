@@ -144,15 +144,17 @@ export default function NuevoCorte() {
   }
 
   if (corte) {
-    const todosCargados = Boolean(resultadoPdt && resultadoProyectos && resultadoEjecucion);
+    const todosCargados = Boolean(
+      resultadoPdt && resultadoProyectos && resultadoEjecucion,
+    );
     const yaRegistrado = corte.estado === "REGISTRADO";
 
     return (
       <section>
         <h1>Cargar archivos del corte</h1>
         <p>
-          Corte de vigencia {corte.vigencia}, fecha {corte.fecha_corte} —
-          estado {corte.estado}.
+          Corte de vigencia {corte.vigencia}, fecha {corte.fecha_corte} — estado{" "}
+          {corte.estado}.
         </p>
 
         <CargaDeArchivo
@@ -214,6 +216,20 @@ export default function NuevoCorte() {
                   El archivo se conservó tal cual fue cargado, aunque su
                   estructura no sea estándar.
                 </p>
+
+                {/* [HU-04][FE-03], Opción B: lista simple, sin componente
+                    nuevo ni agrupación -- los códigos descartados sí la
+                    necesitan (categoria), los válidos no aportan nada
+                    agrupándolos. */}
+                {resultadoProyectos.codigos.length > 0 && (
+                  <ul>
+                    {resultadoProyectos.codigos.map((codigo) => (
+                      <li key={codigo} className="codigo">
+                        {codigo}
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
                 {/* [HU-04][FE-03]: ya construido en PR #79, solo se integra. */}
                 <VistaPreviaDescartes
