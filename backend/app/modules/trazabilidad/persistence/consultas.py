@@ -87,9 +87,13 @@ no se puede escribir un JOIN correcto sin decidir a la vez cómo tratar el
 fan-out (CA-7) y los NULL (CA-8). Coordinado con el equipo antes de tocar el
 archivo (ver decisión del 2026-09-19).
 
-Claves de columna (idénticas a `trazabilidad/api/router.py::COLUMNAS`, para
-que el contrato de las seis columnas viva en un solo lugar — API y
-persistencia usan las mismas cadenas literales a propósito):
+Claves de columna (las mismas seis confirmadas en HU-07/CA-3..CA-6, fijas
+también en `frontend/src/pages/MatrizRelacion.jsx::COLUMNAS`). Ya no hay una
+constante `COLUMNAS` en `trazabilidad/api/router.py` que las centralice: era
+código muerto (`MatrizRespuesta` nunca la usó) y se borró el 2026-09-21 (ver
+docs/TRAZABILIDAD.md). El contrato sigue siendo real, solo que hoy vive como
+coincidencia intencional de cadenas literales entre esta consulta y el
+frontend, no como una única fuente en código:
 
     cod_bpin, cod_indicador_producto, nombre_producto,
     cod_indicador_ejecucion, numero_contrato, descripcion_contrato
