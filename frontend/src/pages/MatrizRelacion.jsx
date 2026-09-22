@@ -35,9 +35,47 @@
  *    ni `parseInt()` sobre `cod_bpin`, `cod_indicador_producto` ni
  *    `cod_indicador_ejecucion`.
  *
- * FUERA DE ALCANCE ([HU-07][FE-04]): paginación o scroll infinito real
- * (se pide solo la primera página) y mejoras visuales adicionales que no
- * formen parte de los criterios de aceptación de [HU-07][FE-03].
+ * ALCANCE DE FE-04 (tarjeta Trello, sin CA propio en PLANDETRABAJO.md —
+ * ver docs/TRAZABILIDAD.md/CA-1 para la evidencia; CA-2 es un contrato
+ * puramente de backend, "usa información ya procesada, no relee Excel", y
+ * no tiene una contraparte de UI, así que esta tarjeta no le agrega nada
+ * nuevo salvo la etiqueta heredada del Trello):
+ *
+ * - Consumo REAL de la paginación de `GET /matriz-relacion/{corte_id}` (ya
+ *   soportada por `api.matriz(corteId, pagina, tamanoPagina)` desde
+ *   [HU-07][FE-01]/[FE-02], pero nunca invocada con una página distinta de
+ *   la 1). Antes de esta tarjeta la pantalla solo podía mostrar la primera
+ *   página del corte; ahora navega todas las páginas que reporte el backend
+ *   (`total_filas` / `tamano_pagina`).
+ * - DECISIÓN TÉCNICA (paginación visible vs. virtualización — la tarjeta
+ *   acepta cualquiera de las dos): se eligió PAGINACIÓN VISIBLE con
+ *   controles "Anterior/Siguiente", no virtualización (p. ej. react-window).
+ *   Motivo: el corte de referencia real (docs/DECISIONES.md D4) tiene 144
+ *   metas; incluso con el fan-out de CA-7 (una meta con varios BPIN/
+ *   contratos genera varias filas) el volumen esperado sigue siendo de
+ *   cientos de filas por corte, no decenas de miles. Traer una librería de
+ *   virtualización para ese volumen sería sofisticación técnica sin
+ *   beneficio medible (la paginación de 50 filas por página, que ya existe
+ *   en el backend, ya evita renderizar miles de filas de golpe) y añadiría
+ *   una dependencia nueva al frontend. Si el volumen real de producción
+ *   creciera en órdenes de magnitud, esta decisión debe revisarse — no es
+ *   definitiva, es la que mejor cumple CORRECCIÓN FUNCIONAL + MANTENIBILIDAD
+ *   con el dato de volumen confirmado hoy.
+ * - "Evitar re-renderizados completos al cambiar de página": la tabla y los
+ *   controles de paginación permanecen montados durante el cambio de
+ *   página — `matrizVisible` conserva los datos de la última página cargada
+ *   con éxito y solo se reemplaza cuando la petición siguiente resuelve. La
+ *   pantalla completa de `Cargando` (que sí reemplaza toda la sección) solo
+ *   aparece en la carga inicial del corte, cuando todavía no hay ninguna
+ *   fila que mostrar.
+ * - Sin framework de pruebas automatizadas de frontend en el repo (ver
+ *   `frontend/package.json` — no hay vitest/jest/@testing-library ni script
+ *   `test`). Mismo precedente que CA-3..CA-8 de esta misma pantalla
+ *   (docs/TRAZABILIDAD.md): validación manual en navegador contra el
+ *   backend real, con el corte de referencia de docs/DECISIONES.md D4.
+ *   Agregar infraestructura de pruebas de frontend es una decisión de
+ *   arquitectura propia que el equipo debe tomar explícitamente en una
+ *   tarjeta dedicada — no se introduce aquí de forma silenciosa.
  */
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -68,6 +106,13 @@ const CLAVES_CODIGO = new Set([
   "cod_indicador_ejecucion",
 ]);
 
+// [HU-07][FE-04] Mismo tamaño de página que el valor por defecto del backend
+// (`obtener_matriz`/`obtener_matriz_actual`, `tamano_pagina: int = 50`). No
+// se expone un selector de tamaño de página: la tarjeta pide navegar el
+// volumen real sin renderizar miles de filas de golpe, no elegir cuántas
+// filas por página — agregar ese control sería alcance no pedido.
+const TAMANO_PAGINA = 50;
+
 function Celda({ clave, valor }) {
   if (valor === null || valor === undefined) {
     return <SinCorrespondencia />;
@@ -79,8 +124,49 @@ function Celda({ clave, valor }) {
   );
 }
 
+// [HU-07][FE-04] Controles de paginación. Deliberadamente sin lógica de
+// negocio: solo recibe los números ya calculados por el componente padre y
+// dispara `onCambiarPagina`. `aria-live="polite"` en el indicador de página
+// para que un lector de pantalla anuncie el cambio sin interrumpir.
+function PaginacionMatriz({
+  pagina,
+  totalPaginas,
+  totalFilas,
+  actualizando,
+  onCambiarPagina,
+}) {
+  return (
+    <nav
+      className="matriz-relacion-paginacion"
+      aria-label="Paginación de la matriz de relación"
+    >
+      <button
+        type="button"
+        onClick={() => onCambiarPagina(pagina - 1)}
+        disabled={pagina <= 1 || actualizando}
+      >
+        Anterior
+      </button>
+
+      <span aria-live="polite">
+        Página {pagina} de {totalPaginas} · {totalFilas} filas en total
+        {actualizando ? " · actualizando…" : ""}
+      </span>
+
+      <button
+        type="button"
+        onClick={() => onCambiarPagina(pagina + 1)}
+        disabled={pagina >= totalPaginas || actualizando}
+      >
+        Siguiente
+      </button>
+    </nav>
+  );
+}
+
 export default function MatrizRelacion() {
   const { corteId } = useParams();
+  const [pagina, setPagina] = useState(1);
   const [intento, setIntento] = useState(0);
   // `clave` identifica a qué petición pertenece `datos`/`error`: mientras no
   // coincida con `claveActual`, la petición sigue en curso. Evita reiniciar
@@ -92,34 +178,66 @@ export default function MatrizRelacion() {
     datos: null,
     error: null,
   });
+  // [HU-07][FE-04] Últimos datos mostrados con éxito para el `corteId`
+  // actual. Se conserva mientras se carga la página siguiente para que la
+  // tabla no desaparezca ni se desmonte en cada cambio de página — solo se
+  // reemplaza cuando la nueva petición resuelve, o se limpia al cambiar de
+  // corte.
+  const [matrizVisible, setMatrizVisible] = useState(null);
 
-  const claveActual = corteId ? `${corteId}:${intento}` : null;
+  // Cambiar de corte es una pantalla distinta: se reinicia la página y se
+  // descartan las filas que se estaban mostrando (pertenecen al corte
+  // anterior, no tiene sentido conservarlas como "página previa" de otro
+  // corte). Ajustar estado cuando cambia una prop se hace DURANTE el render
+  // (patrón oficial de React: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes),
+  // no dentro de un efecto — evita el re-render en cascada que marca
+  // react-hooks/set-state-in-effect, y evita el parpadeo de un render con
+  // datos del corte anterior antes de que el efecto de abajo llegue a
+  // limpiarlos.
+  const [corteAnterior, setCorteAnterior] = useState(corteId);
+  if (corteId !== corteAnterior) {
+    setCorteAnterior(corteId);
+    setPagina(1);
+    setMatrizVisible(null);
+  }
+
+  const claveActual = corteId ? `${corteId}:${pagina}:${intento}` : null;
 
   useEffect(() => {
     if (!corteId) return;
 
-    const clave = `${corteId}:${intento}`;
+    const clave = `${corteId}:${pagina}:${intento}`;
     let vigente = true;
 
     api
-      .matriz(corteId)
+      .matriz(corteId, pagina, TAMANO_PAGINA)
       .then((datos) => {
-        if (vigente) setResultado({ clave, datos, error: null });
+        if (!vigente) return;
+        setResultado({ clave, datos, error: null });
+        setMatrizVisible(datos);
       })
       .catch((errorApi) => {
-        if (vigente) setResultado({ clave, datos: null, error: errorApi });
+        if (!vigente) return;
+        setResultado({ clave, datos: null, error: errorApi });
       });
 
     return () => {
       vigente = false;
     };
-  }, [corteId, intento]);
+  }, [corteId, pagina, intento]);
 
   const cargando = Boolean(claveActual) && resultado.clave !== claveActual;
   const error = resultado.clave === claveActual ? resultado.error : null;
-  const matriz = resultado.clave === claveActual ? resultado.datos : null;
+
+  // Carga inicial: todavía no hay ninguna fila que mostrar, así que la
+  // pantalla completa de `Cargando` es aceptable (no hay nada montado que
+  // preservar). Carga de página siguiente: ya hay `matrizVisible`, así que
+  // la tabla se mantiene montada y solo se deshabilitan los controles.
+  const cargandoInicial = cargando && matrizVisible === null;
+  const actualizandoPagina = cargando && matrizVisible !== null;
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
+  const cambiarPagina = useCallback((nueva) => setPagina(nueva), []);
 
   if (!corteId) {
     return (
@@ -130,15 +248,18 @@ export default function MatrizRelacion() {
     );
   }
 
-  if (cargando) {
+  if (cargandoInicial) {
     return <Cargando mensaje="Cargando matriz de relación…" />;
   }
 
-  if (error) {
+  // Error sin datos previos que mostrar (falló la carga inicial, o falló un
+  // reintento sobre una página que nunca había cargado con éxito): mismo
+  // patrón de pantalla completa que antes de FE-04.
+  if (error && matrizVisible === null) {
     return <EstadoError error={error} onReintentar={reintentar} />;
   }
 
-  if (!matriz || matriz.total_filas === 0) {
+  if (!matrizVisible || matrizVisible.total_filas === 0) {
     return (
       <Vacio
         titulo="Sin datos para mostrar"
@@ -146,6 +267,11 @@ export default function MatrizRelacion() {
       />
     );
   }
+
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(matrizVisible.total_filas / matrizVisible.tamano_pagina),
+  );
 
   return (
     <section className="matriz-relacion">
@@ -161,7 +287,7 @@ export default function MatrizRelacion() {
             </tr>
           </thead>
           <tbody>
-            {matriz.filas.map((fila, indice) => (
+            {matrizVisible.filas.map((fila, indice) => (
               <tr key={`${fila.cod_indicador_producto}-${indice}`}>
                 {COLUMNAS.map((columna) => (
                   <td key={columna.clave}>
@@ -173,6 +299,28 @@ export default function MatrizRelacion() {
           </tbody>
         </table>
       </div>
+
+      {/* `pagina` (el estado, no `matrizVisible.pagina`) es la página que
+          el usuario está pidiendo ahora mismo. Si una página falla, deben
+          coincidir para que "Reintentar" y volver a pulsar "Siguiente"
+          apunten al mismo número — usar `matrizVisible.pagina` (la última que
+          cargó con éxito) dejaría "Siguiente" sin efecto tras un error, al
+          pedir de nuevo el mismo número ya establecido en el estado. */}
+      <PaginacionMatriz
+        pagina={pagina}
+        totalPaginas={totalPaginas}
+        totalFilas={matrizVisible.total_filas}
+        actualizando={actualizandoPagina}
+        onCambiarPagina={cambiarPagina}
+      />
+
+      {/* Error al cambiar de página: no se pierde la tabla ya mostrada
+          (matrizVisible sigue siendo la última página cargada con éxito).
+          Se informa el error puntual y se ofrece reintentar la misma
+          página, sin desmontar el resto de la pantalla. */}
+      {error && matrizVisible !== null && (
+        <EstadoError error={error} onReintentar={reintentar} />
+      )}
     </section>
   );
 }

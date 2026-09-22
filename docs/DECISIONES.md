@@ -562,3 +562,49 @@ deduplicación y orden acordado explícitamente antes de escribir código.
 
 **Quién y cuándo:** Juan David (propuesta), Juan Esteban (deduplicación
 por orden de aparición), 2026-09-20.
+
+---
+
+## D17 · `[HU-07][FE-04]`: paginación visible en vez de virtualización, y método de verificación
+
+**Decisión:** la tarjeta Trello `[HU-07][FE-04]` acepta explícitamente
+"virtualización o paginación visible" para no renderizar miles de filas de
+golpe. Se implementó PAGINACIÓN VISIBLE (controles "Anterior/Siguiente" en
+`MatrizRelacion.jsx`, tamaño de página fijo de 50, igual al valor por
+defecto del backend), no virtualización (p. ej. `react-window`).
+
+**Motivo:** el corte de referencia real (D4) tiene 144 metas; incluso con el
+fan-out de CA-7 (una meta con varios BPIN o contratos genera varias filas)
+el volumen esperado es de cientos de filas por corte, no decenas de miles.
+La paginación de 50 filas por página ya evita renderizar el total de golpe;
+traer una librería de virtualización para ese volumen sería una dependencia
+nueva sin beneficio medible. Si el volumen real de producción creciera en
+órdenes de magnitud, esta decisión debe revisarse.
+
+**Cómo se implementó "evitar re-renderizados completos al cambiar de
+página" (requisito explícito de la tarjeta):** el componente conserva en
+`matrizVisible` la última página cargada con éxito; la tabla y los controles
+de paginación permanecen montados durante la carga de la página siguiente
+(solo se deshabilitan los botones), en vez de reemplazar toda la sección por
+el estado `Cargando`. Ese estado de pantalla completa solo aparece en la
+carga inicial del corte, cuando todavía no hay ninguna fila que mostrar.
+
+**Verificación:** no fue posible levantar Postgres desde el entorno donde se
+implementó (sin Docker disponible en ese shell), así que la verificación
+manual en navegador contra el corte real de Santa Rosa (el mismo volumen que
+D4 documenta: 144 metas) queda PENDIENTE — a cargo de quien tenga el stack
+local corriendo (`docker compose up -d`, backend + frontend, subir los tres
+archivos reales del municipio y navegar la matriz resultante). Sí se
+verificó: `npm run lint` y `npm run build` limpios, y una réplica aislada en
+Node de la aritmética de paginación (`totalPaginas`, límites de los botones
+Anterior/Siguiente) contra los volúmenes de D4 y el caso de fan-out de CA-7.
+Mismo precedente que CA-3..CA-8 de esta pantalla (docs/TRAZABILIDAD.md): sin
+framework de pruebas automatizadas de frontend en el repo, la verificación
+funcional final es manual en navegador — no se agregó infraestructura de
+pruebas de frontend en esta tarjeta (sería una decisión de arquitectura
+propia que el equipo debe tomar explícitamente).
+
+**Estado:** VIGENTE. Verificación manual en navegador con el corte real:
+PENDIENTE.
+
+**Registrado:** 2026-09-22.
