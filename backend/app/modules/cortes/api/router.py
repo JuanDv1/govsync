@@ -205,6 +205,30 @@ def obtener_corte(corte_id: UUID, servicio: ServicioCortesDep) -> CorteRespuesta
     "/{corte_id}/archivos/{tipo}",
     response_model=ArchivoFuenteRespuestaParcial,
     status_code=status.HTTP_201_CREATED,
+    # Hallazgo 2026-09-21: desde el corte por streaming (`request: Request`
+    # crudo, ya no `archivo: UploadFile` -- ver docstring abajo) FastAPI dejó
+    # de saber que este endpoint espera un archivo, porque genera el schema
+    # de OpenAPI a partir de los parámetros declarados en la función, y aquí
+    # ya no hay ninguno de tipo `UploadFile`. Sin esto, Swagger solo muestra
+    # `corte_id`/`tipo` y no deja seleccionar ningún archivo. `openapi_extra`
+    # describe el `requestBody` a mano, sin pasar por la inyección de
+    # parámetros de FastAPI (`deep_dict_update` lo fusiona con el operation
+    # auto-generado, `fastapi/openapi/utils.py`) -- puramente documentación,
+    # no cambia en nada cómo se lee el archivo en tiempo de ejecución.
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "multipart/form-data": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {"archivo": {"type": "string", "format": "binary"}},
+                        "required": ["archivo"],
+                    }
+                }
+            },
+        }
+    },
 )
 async def cargar_archivo(
     corte_id: UUID,
