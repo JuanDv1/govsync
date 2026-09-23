@@ -262,9 +262,19 @@ en vez de `CASOS_DE_PRUEBA.md` — descartada porque esas dos fuentes ya
 asignan explícitamente la tarjeta que cierra el CA, más específico y
 verificable que la descripción de `CASOS_DE_PRUEBA.md`.
 
-**Estado:** VIGENTE.
+**Estado:** VIGENTE — con nota de resolución.
 
 **Registrado:** 2026-09-11.
+
+**Resolución (2026-09-23):** `[HU-01][FE-01]` ya está implementado y
+probado (`test_router_cortes.py::test_get_cortes_devuelve_historico_200`,
+`::test_get_cortes_id_devuelve_detalle_200`), así que la referenciabilidad
+por API que CA-8 exige literalmente ya está cerrada. `docs/CASOS_DE_PRUEBA.md`
+(CP-HU01-08) y `docs/TRAZABILIDAD.md` (CA-8, HU-01) vuelven a marcar el
+criterio como "✅ Probado" — esta vez con evidencia HTTP real, no solo de
+aplicación, que era justo lo que esta decisión pedía. La decisión original
+(usar el endpoint como criterio de cierre, no la capa de aplicación) sigue
+vigente como precedente.
 
 ---
 
