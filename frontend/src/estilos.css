@@ -66,3 +66,212 @@ body {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   white-space: nowrap;
 }
+
+/* [UX-03] Estado de error accionable (Estados.jsx::Error). */
+.estado-error {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radio);
+  background: var(--error-fondo);
+  color: var(--error);
+}
+
+.estado-error-mensaje {
+  margin: 0;
+  font-weight: 600;
+}
+
+.estado-error-detalles {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.estado-error-reintentar {
+  align-self: flex-start;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--error);
+  cursor: pointer;
+}
+
+.estado-error-reintentar:hover {
+  background: var(--error-fondo);
+}
+
+/* [HU-04][FE-03] Vista previa de descartes (VistaPreviaDescartes.jsx).
+   Prioridad alta (posible código real perdido) usa el token de alerta;
+   prioridad baja (ruido de texto libre) usa un tono neutro para no competir
+   visualmente con lo que sí merece revisión. */
+.vista-previa-descartes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vista-previa-descartes-resumen {
+  margin: 0;
+  font-weight: 600;
+  color: var(--alerta);
+}
+
+.vista-previa-descartes-grupo {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radio);
+  border: 1px solid var(--borde);
+}
+
+.vista-previa-descartes-grupo[data-prioridad="alta"] {
+  border-color: var(--alerta);
+  background: var(--alerta-fondo);
+}
+
+.vista-previa-descartes-grupo h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.vista-previa-descartes-grupo ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.vista-previa-descartes-grupo li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.vista-previa-descartes-motivo {
+  color: var(--tinta-suave);
+}
+
+/* [HU-04][FE-02]/CA-2: aclara que el archivo se conserva tal cual,
+   aunque su estructura no sea estándar — tono neutro (ni error ni
+   alerta), mismo patrón que .estado-sin-correspondencia: solo texto
+   atenuado, sin caja. */
+.carga-de-archivo-nota {
+  margin: 0;
+  color: var(--tinta-suave);
+}
+
+/* [UX-04] NULL explícito (Estados.jsx::SinCorrespondencia): distinto de una
+   celda vacía ambigua, sin inventar un "N/A". */
+.estado-sin-correspondencia {
+  color: var(--tinta-suave);
+  font-style: italic;
+}
+
+/* [HU-07][FE-02] Tabla de la matriz de relación: encabezado fijo al hacer
+   scroll, columnas de código con ancho de contenido (nunca truncadas: ver
+   `.codigo` arriba). */
+.matriz-relacion-tabla-contenedor {
+  max-height: 70vh;
+  overflow: auto;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.matriz-relacion-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--superficie);
+}
+
+.matriz-relacion-tabla th,
+.matriz-relacion-tabla td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+}
+
+.matriz-relacion-tabla thead th {
+  position: sticky;
+  top: 0;
+  white-space: nowrap;
+  background: var(--superficie);
+  box-shadow: inset 0 -1px 0 var(--borde);
+}
+
+/* [HU-07][FE-04] Controles de paginación: mismo patrón visual que
+   `.estado-error-reintentar` (borde + fondo de superficie, sin relleno
+   sólido) para no introducir un tercer estilo de botón en la interfaz. */
+.matriz-relacion-paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  color: var(--tinta-suave);
+  font-size: 0.9rem;
+}
+
+.matriz-relacion-paginacion button {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--primario);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  color: var(--primario);
+  cursor: pointer;
+}
+
+.matriz-relacion-paginacion button:hover:not(:disabled) {
+  background: var(--fondo);
+}
+
+.matriz-relacion-paginacion button:disabled {
+  border-color: var(--borde);
+  color: var(--tinta-suave);
+  cursor: not-allowed;
+}
+
+/* [HU-01][FE-03] Estado de las tres fuentes obligatorias del corte. */
+.nuevo-corte-fuentes {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+}
+
+.nuevo-corte-fuentes h2 {
+  margin-top: 0;
+  font-size: 1rem;
+}
+
+.nuevo-corte-fuentes ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+/* [HU-01][FE-03] Histórico de cortes. El orden ya viene definido por backend. */
+.historico-cortes {
+  overflow-x: auto;
+}
+
+.cortes-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--superficie);
+}
+
+.cortes-tabla th,
+.cortes-tabla td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cortes-tabla th {
+  font-weight: 600;
+}

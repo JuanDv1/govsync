@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import uuid
 from abc import ABC, abstractmethod
+from datetime import date
 from typing import Any
 
 from app.modules.cortes.domain.entidades import ArchivoFuente, Corte, TipoArchivoFuente
@@ -25,6 +26,41 @@ class RepositorioCortes(ABC):
     @abstractmethod
     def guardar(self, corte: Corte) -> Corte:
         """Persiste un corte nuevo (siempre en estado BORRADOR)."""
+
+    @abstractmethod
+    def existe_borrador_activo(self) -> bool:
+        """D11: hay como máximo un corte en BORRADOR en toda la tabla,
+        sin importar la vigencia (docs/DECISIONES.md, D11).
+
+        `crear_corte` (casos_uso.py) lo consulta ANTES de `guardar()` para
+        devolver un 409 legible (OperacionNoPermitida) en vez de dejar que
+        la violación del índice único parcial `estado='BORRADOR'` llegue
+        como un error de integridad crudo. El índice sigue siendo necesario
+        como respaldo contra la condición de carrera (dos POST /cortes casi
+        simultáneos) — este método no lo reemplaza, resuelve el caso común
+        con un mensaje de negocio.
+        """
+
+    @abstractmethod
+    def existe_corte_duplicado(
+        self, vigencia: int, fecha_corte: date, *, excluir_id: uuid.UUID | None = None
+    ) -> bool:
+        """D9: no puede haber dos cortes con la misma vigencia y la misma
+        fecha_corte exacta (docs/DECISIONES.md, D9).
+
+        `crear_corte` (casos_uso.py) lo consulta ANTES de `guardar()` para
+        devolver un 409 legible (OperacionNoPermitida) en vez de dejar que
+        la violación del índice único `ux_corte_vigencia_fecha` llegue como
+        un `IntegrityError` crudo (500). El índice de BD sigue siendo
+        necesario como respaldo contra la condición de carrera — este
+        método no lo reemplaza, resuelve el caso común con un mensaje de
+        negocio, igual que `existe_borrador_activo` para D11.
+
+        `excluir_id` (D11, PATCH /cortes/{id}): `corregir_corte` consulta
+        este método contra el propio corte que está corrigiendo — sin
+        excluirlo, corregir un corte manteniendo su misma vigencia/fecha se
+        autorrechazaría con un 409 falso.
+        """
 
     @abstractmethod
     def obtener(self, corte_id: uuid.UUID) -> Corte | None: ...
@@ -44,6 +80,15 @@ class RepositorioCortes(ABC):
     @abstractmethod
     def confirmar_registro(self, corte: Corte) -> None:
         """Persiste el paso a estado REGISTRADO."""
+
+    @abstractmethod
+    def confirmar_correccion(self, corte: Corte) -> None:
+        """D11: persiste vigencia/fecha corregidas de un corte en BORRADOR.
+
+        La validación (estado BORRADOR, fecha no futura) ya la hizo el
+        dominio (`Corte.corregir()`) antes de llegar aquí — este método solo
+        persiste.
+        """
 
 
 class RepositorioDatosCorte(ABC):

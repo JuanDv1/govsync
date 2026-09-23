@@ -17,11 +17,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
+from app.shared.codigos import CodigoIndicadorProducto, DescarteIndicador
 
-class TipoArchivo(str, Enum):
+
+class TipoArchivo(StrEnum):
     PDT = "PDT"
     EJECUCION = "EJECUCION"
     PROYECTOS = "PROYECTOS"
@@ -39,6 +41,29 @@ class ResultadoLectura:
     filas: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     conteos: dict[str, int] = field(default_factory=dict)
     advertencias: list[str] = field(default_factory=list)
+    descartes: list[DescarteIndicador] = field(default_factory=list)
+    """D14 (docs/DECISIONES.md): fragmentos de indicador descartados por
+    `CodigoIndicadorProducto.extraer_todos`, con su `categoria` estructural
+    intacta -- sin reconstruirla como texto en `advertencias`. Reutiliza
+    `DescarteIndicador` de `shared/codigos.py` directamente (mismo shared
+    kernel que ya cruza las 4 fuentes; `shared/` no pertenece a ningun
+    modulo, asi que esto no cruza la regla de modulos de
+    `test_arquitectura.py`). Hoy solo `LectorProyectos` lo llena -- PDT y
+    EJECUCION no producen descartes de codigo, asi que queda `[]` para
+    ellos, que es el comportamiento correcto, no una limitacion a resolver.
+    """
+    codigos: list[CodigoIndicadorProducto] = field(default_factory=list)
+    """[HU-04][FE-03]: la otra mitad de "vista previa de codigos extraidos
+    y descartados" -- los codigos que SI se reconocieron (complemento de
+    `descartes`, que solo cubre los que fallaron). Deduplicados por
+    `.valor` preservando el orden de primera aparicion en el archivo
+    (decision del equipo, 2026-09-20, ver docs/DECISIONES.md): la celda de
+    Proyectos repite el mismo codigo de indicador para varios proyectos de
+    forma legitima, y esta lista es para que la administradora confirme
+    QUE se reconocio, no un log de ocurrencias -- eso ya lo cubre
+    `total_reconocido`/`filas_reconocidas`. Mismo criterio de `descartes`:
+    hoy solo `LectorProyectos` lo llena, PDT/EJECUCION quedan en `[]`.
+    """
 
     @property
     def total_reconocido(self) -> int:
@@ -52,5 +77,12 @@ class LectorArchivoFuente(ABC):
     tipo: TipoArchivo
 
     @abstractmethod
-    def leer(self, contenido: bytes, nombre_archivo: str) -> ResultadoLectura:
-        """Extrae y transforma. Lanza ArchivoInvalido si el archivo no aplica."""
+    def leer(self, contenido: bytes, nombre_archivo: str, vigencia: int) -> ResultadoLectura:
+        """Extrae y transforma. Lanza ArchivoInvalido si el archivo no aplica.
+
+        `vigencia` [HU-02][BE-02]: al menos el PDT la necesita para resolver
+        una columna obligatoria cuyo nombre real cambia cada año
+        ("Programación del producto bien o servicio <vigencia>") — no se
+        puede expresar como alias fijo en una constante de módulo. Los
+        lectores que no la necesiten simplemente la ignoran.
+        """

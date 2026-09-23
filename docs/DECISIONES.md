@@ -198,3 +198,413 @@ Trello no se modifica: ya tenía la numeración correcta.
 **Estado:** VIGENTE — decisión tomada, sin pendientes.
 
 **Registrado:** 2026-09-08.
+
+---
+
+## D7 · La entidad Corte tiene dos estados: BORRADOR y REGISTRADO
+
+**Decisión:** `Corte` modela explícitamente dos estados — `BORRADOR` (creado
+solo con vigencia y fecha, acepta cargas de archivos) y `REGISTRADO` (las
+tres fuentes obligatorias presentes, entra al histórico). El paso de uno a
+otro es la transición que exige HU-01/CA-4.
+
+**Motivo:** sin un estado explícito, HU-01/CA-3 ("no se registra sin
+archivos completos") y las cargas de HU-02/HU-03/HU-04 ("subir archivos
+contra un corte que ya existe") son incompatibles entre sí — no se puede
+exigir que el corte esté completo para existir, y a la vez que exista antes
+de estar completo. El estado resuelve la contradicción.
+
+**Origen:** este supuesto se identificó como `S-1` en una consolidación
+anterior del plan de Trello (`SUPUESTO — confirmar en la próxima reunión`,
+marcado explícitamente como algo que **afecta el esquema de BD**). No existía
+ninguna entrada en este documento que lo ratificara, aunque el esqueleto de
+código (`backend/app/modules/cortes/domain/entidades.py`, con
+`EstadoCorte.BORRADOR`/`REGISTRADO`) y `PLANDETRABAJO.md` ya lo dan por
+sentado, sin marcarlo como pendiente. Se ratifica aquí para cerrar esa
+inconsistencia entre lo que el código ya asume y lo que estaba documentado
+como abierto.
+
+**Alternativas consideradas:** ninguna evaluada aparte — el propio código ya
+estaba construido sobre este diseño antes de que se detectara el vacío
+documental.
+
+**Estado:** RATIFICADA.
+
+**Registrado:** 2026-09-08.
+
+---
+
+## D8 · Reconciliación de CA-8 entre PLANDETRABAJO.md/TRAZABILIDAD.md y CASOS_DE_PRUEBA.md (HU-01)
+
+**Hallazgo:** `docs/CASOS_DE_PRUEBA.md` (CP-HU01-08) marcaba CA-8 como "✅
+Probado" con evidencia de `test_casos_uso_cortes.py` (capa de aplicación,
+sin superficie HTTP), mientras que `PLANDETRABAJO.md` §2.7 y
+`docs/TRAZABILIDAD.md` (fila CA-8) coinciden en que CA-8 es "el endpoint"
+(`cortes/api/router.py`) y lo marcaban "Pendiente" hasta que
+`[HU-01][FE-01]` existiera. Las tres fuentes no pueden estar en lo correcto
+a la vez.
+
+**Decisión:** se corrige `docs/CASOS_DE_PRUEBA.md` para alinearse con las
+otras dos fuentes (que además asignan explícitamente la tarjeta que cierra
+el CA). CP-HU01-08 pasa de "✅ Probado" a "🟡 En progreso": la prueba
+existente verifica una precondición necesaria de aplicación, no la
+referenciabilidad por API que el CA describe literalmente ("el corte queda
+disponible como referencia... para asociarle archivos fuente").
+`[HU-01][FE-01]` cierra CA-8 por completo, al exponer `GET /cortes` y
+`GET /cortes/{id}`.
+
+**Motivo:** mismo patrón que D5/D6 — un documento derivado se adelantó a
+marcar un CA como cerrado con una prueba que cubre solo una parte de lo que
+el CA exige.
+
+**Alternativas consideradas:** corregir `PLANDETRABAJO.md`/`TRAZABILIDAD.md`
+en vez de `CASOS_DE_PRUEBA.md` — descartada porque esas dos fuentes ya
+asignan explícitamente la tarjeta que cierra el CA, más específico y
+verificable que la descripción de `CASOS_DE_PRUEBA.md`.
+
+**Estado:** VIGENTE.
+
+**Registrado:** 2026-09-11.
+
+---
+
+## D9 · Qué hace que dos cortes se consideren duplicados
+
+**Decisión:** se rechaza la creación de un corte si ya existe otro con la
+misma vigencia y la misma fecha_corte exacta. Con D11 (un solo corte en
+BORRADOR activo a la vez), este conflicto solo puede darse entre cortes ya
+REGISTRADO.
+
+**Motivo:** HU-07 necesita identificar "el corte actual" sin ambigüedad
+(GET /matriz-relacion/actual). Dos cortes con la misma fecha lo impiden.
+
+**Alternativas consideradas:** unicidad solo por vigencia (D-03 en
+`docs/ESPECIFICACIONES_TECNICAS.md`, sección HU-01) — descartada: impediría
+más de un corte por año, contradice el uso esperado (revisiones periódicas).
+
+**Nota:** no confundir con "D-09" en `docs/ESPECIFICACIONES_TECNICAS.md`,
+sección HU-03 — es un tema distinto (filas de ejecución reconocidas),
+coincidencia de número entre dos sistemas de numeración diferentes.
+
+**Estado:** RATIFICADA.
+
+**Registrado:** 2026-09-13.
+**Ratificado:** 2026-09-13 por el equipo.
+
+---
+
+## D10 · La creación del corte requiere una acción explícita
+
+**Decisión:** `POST /cortes` se dispara solo con un clic explícito (ej.
+"Continuar") al cerrar el paso de vigencia/fecha, nunca porque la
+validación del formulario pase mientras se escribe.
+
+**Motivo:** en el mockup actual, el checkmark "Datos del corte
+configurados" se enciende con validación en tiempo real; si disparara la
+creación, cada corrección de una fecha ya válida crearía un BORRADOR nuevo.
+
+**Riesgo si no se ratifica:** Karold puede implementar cualquiera de los
+dos sin saber cuál se espera.
+
+**Estado:** PROPUESTA — pendiente de confirmar antes de construir
+`pages/NuevoCorte.jsx` (`[HU-01][FE-02]`, tarjeta 2.8).
+
+**Registrado:** 2026-09-13.
+
+---
+
+## D11 · Solo un corte en BORRADOR activo a la vez
+
+**Decisión:** al crear un corte, se rechaza si ya existe otro en BORRADOR.
+Corregirlo requiere `PATCH /cortes/{id}`, que no existe hoy.
+
+**Motivo:** el proceso real de la clienta es secuencial; simplifica D9.
+
+**A qué afecta (no implementar aún, solo dejar constancia):** `crear_corte`
+en `casos_uso.py`, método nuevo en `puertos.py`, endpoint `PATCH` sin
+dueño, mapeo 409 en `core/errores.py`, migración de Alembic / `models.py`
+— índice único parcial sobre `estado = 'BORRADOR'` (a lo sumo un corte en
+ese estado en toda la tabla).
+
+**Estado:** RATIFICADA.
+
+**Registrado:** 2026-09-13.
+**Ratificado:** 2026-09-13 por el equipo.
+**Aclaración posterior (2026-09-18):** Cristhian y Juan David confirmaron
+que D11 también requiere el índice de BD como respaldo contra condiciones
+de carrera (dos peticiones casi simultáneas), no solo la validación de
+aplicación. La ratificación original del 2026-09-13 no dejó esto
+explícito — este PR lo cierra.
+
+**Aclaración confirmada (2026-09-19):** antes de diseñar `PATCH
+/cortes/{id}`, quedan resueltas las tres preguntas que la ratificación
+original dejó abiertas:
+
+1. El PATCH de corrección **NO aplica a cortes `REGISTRADO`**, solo a
+   `BORRADOR` — editar vigencia/fecha de un corte ya registrado rompería
+   el histórico; ese caso no pasa por este endpoint.
+2. Es **total**, no parcial: exige `vigencia` y `fecha_corte` juntos, el
+   mismo contrato de entrada que `POST /cortes` — no se admite mandar
+   solo uno de los dos campos.
+3. Es **exclusivamente para vigencia/fecha** — no edita `archivos`. La
+   corrección de un archivo cargado por error sigue su propio mecanismo
+   de reemplazo por tipo (HU-06, `registrar_archivo`), sin relación con
+   este PATCH.
+
+---
+
+## D12 · Límite de tamaño de archivo verificado en el cliente
+
+**Decisión:** el frontend rechaza, antes de intentar subir, cualquier
+archivo mayor a 2.097.152 bytes (2 MB) — aviso inmediato en
+`CargaDeArchivo.jsx`, sin llamar a `onCargar`.
+
+**Motivo:** los archivos reales de la clienta hoy pesan menos de 200 KB;
+2 MB da un margen ~10x para crecimiento sin retrasar el aviso de error
+hasta después de un viaje de red completo. Coherente con el límite real de
+`[SEC-03]` (`backend/app/core/config.py::max_upload_bytes`, 25 MB) — el del
+cliente es más conservador, no lo reemplaza ni lo duplica.
+
+**Estado:** RATIFICADA.
+
+**Registrado:** 2026-09-15.
+**Ratificado:** 2026-09-15, acordado con Cristhian.
+
+## D13 · `[HU-04][BE-03]` reabierta y corregida: separadores y descartes registrados
+
+**Hallazgo (2026-09-19, Juan David + verificación cruzada):** el texto
+literal de la tarjeta Trello `[HU-04][BE-03]` exige, en "casos borde
+obligatorios en los tests", dos cosas que la implementación original de
+`CodigoIndicadorProducto.extraer_todos` (probada con 6 tests, solo
+`split("\n")`) no cumplía:
+
+1. Reconocer coma, punto y coma, guion y espacio como separadores además
+   de salto de línea, incluyendo códigos pegados sin separador
+   (segmentar de a 9 dígitos SOLO si el total es múltiplo de 9).
+2. "Todo código descartado queda registrado con su motivo" — la versión
+   original simplemente omitía el candidato inválido de la lista, sin
+   dejar rastro.
+
+Verificado contra la CA-4 oficial (`Levantamiento de Requisitos.md`,
+`HU04-CA04`) y contra `Sprint1_Decisiones_de_Diseno.md`/
+`GovSync_Guia_Tecnica.md`: ninguno de esos documentos menciona los
+separadores adicionales ni el registro de descartes — solo la tarjeta de
+Trello los exige explícitamente. Es la tarjeta, no la documentación
+derivada, la fuente correcta aquí (jerarquía del proyecto: CA aprobados
+
+> reglas de negocio > documentación).
+
+**Decisión:** se reabre y corrige `[HU-04][BE-03]` en esta misma tarjeta
+(no se crea TRANS-02, para no duplicar trabajo ya comprometido).
+
+**Cambio de contrato (deliberado, no oculto):** `extraer_todos` cambia su
+tipo de retorno de `list[CodigoIndicadorProducto]` a
+`ResultadoExtraccionIndicadores(codigos, descartes)`. Es un cambio de API
+de dominio, justificado porque el descarte con motivo es parte del
+contrato exigido por la propia tarjeta, no un detalle de presentación.
+Único call site afectado: `LectorProyectos.leer()`, que ahora vuelca
+`descartes` al mecanismo de `advertencias` ya existente (no se construye
+infraestructura nueva).
+
+**Limitación conocida, aceptada y documentada (no bloqueante):** un monto
+con coma decimal en formato colombiano (`$230.000.000,00`) produce un
+candidato residual de 2 dígitos (`00`) que SÍ se registra como descarte
+(cumple el texto literal de la tarjeta: cualquier candidato numérico de
+longitud distinta de 9 se reporta). No fabrica un código falso ni afecta
+`codigos`, solo agrega ruido a la lista de revisión manual. Pendiente de
+que el equipo confirme si esto debe filtrarse en una iteración futura.
+
+**Fuera de alcance, explícitamente (PENDIENTE S-3 de la propia tarjeta):**
+verificar que cada código exista en el PDT ya cargado. La tarjeta lo
+marca PENDIENTE y, de confirmarse, dependería de HU-02 — no se convierte
+en requisito sin esa confirmación.
+
+**Evidencia:** `test_codigos.py` (16 pruebas, antes 6) + actualización de
+`test_lectores_proyectos.py::test_indicador_no_reconocible_...` (fixture
+ajustada: contenía un "9" suelto en la prosa que ahora se registra como
+descarte válido de 1 dígito — coincidencia del texto de prueba, no un
+bug). 258 passed en local (2026-09-19).
+
+**Estado:** Corregida.
+**Quién y cuándo:** Juan Esteban, 2026-09-19.
+
+## D14 · Categorización de descartes en `extraer_todos` (no cambia qué se descarta)
+
+**Hallazgo (2026-09-19, Juan David, construyendo `[HU-04][FE-03]`):** tras
+D13, `extraer_todos` registra correctamente todo candidato numérico de
+longitud inválida como descarte — pero un número suelto dentro de texto
+libre real (una fecha, un año, un conteo, un porcentaje sin `%`) cae en
+la misma lista con el mismo motivo genérico que un intento de código
+realmente roto. Ejemplo reproducido: `"Avance del 45% en la vigencia
+2026"` registra `"2026"` como descarte de 4 dígitos, indistinguible de
+un BPIN mal cortado. Para la tabla de revisión de FE-03 esto mezclaría
+ruido con hallazgos reales, restándole valor al motivo.
+
+**Decisión:** no se cambia qué termina en `codigos` vs `descartes` (la
+lógica de D13 queda igual). Se agrega `CategoriaDescarte` (`StrEnum`,
+mismo patrón que `TipoArchivo`) con tres valores estructurales, basados
+únicamente en la longitud ya calculada — sin inventar heurísticas de
+negocio sobre formatos de fecha/porcentaje/conteo:
+
+- `POSIBLE_CERO_PERDIDO` (longitud == 8 hoy): probable código real con
+  el cero comido por Excel. Prioridad alta de revisión.
+- `LONGITUD_CORTA` (menor a 9, distinta de 8): casi siempre ruido de
+  texto libre. Prioridad baja.
+- `LONGITUD_LARGA` (mayor a 9, no múltiplo): casi siempre un intento
+  real fallido (BPIN, monto sin separadores). Prioridad alta.
+
+`DescarteIndicador` gana el campo `categoria` (además de `motivo`, que
+se conserva sin cambios). Alternativa descartada: endurecer el propio
+`extraer_todos` para dejar de registrar números cortos sueltos — se
+rechaza porque metería juicio de negocio (qué es "sospechosamente
+corto") en una función que hoy es puramente mecánica, y cada formato de
+fecha/nota nuevo obligaría a tocarla de nuevo.
+
+**Alcance:** cambio contenido en `app/shared/codigos.py`. No se propaga
+todavía a `ResultadoLectura`/la API — `LectorProyectos.leer()` sigue
+volcando `descartes` a `advertencias` como texto plano (ver nota "FUERA
+DE ALCANCE" en el docstring del módulo del lector); FE-03 recibirá la
+categoría cuando se construya el endpoint de vista previa, en la tarjeta
+correspondiente, no en esta.
+
+**Evidencia:** `test_codigos.py` (20 pruebas, antes 16), incluye los tres
+ejemplos reales reportados por Juan David. 262 passed en local
+(2026-09-19). `ruff check`/`ruff format` limpios.
+
+**Estado:** Corregida.
+**Quién y cuándo:** Juan Esteban, 2026-09-19 (hallazgo de Juan David).
+
+---
+
+## D15 · `[HU-02][FE-02]`: un solo mensaje de error cubre "pestaña no encontrada" y "archivo incorrecto"
+
+**Decisión:** el frontend muestra `error.message` del backend tal cual para
+los dos casos de rechazo del PDT, sin fabricar un tercer texto propio.
+
+**Motivo:** la tarjeta de Trello pide "tres mensajes de error distintos"
+(pestaña no encontrada / columna faltante / archivo que no corresponde),
+pero el backend solo distingue dos `detalles.motivo` en la práctica:
+`columnas_faltantes` (CA-3) y `hoja_no_encontrada` (CA-2 **y** CA-4 a la
+vez). Esto no es un descuido: el propio docstring de
+`LectorPDT.leer` (`ingesta/persistence/lectores/pdt.py`) lo documenta
+explícitamente — "CA-4 no tiene una regla propia: si el archivo no trae la
+pestaña de metas, `resolver_hoja_pdt` ya lo rechaza (CA-2) — no hace falta
+una heurística aparte para 'adivinar' que el archivo no corresponde". Subir
+el archivo de ejecución en el paso del PDT y subir un PDT sin su pestaña
+producen el mismo `codigo`/`motivo` y el mismo `error.message`
+("«archivo.xlsx» no contiene la pestaña «Plan indicativo - Productos» del
+Plan Indicativo."), que de hecho ya es válido para ambos casos.
+
+**Alternativa descartada:** pedir al backend que separe CA-4 en su propio
+`motivo` mediante una heurística que intente clasificar qué otro tipo de
+archivo fue cargado. El CA-4 aprobado establece que el archivo que no
+corresponde al formato esperado de PDT debe rechazarse sin intentar adivinar
+su contenido. Introducir esa clasificación agregaría una regla no requerida
+y podría contradecir expresamente ese criterio.
+
+**A qué afecta:** `frontend/src/pages/NuevoCorte.jsx` (paso 2, carga del
+PDT) — no requiere ningún cambio en `Estados.jsx`/`cliente.js` más allá de
+lo que ya hacían (mostrar `error.message` + el desglose de `detalles`
+conocidos).
+
+**Estado:** DECISIÓN RATIFICADA — el equipo confirmó que el comportamiento
+actual, que rechaza el archivo por no cumplir la estructura esperada del PDT
+sin intentar clasificar qué tipo de archivo fue cargado, es consistente con
+CA-4. Por tanto, `[HU-02][FE-02]` no debe fabricar un tercer mensaje ni
+introducir una heurística de detección en frontend o backend.
+
+**Quién y cuándo:** Juan Esteban, 2026-09-20. Ratificada por el equipo,
+2026-09-20.
+
+---
+
+## D16 · `[HU-04][FE-03]`: `ResultadoLectura.codigos` se deduplica por `.valor`, preservando el orden de primera aparición
+
+**Decisión:** el nuevo campo `codigos: list[CodigoIndicadorProducto]`
+(`ResultadoLectura`/`ArchivoFuente`, mismo patrón que `descartes` de D14)
+se llena en `LectorProyectos.leer()` deduplicando por `.valor` con un
+diccionario (no un `set`), preservando el orden en que cada código
+apareció por primera vez en el archivo.
+
+**Motivo:** `[HU-04][FE-03]` pide, con texto literal, "vista previa de
+códigos extraídos **y** descartados, con el motivo". PR #79/#82 ya
+cerraron la mitad de `descartes` (D14); faltaba la mitad de los códigos
+que sí se reconocieron. El mismo código de indicador aparece
+legítimamente en varias filas/proyectos del archivo de Proyectos (no es
+un error, es información real del dominio — ver test
+`test_indicador_con_codigos_repetidos_no_los_deduplica`, que cubre la
+repetición DENTRO de una celda). Exponer esa lista sin deduplicar
+convertiría la vista previa en un log de apariciones, no en una
+confirmación de "qué reconoció el sistema" — que es el propósito de una
+vista previa para la administradora. El orden de primera aparición, y no
+un orden alfabético o de un `set` (que no lo garantiza), facilita que la
+usuaria contraste la lista contra el Excel original.
+
+**Alternativa descartada:** replicar el patrón de `descartes` sin
+deduplicar (acumular cada ocurrencia con `.extend()`). Se descartó porque
+`descartes` representa eventos distintos que merecen su propia fila con
+motivo; `codigos` no tiene motivo por entrada, solo identifica qué se
+reconoció.
+
+**A qué afecta:** `ingesta/domain/contratos.py::ResultadoLectura.codigos`,
+`cortes/domain/entidades.py::ArchivoFuente.codigos`,
+`ingesta/persistence/lectores/proyectos.py::LectorProyectos.leer`,
+`cortes/application/casos_uso.py::cargar_archivo`. La deduplicación ocurre
+únicamente en el lector (Transform); `casos_uso.py` y `entidades.py`
+propagan la lista tal cual, sin volver a deduplicar. Queda pendiente que
+Juan David conecte `resultado.codigos` en el DTO de respuesta
+(`ArchivoFuenteRespuestaParcial`, `router.py`) — su parte ya está
+diseñada contra `[]` y no depende de esta decisión.
+
+**Estado:** DECISIÓN RATIFICADA. Propuesta original de Juan David
+(diseño del campo, mismos 4 archivos que D14) con el detalle de
+deduplicación y orden acordado explícitamente antes de escribir código.
+
+**Quién y cuándo:** Juan David (propuesta), Juan Esteban (deduplicación
+por orden de aparición), 2026-09-20.
+
+---
+
+## D17 · `[HU-07][FE-04]`: paginación visible en vez de virtualización, y método de verificación
+
+**Decisión:** la tarjeta Trello `[HU-07][FE-04]` acepta explícitamente
+"virtualización o paginación visible" para no renderizar miles de filas de
+golpe. Se implementó PAGINACIÓN VISIBLE (controles "Anterior/Siguiente" en
+`MatrizRelacion.jsx`, tamaño de página fijo de 50, igual al valor por
+defecto del backend), no virtualización (p. ej. `react-window`).
+
+**Motivo:** el corte de referencia real (D4) tiene 144 metas; incluso con el
+fan-out de CA-7 (una meta con varios BPIN o contratos genera varias filas)
+el volumen esperado es de cientos de filas por corte, no decenas de miles.
+La paginación de 50 filas por página ya evita renderizar el total de golpe;
+traer una librería de virtualización para ese volumen sería una dependencia
+nueva sin beneficio medible. Si el volumen real de producción creciera en
+órdenes de magnitud, esta decisión debe revisarse.
+
+**Cómo se implementó "evitar re-renderizados completos al cambiar de
+página" (requisito explícito de la tarjeta):** el componente conserva en
+`matrizVisible` la última página cargada con éxito; la tabla y los controles
+de paginación permanecen montados durante la carga de la página siguiente
+(solo se deshabilitan los botones), en vez de reemplazar toda la sección por
+el estado `Cargando`. Ese estado de pantalla completa solo aparece en la
+carga inicial del corte, cuando todavía no hay ninguna fila que mostrar.
+
+**Verificación:** no fue posible levantar Postgres desde el entorno donde se
+implementó (sin Docker disponible en ese shell), así que la verificación
+manual en navegador contra el corte real de Santa Rosa (el mismo volumen que
+D4 documenta: 144 metas) queda PENDIENTE — a cargo de quien tenga el stack
+local corriendo (`docker compose up -d`, backend + frontend, subir los tres
+archivos reales del municipio y navegar la matriz resultante). Sí se
+verificó: `npm run lint` y `npm run build` limpios, y una réplica aislada en
+Node de la aritmética de paginación (`totalPaginas`, límites de los botones
+Anterior/Siguiente) contra los volúmenes de D4 y el caso de fan-out de CA-7.
+Mismo precedente que CA-3..CA-8 de esta pantalla (docs/TRAZABILIDAD.md): sin
+framework de pruebas automatizadas de frontend en el repo, la verificación
+funcional final es manual en navegador — no se agregó infraestructura de
+pruebas de frontend en esta tarjeta (sería una decisión de arquitectura
+propia que el equipo debe tomar explícitamente).
+
+**Estado:** VIGENTE. Verificación manual en navegador con el corte real:
+PENDIENTE.
+
+**Registrado:** 2026-09-22.
