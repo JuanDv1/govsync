@@ -618,3 +618,65 @@ propia que el equipo debe tomar explícitamente).
 PENDIENTE.
 
 **Registrado:** 2026-09-22.
+
+---
+
+## D18 · Rango válido de `vigencia`: hallazgo del QA manual y decisión de rango fijo
+
+**Hallazgo:** durante la ejecución manual de `docs/QA_manual_sprint1.md`
+(2026-09-23) se detectó que `vigencia` no tenía ninguna validación de rango
+en ninguna de las tres capas donde aparece: el input de React
+(`NuevoCorte.jsx`, `type="number"` sin `min`/`max`), el esquema Pydantic de
+la API (`CorteEntrada`/`CorteCorreccion`, `vigencia: int` sin `Field`) ni el
+dominio (`Corte`/`entidades.py`, sin invariante). Esto es exactamente lo que
+permitió, al inicio de este sprint, crear un corte con `vigencia=1` en vez
+de `2026`: el sistema lo aceptó sin objeción y el error solo se manifestó
+mucho después, al leer el Excel, con un mensaje de "columnas faltantes" que
+no menciona la vigencia como causa real.
+
+**Alternativas presentadas al equipo:**
+
+1. Rango fijo y simple (`2000 ≤ vigencia ≤ 2100`) validado en el dominio.
+2. Rango relativo a la fecha del sistema (p. ej. año actual −10 a +1) — más
+   preciso, pero acopla esta regla a `hoy` y exige definir la ventana exacta.
+3. Solo ayuda visual en el frontend (`min`/`max` en el input), sin tocar el
+   backend — descartada de entrada: las reglas de seguridad del proyecto
+   exigen que el backend sea la autoridad, nunca solo la UI.
+
+**Decisión:** opción 1. Se agrega `Corte.validar_vigencia` (dominio,
+`VIGENCIA_MINIMA = 2000`, `VIGENCIA_MAXIMA = 2100`), invocada desde
+`ServicioCortes.crear_corte` y desde `Corte.corregir` — mismo punto de
+entrada que ya usa `Corte.validar_fecha` para CA-2. El frontend recibe
+`min`/`max` + `placeholder="Ej: 2026"` en el input como ayuda de UX, no como
+mecanismo de rechazo.
+
+**Corrección durante la implementación:** la propuesta inicial incluía
+además un `Field(ge=2000, le=2100)` en los esquemas Pydantic de la API
+(`CorteEntrada`/`CorteCorreccion`). Se descartó al revisar
+`app/core/errores.py`: solo traduce subclases de `GovSyncError` al sobre
+`{codigo, mensaje, detalles}` que espera el frontend
+(`api/cliente.js::ErrorApi`); un error de validación de Pydantic no pasa por
+ahí y responde con la forma nativa de FastAPI (`{"detail": [...]}"`), que el
+frontend no reconoce y cae al mensaje genérico de repuesto, perdiendo el
+detalle accionable. Validar solo en el dominio evita esa inconsistencia y
+reutiliza el mecanismo ya probado de `ReglaDeNegocioViolada`.
+
+**Motivo:** mismo patrón que D9/D11 — la regla vive en el dominio, no en el
+esquema de transporte, para que su comportamiento (mensaje, código HTTP,
+forma del error) sea uniforme sin importar qué endpoint la dispare.
+
+**Alternativas de implementación consideradas:** validar en `__post_init__`
+del dataclass `Corte` — descartada porque correría también al reconstruir
+un `Corte` ya persistido (p. ej. filas antiguas con una vigencia inválida
+que alguien ya corrigió a mano en la base de datos, o fixtures de otros
+entornos), rompiendo la lectura de datos existentes en vez de solo
+rechazar datos nuevos.
+
+**Pruebas:** `test_cortes.py::test_validar_vigencia_rechaza_fuera_de_rango_con_motivo`,
+`::test_validar_vigencia_acepta_limites_inclusive`,
+`TestCorregir::test_rechaza_corregir_con_vigencia_fuera_de_rango`;
+`test_casos_uso_cortes.py::test_crear_corte_rechaza_vigencia_fuera_de_rango_sin_persistir_nada`.
+
+**Estado:** VIGENTE.
+
+**Registrado:** 2026-09-23.

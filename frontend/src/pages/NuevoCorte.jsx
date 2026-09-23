@@ -325,6 +325,15 @@ export default function NuevoCorte() {
             id="vigencia"
             name="vigencia"
             type="number"
+            // D18 (docs/DECISIONES.md, 2026-09-23): min/max solo es ayuda de
+            // UX -- el rechazo real ya lo hace el backend
+            // (Corte.validar_vigencia), igual que la fecha de arriba. No se
+            // repiten estos numeros como constante compartida porque el
+            // backend es Python y el frontend JS; si el rango cambia, hay
+            // que actualizar los dos lados (ver D18).
+            min={2000}
+            max={2100}
+            placeholder="Ej: 2026"
             value={vigencia}
             onChange={(evento) => setVigencia(evento.target.value)}
             required

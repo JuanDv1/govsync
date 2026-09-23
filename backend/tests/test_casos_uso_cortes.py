@@ -142,6 +142,17 @@ def test_crear_corte_rechaza_fecha_futura_sin_persistir_nada(servicio):
     assert servicio.llamadas["commit"] == 0
 
 
+def test_crear_corte_rechaza_vigencia_fuera_de_rango_sin_persistir_nada(servicio):
+    """D18 (docs/DECISIONES.md): hallazgo del QA manual del 2026-09-23 —
+    mismo caso que llevo al equipo a escribir "1" en vez de "2026"."""
+    with pytest.raises(ReglaDeNegocioViolada) as exc:
+        servicio.crear_corte(vigencia=1, fecha_corte=date(2026, 9, 8))
+
+    assert exc.value.detalles["motivo"] == "vigencia_fuera_de_rango"
+    assert servicio.listar_cortes() == []
+    assert servicio.llamadas["commit"] == 0
+
+
 def test_crear_corte_rechaza_si_ya_existe_borrador_activo_de_otra_vigencia(servicio):
     # D11: la regla es global — un BORRADOR de OTRA vigencia también bloquea.
     servicio.crear_corte(vigencia=2026, fecha_corte=date(2026, 9, 8))
