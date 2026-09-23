@@ -1,7 +1,7 @@
 /* GovSync — tokens de diseño y reset.
    TARJETA: [UX-01] Layout base
 
-   Actualizado (docs/DECISIONES.md D18, D19): el equipo adoptó Tailwind —
+   Actualizado (docs/DECISIONES.md D19, D20): el equipo adoptó Tailwind —
    ver esas entradas para el motivo completo y el alcance de cada una. Lo que
    queda en este archivo son los tokens globales (:root, consumidos también
    por componentes en Tailwind vía tailwind.config.js) y las clases BEM de

@@ -725,7 +725,7 @@ demás decisiones de arquitectura de este documento.
 
 ---
 
-## D19 · Sidebar AppShell + átomos compartidos, adaptados de `DESIGN_SPEC.md` (mockup Figma Make), sin RBAC
+## D20 · Sidebar AppShell + átomos compartidos, adaptados de `DESIGN_SPEC.md` (mockup Figma Make), sin RBAC
 
 **Decisión:** se reemplazó la barra superior simple de `Disposicion.jsx`
 por un sidebar fijo (`w-52`, navy) siguiendo `DESIGN_SPEC.md` §4.1, y se
@@ -770,14 +770,14 @@ ninguna pantalla que los use todavía; si para cuando exista una tarjeta
 real que los necesite el diseño final terminó siendo distinto, se
 descartan sin costo (son ~20 líneas cada uno).
 
-**Estado:** PROPUESTA — mismo criterio que D18, pendiente de ratificación
+**Estado:** PROPUESTA — mismo criterio que D19, pendiente de ratificación
 del equipo.
 
 **Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
 
 ---
 
-## D20 · `/cortes/:corteId` reanuda un corte en BORRADOR desde el frontend
+## D21 · `/cortes/:corteId` reanuda un corte en BORRADOR desde el frontend
 
 **Hallazgo (2026-09-21, probando el flujo de punta a punta):** un corte
 creado y abandonado a mitad del wizard (por ejemplo, cerrando la pestaña

@@ -1,6 +1,6 @@
 /**
  * Envoltura de tarjeta usada en toda la app: fondo blanco, borde sutil,
- * radio de 2px (ver docs/DECISIONES.md D18 y D19).
+ * radio de 2px (ver docs/DECISIONES.md D19 y D20).
  *
  * `as` permite usarla como `<form>` (ej. el formulario de "Datos del
  * corte") sin duplicar las clases en cada lugar que necesita el look de
