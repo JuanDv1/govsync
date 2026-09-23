@@ -126,8 +126,9 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.modules.cortes.persistence.models import (
@@ -144,9 +145,13 @@ from app.modules.cortes.persistence.models import (
 class FilaMatriz:
     """Una fila de la matriz de relación (HU-07/CA-3 a CA-6).
 
-    Las seis columnas confirmadas. Un campo en `None` es un NULL EXPLÍCITO
-    (CA-8): "esa fuente no tenía información para este indicador", nunca "el
-    dato vino vacío" — ver Regla 2 del docstring del módulo.
+    Las seis columnas confirmadas más `presupuesto_apropiado` (agregada
+    2026-09-23, a pedido del equipo: "algo de presupuesto pero no tan
+    detallado, lo general" — un solo monto, la apropiación definitiva del
+    rubro cruzado, no las cinco columnas de `Rubro`). Un campo en `None` es
+    un NULL EXPLÍCITO (CA-8): "esa fuente no tenía información para este
+    indicador", nunca "el dato vino vacío" — ver Regla 2 del docstring del
+    módulo.
     """
 
     cod_indicador_producto: str
@@ -155,6 +160,7 @@ class FilaMatriz:
     cod_indicador_ejecucion: str | None
     numero_contrato: str | None
     descripcion_contrato: str | None
+    presupuesto_apropiado: Decimal | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,7 +173,24 @@ class ResultadoMatriz:
     tamano_pagina: int
 
 
-def _construir_consulta_base(corte_id: uuid.UUID):
+#: Tipo Gasto = INVERSIÓN (regla de negocio agregada 2026-09-23, a pedido del
+#: equipo: "ambas reglas son necesarias"). El archivo real puede traer el
+#: valor con o sin tilde ("INVERSION"/"INVERSIÓN") — se comparan las dos
+#: grafías en mayúsculas, mismo criterio de tolerancia que ya usa
+#: `_es_principal`/`_es_ultimo_nivel` en los lectores para Sí/No y True/False.
+_VALORES_TIPO_GASTO_INVERSION = ("INVERSION", "INVERSIÓN")
+
+#: CodigoSectorCcpet != vacío/NA (regla de negocio agregada 2026-09-23, junto
+#: con la de arriba). "NA" se compara en mayúsculas por el mismo motivo.
+_VALORES_SECTOR_INVALIDOS = ("", "NA")
+
+
+def _construir_consulta_base(
+    corte_id: uuid.UUID,
+    *,
+    estado_cruce: str | None = None,
+    busqueda: str | None = None,
+):
     """El cruce de las cuatro fuentes, SIN paginar — compartido entre el
     conteo total y la página pedida (ver `construir_matriz`).
 
@@ -178,9 +201,23 @@ def _construir_consulta_base(corte_id: uuid.UUID):
     cruce; se deja en el JOIN por consistencia con esa regla, documentada
     para quien reutilice esta consulta como base de un reporte financiero.
 
+    Regla 1b y 1c (agregadas 2026-09-23, mismo criterio que la Regla 1: se
+    aplican DENTRO del JOIN, no en un WHERE posterior — así una fila que no
+    cumple la regla no descarta la meta completa, solo esa correspondencia
+    en particular, igual que ya hace `ultimo_nivel`):
+      - `RubroORM.codigo_sector_ccpet` no puede estar vacío ni ser "NA".
+      - `ContratoORM.tipo_gasto` debe ser INVERSIÓN.
+
     Regla 2 (LEFT JOIN, CA-8): TODOS los joins de meta hacia afuera son
     `outerjoin` — una meta sin BPIN, sin ejecución o sin contrato sigue
     apareciendo, con esos campos en `None`.
+
+    `estado_cruce`/`busqueda` (HU-07, filtros de la matriz — ver
+    docs/DECISIONES.md): se aplican en un WHERE sobre las columnas ya unidas,
+    nunca cambiando el tipo de JOIN — filtrar DESPUÉS del LEFT JOIN es
+    correcto aquí porque la pregunta que responden ("¿esta meta tiene
+    contrato?") es sobre el resultado del cruce, no sobre qué filas de Rubro/
+    Contrato participan en él (esa es la Regla 1).
     """
     proyectos_del_corte = (
         select(
@@ -203,7 +240,7 @@ def _construir_consulta_base(corte_id: uuid.UUID):
         .subquery()
     )
 
-    return (
+    consulta = (
         select(
             MetaORM.cod_indicador_producto,
             MetaORM.nombre_producto,
@@ -211,6 +248,7 @@ def _construir_consulta_base(corte_id: uuid.UUID):
             RubroORM.cod_indicador_producto.label("cod_indicador_ejecucion"),
             ContratoORM.numero_contrato,
             ContratoORM.objeto.label("descripcion_contrato"),
+            RubroORM.apropiacion_definitiva.label("presupuesto_apropiado"),
         )
         .where(MetaORM.corte_id == corte_id)
         .outerjoin(
@@ -221,15 +259,58 @@ def _construir_consulta_base(corte_id: uuid.UUID):
             RubroORM,
             (RubroORM.corte_id == corte_id)
             & (RubroORM.cod_indicador_producto == MetaORM.cod_indicador_producto)
-            & (RubroORM.ultimo_nivel.is_(True)),
+            & (RubroORM.ultimo_nivel.is_(True))
+            & RubroORM.codigo_sector_ccpet.is_not(None)
+            & (func.upper(RubroORM.codigo_sector_ccpet).notin_(_VALORES_SECTOR_INVALIDOS)),
         )
         .outerjoin(puente_rubro_contrato, puente_rubro_contrato.c.rubro_id == RubroORM.id)
-        .outerjoin(ContratoORM, ContratoORM.id == puente_rubro_contrato.c.contrato_id)
+        .outerjoin(
+            ContratoORM,
+            (ContratoORM.id == puente_rubro_contrato.c.contrato_id)
+            & (func.upper(ContratoORM.tipo_gasto).in_(_VALORES_TIPO_GASTO_INVERSION)),
+        )
     )
+
+    if estado_cruce == "completo":
+        consulta = consulta.where(
+            proyectos_del_corte.c.bpin.is_not(None),
+            RubroORM.cod_indicador_producto.is_not(None),
+            ContratoORM.numero_contrato.is_not(None),
+        )
+    elif estado_cruce == "sin_proyecto":
+        consulta = consulta.where(proyectos_del_corte.c.bpin.is_(None))
+    elif estado_cruce == "sin_ejecucion":
+        consulta = consulta.where(RubroORM.cod_indicador_producto.is_(None))
+    elif estado_cruce == "sin_contrato":
+        consulta = consulta.where(ContratoORM.numero_contrato.is_(None))
+    elif estado_cruce == "sin_cruce":
+        consulta = consulta.where(
+            proyectos_del_corte.c.bpin.is_(None),
+            RubroORM.cod_indicador_producto.is_(None),
+            ContratoORM.numero_contrato.is_(None),
+        )
+
+    if busqueda:
+        patron = f"%{busqueda.strip()}%"
+        consulta = consulta.where(
+            or_(
+                MetaORM.cod_indicador_producto.ilike(patron),
+                proyectos_del_corte.c.bpin.ilike(patron),
+                ContratoORM.numero_contrato.ilike(patron),
+            )
+        )
+
+    return consulta
 
 
 def construir_matriz(
-    sesion: Session, corte_id: uuid.UUID, pagina: int = 1, tamano_pagina: int = 50
+    sesion: Session,
+    corte_id: uuid.UUID,
+    pagina: int = 1,
+    tamano_pagina: int = 50,
+    *,
+    estado_cruce: str | None = None,
+    busqueda: str | None = None,
 ) -> ResultadoMatriz:
     """[HU-07][BE-01]/[BE-02]/[BE-03]: cruce de las 4 fuentes (CA-2 a CA-8).
 
@@ -237,8 +318,14 @@ def construir_matriz(
     `rubro`/`contrato`) — no vuelve a leer ningún Excel. La unificación de
     nombres de columna del indicador (HU03-CA03) ya ocurrió en la ingesta;
     esta consulta ni sabe que esa ambigüedad existió.
+
+    `estado_cruce`: `None` (todas), `"completo"`, `"sin_proyecto"`,
+    `"sin_ejecucion"`, `"sin_contrato"` o `"sin_cruce"`. `busqueda`: texto
+    libre sobre código de indicador, BPIN o número de contrato. Ambos se
+    filtran ANTES de paginar (WHERE en `_construir_consulta_base`), no
+    después: filtrar la página ya traída rompería `total`/`totalPaginas`.
     """
-    consulta_base = _construir_consulta_base(corte_id)
+    consulta_base = _construir_consulta_base(corte_id, estado_cruce=estado_cruce, busqueda=busqueda)
 
     total = sesion.scalar(select(func.count()).select_from(consulta_base.subquery())) or 0
 
@@ -256,6 +343,7 @@ def construir_matriz(
             cod_indicador_ejecucion=fila.cod_indicador_ejecucion,
             numero_contrato=fila.numero_contrato,
             descripcion_contrato=fila.descripcion_contrato,
+            presupuesto_apropiado=fila.presupuesto_apropiado,
         )
         for fila in filas_crudas
     ]

@@ -141,9 +141,25 @@ export const api = {
    * `GET /matriz-relacion/{corteId}` ([HU-07][FE-01], montado en main.py).
    * 404 con `codigo: "recurso_no_encontrado"` si el corte no existe. 409 con
    * `detalles.archivos_faltantes` si falta alguna de las tres fuentes.
+   *
+   * `estadoCruce`/`busqueda` (agregados 2026-09-23): filtros de la matriz —
+   * ver `trazabilidad/persistence/consultas.py::construir_matriz`.
+   * `estadoCruce` es uno de "completo"/"sin_proyecto"/"sin_ejecucion"/
+   * "sin_contrato"/"sin_cruce", o `null` para no filtrar.
    */
-  matriz: (corteId, pagina = 1, tamanoPagina = 50) =>
-    solicitar(
-      `/api/v1/matriz-relacion/${corteId}?pagina=${pagina}&tamano_pagina=${tamanoPagina}`,
-    ),
+  matriz: (
+    corteId,
+    pagina = 1,
+    tamanoPagina = 50,
+    estadoCruce = null,
+    busqueda = null,
+  ) => {
+    const parametros = new URLSearchParams({
+      pagina: String(pagina),
+      tamano_pagina: String(tamanoPagina),
+    });
+    if (estadoCruce) parametros.set("estado_cruce", estadoCruce);
+    if (busqueda) parametros.set("busqueda", busqueda);
+    return solicitar(`/api/v1/matriz-relacion/${corteId}?${parametros}`);
+  },
 };

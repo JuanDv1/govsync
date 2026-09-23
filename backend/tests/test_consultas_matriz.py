@@ -63,7 +63,18 @@ def _crear_proyecto_con_indicador(sesion, corte_id: uuid.UUID, bpin: str, cod: s
     )
 
 
-def _crear_rubro(sesion, corte_id: uuid.UUID, cod: str, *, ultimo_nivel: bool = True) -> uuid.UUID:
+def _crear_rubro(
+    sesion,
+    corte_id: uuid.UUID,
+    cod: str,
+    *,
+    ultimo_nivel: bool = True,
+    codigo_sector_ccpet: str | None = "01",
+    apropiacion_definitiva=None,
+) -> uuid.UUID:
+    """`codigo_sector_ccpet="01"` por defecto: Regla 1b (consultas.py) exige
+    un sector no vacío/NA para que el rubro participe del cruce — los casos
+    que SÍ quieren probar un sector inválido lo pasan explícitamente."""
     rubro_id = uuid.uuid4()
     sesion.add(
         RubroORM(
@@ -72,17 +83,33 @@ def _crear_rubro(sesion, corte_id: uuid.UUID, cod: str, *, ultimo_nivel: bool = 
             codigo_rubro_nivel=f"nivel-{cod}",
             cod_indicador_producto=cod,
             ultimo_nivel=ultimo_nivel,
+            codigo_sector_ccpet=codigo_sector_ccpet,
+            apropiacion_definitiva=apropiacion_definitiva,
         )
     )
     return rubro_id
 
 
 def _crear_contrato(
-    sesion, corte_id: uuid.UUID, numero: str, objeto: str | None = None
+    sesion,
+    corte_id: uuid.UUID,
+    numero: str,
+    objeto: str | None = None,
+    *,
+    tipo_gasto: str | None = "INVERSIÓN",
 ) -> uuid.UUID:
+    """`tipo_gasto="INVERSIÓN"` por defecto: Regla 1c (consultas.py) exige
+    ese valor para que el contrato participe del cruce — los casos que SÍ
+    quieren probar un tipo de gasto distinto lo pasan explícitamente."""
     contrato_id = uuid.uuid4()
     sesion.add(
-        ContratoORM(id=contrato_id, corte_id=corte_id, numero_contrato=numero, objeto=objeto)
+        ContratoORM(
+            id=contrato_id,
+            corte_id=corte_id,
+            numero_contrato=numero,
+            objeto=objeto,
+            tipo_gasto=tipo_gasto,
+        )
     )
     return contrato_id
 
@@ -111,6 +138,18 @@ class TestCasoFeliz:
         assert fila.cod_indicador_ejecucion == COD_1
         assert fila.numero_contrato == "C-001"
         assert fila.descripcion_contrato == "Mantenimiento de vias"
+
+    def test_incluye_la_apropiacion_definitiva_del_rubro_cruzado(self, sesion) -> None:
+        from decimal import Decimal
+
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)
+        _crear_rubro(sesion, corte_id, COD_1, apropiacion_definitiva=Decimal("1500000.00"))
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id)
+
+        assert resultado.filas[0].presupuesto_apropiado == Decimal("1500000.00")
 
 
 class TestCA8SinAsociacionFicticia:
@@ -269,3 +308,162 @@ class TestPaginacion:
         codigos_1 = {f.cod_indicador_producto for f in pagina_1.filas}
         codigos_2 = {f.cod_indicador_producto for f in pagina_2.filas}
         assert codigos_1.isdisjoint(codigos_2)
+
+
+class TestReglaSectorValido:
+    """Regla 1b (consultas.py), agregada 2026-09-23: CodigoSectorCcpet no
+    puede estar vacío ni ser "NA" para que el rubro participe del cruce."""
+
+    def test_rubro_con_sector_vacio_no_cruza(self, sesion) -> None:
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)
+        _crear_rubro(sesion, corte_id, COD_1, codigo_sector_ccpet=None)
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id)
+
+        assert resultado.filas[0].cod_indicador_ejecucion is None
+
+    def test_rubro_con_sector_na_no_cruza(self, sesion) -> None:
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)
+        _crear_rubro(sesion, corte_id, COD_1, codigo_sector_ccpet="NA")
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id)
+
+        assert resultado.filas[0].cod_indicador_ejecucion is None
+
+    def test_rubro_con_sector_valido_si_cruza(self, sesion) -> None:
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)
+        _crear_rubro(sesion, corte_id, COD_1, codigo_sector_ccpet="04")
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id)
+
+        assert resultado.filas[0].cod_indicador_ejecucion == COD_1
+
+
+class TestReglaTipoGastoInversion:
+    """Regla 1c (consultas.py), agregada 2026-09-23: solo contratos con
+    Tipo Gasto = INVERSIÓN participan del cruce (con o sin tilde)."""
+
+    def test_contrato_de_funcionamiento_no_cruza(self, sesion) -> None:
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)
+        rubro_id = _crear_rubro(sesion, corte_id, COD_1)
+        contrato_id = _crear_contrato(sesion, corte_id, "C-001", tipo_gasto="FUNCIONAMIENTO")
+        _crear_registro(sesion, rubro_id, contrato_id)
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id)
+
+        assert resultado.filas[0].numero_contrato is None
+
+    def test_contrato_sin_tipo_gasto_no_cruza(self, sesion) -> None:
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)
+        rubro_id = _crear_rubro(sesion, corte_id, COD_1)
+        contrato_id = _crear_contrato(sesion, corte_id, "C-001", tipo_gasto=None)
+        _crear_registro(sesion, rubro_id, contrato_id)
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id)
+
+        assert resultado.filas[0].numero_contrato is None
+
+    def test_contrato_de_inversion_sin_tilde_si_cruza(self, sesion) -> None:
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)
+        rubro_id = _crear_rubro(sesion, corte_id, COD_1)
+        contrato_id = _crear_contrato(sesion, corte_id, "C-001", tipo_gasto="inversion")
+        _crear_registro(sesion, rubro_id, contrato_id)
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id)
+
+        assert resultado.filas[0].numero_contrato == "C-001"
+
+
+class TestFiltrosMatriz:
+    """Filtros de la matriz agregados 2026-09-23 (HU-07, definición de
+    filtros para verificación visual del cruce)."""
+
+    def _preparar_corte_mixto(self, sesion) -> uuid.UUID:
+        """Un corte con cuatro metas en los cuatro estados de cruce posibles:
+        completa (COD_1), sin proyecto (COD_2), sin ejecución (COD_3), y sin
+        ningún cruce (un cuarto código nuevo)."""
+        cod_sin_cruce = "099999999"
+        corte_id = _crear_corte(sesion)
+
+        _crear_meta(sesion, corte_id, COD_1)
+        _crear_proyecto_con_indicador(sesion, corte_id, "BPIN-1", COD_1)
+        rubro_id = _crear_rubro(sesion, corte_id, COD_1)
+        contrato_id = _crear_contrato(sesion, corte_id, "C-COMPLETO")
+        _crear_registro(sesion, rubro_id, contrato_id)
+
+        _crear_meta(sesion, corte_id, COD_2)
+        _crear_rubro(sesion, corte_id, COD_2)
+
+        _crear_meta(sesion, corte_id, COD_3)
+        _crear_proyecto_con_indicador(sesion, corte_id, "BPIN-3", COD_3)
+
+        _crear_meta(sesion, corte_id, cod_sin_cruce)
+
+        sesion.flush()
+        return corte_id
+
+    def test_estado_completo_solo_trae_metas_con_las_tres_fuentes(self, sesion) -> None:
+        corte_id = self._preparar_corte_mixto(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, estado_cruce="completo")
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_1
+
+    def test_estado_sin_proyecto_trae_la_meta_sin_bpin(self, sesion) -> None:
+        corte_id = self._preparar_corte_mixto(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, estado_cruce="sin_proyecto")
+
+        assert {f.cod_indicador_producto for f in resultado.filas} == {COD_2, "099999999"}
+
+    def test_estado_sin_ejecucion_trae_la_meta_sin_rubro(self, sesion) -> None:
+        corte_id = self._preparar_corte_mixto(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, estado_cruce="sin_ejecucion")
+
+        assert {f.cod_indicador_producto for f in resultado.filas} == {COD_3, "099999999"}
+
+    def test_estado_sin_cruce_trae_solo_la_meta_totalmente_huerfana(self, sesion) -> None:
+        corte_id = self._preparar_corte_mixto(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, estado_cruce="sin_cruce")
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == "099999999"
+
+    def test_busqueda_por_codigo_de_indicador(self, sesion) -> None:
+        corte_id = self._preparar_corte_mixto(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, busqueda=COD_1)
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_1
+
+    def test_busqueda_por_bpin(self, sesion) -> None:
+        corte_id = self._preparar_corte_mixto(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, busqueda="BPIN-3")
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_3
+
+    def test_busqueda_por_numero_de_contrato(self, sesion) -> None:
+        corte_id = self._preparar_corte_mixto(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, busqueda="C-COMPLETO")
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_1

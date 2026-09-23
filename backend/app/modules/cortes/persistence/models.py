@@ -169,8 +169,26 @@ class MetaORM(Base):
     # Decisión 6: la eficacia solo considera indicadores principales.
     es_principal: Mapped[bool] = mapped_column(sa.Boolean, nullable=False)
     # BPIN multivaluado del PDT, crudo (coma-separado). El cruce real de HU-07
-    # va por `proyecto_indicador`; esta columna queda para diagnóstico.
+    # va por `proyecto_indicador`; esta columna queda para diagnóstico. Sigue
+    # sin poblarse (2026-09-23): ningún nombre de columna real confirmado
+    # todavía en docs/DATOS.md — a diferencia de las columnas de abajo, no
+    # hay evidencia de qué encabezado real le corresponde en el archivo.
     bpin_relacionados: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+
+    # Agregadas 2026-09-23 (revisión de columnas, ver docs/DATOS.md).
+    # Metadato del plan, repetido en cada fila del archivo real:
+    entidad_territorial: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    nombre_plan: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    fecha_creacion_plan: Mapped[date | None] = mapped_column(nullable=True)
+    # Jerarquía MGA y clasificación propia de cada meta:
+    linea_estrategica: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    codigo_sector: Mapped[str | None] = mapped_column(sa.String(10), nullable=True)
+    sector: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    codigo_programa: Mapped[str | None] = mapped_column(sa.String(10), nullable=True)
+    programa: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    codigo_ods: Mapped[str | None] = mapped_column(sa.String(10), nullable=True)
+    ods: Mapped[str | None] = mapped_column(sa.Text, nullable=True)
+    tipo_acumulacion: Mapped[str | None] = mapped_column(sa.String(50), nullable=True)
 
     __table_args__ = (sa.Index("ix_meta_cruce", "corte_id", "cod_indicador_producto"),)
 
@@ -272,6 +290,9 @@ class RubroORM(Base):
     # Código largo con sufijos (-Actual-ENTIDAD-1), para casar contra Contratación.
     codigo_rubro_completo: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     codigo_sector_ccpet: Mapped[str | None] = mapped_column(sa.String(2), nullable=True)
+    # Agregada 2026-09-23: nombre legible del sector — antes solo se
+    # guardaba el código.
+    nombre_sector_ccpet: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
     codigo_producto_ccpet: Mapped[str | None] = mapped_column(sa.String(7), nullable=True)
     # Segundo segmento de codigo_rubro_nivel (EJ4); nullable en subtotales.
     cod_indicador_producto: Mapped[str | None] = mapped_column(sa.String(9), nullable=True)
