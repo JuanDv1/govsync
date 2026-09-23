@@ -29,15 +29,15 @@ todavía) sino la carga de archivos Excel. Checklist de `[SEC-03]`:
       que "el corte por streaming vive en el router" pero eso nunca se
       había implementado: `cargar_archivo` hacía
       `contenido = await archivo.read()` completo antes de que
-      `_verificar_tamano` revisara nada). Ahora es de dos capas: 1. `cortes/api/router.py::cargar_archivo` — filtro por
+      `_verificar_tamano` revisara nada). Ahora es de dos capas: (1) `cortes/api/router.py::cargar_archivo` — filtro por
       `Content-Length`, rechaza sin leer nada si el cliente declara el
       tamaño y ya excede `max_upload_bytes`. Cubre el caso común
       (cliente honesto); responde 422 estructurado
-      (`ArchivoInvalido`, `detalles.motivo == "tamano_excedido"`). 2. `main.py::crear_app` (`RequestBodyLimitMiddleware`, de
+      (`ArchivoInvalido`, `detalles.motivo == "tamano_excedido"`). (2) `main.py::crear_app` (`RequestBodyLimitMiddleware`, de
       `starlette.middleware.body_limit`) — respaldo autoritativo a
       nivel ASGI: envuelve `receive()` y corta apenas se exceden los
-      bytes reales, sin importar si `Content-Length` falta (`chunked
-       transfer-encoding`) o miente. **No** pasa por `ArchivoInvalido`:
+      bytes reales, sin importar si `Content-Length` falta (`chunked transfer-encoding`)
+      o miente. **No** pasa por `ArchivoInvalido`:
       responde `413 Content Too Large` en texto plano — excepción
       deliberada al contrato 422 de SEC-03, documentada aquí y en el
       docstring de `cargar_archivo`, porque reimplementar el parseo
