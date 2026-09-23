@@ -1,10 +1,22 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { Check } from "lucide-react";
 import { api } from "../api/cliente.js";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
 import { Cargando, Error as EstadoError } from "../components/Estados.jsx";
 import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
+import Card from "../components/shared/Card.jsx";
+import SectionHeader from "../components/shared/SectionHeader.jsx";
+import StateBadge from "../components/shared/StateBadge.jsx";
+
+// [HU-01][FE-03]: mapea el texto de `estadoFuente()` (definida más abajo,
+// depende de `corte`) al tono del badge — separado del texto para que
+// `StateBadge` no tenga que conocer estas tres frases específicas.
+const TONO_ESTADO_FUENTE = {
+  "Cargada en este corte": "verde",
+  "Reutilizada del corte anterior": "azul",
+  Pendiente: "gris",
+};
 
 /**
  * Asistente de creación de un corte.
@@ -25,13 +37,23 @@ import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
  *                           YA IMPLEMENTADO (componente `VistaPreviaDescartes`,
  *                           PR #79), integrado aquí en el paso 2 de PROYECTOS.
  *
+ * REANUDAR UN BORRADOR: sin tarjeta propia — hueco detectado probando el
+ * flujo manualmente (un corte creado y abandonado a mitad del wizard quedaba
+ * huérfano: el backend ya soporta retomarlo por id, pero el frontend no
+ * tenía ninguna ruta para hacerlo). Esta pantalla se monta también en
+ * `/cortes/:corteId` (ver App.jsx) — con `corteId` en la URL, en vez de
+ * mostrar el formulario de creación, se hace `GET /cortes/{id}` y se entra
+ * directo al paso 2 con el corte ya existente. `Cortes.jsx` enlaza aquí para
+ * cualquier corte en BORRADOR.
+ *
  * FLUJO
  *   Paso 1  vigencia y fecha — el calendario NO permite fechas futuras (CA-2),
  *           pero el rechazo también debe venir del backend: ocultar la opción
  *           en el frontend no es una validación. Al enviar, el corte creado
  *           (con su `id`) queda en estado local y se avanza al paso 2 — antes
  *           el resultado de `crearCorte` se descartaba; [HU-02][FE-02] es el
- *           primer consumidor real de ese `id`.
+ *           primer consumidor real de ese `id`. Si en cambio se entra por
+ *           `/cortes/:corteId`, este paso se salta: el corte ya existe.
  *   Paso 2  carga de los tres archivos obligatorios: PDT ([HU-02][FE-02]),
  *           PROYECTOS ([HU-04][FE-02]/[FE-03], Karold) y EJECUCION
  *           ([HU-03][FE-02]) contra `POST /cortes/{id}/archivos/{tipo}`, que
@@ -56,11 +78,21 @@ import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
  */
 
 export default function NuevoCorte() {
+  const { corteId } = useParams();
   const [vigencia, setVigencia] = useState("");
   const [fechaCorte, setFechaCorte] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
   const [corte, setCorte] = useState(null);
+  const [intentoCarga, setIntentoCarga] = useState(0);
+  // `claveCorteCargado` es la `clave` de la última petición de GET /cortes/{id}
+  // que ya resolvió (éxito o error) — comparándola contra `claveActualCarga`
+  // se deriva `cargandoCorte` en vez de guardarlo como su propio booleano.
+  // Ningún setState corre de forma síncrona en el cuerpo del efecto de abajo
+  // (react-hooks/set-state-in-effect); solo dentro de sus callbacks
+  // async, igual que ya hacen Cortes.jsx y MatrizRelacion.jsx.
+  const [claveCorteCargado, setClaveCorteCargado] = useState(null);
+  const [errorCarga, setErrorCarga] = useState(null);
   const [resultadoPdt, setResultadoPdt] = useState(null);
   const [errorPdt, setErrorPdt] = useState(null);
   const [resultadoProyectos, setResultadoProyectos] = useState(null);
@@ -93,6 +125,42 @@ export default function NuevoCorte() {
       setEnviando(false);
     }
   }
+
+  // Reanudar un borrador (ver docstring del módulo): con `corteId` en la
+  // URL, se trae el corte existente en vez de esperar el formulario de
+  // creación. `vigente` evita pisar el estado si el efecto vuelve a correr
+  // (cambio de `corteId` o reintento) antes de que la petición anterior
+  // resuelva — mismo patrón que ya usan Cortes.jsx y MatrizRelacion.jsx.
+  useEffect(() => {
+    if (!corteId) return;
+
+    const clave = `${corteId}:${intentoCarga}`;
+    let vigente = true;
+
+    api
+      .obtenerCorte(corteId)
+      .then((datos) => {
+        if (vigente) {
+          setCorte(datos);
+          setErrorCarga(null);
+          setClaveCorteCargado(clave);
+        }
+      })
+      .catch((errorApi) => {
+        if (vigente) {
+          setErrorCarga(errorApi);
+          setClaveCorteCargado(clave);
+        }
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [corteId, intentoCarga]);
+
+  const claveActualCarga = corteId ? `${corteId}:${intentoCarga}` : null;
+  const cargandoCorte =
+    Boolean(corteId) && claveCorteCargado !== claveActualCarga;
 
   // [HU-02][FE-02]: `CargaDeArchivo` nunca captura el error de `onCargar`
   // (solo envuelve el estado "enviando" en un try/finally, ver su
@@ -145,6 +213,25 @@ export default function NuevoCorte() {
     }
   }
 
+  if (corteId && cargandoCorte) {
+    return (
+      <section className="mx-auto max-w-4xl">
+        <Cargando mensaje="Cargando corte…" />
+      </section>
+    );
+  }
+
+  if (corteId && errorCarga) {
+    return (
+      <section className="mx-auto max-w-4xl">
+        <EstadoError
+          error={errorCarga}
+          onReintentar={() => setIntentoCarga((n) => n + 1)}
+        />
+      </section>
+    );
+  }
+
   if (corte) {
     const archivos = corte.archivos ?? [];
     const archivoPdt = archivos.find((archivo) => archivo.tipo === "PDT");
@@ -178,7 +265,7 @@ export default function NuevoCorte() {
     }
 
     return (
-      <section className="mx-auto max-w-4xl px-6 py-8">
+      <section className="mx-auto max-w-4xl">
         <header className="mb-5">
           <h1 className="text-base font-semibold text-gray-800">
             Cargar archivos del corte
@@ -190,10 +277,8 @@ export default function NuevoCorte() {
           </p>
         </header>
 
-        <div className="mb-5 rounded-sm border border-gray-200 bg-white p-5">
-          <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-            Fuentes obligatorias
-          </p>
+        <Card className="mb-5">
+          <SectionHeader>Fuentes obligatorias</SectionHeader>
           <ul
             className="flex flex-col gap-2"
             aria-label="Estado de fuentes obligatorias"
@@ -216,21 +301,14 @@ export default function NuevoCorte() {
                 <span className="font-medium text-gray-700">
                   {etiquetaFuente}
                 </span>
-                <span
-                  className={`rounded-sm border px-2 py-0.5 text-[11px] font-medium ${
-                    estado === "Cargada en este corte"
-                      ? "border-green-200 bg-green-50 text-green-700"
-                      : estado === "Reutilizada del corte anterior"
-                        ? "border-blue-200 bg-blue-50 text-azul"
-                        : "border-gray-200 bg-gray-50 text-gray-500"
-                  }`}
-                >
-                  {estado}
-                </span>
+                <StateBadge
+                  texto={estado}
+                  tono={TONO_ESTADO_FUENTE[estado] ?? "gris"}
+                />
               </li>
             ))}
           </ul>
-        </div>
+        </Card>
 
         <div className="flex flex-col gap-5">
           <CargaDeArchivo
@@ -322,10 +400,11 @@ export default function NuevoCorte() {
           <div className="flex items-center justify-between border-t border-gray-100 pt-5">
             {yaRegistrado ? (
               <>
-                <div className="flex items-center gap-2 rounded-sm border border-green-200 bg-green-50 px-3 py-2 text-xs font-medium text-green-700">
-                  <Check size={13} />
-                  Corte registrado
-                </div>
+                <StateBadge
+                  texto="Corte registrado"
+                  tono="verde"
+                  icono={Check}
+                />
                 <Link
                   to={`/matriz/${corte.id}`}
                   className="rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover"
@@ -359,7 +438,7 @@ export default function NuevoCorte() {
   }
 
   return (
-    <section className="mx-auto max-w-4xl px-6 py-8">
+    <section className="mx-auto max-w-4xl">
       <header className="mb-5">
         <h1 className="text-base font-semibold text-gray-800">Nuevo corte</h1>
         <p className="mt-0.5 text-[11px] text-gray-500">
@@ -367,13 +446,8 @@ export default function NuevoCorte() {
         </p>
       </header>
 
-      <form
-        onSubmit={manejarEnvio}
-        className="rounded-sm border border-gray-200 bg-white p-5"
-      >
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-          Datos del corte
-        </p>
+      <Card as="form" onSubmit={manejarEnvio}>
+        <SectionHeader>Datos del corte</SectionHeader>
 
         <div className="grid grid-cols-3 gap-4">
           <div>
@@ -440,7 +514,7 @@ export default function NuevoCorte() {
 
         {enviando && <Cargando mensaje="Creando corte…" />}
         <EstadoError error={error} />
-      </form>
+      </Card>
     </section>
   );
 }

@@ -87,6 +87,7 @@ import {
   SinCorrespondencia,
   Vacio,
 } from "../components/Estados.jsx";
+import Card from "../components/shared/Card.jsx";
 
 //: Mismo orden y claves que el contrato confirmado en HU-07/CA-3..CA-6 — ver
 //: la nota de corrección de contrato arriba (la constante `COLUMNAS` del
@@ -137,18 +138,19 @@ function PaginacionMatriz({
 }) {
   return (
     <nav
-      className="matriz-relacion-paginacion"
+      className="mt-3 flex items-center justify-center gap-4"
       aria-label="Paginación de la matriz de relación"
     >
       <button
         type="button"
         onClick={() => onCambiarPagina(pagina - 1)}
         disabled={pagina <= 1 || actualizando}
+        className="rounded-sm border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Anterior
       </button>
 
-      <span aria-live="polite">
+      <span aria-live="polite" className="text-[11px] text-gray-500">
         Página {pagina} de {totalPaginas} · {totalFilas} filas en total
         {actualizando ? " · actualizando…" : ""}
       </span>
@@ -157,6 +159,7 @@ function PaginacionMatriz({
         type="button"
         onClick={() => onCambiarPagina(pagina + 1)}
         disabled={pagina >= totalPaginas || actualizando}
+        className="rounded-sm border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Siguiente
       </button>
@@ -239,87 +242,112 @@ export default function MatrizRelacion() {
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
   const cambiarPagina = useCallback((nueva) => setPagina(nueva), []);
 
-  if (!corteId) {
-    return (
-      <Vacio
-        titulo="Ningún corte seleccionado"
-        descripcion="Elige un corte desde el histórico para ver su matriz de relación."
-      />
-    );
-  }
-
-  if (cargandoInicial) {
-    return <Cargando mensaje="Cargando matriz de relación…" />;
-  }
-
-  // Error sin datos previos que mostrar (falló la carga inicial, o falló un
-  // reintento sobre una página que nunca había cargado con éxito): mismo
-  // patrón de pantalla completa que antes de FE-04.
-  if (error && matrizVisible === null) {
-    return <EstadoError error={error} onReintentar={reintentar} />;
-  }
-
-  if (!matrizVisible || matrizVisible.total_filas === 0) {
-    return (
-      <Vacio
-        titulo="Sin datos para mostrar"
-        descripcion="Este corte no tiene metas registradas en la matriz de relación."
-      />
-    );
-  }
-
-  const totalPaginas = Math.max(
-    1,
-    Math.ceil(matrizVisible.total_filas / matrizVisible.tamano_pagina),
-  );
+  const totalPaginas = matrizVisible
+    ? Math.max(
+        1,
+        Math.ceil(matrizVisible.total_filas / matrizVisible.tamano_pagina),
+      )
+    : 1;
 
   return (
-    <section className="matriz-relacion">
-      <h1>Matriz de relación</h1>
+    <section className="mx-auto max-w-6xl">
+      <header className="mb-5">
+        <h1 className="text-base font-semibold text-gray-800">
+          Matriz de relación
+        </h1>
+        {corteId && (
+          <p className="mt-0.5 text-[11px] text-gray-500">
+            Corte <span className="font-mono">{corteId}</span>
+          </p>
+        )}
+      </header>
 
-      <div className="matriz-relacion-tabla-contenedor">
-        <table className="matriz-relacion-tabla">
-          <thead>
-            <tr>
-              {COLUMNAS.map((columna) => (
-                <th key={columna.clave}>{columna.titulo}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {matrizVisible.filas.map((fila, indice) => (
-              <tr key={`${fila.cod_indicador_producto}-${indice}`}>
-                {COLUMNAS.map((columna) => (
-                  <td key={columna.clave}>
-                    <Celda clave={columna.clave} valor={fila[columna.clave]} />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {!corteId && (
+        <Vacio
+          titulo="Ningún corte seleccionado"
+          descripcion="Elige un corte desde el histórico para ver su matriz de relación."
+        />
+      )}
 
-      {/* `pagina` (el estado, no `matrizVisible.pagina`) es la página que
-          el usuario está pidiendo ahora mismo. Si una página falla, deben
-          coincidir para que "Reintentar" y volver a pulsar "Siguiente"
-          apunten al mismo número — usar `matrizVisible.pagina` (la última que
-          cargó con éxito) dejaría "Siguiente" sin efecto tras un error, al
-          pedir de nuevo el mismo número ya establecido en el estado. */}
-      <PaginacionMatriz
-        pagina={pagina}
-        totalPaginas={totalPaginas}
-        totalFilas={matrizVisible.total_filas}
-        actualizando={actualizandoPagina}
-        onCambiarPagina={cambiarPagina}
-      />
+      {corteId && cargandoInicial && (
+        <Cargando mensaje="Cargando matriz de relación…" />
+      )}
 
-      {/* Error al cambiar de página: no se pierde la tabla ya mostrada
-          (matrizVisible sigue siendo la última página cargada con éxito).
-          Se informa el error puntual y se ofrece reintentar la misma
-          página, sin desmontar el resto de la pantalla. */}
-      {error && matrizVisible !== null && (
+      {/* Error sin datos previos que mostrar (falló la carga inicial, o un
+          reintento sobre una página que nunca había cargado con éxito). */}
+      {corteId && !cargandoInicial && error && matrizVisible === null && (
         <EstadoError error={error} onReintentar={reintentar} />
+      )}
+
+      {corteId &&
+        !cargandoInicial &&
+        matrizVisible !== null &&
+        matrizVisible.total_filas === 0 && (
+          <Vacio
+            titulo="Sin datos para mostrar"
+            descripcion="Este corte no tiene metas registradas en la matriz de relación."
+          />
+        )}
+
+      {corteId && matrizVisible && matrizVisible.total_filas > 0 && (
+        <>
+          <Card padding="p-0" className="max-h-[70vh] overflow-auto">
+            <table className="w-full">
+              <thead className="sticky top-0 bg-gray-50">
+                <tr>
+                  {COLUMNAS.map((columna) => (
+                    <th
+                      key={columna.clave}
+                      className="whitespace-nowrap px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                    >
+                      {columna.titulo}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {matrizVisible.filas.map((fila, indice) => (
+                  <tr
+                    key={`${fila.cod_indicador_producto}-${indice}`}
+                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60"
+                  >
+                    {COLUMNAS.map((columna) => (
+                      <td key={columna.clave} className="px-4 py-2.5 text-xs">
+                        <Celda
+                          clave={columna.clave}
+                          valor={fila[columna.clave]}
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+
+          {/* `pagina` (el estado, no `matrizVisible.pagina`) es la página
+              que el usuario está pidiendo ahora mismo. Si una página falla,
+              deben coincidir para que "Reintentar" y volver a pulsar
+              "Siguiente" apunten al mismo número — usar
+              `matrizVisible.pagina` (la última que cargó con éxito) dejaría
+              "Siguiente" sin efecto tras un error, al pedir de nuevo el
+              mismo número ya establecido en el estado. */}
+          <PaginacionMatriz
+            pagina={pagina}
+            totalPaginas={totalPaginas}
+            totalFilas={matrizVisible.total_filas}
+            actualizando={actualizandoPagina}
+            onCambiarPagina={cambiarPagina}
+          />
+
+          {/* Error al cambiar de página: no se pierde la tabla ya mostrada
+              (matrizVisible sigue siendo la última página cargada con
+              éxito). Se informa el error puntual y se ofrece reintentar la
+              misma página, sin desmontar el resto de la pantalla. */}
+          {error && matrizVisible !== null && (
+            <EstadoError error={error} onReintentar={reintentar} />
+          )}
+        </>
       )}
     </section>
   );

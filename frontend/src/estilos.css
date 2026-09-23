@@ -1,13 +1,14 @@
 /* GovSync — tokens de diseño y reset.
    TARJETA: [UX-01] Layout base
 
-   Actualizado (docs/DECISIONES.md D17): el equipo adoptó Tailwind para las
-   pantallas nuevas (Login, Nuevo corte y lo que siga) — ver esa entrada para
-   el motivo completo. Las pantallas construidas antes de D17 (Estados.jsx,
-   VistaPreviaDescartes.jsx, la tabla de matriz) siguen usando las clases BEM
-   de este archivo; no se migran solo por consistencia cosmética. Los tokens
-   de :root de abajo sí se actualizaron a la paleta de la guía de estilo, así
-   esas pantallas heredan los mismos colores sin tocar su JSX. */
+   Actualizado (docs/DECISIONES.md D18, D19): el equipo adoptó Tailwind —
+   ver esas entradas para el motivo completo y el alcance de cada una. Lo que
+   queda en este archivo son los tokens globales (:root, consumidos también
+   por componentes en Tailwind vía tailwind.config.js) y las clases BEM de
+   componentes que todavía no se migraron a Tailwind: Estados.jsx y
+   VistaPreviaDescartes.jsx (sí heredan la paleta actualizada de :root, solo
+   no tienen sus className en clases utilitarias). Login, NuevoCorte, Cortes
+   y MatrizRelacion ya están 100% en Tailwind. */
 
 @tailwind base;
 @tailwind components;
@@ -178,110 +179,4 @@ body {
 .estado-sin-correspondencia {
   color: var(--tinta-suave);
   font-style: italic;
-}
-
-/* [HU-07][FE-02] Tabla de la matriz de relación: encabezado fijo al hacer
-   scroll, columnas de código con ancho de contenido (nunca truncadas: ver
-   `.codigo` arriba). */
-.matriz-relacion-tabla-contenedor {
-  max-height: 70vh;
-  overflow: auto;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-}
-
-.matriz-relacion-tabla {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--superficie);
-}
-
-.matriz-relacion-tabla th,
-.matriz-relacion-tabla td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--borde);
-  text-align: left;
-}
-
-.matriz-relacion-tabla thead th {
-  position: sticky;
-  top: 0;
-  white-space: nowrap;
-  background: var(--superficie);
-  box-shadow: inset 0 -1px 0 var(--borde);
-}
-
-/* [HU-07][FE-04] Controles de paginación: mismo patrón visual que
-   `.estado-error-reintentar` (borde + fondo de superficie, sin relleno
-   sólido) para no introducir un tercer estilo de botón en la interfaz. */
-.matriz-relacion-paginacion {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 0.75rem;
-  color: var(--tinta-suave);
-  font-size: 0.9rem;
-}
-
-.matriz-relacion-paginacion button {
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--primario);
-  border-radius: var(--radio);
-  background: var(--superficie);
-  color: var(--primario);
-  cursor: pointer;
-}
-
-.matriz-relacion-paginacion button:hover:not(:disabled) {
-  background: var(--fondo);
-}
-
-.matriz-relacion-paginacion button:disabled {
-  border-color: var(--borde);
-  color: var(--tinta-suave);
-  cursor: not-allowed;
-}
-
-/* [HU-01][FE-03] Estado de las tres fuentes obligatorias del corte. */
-.nuevo-corte-fuentes {
-  margin: 1rem 0;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--borde);
-  border-radius: var(--radio);
-  background: var(--superficie);
-  box-shadow: var(--sombra);
-}
-
-.nuevo-corte-fuentes h2 {
-  margin-top: 0;
-  font-size: 1rem;
-}
-
-.nuevo-corte-fuentes ul {
-  margin: 0;
-  padding-left: 1.25rem;
-}
-
-/* [HU-01][FE-03] Histórico de cortes. El orden ya viene definido por backend. */
-.historico-cortes {
-  overflow-x: auto;
-}
-
-.cortes-tabla {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--superficie);
-}
-
-.cortes-tabla th,
-.cortes-tabla td {
-  padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--borde);
-  text-align: left;
-  white-space: nowrap;
-}
-
-.cortes-tabla th {
-  font-weight: 600;
 }
