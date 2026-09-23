@@ -1,0 +1,57 @@
+# [DEV-06] Analisis estatico de seguridad (CodeQL). No requiere cuenta ni
+# secreto -- a diferencia de SonarCloud, GitHub lo ofrece nativo para
+# repositorios publicos y privados de organizaciones con GitHub Advanced
+# Security. Los resultados quedan en la pestana "Security > Code scanning
+# alerts" del repositorio, que es la evidencia que pide PlantillaSprint1.md
+# S4.2/S4.3 (analisis estatico + vulnerabilidades criticas).
+#
+# Dos lenguajes porque el repo es un monolito modular con backend Python y
+# frontend JS/JSX (ver docs/GovSync_Guia_Tecnica.md) -- se analizan por
+# separado, cada uno con su propia matriz de "language", como recomienda la
+# plantilla oficial de CodeQL para evitar falsos negativos por mezclar
+# lenguajes en un mismo analisis.
+name: CodeQL
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Los lunes a las 09:00 UTC (04:00 hora Colombia) -- corre igual aunque
+    # no haya push/PR esa semana, para detectar vulnerabilidades nuevas en
+    # dependencias ya mergeadas (CVEs publicados despues del merge).
+    - cron: "0 9 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: python
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
