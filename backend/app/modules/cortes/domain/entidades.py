@@ -9,6 +9,11 @@ INVARIANTES (de la tarjeta)
 =============================================================================
 - La vigencia no puede ser fecha futura (CA-2). Al violarse lanza excepción de
   dominio CON EL MOTIVO, no un error genérico.
+- La vigencia debe ser un año dentro de un rango real (hallazgo del QA manual
+  del 2026-09-23, ver D18 en docs/DECISIONES.md): sin esta regla, un valor
+  como 0, negativo o un typo ("1" en vez de "2026") pasaba sin problema hasta
+  la lectura del Excel, donde fallaba con un mensaje de "columnas faltantes"
+  que no menciona la vigencia como causa real.
 - El paso a REGISTRADO exige las tres fuentes asociadas (CA-4).
 - Un corte REGISTRADO no admite cambio de vigencia.
 
@@ -70,6 +75,13 @@ ARCHIVOS_REUTILIZABLES: tuple[TipoArchivoFuente, ...] = (
     TipoArchivoFuente.PROYECTOS,
 )
 
+#: D18 (docs/DECISIONES.md, 2026-09-23): rango fijo y simple, sin acoplarse a
+#: la fecha del sistema (alternativa elegida por el equipo entre las
+#: presentadas). No pretende ser el año calendario real de la vigencia, solo
+#: descartar valores sin sentido (0, negativos, typos de un solo dígito).
+VIGENCIA_MINIMA = 2000
+VIGENCIA_MAXIMA = 2100
+
 
 @dataclass(slots=True)
 class ArchivoFuente:
@@ -126,6 +138,31 @@ class Corte:
                 },
             )
 
+    @staticmethod
+    def validar_vigencia(vigencia: int) -> None:
+        """D18 (docs/DECISIONES.md): rechaza una vigencia fuera de rango.
+
+        Deliberadamente en el dominio y NO como `Field(ge=, le=)` en el
+        esquema Pydantic de la API: un error de validación de Pydantic no
+        pasa por `app/core/errores.py` (que solo traduce subclases de
+        `GovSyncError`), así que el frontend (`api/cliente.js::ErrorApi`,
+        que espera `{codigo, mensaje, detalles}`) recibiría un cuerpo con
+        forma distinta (`{"detail": [...]}"`) y caería al mensaje genérico
+        de fallback, perdiendo el detalle accionable. Levantar
+        `ReglaDeNegocioViolada` aquí reutiliza el mismo mecanismo ya
+        probado que `validar_fecha`.
+        """
+        if not (VIGENCIA_MINIMA <= vigencia <= VIGENCIA_MAXIMA):
+            raise ReglaDeNegocioViolada(
+                f"La vigencia ({vigencia}) debe estar entre {VIGENCIA_MINIMA} y {VIGENCIA_MAXIMA}.",
+                detalles={
+                    "motivo": "vigencia_fuera_de_rango",
+                    "vigencia": vigencia,
+                    "vigencia_minima": VIGENCIA_MINIMA,
+                    "vigencia_maxima": VIGENCIA_MAXIMA,
+                },
+            )
+
     def archivos_faltantes(self) -> list[TipoArchivoFuente]:
         """Tipos obligatorios que aún no están cargados ni reutilizados."""
         return [tipo for tipo in ARCHIVOS_OBLIGATORIOS if tipo not in self.archivos]
@@ -168,6 +205,7 @@ class Corte:
                     "estado_actual": self.estado.value,
                 },
             )
+        Corte.validar_vigencia(vigencia)
         Corte.validar_fecha(fecha_corte, hoy)
         self.vigencia = vigencia
         self.fecha_corte = fecha_corte

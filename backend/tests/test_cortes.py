@@ -33,6 +33,25 @@ def test_acepta_fecha_hoy_o_pasada():
     Corte.validar_fecha(date(2026, 9, 1), hoy)
 
 
+# D18 (docs/DECISIONES.md, 2026-09-23): hallazgo del QA manual -- la
+# vigencia no tenia ninguna validacion de rango en ninguna capa. Rango
+# elegido por el equipo: fijo (2000-2100), sin acoplarse a `hoy`.
+@pytest.mark.parametrize("vigencia", [1999, 0, -5, 1, 2101, 99999])
+def test_validar_vigencia_rechaza_fuera_de_rango_con_motivo(vigencia):
+    with pytest.raises(ReglaDeNegocioViolada) as exc_info:
+        Corte.validar_vigencia(vigencia)
+
+    assert exc_info.value.detalles["motivo"] == "vigencia_fuera_de_rango"
+    assert exc_info.value.detalles["vigencia"] == vigencia
+    assert exc_info.value.detalles["vigencia_minima"] == 2000
+    assert exc_info.value.detalles["vigencia_maxima"] == 2100
+
+
+@pytest.mark.parametrize("vigencia", [2000, 2026, 2100])
+def test_validar_vigencia_acepta_limites_inclusive(vigencia):
+    Corte.validar_vigencia(vigencia)
+
+
 def test_archivos_faltantes_en_corte_nuevo_devuelve_los_tres():
     corte = Corte(vigencia=2026, fecha_corte=date(2026, 9, 8))
 
@@ -158,4 +177,20 @@ class TestCorregir:
 
         assert exc_info.value.detalles["fecha_corte"] == date(2026, 9, 11).isoformat()
         # No cambia nada si se rechaza:
+        assert corte.fecha_corte == date(2026, 9, 8)
+
+    def test_rechaza_corregir_con_vigencia_fuera_de_rango(self):
+        """D18 (docs/DECISIONES.md): mismo hallazgo del QA manual, pero por
+        el camino de PATCH /cortes/{id} en vez de POST /cortes -- es el
+        camino que originalmente permitio corregir un "1" a un "2026", y
+        debe rechazar igual de bien un segundo error de digitacion."""
+        corte = Corte(vigencia=2026, fecha_corte=date(2026, 9, 8))
+        hoy = date(2026, 9, 10)
+
+        with pytest.raises(ReglaDeNegocioViolada) as exc_info:
+            corte.corregir(vigencia=1, fecha_corte=date(2026, 9, 9), hoy=hoy)
+
+        assert exc_info.value.detalles["motivo"] == "vigencia_fuera_de_rango"
+        # No cambia nada si se rechaza:
+        assert corte.vigencia == 2026
         assert corte.fecha_corte == date(2026, 9, 8)
