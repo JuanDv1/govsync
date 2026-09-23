@@ -604,3 +604,112 @@ tarjeta de estilo visual, pendiente de que el equipo la ratifique como las
 demás decisiones de arquitectura de este documento.
 
 **Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
+
+---
+
+## D18 · Sidebar AppShell + átomos compartidos, adaptados de `DESIGN_SPEC.md` (mockup Figma Make), sin RBAC
+
+**Decisión:** se reemplazó la barra superior simple de `Disposicion.jsx`
+por un sidebar fijo (`w-52`, navy) siguiendo `DESIGN_SPEC.md` §4.1, y se
+extrajeron los átomos que ese documento lista en su §7 como base a portar
+primero: `Card`, `SectionHeader`, `StateBadge`, `SemaforoDot`, `PctCell`
+(en `components/shared/`) y el helper `cop()` (`lib/formato.js`). Se
+aplicaron a las cuatro pantallas que ya existen en el sprint — Login,
+Nuevo corte, Cortes, Matriz de relación —, no a las pantallas nuevas que
+describe el documento (Tablero, Conciliación, Avance físico, Gestión de
+usuarios), que **no se construyeron**.
+
+**Motivo:** `DESIGN_SPEC.md` es la documentación de un mockup de Figma Make
+más grande que el alcance de este sprint — describe una app completa con
+RBAC por rol y seis pantallas. `PLANDETRABAJO.md` no tiene tarjeta para
+ninguna de esas seis pantallas ni para roles/autenticación (siguen bajo
+D2/`[REF-05]`, diferidos a Sprint 2). Construirlas ahora habría significado
+UI sin backend ni datos reales que las respalden, y un menú de navegación
+filtrado por un rol que el sistema todavía no modela. El usuario confirmó
+explícitamente este recorte antes de empezar (tokens + átomos + sidebar,
+sin las pantallas nuevas ni RBAC).
+
+**Qué SÍ se llevó del documento:** los tokens de color adicionales
+(`semaforo.*`, `chart.*`, `navy.sidebar`, `secundario`) en
+`tailwind.config.js`; el patrón de tabla universal (§4.4: `thead` gris,
+texto `10px` uppercase, filas con hover, celdas numéricas en `font-mono`)
+aplicado a `Cortes.jsx` y `MatrizRelacion.jsx`, que antes no tenían ningún
+estilo real (sus clases `.historico-cortes`/`.cortes-tabla`/`.apagado`
+nunca tuvieron CSS definido); el patrón de encabezado de pantalla
+persistente (§4.2: título+subtítulo visibles incluso en estados de
+carga/error), que antes no existía — `Cortes.jsx` y `MatrizRelacion.jsx`
+retornaban solo el estado de carga/error sin encabezado.
+
+**Qué NO se llevó (deliberado):** `NAV_BY_ROLE`/roles, las seis pantallas
+nuevas, Recharts (no hay gráficos en este sprint), shadcn/ui (no se
+evaluó; el layout actual son cuatro pantallas y una tabla, no justifica
+otra dependencia de componentes todavía). `SemaforoDot` y `PctCell` se
+crearon sin consumidor real hoy — quedan documentados en su propio
+comentario como átomos listos, no como código muerto accidental.
+
+**Riesgo aceptado:** dos átomos (`SemaforoDot`, `PctCell`) no tienen
+ninguna pantalla que los use todavía; si para cuando exista una tarjeta
+real que los necesite el diseño final terminó siendo distinto, se
+descartan sin costo (son ~20 líneas cada uno).
+
+**Estado:** PROPUESTA — mismo criterio que D17, pendiente de ratificación
+del equipo.
+
+**Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
+
+---
+
+## D19 · `/cortes/:corteId` reanuda un corte en BORRADOR desde el frontend
+
+**Hallazgo (2026-09-21, probando el flujo de punta a punta):** un corte
+creado y abandonado a mitad del wizard (por ejemplo, cerrando la pestaña
+tras el paso 1) quedaba huérfano. El backend ya soporta retomarlo por id
+(`GET /cortes/{id}`, y `POST /cortes/{id}/archivos/{tipo}` /
+`POST /cortes/{id}/registrar` funcionan contra cualquier corte en
+BORRADOR existente), pero el frontend no tenía ningún punto de entrada
+para hacerlo: `NuevoCorte.jsx` solo sabía crear un corte nuevo, y
+`Cortes.jsx` mostraba los BORRADOR como texto plano ("En borrador"), sin
+enlace. No estaba anotado como pendiente en `PLANDETRABAJO.md` ni en este
+documento — a diferencia de RBAC/autenticación (D2), que sí están
+diferidos a propósito, este era un hueco no advertido.
+
+**Decisión:** `NuevoCorte.jsx` se monta también en la ruta
+`/cortes/:corteId` (además de `/cortes/nuevo`). Con `corteId` en la URL,
+en vez de mostrar el formulario de creación, hace `GET /cortes/{id}` y
+entra directo a la vista de carga de archivos con el corte ya existente
+— mismo componente, misma lógica de `subirPdt`/`subirProyectos`/
+`subirEjecucion`/`manejarRegistro`, sin duplicar nada. `Cortes.jsx` ahora
+enlaza "Continuar carga" a esa ruta para cualquier corte en BORRADOR.
+
+**Por qué reusar el mismo componente en vez de crear uno nuevo:** la
+vista de "cargar archivos del corte" (paso 2 del wizard) ya es idéntica
+para un corte recién creado o uno recuperado — ambos casos solo necesitan
+un objeto `corte` con `id`/`vigencia`/`fecha_corte`/`estado`/`archivos`.
+Separar esto en dos componentes hubiera duplicado ~150 líneas de JSX y
+las tres funciones de subida.
+
+**Efecto secundario encontrado y corregido en el mismo cambio:** al
+razonar sobre las rutas se encontró que el `NavLink` de "Cortes" en el
+sidebar (`Disposicion.jsx`) no tenía `end`, así que se resaltaba también
+en `/cortes/nuevo` y ahora se resaltaría en `/cortes/:id` — dos ítems del
+menú activos a la vez. Se agregó `end` a ese `NavLink`. Costo aceptado:
+mientras se reanuda un borrador (`/cortes/:id`), ningún ítem del menú
+queda resaltado — se prefirió eso a inventar una regla de coincidencia
+custom para un caso de uso secundario.
+
+**Probado manualmente de punta a punta** (backend + Postgres + frontend
+reales, sin mocks): corte creado y abandonado en BORRADOR → `Cortes.jsx`
+lo lista con "Continuar carga" → `/cortes/:id` lo carga con sus fuentes
+reutilizadas/pendientes intactas → se sube la fuente faltante → se
+registra con éxito → aparece en el histórico como REGISTRADO. También se
+probó el camino de error: un id con formato inválido cae en el 422
+genérico de FastAPI (mismo comportamiento que ya tenía `/matriz/:corteId`
+para el mismo caso, no es nuevo de esta tarjeta); un UUID válido pero
+inexistente muestra el 404 específico del dominio
+(`codigo: recurso_no_encontrado`) con su mensaje, gracias a
+`EstadoError`.
+
+**Estado:** IMPLEMENTADA — cierra un hueco real, no una decisión de
+alcance a ratificar.
+
+**Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).

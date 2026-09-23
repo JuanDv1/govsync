@@ -49,6 +49,7 @@ import {
   SinCorrespondencia,
   Vacio,
 } from "../components/Estados.jsx";
+import Card from "../components/shared/Card.jsx";
 
 //: Mismo orden y claves que el contrato confirmado en HU-07/CA-3..CA-6 — ver
 //: la nota de corrección de contrato arriba (la constante `COLUMNAS` del
@@ -121,58 +122,79 @@ export default function MatrizRelacion() {
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
 
-  if (!corteId) {
-    return (
-      <Vacio
-        titulo="Ningún corte seleccionado"
-        descripcion="Elige un corte desde el histórico para ver su matriz de relación."
-      />
-    );
-  }
-
-  if (cargando) {
-    return <Cargando mensaje="Cargando matriz de relación…" />;
-  }
-
-  if (error) {
-    return <EstadoError error={error} onReintentar={reintentar} />;
-  }
-
-  if (!matriz || matriz.total_filas === 0) {
-    return (
-      <Vacio
-        titulo="Sin datos para mostrar"
-        descripcion="Este corte no tiene metas registradas en la matriz de relación."
-      />
-    );
-  }
-
   return (
-    <section className="matriz-relacion">
-      <h1>Matriz de relación</h1>
+    <section className="mx-auto max-w-6xl">
+      <header className="mb-5">
+        <h1 className="text-base font-semibold text-gray-800">
+          Matriz de relación
+        </h1>
+        {corteId && (
+          <p className="mt-0.5 text-[11px] text-gray-500">
+            Corte <span className="font-mono">{corteId}</span>
+          </p>
+        )}
+      </header>
 
-      <div className="matriz-relacion-tabla-contenedor">
-        <table className="matriz-relacion-tabla">
-          <thead>
-            <tr>
-              {COLUMNAS.map((columna) => (
-                <th key={columna.clave}>{columna.titulo}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {matriz.filas.map((fila, indice) => (
-              <tr key={`${fila.cod_indicador_producto}-${indice}`}>
+      {!corteId && (
+        <Vacio
+          titulo="Ningún corte seleccionado"
+          descripcion="Elige un corte desde el histórico para ver su matriz de relación."
+        />
+      )}
+
+      {corteId && cargando && (
+        <Cargando mensaje="Cargando matriz de relación…" />
+      )}
+
+      {corteId && !cargando && error && (
+        <EstadoError error={error} onReintentar={reintentar} />
+      )}
+
+      {corteId &&
+        !cargando &&
+        !error &&
+        (!matriz || matriz.total_filas === 0) && (
+          <Vacio
+            titulo="Sin datos para mostrar"
+            descripcion="Este corte no tiene metas registradas en la matriz de relación."
+          />
+        )}
+
+      {corteId && !cargando && !error && matriz && matriz.total_filas > 0 && (
+        <Card padding="p-0" className="max-h-[70vh] overflow-auto">
+          <table className="w-full">
+            <thead className="sticky top-0 bg-gray-50">
+              <tr>
                 {COLUMNAS.map((columna) => (
-                  <td key={columna.clave}>
-                    <Celda clave={columna.clave} valor={fila[columna.clave]} />
-                  </td>
+                  <th
+                    key={columna.clave}
+                    className="whitespace-nowrap px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                  >
+                    {columna.titulo}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {matriz.filas.map((fila, indice) => (
+                <tr
+                  key={`${fila.cod_indicador_producto}-${indice}`}
+                  className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60"
+                >
+                  {COLUMNAS.map((columna) => (
+                    <td key={columna.clave} className="px-4 py-2.5 text-xs">
+                      <Celda
+                        clave={columna.clave}
+                        valor={fila[columna.clave]}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      )}
     </section>
   );
 }

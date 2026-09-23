@@ -17,17 +17,20 @@ import MatrizRelacion from "./pages/MatrizRelacion.jsx";
 
 function Pendiente() {
   return (
-    <section
-      style={{ maxWidth: 640, margin: "4rem auto", padding: "0 1.5rem" }}
-    >
-      <h1>GovSync</h1>
-      <p className="apagado">
-        Esqueleto del Sprint 1. Las pantallas se implementan según
-        <code> PLAN-DE-TRABAJO.md</code>.
+    <section className="mx-auto max-w-2xl rounded-sm border border-gray-200 bg-white p-5">
+      <h1 className="text-base font-semibold text-gray-800">GovSync</h1>
+      <p className="mt-1 text-xs text-gray-500">
+        Esqueleto del Sprint 1. Las pantallas se implementan según{" "}
+        <code className="font-mono">PLAN-DE-TRABAJO.md</code>.
       </p>
-      <p>
+      <p className="mt-2 text-xs text-gray-500">
         Backend:{" "}
-        <a href="http://localhost:8000/docs">http://localhost:8000/docs</a>
+        <a
+          href="http://localhost:8000/docs"
+          className="font-medium text-azul hover:text-navy"
+        >
+          http://localhost:8000/docs
+        </a>
       </p>
     </section>
   );
@@ -41,6 +44,11 @@ export default function App() {
       <Route element={<Disposicion />}>
         <Route path="/cortes" element={<Cortes />} />
         <Route path="/cortes/nuevo" element={<NuevoCorte />} />
+        {/* Reanudar un corte en BORRADOR — ver docstring de NuevoCorte.jsx.
+            React Router prioriza los segmentos estáticos ("/cortes/nuevo")
+            sobre los dinámicos, así que el orden de estas dos rutas no
+            importa para que no choquen entre sí. */}
+        <Route path="/cortes/:corteId" element={<NuevoCorte />} />
         <Route path="/matriz/:corteId?" element={<MatrizRelacion />} />
         <Route path="*" element={<Pendiente />} />
       </Route>
