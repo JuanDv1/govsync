@@ -680,3 +680,154 @@ rechazar datos nuevos.
 **Estado:** VIGENTE.
 
 **Registrado:** 2026-09-23.
+
+---
+
+## D19 · Se adopta Tailwind CSS para las pantallas nuevas del frontend
+
+**Decisión:** a partir de esta tarjeta (estilo visual de Login y Nuevo
+corte), el frontend usa Tailwind CSS para las pantallas y componentes que
+se construyan o restilicen de aquí en adelante. Las pantallas y
+componentes ya existentes antes de esta fecha (`Estados.jsx`,
+`VistaPreviaDescartes.jsx`, la tabla de `MatrizRelacion.jsx`) **no se
+migran** solo por consistencia cosmética — siguen con las clases BEM de
+`estilos.css`. Los tokens de color/radio/tipografía que ya vivían como
+variables CSS en `:root` se actualizaron a la paleta de la guía de estilo
+recibida, así esos componentes heredan los mismos colores sin tocar su
+JSX (ver comentario al inicio de `estilos.css`).
+
+**Motivo:** `estilos.css` documentaba explícitamente la decisión contraria
+("agregar Tailwind o MUI sería peso sin beneficio para cuatro pantallas").
+Esa decisión fue razonable cuando el alcance era 4 pantallas sin guía de
+diseño. Cambia el contexto: (1) la guía de estilo que el equipo recibió
+está escrita en su totalidad como clases utilitarias de Tailwind — traducir
+cada valor arbitrario a mano (`text-[#1A3A6B]`, `tracking-[0.12em]`,
+`w-[42%]`) a CSS plano es más lento y con más riesgo de desviarse del
+pixel-spec; (2) hay un dashboard con más pantallas planeado a futuro, y
+adoptar Tailwind ahora (2 pantallas) es más barato que migrar después con
+10+ pantallas ya escritas en CSS plano.
+
+**Alternativas consideradas:** traducir la guía a CSS plano extendiendo
+`estilos.css` con el mismo patrón BEM — descartada por el punto (2)
+anterior; se prefirió no posponer la migración a un momento con más
+superficie de código que reescribir.
+
+**Costo aceptado:** el frontend queda con dos sistemas de estilos
+coexistiendo (Tailwind en pantallas nuevas, CSS plano en las anteriores)
+hasta que alguien decida migrar el resto — no forma parte de esta
+tarjeta.
+
+**Estado:** PROPUESTA — implementada directamente por no bloquear la
+tarjeta de estilo visual, pendiente de que el equipo la ratifique como las
+demás decisiones de arquitectura de este documento.
+
+**Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
+
+---
+
+## D20 · Sidebar AppShell + átomos compartidos, adaptados de `DESIGN_SPEC.md` (mockup Figma Make), sin RBAC
+
+**Decisión:** se reemplazó la barra superior simple de `Disposicion.jsx`
+por un sidebar fijo (`w-52`, navy) siguiendo `DESIGN_SPEC.md` §4.1, y se
+extrajeron los átomos que ese documento lista en su §7 como base a portar
+primero: `Card`, `SectionHeader`, `StateBadge`, `SemaforoDot`, `PctCell`
+(en `components/shared/`) y el helper `cop()` (`lib/formato.js`). Se
+aplicaron a las cuatro pantallas que ya existen en el sprint — Login,
+Nuevo corte, Cortes, Matriz de relación —, no a las pantallas nuevas que
+describe el documento (Tablero, Conciliación, Avance físico, Gestión de
+usuarios), que **no se construyeron**.
+
+**Motivo:** `DESIGN_SPEC.md` es la documentación de un mockup de Figma Make
+más grande que el alcance de este sprint — describe una app completa con
+RBAC por rol y seis pantallas. `PLANDETRABAJO.md` no tiene tarjeta para
+ninguna de esas seis pantallas ni para roles/autenticación (siguen bajo
+D2/`[REF-05]`, diferidos a Sprint 2). Construirlas ahora habría significado
+UI sin backend ni datos reales que las respalden, y un menú de navegación
+filtrado por un rol que el sistema todavía no modela. El usuario confirmó
+explícitamente este recorte antes de empezar (tokens + átomos + sidebar,
+sin las pantallas nuevas ni RBAC).
+
+**Qué SÍ se llevó del documento:** los tokens de color adicionales
+(`semaforo.*`, `chart.*`, `navy.sidebar`, `secundario`) en
+`tailwind.config.js`; el patrón de tabla universal (§4.4: `thead` gris,
+texto `10px` uppercase, filas con hover, celdas numéricas en `font-mono`)
+aplicado a `Cortes.jsx` y `MatrizRelacion.jsx`, que antes no tenían ningún
+estilo real (sus clases `.historico-cortes`/`.cortes-tabla`/`.apagado`
+nunca tuvieron CSS definido); el patrón de encabezado de pantalla
+persistente (§4.2: título+subtítulo visibles incluso en estados de
+carga/error), que antes no existía — `Cortes.jsx` y `MatrizRelacion.jsx`
+retornaban solo el estado de carga/error sin encabezado.
+
+**Qué NO se llevó (deliberado):** `NAV_BY_ROLE`/roles, las seis pantallas
+nuevas, Recharts (no hay gráficos en este sprint), shadcn/ui (no se
+evaluó; el layout actual son cuatro pantallas y una tabla, no justifica
+otra dependencia de componentes todavía). `SemaforoDot` y `PctCell` se
+crearon sin consumidor real hoy — quedan documentados en su propio
+comentario como átomos listos, no como código muerto accidental.
+
+**Riesgo aceptado:** dos átomos (`SemaforoDot`, `PctCell`) no tienen
+ninguna pantalla que los use todavía; si para cuando exista una tarjeta
+real que los necesite el diseño final terminó siendo distinto, se
+descartan sin costo (son ~20 líneas cada uno).
+
+**Estado:** PROPUESTA — mismo criterio que D19, pendiente de ratificación
+del equipo.
+
+**Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
+
+---
+
+## D21 · `/cortes/:corteId` reanuda un corte en BORRADOR desde el frontend
+
+**Hallazgo (2026-09-21, probando el flujo de punta a punta):** un corte
+creado y abandonado a mitad del wizard (por ejemplo, cerrando la pestaña
+tras el paso 1) quedaba huérfano. El backend ya soporta retomarlo por id
+(`GET /cortes/{id}`, y `POST /cortes/{id}/archivos/{tipo}` /
+`POST /cortes/{id}/registrar` funcionan contra cualquier corte en
+BORRADOR existente), pero el frontend no tenía ningún punto de entrada
+para hacerlo: `NuevoCorte.jsx` solo sabía crear un corte nuevo, y
+`Cortes.jsx` mostraba los BORRADOR como texto plano ("En borrador"), sin
+enlace. No estaba anotado como pendiente en `PLANDETRABAJO.md` ni en este
+documento — a diferencia de RBAC/autenticación (D2), que sí están
+diferidos a propósito, este era un hueco no advertido.
+
+**Decisión:** `NuevoCorte.jsx` se monta también en la ruta
+`/cortes/:corteId` (además de `/cortes/nuevo`). Con `corteId` en la URL,
+en vez de mostrar el formulario de creación, hace `GET /cortes/{id}` y
+entra directo a la vista de carga de archivos con el corte ya existente
+— mismo componente, misma lógica de `subirPdt`/`subirProyectos`/
+`subirEjecucion`/`manejarRegistro`, sin duplicar nada. `Cortes.jsx` ahora
+enlaza "Continuar carga" a esa ruta para cualquier corte en BORRADOR.
+
+**Por qué reusar el mismo componente en vez de crear uno nuevo:** la
+vista de "cargar archivos del corte" (paso 2 del wizard) ya es idéntica
+para un corte recién creado o uno recuperado — ambos casos solo necesitan
+un objeto `corte` con `id`/`vigencia`/`fecha_corte`/`estado`/`archivos`.
+Separar esto en dos componentes hubiera duplicado ~150 líneas de JSX y
+las tres funciones de subida.
+
+**Efecto secundario encontrado y corregido en el mismo cambio:** al
+razonar sobre las rutas se encontró que el `NavLink` de "Cortes" en el
+sidebar (`Disposicion.jsx`) no tenía `end`, así que se resaltaba también
+en `/cortes/nuevo` y ahora se resaltaría en `/cortes/:id` — dos ítems del
+menú activos a la vez. Se agregó `end` a ese `NavLink`. Costo aceptado:
+mientras se reanuda un borrador (`/cortes/:id`), ningún ítem del menú
+queda resaltado — se prefirió eso a inventar una regla de coincidencia
+custom para un caso de uso secundario.
+
+**Probado manualmente de punta a punta** (backend + Postgres + frontend
+reales, sin mocks): corte creado y abandonado en BORRADOR → `Cortes.jsx`
+lo lista con "Continuar carga" → `/cortes/:id` lo carga con sus fuentes
+reutilizadas/pendientes intactas → se sube la fuente faltante → se
+registra con éxito → aparece en el histórico como REGISTRADO. También se
+probó el camino de error: un id con formato inválido cae en el 422
+genérico de FastAPI (mismo comportamiento que ya tenía `/matriz/:corteId`
+para el mismo caso, no es nuevo de esta tarjeta); un UUID válido pero
+inexistente muestra el 404 específico del dominio
+(`codigo: recurso_no_encontrado`) con su mensaje, gracias a
+`EstadoError`.
+
+**Estado:** IMPLEMENTADA — cierra un hueco real, no una decisión de
+alcance a ratificar.
+
+**Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
