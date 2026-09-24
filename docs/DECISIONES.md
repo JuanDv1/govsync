@@ -831,3 +831,124 @@ inexistente muestra el 404 específico del dominio
 alcance a ratificar.
 
 **Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
+
+---
+
+## D21 · Columnas faltantes en PDT/Ejecución, dos reglas de negocio nuevas en la matriz, y definición de filtros
+
+**Hallazgo (2026-09-23, revisión de columnas pedida por el equipo):**
+comparando la lista de columnas de PDT/Ejecución/Proyectos contra el
+código, se encontraron: (1) columnas del PDT nunca extraídas (metadato del
+plan, jerarquía MGA completa, ODS); (2) `NombreSectorCcpet` de Ejecución
+nunca extraída (solo el código); (3) tres columnas ya modeladas en
+`MetaORM` y ya leídas por `repositorios.py::reemplazar_metas`
+(`cod_indicador_sistp`, `codigo_producto_mga`, `bpin_relacionados`) que el
+lector del PDT nunca poblaba — la tubería existía, faltaba la extracción;
+(4) dos reglas de negocio (`Tipo Gasto = INVERSIÓN`, `CodigoSectorCcpet ≠
+vacío/NA`) que el equipo esperaba pero no estaban en ningún CA aprobado ni
+en el código. Detalle completo por columna en `docs/DATOS.md` (nuevo,
+también cierra ese hallazgo — el archivo era referenciado por `pdt.py`/
+`ejecucion.py`/`proyectos.py`/`_comun.py` desde el inicio del sprint sin
+existir nunca).
+
+**Decisiones tomadas, una por hallazgo:**
+
+1. **Columnas nuevas del PDT** (`pdt.py::OPCIONALES`, `MetaORM`,
+   `repositorios.py::reemplazar_metas`, migración `122e94509b80`):
+   `entidad_territorial`, `nombre_plan`, `fecha_creacion_plan` (metadato
+   del plan, repetido por fila — no se creó una tabla `plan` aparte, ver
+   razonamiento en el comentario de `pdt.py`), `linea_estrategica`,
+   `codigo_sector`/`sector`, `codigo_programa`/`programa`, `codigo_ods`/
+   `ods`, `tipo_acumulacion` (propias de cada meta). Todas opcionales — no
+   rechazan el archivo si faltan, mismo criterio que `nombre_producto`.
+2. **`NombreSectorCcpet`** (`ejecucion.py::OPCIONALES_RUBRO`, `RubroORM`,
+   misma migración): agregada junto al código que ya existía.
+3. **Columnas fantasma corregidas**: `cod_indicador_sistp` (columna real
+   confirmada: "Código de indicador de producto (SisPT)" — NO es llave de
+   cruce, ver `shared/codigos.py`, solo diagnóstico) y `codigo_producto_mga`
+   (SUPUESTO sin confirmar, ver `docs/DATOS.md` §5) ahora se extraen en
+   `pdt.py`. `bpin_relacionados` **sigue sin poblarse**: a diferencia de
+   las otras dos, no hay ningún nombre de columna real identificado en el
+   PDT para un BPIN relacionado — inventar un alias sin evidencia
+   fabricaría un mapeo que nunca coincidiría, o peor, coincidiría con la
+   columna equivocada. Queda como pregunta abierta en `docs/DATOS.md`.
+4. **`no muevas eso, el indicador y unidad de medida es el mismo`** (dato
+   del equipo, 2026-09-23): confirmado y dejado explícito en el comentario
+   de `pdt.py::OPCIONALES` — "Indicador de Producto(MGA)" sigue mapeando a
+   `unidad_medida`, no se toca.
+5. **`docs/DATOS.md` creado**: consolida anatomía real de las tres fuentes,
+   qué se extrae/persiste/expone en la matriz por columna, y las preguntas
+   abiertas (columnas sin confirmar).
+6. **Matriz (HU-07) — contenido + reglas + filtros**, a pedido explícito
+   del equipo ("incluye solo lo necesario para ver que se hizo bien el
+   cruce... agrega presupuesto pero no tan detallado, lo general"):
+   - **Dos reglas de negocio nuevas**, aplicadas DENTRO del JOIN (mismo
+     patrón que la Regla 1 de `ultimo_nivel`, nunca en un WHERE posterior
+     — ver docstring de `consultas.py::_construir_consulta_base`): un
+     rubro con `CodigoSectorCcpet` vacío o "NA" no cruza; un contrato sin
+     `Tipo Gasto = INVERSIÓN` no cruza (con o sin tilde).
+   - **`presupuesto_apropiado`** agregado a `FilaMatriz`/
+     `FilaMatrizRespuesta`/`MatrizRelacion.jsx`: un solo monto general (la
+     apropiación definitiva del rubro cruzado), no las cinco columnas
+     financieras de `Rubro` — la matriz es para verificar el cruce
+     visualmente, no un reporte financiero.
+   - **Columna "Estado" agregada en el frontend** (`estadoDeFila`,
+     `MatrizRelacion.jsx`): resume si la meta cruzó con las tres fuentes
+     ("Completo", verde), con ninguna ("Sin cruce", gris) o con algunas
+     ("Parcial", ámbar) — computado en el cliente a partir de los mismos
+     tres campos de correspondencia que ya viajaban, sin campo nuevo del
+     backend para esto.
+   - **Filtros implementados**: `estado_cruce` (`completo`/`sin_proyecto`/
+     `sin_ejecucion`/`sin_contrato`/`sin_cruce`) y `busqueda` (texto libre
+     sobre código de indicador, BPIN o número de contrato) —
+     `GET /matriz-relacion/{id}?estado_cruce=...&busqueda=...`, aplicados
+     ANTES de paginar (afectan `total`/`totalPaginas`, no la página ya
+     traída). Selector + campo de texto en la pantalla, con debounce de
+     400ms en la búsqueda.
+   - **Filtros definidos pero NO implementados** (propuesta para una
+     tarjeta futura, si el equipo los quiere):
+     - _Por sector_ (`codigo_sector_ccpet`/`nombre_sector_ccpet`, ya
+       persistidos): útil ahora que `NombreSectorCcpet` se extrae.
+     - _Por línea estratégica_ (`meta.linea_estrategica`, agregada en esta
+       misma tarjeta): agrupa metas por la misma línea del plan.
+     - _"Con/sin presupuesto asignado"_: sobre `presupuesto_apropiado`
+       IS/IS NOT NULL — más simple que un rango numérico, y cubre el caso
+       real de uso ("¿qué metas con ejecución no tienen apropiación
+       registrada?").
+     - _Rango de presupuesto_ (mínimo/máximo): se dejó fuera de la primera
+       tanda por ser el que menos valor visual aporta frente a su costo de
+       UI (dos inputs numéricos + validación de rango) comparado con los
+       otros tres.
+     - _Por BPIN específico o por número de contrato exacto_ (no
+       `busqueda` parcial): no se implementó porque `busqueda` ya cubre
+       este caso vía coincidencia parcial (`ILIKE`), y un filtro exacto
+       aparte sería redundante sin un caso de uso que lo distinga.
+
+**Verificación:** `pytest` (nuevas pruebas dedicadas por regla: sector
+vacío/NA no cruza, sector válido sí cruza, tipo de gasto distinto de
+INVERSIÓN no cruza, con/sin tilde, cada valor de `estado_cruce`, cada
+campo de `busqueda`, extracción de las columnas nuevas de PDT/Ejecución
+con un workbook armado a mano) + `ruff check`/`format` limpios + migración
+`122e94509b80` generada con `alembic revision --autogenerate` y aplicada
+contra Postgres real. Frontend: `npm run build`/ESLint limpios, y
+verificación manual en navegador contra el stack real (Postgres, FastAPI y
+Vite): los tres filtros (`sin_proyecto`, `sin_ejecucion`, `completo`,
+`busqueda`) probados con datos reales que cruzan mixto, confirmando que
+antes de esta tarjeta ninguna regla de sector/tipo de gasto se aplicaba.
+
+**Nota operativa (no relacionada con el código):** durante la
+verificación se encontró que `lsof`/`ps` de Git Bash no ven procesos de
+Windows — un backend/frontend de sesiones anteriores de este mismo
+entorno de desarrollo quedó "zombi" ocupando los puertos 8000/5173 durante
+varias horas, haciendo que reinicios aparentes del servidor siguieran
+sirviendo código viejo silenciosamente. Se resolvió matando los procesos
+por PID vía PowerShell (`Get-NetTCPConnection`/`Stop-Process`). Queda como
+advertencia para cualquiera que verifique cambios de backend manualmente
+en este entorno: confirmar con `curl .../openapi.json` que el esquema
+refleja el código actual antes de dar una prueba manual por buena.
+
+**Estado:** IMPLEMENTADA (puntos 1-6, filtros `estado_cruce`/`busqueda`) —
+PROPUESTA (filtros adicionales del punto 6, pendientes de que el equipo
+decida cuáles construir).
+
+**Registrado:** 2026-09-23, Cristhian (`CrisCamUO`).

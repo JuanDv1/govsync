@@ -26,6 +26,8 @@ entre los dos endpoints, sin helper compartido -- ver docstring de cada uno.
 
 from __future__ import annotations
 
+from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -39,6 +41,11 @@ from app.shared.errors import OperacionNoPermitida
 router = APIRouter(prefix="/matriz-relacion", tags=["Trazabilidad"])
 
 
+#: Valores válidos de `estado_cruce` (HU-07, filtros de la matriz) — mismos
+#: nombres que `consultas.py::_construir_consulta_base` interpreta.
+EstadoCruce = Literal["completo", "sin_proyecto", "sin_ejecucion", "sin_contrato", "sin_cruce"]
+
+
 # --- DTOs (Pydantic, nunca la entidad de dominio/ORM) -----------------------
 
 
@@ -49,6 +56,7 @@ class FilaMatrizRespuesta(BaseModel):
     cod_indicador_ejecucion: str | None
     numero_contrato: str | None
     descripcion_contrato: str | None
+    presupuesto_apropiado: Decimal | None
 
 
 class MatrizRespuesta(BaseModel):
@@ -74,6 +82,8 @@ def obtener_matriz_actual(
     sesion: SesionDep,
     pagina: int = 1,
     tamano_pagina: int = 50,
+    estado_cruce: EstadoCruce | None = None,
+    busqueda: str | None = None,
 ) -> MatrizRespuesta:
     """HU-07/CA-1: matriz de relación del corte REGISTRADO más reciente,
     global (sin filtro de vigencia -- mismo criterio que D11 usa para
@@ -85,6 +95,9 @@ def obtener_matriz_actual(
     reciente le falta alguna fuente -- mismo criterio que `obtener_matriz`
     (`/{corte_id}`), deliberadamente duplicado aquí en vez de extraído a
     un helper compartido, para no tocar ese endpoint ya cerrado.
+
+    `estado_cruce`/`busqueda`: filtros de la matriz (ver
+    `consultas.py::construir_matriz`), agregados 2026-09-23.
     """
     corte: Corte = servicio.obtener_corte_actual()
 
@@ -99,7 +112,9 @@ def obtener_matriz_actual(
             },
         )
 
-    resultado = construir_matriz(sesion, corte.id, pagina, tamano_pagina)
+    resultado = construir_matriz(
+        sesion, corte.id, pagina, tamano_pagina, estado_cruce=estado_cruce, busqueda=busqueda
+    )
     return MatrizRespuesta(
         corte_id=corte.id,
         pagina=resultado.pagina,
@@ -113,6 +128,7 @@ def obtener_matriz_actual(
                 cod_indicador_ejecucion=fila.cod_indicador_ejecucion,
                 numero_contrato=fila.numero_contrato,
                 descripcion_contrato=fila.descripcion_contrato,
+                presupuesto_apropiado=fila.presupuesto_apropiado,
             )
             for fila in resultado.filas
         ],
@@ -126,6 +142,8 @@ def obtener_matriz(
     sesion: SesionDep,
     pagina: int = 1,
     tamano_pagina: int = 50,
+    estado_cruce: EstadoCruce | None = None,
+    busqueda: str | None = None,
 ) -> MatrizRespuesta:
     """HU-07/CA-1: matriz de relación de un corte específico.
 
@@ -136,6 +154,9 @@ def obtener_matriz(
     409 si falta alguna de las tres fuentes: reutiliza
     `Corte.archivos_faltantes()` (ya existente, HU-01), sin duplicar la
     regla. `detalles.archivos_faltantes` nombra exactamente qué falta.
+
+    `estado_cruce`/`busqueda`: filtros de la matriz (ver
+    `consultas.py::construir_matriz`), agregados 2026-09-23.
     """
     corte: Corte = servicio.obtener_corte(corte_id)
 
@@ -150,7 +171,9 @@ def obtener_matriz(
             },
         )
 
-    resultado = construir_matriz(sesion, corte_id, pagina, tamano_pagina)
+    resultado = construir_matriz(
+        sesion, corte_id, pagina, tamano_pagina, estado_cruce=estado_cruce, busqueda=busqueda
+    )
     return MatrizRespuesta(
         corte_id=corte_id,
         pagina=resultado.pagina,
@@ -164,6 +187,7 @@ def obtener_matriz(
                 cod_indicador_ejecucion=fila.cod_indicador_ejecucion,
                 numero_contrato=fila.numero_contrato,
                 descripcion_contrato=fila.descripcion_contrato,
+                presupuesto_apropiado=fila.presupuesto_apropiado,
             )
             for fila in resultado.filas
         ],

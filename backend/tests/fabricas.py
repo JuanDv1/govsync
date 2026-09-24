@@ -108,12 +108,28 @@ def construir_ejecucion(
 
     if incluir_ejecucion:
         hoja = libro.create_sheet(HOJA_EJECUCION)
-        hoja.append(["CodigoRubroNivel", "UltimoNivel", "CodigoIndicadorCcpet"])
-        hoja.append(["1.2.3", True, COD_B])
+        # CodigoSectorCcpet/NombreSectorCcpet: agregadas 2026-09-23 (D21,
+        # docs/DECISIONES.md) — un rubro sin sector válido no cruza en la
+        # matriz (Regla 1b de consultas.py), así que el fixture necesita un
+        # valor real para que el "caso feliz" siga cruzando.
+        hoja.append(
+            [
+                "CodigoRubroNivel",
+                "UltimoNivel",
+                "CodigoIndicadorCcpet",
+                "CodigoSectorCcpet",
+                "NombreSectorCcpet",
+            ]
+        )
+        hoja.append(["1.2.3", True, COD_B, "04", "Transporte"])
     if incluir_contratacion:
         hoja = libro.create_sheet(HOJA_CONTRATACION)
-        hoja.append(["NumeroContrato", "Cod Indicador Ccpet", "Codigo Bpin", "Objeto"])
-        hoja.append(["C-001", COD_B, BPIN_1, "Mantenimiento de vías terciarias"])
+        # Tipo Gasto: agregada 2026-09-23 (D21) — un contrato sin
+        # Tipo Gasto = INVERSIÓN no cruza en la matriz (Regla 1c).
+        hoja.append(
+            ["NumeroContrato", "Cod Indicador Ccpet", "Codigo Bpin", "Objeto", "Tipo Gasto"]
+        )
+        hoja.append(["C-001", COD_B, BPIN_1, "Mantenimiento de vías terciarias", "INVERSIÓN"])
     if not incluir_ejecucion and not incluir_contratacion:
         libro.create_sheet("Otra hoja")["A1"] = "sin datos relevantes"
 

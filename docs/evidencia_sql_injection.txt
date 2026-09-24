@@ -1,0 +1,18 @@
+=== 1. Todas las llamadas .execute() del backend ===
+app/modules/cortes/persistence/repositorios.py:243:        self._s.execute(delete(MetaORM).where(MetaORM.corte_id == corte_id))
+app/modules/cortes/persistence/repositorios.py:327:        self._s.execute(delete(ContratoORM).where(ContratoORM.corte_id == corte_id))
+app/modules/cortes/persistence/repositorios.py:328:        self._s.execute(delete(RubroORM).where(RubroORM.corte_id == corte_id))
+app/modules/cortes/persistence/repositorios.py:436:        self._s.execute(delete(ProyectoORM).where(ProyectoORM.corte_id == corte_id))
+app/modules/trazabilidad/persistence/consultas.py:332:    filas_crudas = sesion.execute(
+
+=== 2. Busqueda del antipatron (SQL crudo con f-string/%/format) ===
+0 resultados
+
+=== 3. Prueba de parametrizacion con payload de inyeccion real ===
+SQL enviado al driver:
+SELECT meta.cod_indicador_producto 
+FROM meta 
+WHERE lower(meta.cod_indicador_producto) LIKE lower(:cod_indicador_producto_1)
+
+Parametros enlazados:
+{'cod_indicador_producto_1': "%'; DROP TABLE corte; --%"}

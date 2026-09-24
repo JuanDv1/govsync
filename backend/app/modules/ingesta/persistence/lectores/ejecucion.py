@@ -151,6 +151,9 @@ OPCIONALES_RUBRO: dict[str, tuple[str, ...]] = {
     "codigo_tipo_gasto": ("CodigoTipoGasto",),
     "nombre_financiacion": ("NombreFuenteFinanciacionCcpet",),
     "codigo_sector_ccpet": ("CodigoSectorCcpet",),
+    # Agregada 2026-09-23: el código ya se leía; faltaba el nombre legible
+    # del sector (columna real distinta, no derivada de CodigoSectorCcpet).
+    "nombre_sector_ccpet": ("NombreSectorCcpet",),
     "codigo_producto_ccpet": ("CodigoProductoCcpet",),
     "apropiacion_definitiva": ("ApropiacionDefinitiva",),
     "disponibilidad_acumulada": ("DisponibilidadAcumulada",),
@@ -383,6 +386,7 @@ def _leer_rubros(
                 "codigo_tipo_gasto": _texto_opcional(fila, mapeo, "codigo_tipo_gasto"),
                 "nombre_financiacion": _texto_opcional(fila, mapeo, "nombre_financiacion"),
                 "codigo_sector_ccpet": _texto_opcional(fila, mapeo, "codigo_sector_ccpet"),
+                "nombre_sector_ccpet": _texto_opcional(fila, mapeo, "nombre_sector_ccpet"),
                 "codigo_producto_ccpet": _texto_opcional(fila, mapeo, "codigo_producto_ccpet"),
                 "apropiacion_definitiva": _monto_opcional(fila, mapeo, "apropiacion_definitiva"),
                 "disponibilidad_acumulada": _monto_opcional(

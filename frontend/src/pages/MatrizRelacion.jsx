@@ -88,10 +88,16 @@ import {
   Vacio,
 } from "../components/Estados.jsx";
 import Card from "../components/shared/Card.jsx";
+import StateBadge from "../components/shared/StateBadge.jsx";
+import { cop } from "../lib/formato.js";
 
 //: Mismo orden y claves que el contrato confirmado en HU-07/CA-3..CA-6 — ver
 //: la nota de corrección de contrato arriba (la constante `COLUMNAS` del
-//: router era código muerto y se borró el 2026-09-21).
+//: router era código muerto y se borró el 2026-09-21). `presupuesto_apropiado`
+//: se agregó 2026-09-23 (D21, docs/DECISIONES.md): un solo monto general
+//: ("algo de presupuesto pero no tan detallado, lo general"), no las cinco
+//: columnas financieras de `Rubro` — para eso está la tabla `rubro` en la
+//: base de datos, no esta pantalla de verificación visual del cruce.
 const COLUMNAS = [
   { clave: "cod_bpin", titulo: "Cód. BPIN" },
   { clave: "cod_indicador_producto", titulo: "Cód. indicador (SisPT)" },
@@ -99,6 +105,7 @@ const COLUMNAS = [
   { clave: "cod_indicador_ejecucion", titulo: "Cód. indicador (ejecución)" },
   { clave: "numero_contrato", titulo: "Núm. contrato" },
   { clave: "descripcion_contrato", titulo: "Descripción" },
+  { clave: "presupuesto_apropiado", titulo: "Presupuesto" },
 ];
 
 const CLAVES_CODIGO = new Set([
@@ -114,15 +121,44 @@ const CLAVES_CODIGO = new Set([
 // filas por página — agregar ese control sería alcance no pedido.
 const TAMANO_PAGINA = 50;
 
+//: Opciones del filtro "Estado del cruce" (D21) — mismos valores que
+//: `trazabilidad/persistence/consultas.py::_construir_consulta_base` espera
+//: en `estado_cruce`. `""` significa "sin filtrar" (todas).
+const OPCIONES_ESTADO_CRUCE = [
+  { valor: "", etiqueta: "Todas" },
+  { valor: "completo", etiqueta: "Completo (BPIN + ejecución + contrato)" },
+  { valor: "sin_proyecto", etiqueta: "Sin proyecto BPIN" },
+  { valor: "sin_ejecucion", etiqueta: "Sin ejecución" },
+  { valor: "sin_contrato", etiqueta: "Sin contrato" },
+  { valor: "sin_cruce", etiqueta: "Sin ningún cruce" },
+];
+
 function Celda({ clave, valor }) {
   if (valor === null || valor === undefined) {
     return <SinCorrespondencia />;
+  }
+  if (clave === "presupuesto_apropiado") {
+    return <span className="font-mono">{cop(valor)}</span>;
   }
   return CLAVES_CODIGO.has(clave) ? (
     <span className="codigo">{valor}</span>
   ) : (
     valor
   );
+}
+
+// D21: resume visualmente si la meta cruzó con las tres fuentes, con
+// ninguna, o solo con algunas — para que verificar el cruce no dependa de
+// leer las tres columnas de correspondencia una por una en cada fila.
+function estadoDeFila(fila) {
+  const cuantos = [
+    fila.cod_bpin,
+    fila.cod_indicador_ejecucion,
+    fila.numero_contrato,
+  ].filter((valor) => valor !== null && valor !== undefined).length;
+  if (cuantos === 3) return { texto: "Completo", tono: "verde" };
+  if (cuantos === 0) return { texto: "Sin cruce", tono: "gris" };
+  return { texto: "Parcial", tono: "ambar" };
 }
 
 // [HU-07][FE-04] Controles de paginación. Deliberadamente sin lógica de
@@ -188,11 +224,19 @@ export default function MatrizRelacion() {
   // corte.
   const [matrizVisible, setMatrizVisible] = useState(null);
 
-  // Cambiar de corte es una pantalla distinta: se reinicia la página y se
-  // descartan las filas que se estaban mostrando (pertenecen al corte
-  // anterior, no tiene sentido conservarlas como "página previa" de otro
-  // corte). Ajustar estado cuando cambia una prop se hace DURANTE el render
-  // (patrón oficial de React: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes),
+  // D21 (docs/DECISIONES.md): filtros de la matriz. `busquedaInput` es lo
+  // que el usuario escribe; `busqueda` es lo que realmente se manda al
+  // backend, con un pequeño debounce (ver efecto de abajo) para no disparar
+  // una petición por cada tecla.
+  const [estadoCruce, setEstadoCruce] = useState("");
+  const [busquedaInput, setBusquedaInput] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+
+  // Cambiar de corte es una pantalla distinta: se reinicia la página, los
+  // filtros, y se descartan las filas que se estaban mostrando (pertenecen
+  // al corte anterior, no tiene sentido conservarlas como "página previa"
+  // de otro corte). Ajustar estado cuando cambia una prop se hace DURANTE
+  // el render (patrón oficial de React: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes),
   // no dentro de un efecto — evita el re-render en cascada que marca
   // react-hooks/set-state-in-effect, y evita el parpadeo de un render con
   // datos del corte anterior antes de que el efecto de abajo llegue a
@@ -202,18 +246,45 @@ export default function MatrizRelacion() {
     setCorteAnterior(corteId);
     setPagina(1);
     setMatrizVisible(null);
+    setEstadoCruce("");
+    setBusquedaInput("");
+    setBusqueda("");
   }
 
-  const claveActual = corteId ? `${corteId}:${pagina}:${intento}` : null;
+  // Debounce de la búsqueda: espera a que el usuario deje de escribir antes
+  // de mandar la petición. Reinicia la página a 1 — un resultado filtrado
+  // nuevo no tiene por qué tener tantas páginas como el histórico completo.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setBusqueda(busquedaInput.trim());
+      setPagina(1);
+    }, 400);
+    return () => clearTimeout(id);
+  }, [busquedaInput]);
+
+  function cambiarEstadoCruce(nuevo) {
+    setEstadoCruce(nuevo);
+    setPagina(1);
+  }
+
+  const claveActual = corteId
+    ? `${corteId}:${pagina}:${intento}:${estadoCruce}:${busqueda}`
+    : null;
 
   useEffect(() => {
     if (!corteId) return;
 
-    const clave = `${corteId}:${pagina}:${intento}`;
+    const clave = `${corteId}:${pagina}:${intento}:${estadoCruce}:${busqueda}`;
     let vigente = true;
 
     api
-      .matriz(corteId, pagina, TAMANO_PAGINA)
+      .matriz(
+        corteId,
+        pagina,
+        TAMANO_PAGINA,
+        estadoCruce || null,
+        busqueda || null,
+      )
       .then((datos) => {
         if (!vigente) return;
         setResultado({ clave, datos, error: null });
@@ -227,7 +298,7 @@ export default function MatrizRelacion() {
     return () => {
       vigente = false;
     };
-  }, [corteId, pagina, intento]);
+  }, [corteId, pagina, intento, estadoCruce, busqueda]);
 
   const cargando = Boolean(claveActual) && resultado.clave !== claveActual;
   const error = resultado.clave === claveActual ? resultado.error : null;
@@ -269,6 +340,57 @@ export default function MatrizRelacion() {
         />
       )}
 
+      {corteId && (
+        <Card className="mb-4">
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <label
+                htmlFor="estado-cruce"
+                className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
+              >
+                Estado del cruce
+              </label>
+              <select
+                id="estado-cruce"
+                value={estadoCruce}
+                onChange={(evento) => cambiarEstadoCruce(evento.target.value)}
+                className="rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
+              >
+                {OPCIONES_ESTADO_CRUCE.map((opcion) => (
+                  <option key={opcion.valor} value={opcion.valor}>
+                    {opcion.etiqueta}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="min-w-[220px] flex-1">
+              <label
+                htmlFor="busqueda-matriz"
+                className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
+              >
+                Buscar
+              </label>
+              <input
+                id="busqueda-matriz"
+                type="text"
+                placeholder="Código de indicador, BPIN o número de contrato"
+                value={busquedaInput}
+                onChange={(evento) => setBusquedaInput(evento.target.value)}
+                className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
+              />
+            </div>
+
+            {matrizVisible && (
+              <span className="ml-auto shrink-0 text-[11px] text-gray-500">
+                {matrizVisible.total_filas} fila
+                {matrizVisible.total_filas === 1 ? "" : "s"}
+              </span>
+            )}
+          </div>
+        </Card>
+      )}
+
       {corteId && cargandoInicial && (
         <Cargando mensaje="Cargando matriz de relación…" />
       )}
@@ -285,7 +407,11 @@ export default function MatrizRelacion() {
         matrizVisible.total_filas === 0 && (
           <Vacio
             titulo="Sin datos para mostrar"
-            descripcion="Este corte no tiene metas registradas en la matriz de relación."
+            descripcion={
+              estadoCruce || busqueda
+                ? "Ningún resultado coincide con el filtro o la búsqueda aplicados."
+                : "Este corte no tiene metas registradas en la matriz de relación."
+            }
           />
         )}
 
@@ -303,24 +429,33 @@ export default function MatrizRelacion() {
                       {columna.titulo}
                     </th>
                   ))}
+                  <th className="whitespace-nowrap px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                    Estado
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {matrizVisible.filas.map((fila, indice) => (
-                  <tr
-                    key={`${fila.cod_indicador_producto}-${indice}`}
-                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60"
-                  >
-                    {COLUMNAS.map((columna) => (
-                      <td key={columna.clave} className="px-4 py-2.5 text-xs">
-                        <Celda
-                          clave={columna.clave}
-                          valor={fila[columna.clave]}
-                        />
+                {matrizVisible.filas.map((fila, indice) => {
+                  const estado = estadoDeFila(fila);
+                  return (
+                    <tr
+                      key={`${fila.cod_indicador_producto}-${indice}`}
+                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60"
+                    >
+                      {COLUMNAS.map((columna) => (
+                        <td key={columna.clave} className="px-4 py-2.5 text-xs">
+                          <Celda
+                            clave={columna.clave}
+                            valor={fila[columna.clave]}
+                          />
+                        </td>
+                      ))}
+                      <td className="px-4 py-2.5">
+                        <StateBadge texto={estado.texto} tono={estado.tono} />
                       </td>
-                    ))}
-                  </tr>
-                ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </Card>

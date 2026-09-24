@@ -226,3 +226,70 @@ class TestLeer:
         meta = resultado.filas["metas"][0]
         assert meta["nombre_producto"] is None
         assert meta["unidad_medida"] is None
+
+    def test_columnas_agregadas_2026_09_23_se_extraen_cuando_estan_presentes(self) -> None:
+        """entidad_territorial/nombre_plan/fecha_creacion_plan (metadato del
+        plan) + linea_estrategica/sector/programa/ods/tipo_acumulacion (por
+        meta) — ver docs/DATOS.md."""
+        libro = Workbook()
+        libro.remove(libro.active)
+        hoja = libro.create_sheet(HOJA_PDT)
+        hoja.append(
+            [
+                "Código de indicador de producto (MGA)",
+                "Principal",
+                "Programación del producto bien o servicio 2026",
+                "Código de indicador de producto (SisPT)",
+                "Código de producto (MGA)",
+                "Entidad Territorial",
+                "Nombre del Plan",
+                "Fecha de creación del plan",
+                "Línea estratégica",
+                "Código del sector (MGA)",
+                "Sector (MGA)",
+                "Código del programa (MGA)",
+                "Programa (MGA)",
+                "Código ODS",
+                "ODS",
+                "Tipo de acumulación",
+            ]
+        )
+        hoja.append(
+            [
+                "040110500",
+                "Sí",
+                "10",
+                "IP-63",
+                "0401",
+                "Santa Rosa, Cauca",
+                "Plan de Desarrollo Municipal 2024-2027",
+                "2024-01-15",
+                "Vías para la competitividad",
+                "04",
+                "Transporte",
+                "0401",
+                "Infraestructura vial",
+                "09",
+                "Industria, innovación e infraestructura",
+                "Sumable",
+            ]
+        )
+        buffer = io.BytesIO()
+        libro.save(buffer)
+
+        resultado = LectorPDT().leer(buffer.getvalue(), "raro.xlsx", vigencia=2026)
+
+        meta = resultado.filas["metas"][0]
+        assert meta["cod_indicador_sistp"] == "IP-63"
+        assert meta["codigo_producto_mga"] == "0401"
+        assert meta["entidad_territorial"] == "Santa Rosa, Cauca"
+        assert meta["nombre_plan"] == "Plan de Desarrollo Municipal 2024-2027"
+        assert meta["fecha_creacion_plan"].isoformat() == "2024-01-15"
+        assert meta["linea_estrategica"] == "Vías para la competitividad"
+        assert meta["codigo_sector"] == "04"
+        assert meta["sector"] == "Transporte"
+        assert meta["codigo_programa"] == "0401"
+        assert meta["programa"] == "Infraestructura vial"
+        assert meta["codigo_ods"] == "09"
+        assert meta["ods"] == "Industria, innovación e infraestructura"
+        assert meta["tipo_acumulacion"] == "Sumable"
