@@ -334,7 +334,7 @@ rendimiento: el cruce real produce miles de combinaciones (D-08).
 
 ### Esquema de entrada
 
-Query params: `pagina` (default 1), `tamano_pagina` (default 50).
+Query params: `pagina` (default 1), `tamano_pagina` (default 50), `estado_cruce` (opcional: `completo` | `sin_proyecto` | `sin_ejecucion` | `sin_contrato` | `sin_cruce`), `busqueda` (opcional, coincidencia parcial `ILIKE` sobre BPIN/indicador/número de contrato) — agregados 2026-09-23, ver `docs/DECISIONES.md`, D22.
 
 ### Esquema de salida
 
@@ -351,26 +351,43 @@ Query params: `pagina` (default 1), `tamano_pagina` (default 50).
       "nombre_producto": "...",
       "cod_indicador_ejecucion": "040600400",
       "numero_contrato": null,
-      "descripcion_contrato": null
+      "descripcion_contrato": null,
+      "presupuesto_apropiado": null
     }
   ]
 }
 ```
 
-Las seis columnas cubren CA-3 (BPIN), CA-4 (indicador/producto), CA-5
-(ejecución) y CA-6 (contrato) por separado. `null` explícito (nunca `""`, `0`
-ni `"N/A"`) cuando no hubo correspondencia — regla de CA-8, ya validada con
-datos reales: de 144 metas, 119 tienen ejecución, 67 tienen proyecto con
-BPIN, 40 tienen contrato, **24 no cruzan con ninguna fuente** (D-01) y deben
-seguir apareciendo en la matriz.
+Las primeras seis columnas cubren CA-3 (BPIN), CA-4 (indicador/producto),
+CA-5 (ejecución) y CA-6 (contrato) por separado. `null` explícito (nunca
+`""`, `0` ni `"N/A"`) cuando no hubo correspondencia — regla de CA-8, ya
+validada con datos reales: de 144 metas, 119 tienen ejecución, 67 tienen
+proyecto con BPIN, 40 tienen contrato, **24 no cruzan con ninguna fuente**
+(D4) y deben seguir apareciendo en la matriz.
+
+`presupuesto_apropiado` (séptima columna, agregada 2026-09-23) es
+funcionalidad adicional sin CA formal propio: expone la apropiación
+definitiva del rubro asociado, a pedido del equipo — ver `docs/DECISIONES.md`,
+D22. **Pendiente de decisión del equipo:** las Reglas 1b/1c introducidas en
+la misma fecha (filtro de sector válido y de tipo de gasto INVERSIÓN, ver
+abajo) cambian qué filas participan del cruce, por lo que el benchmark de
+D4 (144/119/67/40/24) debería re-verificarse contra datos reales antes de
+citarlo de nuevo en la Entrega 2 — no se ha vuelto a correr con las reglas
+nuevas aplicadas.
 
 ### Tablas que toca (solo lectura — es una consulta, no una tabla, D-08)
 
 `meta` JOIN `proyecto_indicador`/`proyecto` (por `cod_indicador_producto`),
-LEFT JOIN `rubro` (filtrado por `ultimo_nivel = true`, D-09) LEFT JOIN
+LEFT JOIN `rubro` (filtrado por `ultimo_nivel = true`, D-09, **y por
+`codigo_sector_ccpet` no vacío ni `"NA"`, Regla 1b, D22**) LEFT JOIN
 `registro_presupuestal` (deduplicado por `(rubro_id, contrato_id)`, no por
 `DISTINCT` sobre el resultado final — ver regla de CA-7 más abajo) LEFT JOIN
-`contrato`. Todo acotado a un `corte_id`. La lectura de las fuentes ya
+`contrato` (filtrado por `tipo_gasto = INVERSIÓN`, con o sin tilde, **Regla
+1c, D22**). Todo acotado a un `corte_id`. Ambas reglas nuevas se aplican
+**dentro** de la condición `ON` de su respectivo LEFT JOIN, no en un `WHERE`
+posterior — mismo patrón que `ultimo_nivel` (D-09/D8): una meta sin rubro o
+contrato que cumpla la regla sigue apareciendo en la matriz con `NULL`
+explícito, en vez de desaparecer de la fila. La lectura de las fuentes ya
 procesadas (CA-2) implica que esta consulta nunca vuelve a abrir los archivos
 Excel originales.
 
@@ -384,6 +401,10 @@ Excel originales.
 | No colapsar relaciones múltiples (prohibido `DISTINCT`, `LIMIT 1`, `first()` sobre el resultado final)                | CA-7                                                   | Un indicador con 2 BPIN debe mostrar ambos; un BPIN con 3 indicadores, los tres. El _único_ `DISTINCT` permitido es sobre el puente `(rubro_id, contrato_id)` de `registro_presupuestal`, para no generar fan-out por los 1..N registros presupuestales de un mismo contrato (no es una violación de la regla: la deduplicación es sobre el puente, no sobre las columnas que expone la matriz) |
 | Acotar `proyecto_indicador` al `corte_id` **dentro** de la subconsulta de proyectos, no encadenando LEFT JOIN sueltos | Regla de negocio (evita fila fantasma cruzando cortes) | `proyecto_indicador` no tiene `corte_id` propio; lo hereda de `proyecto`                                                                                                                                                                                                                                                                                                                        |
 | Unificar `CodigoIndicadorCcpet`/`Cod Indicador Ccpet` sin duplicar columnas ni perder filas                           | CA-2 (fusionada con la unificación de HU03-CA02)       | Ya resuelto en la capa de ingesta (HU-03/CA-02, D-01); esta consulta solo lee la columna ya unificada — no vuelve a unificar nada                                                                                                                                                                                                                                                               |
+| Filtrar `rubro` con `codigo_sector_ccpet` no vacío ni `"NA"` (Regla 1b)                                                | Regla de negocio nueva (a pedido explícito del equipo, D22, 2026-09-23) | Aplicada dentro del `ON` del LEFT JOIN a `rubro`, no en `WHERE` — mismo patrón que `ultimo_nivel` (D-09); un rubro con sector inválido no participa del cruce, pero la meta sigue apareciendo con `NULL`                                                                                                                                                                                        |
+| Filtrar `contrato` con `tipo_gasto = INVERSIÓN` (con o sin tilde, Regla 1c)                                            | Regla de negocio nueva (a pedido explícito del equipo, D22, 2026-09-23) | Aplicada dentro del `ON` del LEFT JOIN a `contrato`, mismo patrón que Regla 1b                                                                                                                                                                                                                                                                                                                    |
+| Filtro opcional `estado_cruce` (`completo`/`sin_proyecto`/`sin_ejecucion`/`sin_contrato`/`sin_cruce`)                  | Funcionalidad adicional sin CA formal (D22, 2026-09-23) | Aplicado en `WHERE`, después de los LEFT JOIN, antes de paginar                                                                                                                                                                                                                                                                                                                                   |
+| Filtro opcional `busqueda` (coincidencia parcial `ILIKE` sobre BPIN/indicador/número de contrato)                      | Funcionalidad adicional sin CA formal (D22, 2026-09-23) | Aplicado en `WHERE`, después de los LEFT JOIN, antes de paginar                                                                                                                                                                                                                                                                                                                                   |
 
 ### Comportamiento ante error
 

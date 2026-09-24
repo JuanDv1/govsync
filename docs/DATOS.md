@@ -1,7 +1,7 @@
 # Anatomía de los archivos reales de Santa Rosa (Cauca)
 
 > Referenciado desde `_comun.py`, `pdt.py`, `ejecucion.py` y `proyectos.py` como
-> "ver docs/DATOS.md" — no existía como archivo hasta 2026-09-23 (D21,
+> "ver docs/DATOS.md" — no existía como archivo hasta 2026-09-23 (D22,
 > `docs/DECISIONES.md`). Este documento consolida lo medido contra los
 > archivos reales del municipio y, columna por columna, qué se extrae hoy en
 > el código, qué se persiste, y qué se muestra en la matriz de relación
@@ -56,7 +56,7 @@ ejecución se llama `Formato Resumido Ejecucion Gast` en el archivo real
 | CodigoRubroNivel                                                                                        | ✅ Obligatoria                                 | `codigo_rubro_nivel`                                                                                                   | La llave utilizable del rubro (484 únicos de 485 — 1 duplicado)                                                                                                                           |
 | UltimoNivel                                                                                             | ✅ Obligatoria, **y filtrada**                 | `ultimo_nivel`                                                                                                         | 374 hojas / 111 subtotales. **Regla 1 (`consultas.py`): solo `ultimo_nivel = true` participa del cruce** — un subtotal ya incluye el valor de sus hojas                                   |
 | CodigoRubroCcpet                                                                                        | ✅ Opcional                                    | `codigo_rubro_ccpet`                                                                                                   | 343 únicos de 485 (142 duplicados) — NO sirve como llave                                                                                                                                  |
-| CodigoSectorCcpet                                                                                       | ✅ Opcional, **y filtrada** (desde 2026-09-23) | `codigo_sector_ccpet`                                                                                                  | **Regla 1b: un rubro con sector vacío o "NA" no participa del cruce** (a pedido explícito del equipo, D21)                                                                                |
+| CodigoSectorCcpet                                                                                       | ✅ Opcional, **y filtrada** (desde 2026-09-23) | `codigo_sector_ccpet`                                                                                                  | **Regla 1b: un rubro con sector vacío o "NA" no participa del cruce** (a pedido explícito del equipo, D22)                                                                                |
 | NombreSectorCcpet                                                                                       | ✅ Opcional (desde 2026-09-23)                 | `nombre_sector_ccpet`                                                                                                  | Antes solo se guardaba el código, nunca el nombre                                                                                                                                         |
 | CodigoIndicadorCcpet                                                                                    | ✅ Obligatoria                                 | `cod_indicador_producto`                                                                                               | Llave de cruce con el PDT (119 de 120 coinciden — D4)                                                                                                                                     |
 | CodigoTipoGasto                                                                                         | ✅ Opcional                                    | `codigo_tipo_gasto`                                                                                                    | Código de tipo de gasto DEL RUBRO — distinto de `Tipo Gasto` de Contratación (ver 2.2); ninguno de los dos tiene regla de filtro sobre este campo del rubro                               |
@@ -71,7 +71,7 @@ ejecución se llama `Formato Resumido Ejecucion Gast` en el archivo real
 | -------------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | NumeroContrato                                                                         | ✅ Obligatoria                                 | `numero_contrato`                                 | NO es llave única (CT2) — `llave_sustituta` queda NULL, ver `ejecucion.py`                                                                                             |
 | Cod Indicador Ccpet                                                                    | ✅ Opcional                                    | `cod_indicador_producto` (en `contrato`)          | Mismo dato que `CodigoIndicadorCcpet` de Ejecución (HU-03/CA-3)                                                                                                        |
-| Tipo Gasto                                                                             | ✅ Opcional, **y filtrada** (desde 2026-09-23) | `tipo_gasto`                                      | **Regla 1c: solo contratos con Tipo Gasto = INVERSIÓN participan del cruce** (a pedido explícito del equipo, D21). Se acepta con o sin tilde ("INVERSION"/"INVERSIÓN") |
+| Tipo Gasto                                                                             | ✅ Opcional, **y filtrada** (desde 2026-09-23) | `tipo_gasto`                                      | **Regla 1c: solo contratos con Tipo Gasto = INVERSIÓN participan del cruce** (a pedido explícito del equipo, D22). Se acepta con o sin tilde ("INVERSION"/"INVERSIÓN") |
 | Codigo Bpin / CodigoBpin                                                               | ✅ Opcional (poblado en 200 de 319, 63%)       | `bpin`                                            | **Este es el BPIN confiable** — un tercio de los contratos no cruza por diseño de los datos de origen, no es un defecto                                                |
 | Objeto                                                                                 | ✅ Opcional                                    | `objeto` / `descripcion_contrato` (en la matriz)  |                                                                                                                                                                        |
 | Modalidad seleccion                                                                    | ✅ Opcional                                    | `modalidad_seleccion`                             |                                                                                                                                                                        |
@@ -121,7 +121,7 @@ cod_indicador_producto, nombre_producto, cod_bpin, cod_indicador_ejecucion,
 numero_contrato, descripcion_contrato, presupuesto_apropiado
 ```
 
-`presupuesto_apropiado` (agregada 2026-09-23, D21) es la `apropiacion_definitiva`
+`presupuesto_apropiado` (agregada 2026-09-23, D22) es la `apropiacion_definitiva`
 del rubro cruzado — un solo monto general, no las cinco columnas financieras
 de `Rubro`. Es deliberadamente así: la matriz es para verificar visualmente
 que el cruce se hizo bien (¿esta meta tiene proyecto, ejecución y contrato?),
@@ -134,13 +134,13 @@ no un reporte financiero detallado — para eso están las tablas `rubro`/
 2. `RubroORM.codigo_sector_ccpet` no vacío ni "NA" (agregada 2026-09-23).
 3. `ContratoORM.tipo_gasto` = INVERSIÓN, con o sin tilde (agregada 2026-09-23).
 
-### 4.2 Filtros de la matriz (agregados 2026-09-23, D21)
+### 4.2 Filtros de la matriz (agregados 2026-09-23, D22)
 
 - `estado_cruce`: `completo` / `sin_proyecto` / `sin_ejecucion` / `sin_contrato`
   / `sin_cruce` — sobre las mismas tres correspondencias del punto anterior.
 - `busqueda`: texto libre sobre código de indicador, BPIN o número de contrato.
 
-Ver `docs/DECISIONES.md` D21 para el resto de filtros propuestos (por sector,
+Ver `docs/DECISIONES.md` D22 para el resto de filtros propuestos (por sector,
 por rango de presupuesto) que quedaron definidos pero sin implementar.
 
 ---
