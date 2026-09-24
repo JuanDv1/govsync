@@ -109,6 +109,14 @@ docstring de `backend/app/modules/trazabilidad/persistence/consultas.py`; esta
 entrada los deja registrados formalmente como la decisión que responde a la
 observación del docente.
 
+**Nota (2026-09-23, AS-A-JUDGE):** `D22` agrega dos reglas de negocio nuevas
+a la misma consulta (`Regla 1b` — sector válido, `Regla 1c` — tipo de gasto
+INVERSIÓN), que pueden excluir del cruce filas que antes sí contaban. Este
+benchmark (144/119/67/40/24) no se ha vuelto a correr contra datos reales
+con esas reglas aplicadas. **Pregunta para el equipo, no una decisión
+tomada aquí:** ¿se re-verifica este benchmark antes de citarlo de nuevo en
+la Entrega 2, o se documenta explícitamente como "vigente antes de D22"?
+
 **Cómo se usa:** las pruebas de rendimiento y las pruebas de integración de
 HU-07 (`[HU-07][BE-02]` y siguientes) deben ejecutarse contra este corte —
 no contra datos sintéticos ni contra un subconjunto arbitrario — para que la
@@ -834,7 +842,7 @@ alcance a ratificar.
 
 ---
 
-## D21 · Columnas faltantes en PDT/Ejecución, dos reglas de negocio nuevas en la matriz, y definición de filtros
+## D22 · Columnas faltantes en PDT/Ejecución, dos reglas de negocio nuevas en la matriz, y definición de filtros
 
 **Hallazgo (2026-09-23, revisión de columnas pedida por el equipo):**
 comparando la lista de columnas de PDT/Ejecución/Proyectos contra el

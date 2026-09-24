@@ -94,7 +94,7 @@ import { cop } from "../lib/formato.js";
 //: Mismo orden y claves que el contrato confirmado en HU-07/CA-3..CA-6 — ver
 //: la nota de corrección de contrato arriba (la constante `COLUMNAS` del
 //: router era código muerto y se borró el 2026-09-21). `presupuesto_apropiado`
-//: se agregó 2026-09-23 (D21, docs/DECISIONES.md): un solo monto general
+//: se agregó 2026-09-23 (D22, docs/DECISIONES.md): un solo monto general
 //: ("algo de presupuesto pero no tan detallado, lo general"), no las cinco
 //: columnas financieras de `Rubro` — para eso está la tabla `rubro` en la
 //: base de datos, no esta pantalla de verificación visual del cruce.
@@ -121,7 +121,7 @@ const CLAVES_CODIGO = new Set([
 // filas por página — agregar ese control sería alcance no pedido.
 const TAMANO_PAGINA = 50;
 
-//: Opciones del filtro "Estado del cruce" (D21) — mismos valores que
+//: Opciones del filtro "Estado del cruce" (D22) — mismos valores que
 //: `trazabilidad/persistence/consultas.py::_construir_consulta_base` espera
 //: en `estado_cruce`. `""` significa "sin filtrar" (todas).
 const OPCIONES_ESTADO_CRUCE = [
@@ -147,7 +147,7 @@ function Celda({ clave, valor }) {
   );
 }
 
-// D21: resume visualmente si la meta cruzó con las tres fuentes, con
+// D22: resume visualmente si la meta cruzó con las tres fuentes, con
 // ninguna, o solo con algunas — para que verificar el cruce no dependa de
 // leer las tres columnas de correspondencia una por una en cada fila.
 function estadoDeFila(fila) {
@@ -224,7 +224,7 @@ export default function MatrizRelacion() {
   // corte.
   const [matrizVisible, setMatrizVisible] = useState(null);
 
-  // D21 (docs/DECISIONES.md): filtros de la matriz. `busquedaInput` es lo
+  // D22 (docs/DECISIONES.md): filtros de la matriz. `busquedaInput` es lo
   // que el usuario escribe; `busqueda` es lo que realmente se manda al
   // backend, con un pequeño debounce (ver efecto de abajo) para no disparar
   // una petición por cada tecla.
