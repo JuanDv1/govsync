@@ -251,6 +251,21 @@ class TestLeerRubros:
 
         assert rubros[0]["apropiacion_definitiva"] == Decimal("1218264452")
 
+    def test_nombre_sector_ccpet_se_extrae_junto_al_codigo(self) -> None:
+        """Agregada 2026-09-23: antes solo se guardaba CodigoSectorCcpet."""
+        contenido = _libro(
+            HOJA_EJECUCION,
+            [
+                ["CodigoRubroNivel", "UltimoNivel", "CodigoSectorCcpet", "NombreSectorCcpet"],
+                ["1.2.3", "True", "04", "Transporte"],
+            ],
+        )
+
+        rubros, _ = _leer_rubros(contenido, "presupuestal.xlsx", HOJA_EJECUCION)
+
+        assert rubros[0]["codigo_sector_ccpet"] == "04"
+        assert rubros[0]["nombre_sector_ccpet"] == "Transporte"
+
     def test_columna_ancla_ausente_degrada_en_vez_de_rechazar_archivo(self) -> None:
         """Ninguna CA de HU-03 exige rechazar TODO el archivo si falta
         CodigoRubroNivel: se degrada con advertencia (no ArchivoInvalido)."""

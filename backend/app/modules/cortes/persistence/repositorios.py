@@ -255,6 +255,17 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
                     meta_cuatrienio=meta.get("meta_cuatrienio"),
                     es_principal=bool(meta["principal"]),
                     bpin_relacionados=meta.get("bpin_relacionados"),
+                    entidad_territorial=meta.get("entidad_territorial"),
+                    nombre_plan=meta.get("nombre_plan"),
+                    fecha_creacion_plan=meta.get("fecha_creacion_plan"),
+                    linea_estrategica=meta.get("linea_estrategica"),
+                    codigo_sector=meta.get("codigo_sector"),
+                    sector=meta.get("sector"),
+                    codigo_programa=meta.get("codigo_programa"),
+                    programa=meta.get("programa"),
+                    codigo_ods=meta.get("codigo_ods"),
+                    ods=meta.get("ods"),
+                    tipo_acumulacion=meta.get("tipo_acumulacion"),
                 )
             )
 
@@ -328,6 +339,7 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
                     codigo_rubro_ccpet=rubro.get("codigo_rubro_ccpet"),
                     codigo_rubro_completo=rubro.get("codigo_rubro_completo"),
                     codigo_sector_ccpet=rubro.get("codigo_sector_ccpet"),
+                    nombre_sector_ccpet=rubro.get("nombre_sector_ccpet"),
                     codigo_producto_ccpet=rubro.get("codigo_producto_ccpet"),
                     cod_indicador_producto=rubro.get("cod_indicador_producto"),
                     codigo_tipo_gasto=rubro.get("codigo_tipo_gasto"),

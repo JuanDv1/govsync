@@ -109,6 +109,14 @@ docstring de `backend/app/modules/trazabilidad/persistence/consultas.py`; esta
 entrada los deja registrados formalmente como la decisión que responde a la
 observación del docente.
 
+**Nota (2026-09-23, AS-A-JUDGE):** `D22` agrega dos reglas de negocio nuevas
+a la misma consulta (`Regla 1b` — sector válido, `Regla 1c` — tipo de gasto
+INVERSIÓN), que pueden excluir del cruce filas que antes sí contaban. Este
+benchmark (144/119/67/40/24) no se ha vuelto a correr contra datos reales
+con esas reglas aplicadas. **Pregunta para el equipo, no una decisión
+tomada aquí:** ¿se re-verifica este benchmark antes de citarlo de nuevo en
+la Entrega 2, o se documenta explícitamente como "vigente antes de D22"?
+
 **Cómo se usa:** las pruebas de rendimiento y las pruebas de integración de
 HU-07 (`[HU-07][BE-02]` y siguientes) deben ejecutarse contra este corte —
 no contra datos sintéticos ni contra un subconjunto arbitrario — para que la
@@ -262,9 +270,19 @@ en vez de `CASOS_DE_PRUEBA.md` — descartada porque esas dos fuentes ya
 asignan explícitamente la tarjeta que cierra el CA, más específico y
 verificable que la descripción de `CASOS_DE_PRUEBA.md`.
 
-**Estado:** VIGENTE.
+**Estado:** VIGENTE — con nota de resolución.
 
 **Registrado:** 2026-09-11.
+
+**Resolución (2026-09-23):** `[HU-01][FE-01]` ya está implementado y
+probado (`test_router_cortes.py::test_get_cortes_devuelve_historico_200`,
+`::test_get_cortes_id_devuelve_detalle_200`), así que la referenciabilidad
+por API que CA-8 exige literalmente ya está cerrada. `docs/CASOS_DE_PRUEBA.md`
+(CP-HU01-08) y `docs/TRAZABILIDAD.md` (CA-8, HU-01) vuelven a marcar el
+criterio como "✅ Probado" — esta vez con evidencia HTTP real, no solo de
+aplicación, que era justo lo que esta decisión pedía. La decisión original
+(usar el endpoint como criterio de cierre, no la capa de aplicación) sigue
+vigente como precedente.
 
 ---
 
@@ -608,3 +626,337 @@ propia que el equipo debe tomar explícitamente).
 PENDIENTE.
 
 **Registrado:** 2026-09-22.
+
+---
+
+## D18 · Rango válido de `vigencia`: hallazgo del QA manual y decisión de rango fijo
+
+**Hallazgo:** durante la ejecución manual de `docs/QA_manual_sprint1.md`
+(2026-09-23) se detectó que `vigencia` no tenía ninguna validación de rango
+en ninguna de las tres capas donde aparece: el input de React
+(`NuevoCorte.jsx`, `type="number"` sin `min`/`max`), el esquema Pydantic de
+la API (`CorteEntrada`/`CorteCorreccion`, `vigencia: int` sin `Field`) ni el
+dominio (`Corte`/`entidades.py`, sin invariante). Esto es exactamente lo que
+permitió, al inicio de este sprint, crear un corte con `vigencia=1` en vez
+de `2026`: el sistema lo aceptó sin objeción y el error solo se manifestó
+mucho después, al leer el Excel, con un mensaje de "columnas faltantes" que
+no menciona la vigencia como causa real.
+
+**Alternativas presentadas al equipo:**
+
+1. Rango fijo y simple (`2000 ≤ vigencia ≤ 2100`) validado en el dominio.
+2. Rango relativo a la fecha del sistema (p. ej. año actual −10 a +1) — más
+   preciso, pero acopla esta regla a `hoy` y exige definir la ventana exacta.
+3. Solo ayuda visual en el frontend (`min`/`max` en el input), sin tocar el
+   backend — descartada de entrada: las reglas de seguridad del proyecto
+   exigen que el backend sea la autoridad, nunca solo la UI.
+
+**Decisión:** opción 1. Se agrega `Corte.validar_vigencia` (dominio,
+`VIGENCIA_MINIMA = 2000`, `VIGENCIA_MAXIMA = 2100`), invocada desde
+`ServicioCortes.crear_corte` y desde `Corte.corregir` — mismo punto de
+entrada que ya usa `Corte.validar_fecha` para CA-2. El frontend recibe
+`min`/`max` + `placeholder="Ej: 2026"` en el input como ayuda de UX, no como
+mecanismo de rechazo.
+
+**Corrección durante la implementación:** la propuesta inicial incluía
+además un `Field(ge=2000, le=2100)` en los esquemas Pydantic de la API
+(`CorteEntrada`/`CorteCorreccion`). Se descartó al revisar
+`app/core/errores.py`: solo traduce subclases de `GovSyncError` al sobre
+`{codigo, mensaje, detalles}` que espera el frontend
+(`api/cliente.js::ErrorApi`); un error de validación de Pydantic no pasa por
+ahí y responde con la forma nativa de FastAPI (`{"detail": [...]}"`), que el
+frontend no reconoce y cae al mensaje genérico de repuesto, perdiendo el
+detalle accionable. Validar solo en el dominio evita esa inconsistencia y
+reutiliza el mecanismo ya probado de `ReglaDeNegocioViolada`.
+
+**Motivo:** mismo patrón que D9/D11 — la regla vive en el dominio, no en el
+esquema de transporte, para que su comportamiento (mensaje, código HTTP,
+forma del error) sea uniforme sin importar qué endpoint la dispare.
+
+**Alternativas de implementación consideradas:** validar en `__post_init__`
+del dataclass `Corte` — descartada porque correría también al reconstruir
+un `Corte` ya persistido (p. ej. filas antiguas con una vigencia inválida
+que alguien ya corrigió a mano en la base de datos, o fixtures de otros
+entornos), rompiendo la lectura de datos existentes en vez de solo
+rechazar datos nuevos.
+
+**Pruebas:** `test_cortes.py::test_validar_vigencia_rechaza_fuera_de_rango_con_motivo`,
+`::test_validar_vigencia_acepta_limites_inclusive`,
+`TestCorregir::test_rechaza_corregir_con_vigencia_fuera_de_rango`;
+`test_casos_uso_cortes.py::test_crear_corte_rechaza_vigencia_fuera_de_rango_sin_persistir_nada`.
+
+**Estado:** VIGENTE.
+
+**Registrado:** 2026-09-23.
+
+---
+
+## D19 · Se adopta Tailwind CSS para las pantallas nuevas del frontend
+
+**Decisión:** a partir de esta tarjeta (estilo visual de Login y Nuevo
+corte), el frontend usa Tailwind CSS para las pantallas y componentes que
+se construyan o restilicen de aquí en adelante. Las pantallas y
+componentes ya existentes antes de esta fecha (`Estados.jsx`,
+`VistaPreviaDescartes.jsx`, la tabla de `MatrizRelacion.jsx`) **no se
+migran** solo por consistencia cosmética — siguen con las clases BEM de
+`estilos.css`. Los tokens de color/radio/tipografía que ya vivían como
+variables CSS en `:root` se actualizaron a la paleta de la guía de estilo
+recibida, así esos componentes heredan los mismos colores sin tocar su
+JSX (ver comentario al inicio de `estilos.css`).
+
+**Motivo:** `estilos.css` documentaba explícitamente la decisión contraria
+("agregar Tailwind o MUI sería peso sin beneficio para cuatro pantallas").
+Esa decisión fue razonable cuando el alcance era 4 pantallas sin guía de
+diseño. Cambia el contexto: (1) la guía de estilo que el equipo recibió
+está escrita en su totalidad como clases utilitarias de Tailwind — traducir
+cada valor arbitrario a mano (`text-[#1A3A6B]`, `tracking-[0.12em]`,
+`w-[42%]`) a CSS plano es más lento y con más riesgo de desviarse del
+pixel-spec; (2) hay un dashboard con más pantallas planeado a futuro, y
+adoptar Tailwind ahora (2 pantallas) es más barato que migrar después con
+10+ pantallas ya escritas en CSS plano.
+
+**Alternativas consideradas:** traducir la guía a CSS plano extendiendo
+`estilos.css` con el mismo patrón BEM — descartada por el punto (2)
+anterior; se prefirió no posponer la migración a un momento con más
+superficie de código que reescribir.
+
+**Costo aceptado:** el frontend queda con dos sistemas de estilos
+coexistiendo (Tailwind en pantallas nuevas, CSS plano en las anteriores)
+hasta que alguien decida migrar el resto — no forma parte de esta
+tarjeta.
+
+**Estado:** PROPUESTA — implementada directamente por no bloquear la
+tarjeta de estilo visual, pendiente de que el equipo la ratifique como las
+demás decisiones de arquitectura de este documento.
+
+**Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
+
+---
+
+## D20 · Sidebar AppShell + átomos compartidos, adaptados de `DESIGN_SPEC.md` (mockup Figma Make), sin RBAC
+
+**Decisión:** se reemplazó la barra superior simple de `Disposicion.jsx`
+por un sidebar fijo (`w-52`, navy) siguiendo `DESIGN_SPEC.md` §4.1, y se
+extrajeron los átomos que ese documento lista en su §7 como base a portar
+primero: `Card`, `SectionHeader`, `StateBadge`, `SemaforoDot`, `PctCell`
+(en `components/shared/`) y el helper `cop()` (`lib/formato.js`). Se
+aplicaron a las cuatro pantallas que ya existen en el sprint — Login,
+Nuevo corte, Cortes, Matriz de relación —, no a las pantallas nuevas que
+describe el documento (Tablero, Conciliación, Avance físico, Gestión de
+usuarios), que **no se construyeron**.
+
+**Motivo:** `DESIGN_SPEC.md` es la documentación de un mockup de Figma Make
+más grande que el alcance de este sprint — describe una app completa con
+RBAC por rol y seis pantallas. `PLANDETRABAJO.md` no tiene tarjeta para
+ninguna de esas seis pantallas ni para roles/autenticación (siguen bajo
+D2/`[REF-05]`, diferidos a Sprint 2). Construirlas ahora habría significado
+UI sin backend ni datos reales que las respalden, y un menú de navegación
+filtrado por un rol que el sistema todavía no modela. El usuario confirmó
+explícitamente este recorte antes de empezar (tokens + átomos + sidebar,
+sin las pantallas nuevas ni RBAC).
+
+**Qué SÍ se llevó del documento:** los tokens de color adicionales
+(`semaforo.*`, `chart.*`, `navy.sidebar`, `secundario`) en
+`tailwind.config.js`; el patrón de tabla universal (§4.4: `thead` gris,
+texto `10px` uppercase, filas con hover, celdas numéricas en `font-mono`)
+aplicado a `Cortes.jsx` y `MatrizRelacion.jsx`, que antes no tenían ningún
+estilo real (sus clases `.historico-cortes`/`.cortes-tabla`/`.apagado`
+nunca tuvieron CSS definido); el patrón de encabezado de pantalla
+persistente (§4.2: título+subtítulo visibles incluso en estados de
+carga/error), que antes no existía — `Cortes.jsx` y `MatrizRelacion.jsx`
+retornaban solo el estado de carga/error sin encabezado.
+
+**Qué NO se llevó (deliberado):** `NAV_BY_ROLE`/roles, las seis pantallas
+nuevas, Recharts (no hay gráficos en este sprint), shadcn/ui (no se
+evaluó; el layout actual son cuatro pantallas y una tabla, no justifica
+otra dependencia de componentes todavía). `SemaforoDot` y `PctCell` se
+crearon sin consumidor real hoy — quedan documentados en su propio
+comentario como átomos listos, no como código muerto accidental.
+
+**Riesgo aceptado:** dos átomos (`SemaforoDot`, `PctCell`) no tienen
+ninguna pantalla que los use todavía; si para cuando exista una tarjeta
+real que los necesite el diseño final terminó siendo distinto, se
+descartan sin costo (son ~20 líneas cada uno).
+
+**Estado:** PROPUESTA — mismo criterio que D19, pendiente de ratificación
+del equipo.
+
+**Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
+
+---
+
+## D21 · `/cortes/:corteId` reanuda un corte en BORRADOR desde el frontend
+
+**Hallazgo (2026-09-21, probando el flujo de punta a punta):** un corte
+creado y abandonado a mitad del wizard (por ejemplo, cerrando la pestaña
+tras el paso 1) quedaba huérfano. El backend ya soporta retomarlo por id
+(`GET /cortes/{id}`, y `POST /cortes/{id}/archivos/{tipo}` /
+`POST /cortes/{id}/registrar` funcionan contra cualquier corte en
+BORRADOR existente), pero el frontend no tenía ningún punto de entrada
+para hacerlo: `NuevoCorte.jsx` solo sabía crear un corte nuevo, y
+`Cortes.jsx` mostraba los BORRADOR como texto plano ("En borrador"), sin
+enlace. No estaba anotado como pendiente en `PLANDETRABAJO.md` ni en este
+documento — a diferencia de RBAC/autenticación (D2), que sí están
+diferidos a propósito, este era un hueco no advertido.
+
+**Decisión:** `NuevoCorte.jsx` se monta también en la ruta
+`/cortes/:corteId` (además de `/cortes/nuevo`). Con `corteId` en la URL,
+en vez de mostrar el formulario de creación, hace `GET /cortes/{id}` y
+entra directo a la vista de carga de archivos con el corte ya existente
+— mismo componente, misma lógica de `subirPdt`/`subirProyectos`/
+`subirEjecucion`/`manejarRegistro`, sin duplicar nada. `Cortes.jsx` ahora
+enlaza "Continuar carga" a esa ruta para cualquier corte en BORRADOR.
+
+**Por qué reusar el mismo componente en vez de crear uno nuevo:** la
+vista de "cargar archivos del corte" (paso 2 del wizard) ya es idéntica
+para un corte recién creado o uno recuperado — ambos casos solo necesitan
+un objeto `corte` con `id`/`vigencia`/`fecha_corte`/`estado`/`archivos`.
+Separar esto en dos componentes hubiera duplicado ~150 líneas de JSX y
+las tres funciones de subida.
+
+**Efecto secundario encontrado y corregido en el mismo cambio:** al
+razonar sobre las rutas se encontró que el `NavLink` de "Cortes" en el
+sidebar (`Disposicion.jsx`) no tenía `end`, así que se resaltaba también
+en `/cortes/nuevo` y ahora se resaltaría en `/cortes/:id` — dos ítems del
+menú activos a la vez. Se agregó `end` a ese `NavLink`. Costo aceptado:
+mientras se reanuda un borrador (`/cortes/:id`), ningún ítem del menú
+queda resaltado — se prefirió eso a inventar una regla de coincidencia
+custom para un caso de uso secundario.
+
+**Probado manualmente de punta a punta** (backend + Postgres + frontend
+reales, sin mocks): corte creado y abandonado en BORRADOR → `Cortes.jsx`
+lo lista con "Continuar carga" → `/cortes/:id` lo carga con sus fuentes
+reutilizadas/pendientes intactas → se sube la fuente faltante → se
+registra con éxito → aparece en el histórico como REGISTRADO. También se
+probó el camino de error: un id con formato inválido cae en el 422
+genérico de FastAPI (mismo comportamiento que ya tenía `/matriz/:corteId`
+para el mismo caso, no es nuevo de esta tarjeta); un UUID válido pero
+inexistente muestra el 404 específico del dominio
+(`codigo: recurso_no_encontrado`) con su mensaje, gracias a
+`EstadoError`.
+
+**Estado:** IMPLEMENTADA — cierra un hueco real, no una decisión de
+alcance a ratificar.
+
+**Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
+
+---
+
+## D22 · Columnas faltantes en PDT/Ejecución, dos reglas de negocio nuevas en la matriz, y definición de filtros
+
+**Hallazgo (2026-09-23, revisión de columnas pedida por el equipo):**
+comparando la lista de columnas de PDT/Ejecución/Proyectos contra el
+código, se encontraron: (1) columnas del PDT nunca extraídas (metadato del
+plan, jerarquía MGA completa, ODS); (2) `NombreSectorCcpet` de Ejecución
+nunca extraída (solo el código); (3) tres columnas ya modeladas en
+`MetaORM` y ya leídas por `repositorios.py::reemplazar_metas`
+(`cod_indicador_sistp`, `codigo_producto_mga`, `bpin_relacionados`) que el
+lector del PDT nunca poblaba — la tubería existía, faltaba la extracción;
+(4) dos reglas de negocio (`Tipo Gasto = INVERSIÓN`, `CodigoSectorCcpet ≠
+vacío/NA`) que el equipo esperaba pero no estaban en ningún CA aprobado ni
+en el código. Detalle completo por columna en `docs/DATOS.md` (nuevo,
+también cierra ese hallazgo — el archivo era referenciado por `pdt.py`/
+`ejecucion.py`/`proyectos.py`/`_comun.py` desde el inicio del sprint sin
+existir nunca).
+
+**Decisiones tomadas, una por hallazgo:**
+
+1. **Columnas nuevas del PDT** (`pdt.py::OPCIONALES`, `MetaORM`,
+   `repositorios.py::reemplazar_metas`, migración `122e94509b80`):
+   `entidad_territorial`, `nombre_plan`, `fecha_creacion_plan` (metadato
+   del plan, repetido por fila — no se creó una tabla `plan` aparte, ver
+   razonamiento en el comentario de `pdt.py`), `linea_estrategica`,
+   `codigo_sector`/`sector`, `codigo_programa`/`programa`, `codigo_ods`/
+   `ods`, `tipo_acumulacion` (propias de cada meta). Todas opcionales — no
+   rechazan el archivo si faltan, mismo criterio que `nombre_producto`.
+2. **`NombreSectorCcpet`** (`ejecucion.py::OPCIONALES_RUBRO`, `RubroORM`,
+   misma migración): agregada junto al código que ya existía.
+3. **Columnas fantasma corregidas**: `cod_indicador_sistp` (columna real
+   confirmada: "Código de indicador de producto (SisPT)" — NO es llave de
+   cruce, ver `shared/codigos.py`, solo diagnóstico) y `codigo_producto_mga`
+   (SUPUESTO sin confirmar, ver `docs/DATOS.md` §5) ahora se extraen en
+   `pdt.py`. `bpin_relacionados` **sigue sin poblarse**: a diferencia de
+   las otras dos, no hay ningún nombre de columna real identificado en el
+   PDT para un BPIN relacionado — inventar un alias sin evidencia
+   fabricaría un mapeo que nunca coincidiría, o peor, coincidiría con la
+   columna equivocada. Queda como pregunta abierta en `docs/DATOS.md`.
+4. **`no muevas eso, el indicador y unidad de medida es el mismo`** (dato
+   del equipo, 2026-09-23): confirmado y dejado explícito en el comentario
+   de `pdt.py::OPCIONALES` — "Indicador de Producto(MGA)" sigue mapeando a
+   `unidad_medida`, no se toca.
+5. **`docs/DATOS.md` creado**: consolida anatomía real de las tres fuentes,
+   qué se extrae/persiste/expone en la matriz por columna, y las preguntas
+   abiertas (columnas sin confirmar).
+6. **Matriz (HU-07) — contenido + reglas + filtros**, a pedido explícito
+   del equipo ("incluye solo lo necesario para ver que se hizo bien el
+   cruce... agrega presupuesto pero no tan detallado, lo general"):
+   - **Dos reglas de negocio nuevas**, aplicadas DENTRO del JOIN (mismo
+     patrón que la Regla 1 de `ultimo_nivel`, nunca en un WHERE posterior
+     — ver docstring de `consultas.py::_construir_consulta_base`): un
+     rubro con `CodigoSectorCcpet` vacío o "NA" no cruza; un contrato sin
+     `Tipo Gasto = INVERSIÓN` no cruza (con o sin tilde).
+   - **`presupuesto_apropiado`** agregado a `FilaMatriz`/
+     `FilaMatrizRespuesta`/`MatrizRelacion.jsx`: un solo monto general (la
+     apropiación definitiva del rubro cruzado), no las cinco columnas
+     financieras de `Rubro` — la matriz es para verificar el cruce
+     visualmente, no un reporte financiero.
+   - **Columna "Estado" agregada en el frontend** (`estadoDeFila`,
+     `MatrizRelacion.jsx`): resume si la meta cruzó con las tres fuentes
+     ("Completo", verde), con ninguna ("Sin cruce", gris) o con algunas
+     ("Parcial", ámbar) — computado en el cliente a partir de los mismos
+     tres campos de correspondencia que ya viajaban, sin campo nuevo del
+     backend para esto.
+   - **Filtros implementados**: `estado_cruce` (`completo`/`sin_proyecto`/
+     `sin_ejecucion`/`sin_contrato`/`sin_cruce`) y `busqueda` (texto libre
+     sobre código de indicador, BPIN o número de contrato) —
+     `GET /matriz-relacion/{id}?estado_cruce=...&busqueda=...`, aplicados
+     ANTES de paginar (afectan `total`/`totalPaginas`, no la página ya
+     traída). Selector + campo de texto en la pantalla, con debounce de
+     400ms en la búsqueda.
+   - **Filtros definidos pero NO implementados** (propuesta para una
+     tarjeta futura, si el equipo los quiere):
+     - _Por sector_ (`codigo_sector_ccpet`/`nombre_sector_ccpet`, ya
+       persistidos): útil ahora que `NombreSectorCcpet` se extrae.
+     - _Por línea estratégica_ (`meta.linea_estrategica`, agregada en esta
+       misma tarjeta): agrupa metas por la misma línea del plan.
+     - _"Con/sin presupuesto asignado"_: sobre `presupuesto_apropiado`
+       IS/IS NOT NULL — más simple que un rango numérico, y cubre el caso
+       real de uso ("¿qué metas con ejecución no tienen apropiación
+       registrada?").
+     - _Rango de presupuesto_ (mínimo/máximo): se dejó fuera de la primera
+       tanda por ser el que menos valor visual aporta frente a su costo de
+       UI (dos inputs numéricos + validación de rango) comparado con los
+       otros tres.
+     - _Por BPIN específico o por número de contrato exacto_ (no
+       `busqueda` parcial): no se implementó porque `busqueda` ya cubre
+       este caso vía coincidencia parcial (`ILIKE`), y un filtro exacto
+       aparte sería redundante sin un caso de uso que lo distinga.
+
+**Verificación:** `pytest` (nuevas pruebas dedicadas por regla: sector
+vacío/NA no cruza, sector válido sí cruza, tipo de gasto distinto de
+INVERSIÓN no cruza, con/sin tilde, cada valor de `estado_cruce`, cada
+campo de `busqueda`, extracción de las columnas nuevas de PDT/Ejecución
+con un workbook armado a mano) + `ruff check`/`format` limpios + migración
+`122e94509b80` generada con `alembic revision --autogenerate` y aplicada
+contra Postgres real. Frontend: `npm run build`/ESLint limpios, y
+verificación manual en navegador contra el stack real (Postgres, FastAPI y
+Vite): los tres filtros (`sin_proyecto`, `sin_ejecucion`, `completo`,
+`busqueda`) probados con datos reales que cruzan mixto, confirmando que
+antes de esta tarjeta ninguna regla de sector/tipo de gasto se aplicaba.
+
+**Nota operativa (no relacionada con el código):** durante la
+verificación se encontró que `lsof`/`ps` de Git Bash no ven procesos de
+Windows — un backend/frontend de sesiones anteriores de este mismo
+entorno de desarrollo quedó "zombi" ocupando los puertos 8000/5173 durante
+varias horas, haciendo que reinicios aparentes del servidor siguieran
+sirviendo código viejo silenciosamente. Se resolvió matando los procesos
+por PID vía PowerShell (`Get-NetTCPConnection`/`Stop-Process`). Queda como
+advertencia para cualquiera que verifique cambios de backend manualmente
+en este entorno: confirmar con `curl .../openapi.json` que el esquema
+refleja el código actual antes de dar una prueba manual por buena.
+
+**Estado:** IMPLEMENTADA (puntos 1-6, filtros `estado_cruce`/`busqueda`) —
+PROPUESTA (filtros adicionales del punto 6, pendientes de que el equipo
+decida cuáles construir).
+
+**Registrado:** 2026-09-23, Cristhian (`CrisCamUO`).

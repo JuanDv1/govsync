@@ -55,10 +55,52 @@ ALIAS_HOJA = ("Plan indicativo - Productos", "Plan indicativo Productos")
 # HU-02/CA-6: columnas que aportan a la matriz pero NO son obligatorias (si
 # faltan, no se rechaza el archivo — solo quedan como None en cada meta). El
 # fixture real muestra que "Indicador de Producto(MGA)" trae en realidad la
-# unidad de medida ("Kilómetros", "Número"), no un segundo código.
+# unidad de medida ("Kilómetros", "Número"), no un segundo código — CONFIRMADO
+# de nuevo (2026-09-23): no se cambia, indicador y unidad de medida son el
+# mismo dato en el archivo real de Santa Rosa.
+#
+# Columnas agregadas 2026-09-23 (revisión de docs/DATOS.md, ver ese documento
+# para el detalle medido de cada una). Dos grupos:
+#
+# 1. Metadato del plan (mismo valor repetido en las 144 filas del archivo
+#    real, según lo observado): entidad_territorial, nombre_plan,
+#    fecha_creacion_plan. Se extraen por fila igual que el resto — no hay
+#    tabla separada de "plan" en el esquema, y crear una para tres columnas
+#    constantes sería sobre-ingeniería frente al resto del modelo (`meta` ya
+#    guarda `nombre_producto`/`unidad_medida` denormalizados de la misma
+#    forma). Si el equipo prefiere una tabla `plan` en el futuro, es una
+#    migración aparte.
+# 2. Dato propio de cada meta (varía fila a fila, jerarquía MGA):
+#    linea_estrategica, codigo_sector/sector, codigo_programa/programa,
+#    codigo_ods/ods, tipo_acumulacion.
+#
+# `cod_indicador_sistp`: la columna YA existe en `MetaORM` y YA se lee en
+# `repositorios.py::reemplazar_metas` (`meta.get("cod_indicador_sistp")`) —
+# nadie la estaba poblando aquí. NO es una llave de cruce (ver
+# `shared/codigos.py`: intersección con CCPET es CERO), solo diagnóstico.
+# `codigo_producto_mga`: mismo caso — columna y wiring de persistencia ya
+# existían, sin extracción. SUPUESTO (sin confirmar contra el archivo real,
+# pendiente de docs/DATOS.md): el nombre real es "Código de producto (MGA)",
+# un nivel de la jerarquía MGA por encima del indicador.
 OPCIONALES: dict[str, tuple[str, ...]] = {
     "nombre_producto": ("Producto (MGA)",),
     "unidad_medida": ("Indicador de Producto(MGA)",),
+    "cod_indicador_sistp": ("Código de indicador de producto (SisPT)",),
+    "codigo_producto_mga": ("Código de producto (MGA)", "Codigo de producto (MGA)"),
+    "entidad_territorial": ("Entidad Territorial",),
+    "nombre_plan": ("Nombre del Plan", "Nombre Plan"),
+    "fecha_creacion_plan": (
+        "Fecha de creación del plan",
+        "Fecha de creacion del plan",
+    ),
+    "linea_estrategica": ("Línea estratégica", "Linea estrategica"),
+    "codigo_sector": ("Código del sector (MGA)", "Codigo del sector (MGA)"),
+    "sector": ("Sector (MGA)",),
+    "codigo_programa": ("Código del programa (MGA)", "Codigo del programa (MGA)"),
+    "programa": ("Programa (MGA)",),
+    "codigo_ods": ("Código ODS", "Codigo ODS"),
+    "ods": ("ODS",),
+    "tipo_acumulacion": ("Tipo de acumulación", "Tipo de acumulacion"),
 }
 
 
@@ -78,6 +120,12 @@ def _meta_a_decimal(crudo: object) -> Decimal | None:
         return Decimal(texto.replace(" ", ""))
     except InvalidOperation:
         return None
+
+
+def _texto_opcional(fila, mapeo: dict[str, str], clave: str) -> str | None:
+    """Mismo patrón que `ejecucion.py::_texto_opcional`: evita capturar `fila`
+    de un bucle en una función anidada (ruff B023)."""
+    return _comun.texto(fila[mapeo[clave]]) if clave in mapeo else None
 
 
 def _es_principal(crudo: object) -> bool | None:
@@ -211,16 +259,25 @@ class LectorPDT(LectorArchivoFuente):
                     "cod_indicador_producto": codigo.valor,
                     "principal": principal,
                     "meta_cuatrienio": meta_cuatrienio,
-                    "nombre_producto": (
-                        _comun.texto(fila[mapeo["nombre_producto"]])
-                        if "nombre_producto" in mapeo
+                    "nombre_producto": _texto_opcional(fila, mapeo, "nombre_producto"),
+                    "unidad_medida": _texto_opcional(fila, mapeo, "unidad_medida"),
+                    "cod_indicador_sistp": _texto_opcional(fila, mapeo, "cod_indicador_sistp"),
+                    "codigo_producto_mga": _texto_opcional(fila, mapeo, "codigo_producto_mga"),
+                    "entidad_territorial": _texto_opcional(fila, mapeo, "entidad_territorial"),
+                    "nombre_plan": _texto_opcional(fila, mapeo, "nombre_plan"),
+                    "fecha_creacion_plan": (
+                        _comun.fecha(fila[mapeo["fecha_creacion_plan"]])
+                        if "fecha_creacion_plan" in mapeo
                         else None
                     ),
-                    "unidad_medida": (
-                        _comun.texto(fila[mapeo["unidad_medida"]])
-                        if "unidad_medida" in mapeo
-                        else None
-                    ),
+                    "linea_estrategica": _texto_opcional(fila, mapeo, "linea_estrategica"),
+                    "codigo_sector": _texto_opcional(fila, mapeo, "codigo_sector"),
+                    "sector": _texto_opcional(fila, mapeo, "sector"),
+                    "codigo_programa": _texto_opcional(fila, mapeo, "codigo_programa"),
+                    "programa": _texto_opcional(fila, mapeo, "programa"),
+                    "codigo_ods": _texto_opcional(fila, mapeo, "codigo_ods"),
+                    "ods": _texto_opcional(fila, mapeo, "ods"),
+                    "tipo_acumulacion": _texto_opcional(fila, mapeo, "tipo_acumulacion"),
                 }
             )
 

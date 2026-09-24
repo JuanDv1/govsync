@@ -102,6 +102,7 @@ class ServicioCortes:
         se reutiliza (CA-7). Todo dentro de la misma transaccion: si copiar
         los datos de origen falla, no queda ni el corte a medio crear.
         """
+        Corte.validar_vigencia(vigencia)
         Corte.validar_fecha(fecha_corte, self._hoy)
         if self._cortes.existe_borrador_activo():
             raise OperacionNoPermitida(
