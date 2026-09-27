@@ -20,5 +20,14 @@ export default defineConfig(({ mode }) => {
       outDir: "dist",
       sourcemap: false,
     },
+    test: {
+      environment: "jsdom",
+      setupFiles: ["./src/setupTests.js"],
+      coverage: {
+        provider: "v8",
+        reporter: ["text", "lcov"],
+        include: ["src/**/*.{js,jsx,ts,tsx}"],
+      },
+    },
   };
 });

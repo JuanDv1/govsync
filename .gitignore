@@ -22,6 +22,7 @@ backend/.env
 # Test artifacts
 backend/.coverage
 backend/coverage.xml
+frontend/coverage/
 
 
 # Artefactos derivados de Graphify (rutas absolutas por máquina; se regenera)
