@@ -17,7 +17,10 @@ class Settings(BaseSettings):
 
     environment: Literal["development", "test", "production"] = "development"
 
-    database_url: str = "postgresql+psycopg://govsync:govsync@localhost:5432/govsync"
+    # Obligatoria, sin valor por defecto: una credencial literal en el código
+    # es un secreto versionado. En local viene de `.env` (ver `.env.example`),
+    # en pruebas de `tests/conftest.py` y en Render de sus variables de entorno.
+    database_url: str
 
     # --- Seguridad -------------------------------------------------------
     secret_key: str = "dev-only-insecure-key-change-me"
