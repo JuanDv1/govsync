@@ -43,6 +43,12 @@ El camino normal es el flujo automático de la sección anterior: el job
 procedimiento manual queda **solo** para cuando ese job falla o para una
 corrección puntual fuera del flujo de `main`.
 
+**Caso especial — el paso del Deploy Hook falló después de migrar:** el
+esquema de la base ya quedó migrado pero el código desplegado sigue siendo
+el anterior. No hay que repetir la migración: hacer de inmediato **Manual
+Deploy** en Render (Web Service → Manual Deploy → _Deploy latest commit_)
+para que el código alcance al esquema.
+
 El `Start Command` de Render NO encadena `alembic upgrade head`; solo
 levanta `uvicorn` — decisión explícita de `[DEV-07]`: una migración con
 error no debe tumbar el Web Service en producción sin aviso previo. Por
