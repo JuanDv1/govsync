@@ -20,6 +20,7 @@ cambios: la consolidación no les cambia el comportamiento observable.
 from __future__ import annotations
 
 import io
+from datetime import date
 from decimal import Decimal
 
 import pandas as pd
@@ -277,3 +278,13 @@ class TestNumero:
 
     def test_negativo(self):
         assert _comun.numero("-$50.000,00") == Decimal("-50000.00")
+
+
+class TestFecha:
+    def test_texto_de_timestamp_de_pandas(self) -> None:
+        assert _comun.fecha("2026-01-13 00:00:00") == date(2026, 1, 13)
+
+    def test_valores_vacios_devuelven_none(self) -> None:
+        assert _comun.fecha(None) is None
+        assert _comun.fecha("   ") is None
+        assert _comun.fecha(float("nan")) is None

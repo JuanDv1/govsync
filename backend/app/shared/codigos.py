@@ -54,6 +54,7 @@ openpyxl en este archivo. Lo verifica tests/test_arquitectura.py.
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from enum import StrEnum
@@ -87,7 +88,7 @@ def _a_texto(crudo: object) -> str | None:
     if isinstance(crudo, int):
         return str(crudo)
     if isinstance(crudo, float):
-        if crudo != crudo:  # NaN
+        if math.isnan(crudo):
             return None
         if not crudo.is_integer():
             return None
