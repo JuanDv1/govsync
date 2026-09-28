@@ -36,16 +36,18 @@ aplicarla antes siguiendo la sección siguiente.
 El frontend no pasa por este flujo: se despliega aparte mediante la
 integración de Vercel con el repositorio.
 
-## Migraciones manuales contra la base de datos real de Render
+## Plan B: migraciones manuales contra la base de datos real de Render
 
-`[DEV-07]` corre migraciones **manualmente**, no automáticamente en cada
-deploy — decisión explícita: una migración con error no debe tumbar el
-Web Service en producción sin aviso previo. El `Start Command` de Render
-NO encadena `alembic upgrade head`; solo levanta `uvicorn`.
+El camino normal es el flujo automático de la sección anterior: el job
+`migrate-render` aplica las migraciones y luego despliega. Este
+procedimiento manual queda **solo** para cuando ese job falla o para una
+corrección puntual fuera del flujo de `main`.
 
-Esto significa que, cada vez que se fusiona una migración nueva a
-`develop`/`main`, alguien tiene que aplicarla a mano contra la base de
-datos de Render. Pasos:
+El `Start Command` de Render NO encadena `alembic upgrade head`; solo
+levanta `uvicorn` — decisión explícita de `[DEV-07]`: una migración con
+error no debe tumbar el Web Service en producción sin aviso previo. Por
+eso la migración vive en el CI (o en este procedimiento), nunca en el
+arranque del servicio. Pasos:
 
 ### 1. Conseguir la URL externa de la base de datos
 

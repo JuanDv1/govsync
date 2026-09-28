@@ -82,9 +82,9 @@ Evidencia: `test_validacion_archivos.py` (16 pruebas), 170 passed en local
       si `environment=="production"` y el secreto sigue empezando por `dev-only`
 - [ ] `SONAR_TOKEN` y credenciales de despliegue viven en GitHub Secrets, no
       en el código ni en `docker-compose.yml` — **no verificable desde el
-      repositorio local** (son ajustes de GitHub, no de código); además
-      `[DEV-06]` (SonarCloud/CodeQL) todavía no está implementado, así que este
-      secreto ni siquiera existe todavía
+      repositorio local** (son ajustes de GitHub, no de código). `[DEV-06]` ya
+      está implementado: SonarCloud corre en cada push/PR (job `sonarcloud` de
+      `.github/workflows/ci.yml`) junto con CodeQL (`.github/workflows/codeql.yml`)
 - [ ] Los PRs que abre Dependabot **no** leen los secrets de GitHub Actions:
       usan el almacén de secrets de **Dependabot** (Settings → Secrets and
       variables → Dependabot). Para que el job `sonarcloud` funcione en esos
