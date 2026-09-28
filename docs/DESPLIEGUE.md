@@ -1,15 +1,59 @@
 # Despliegue — GovSync
 
-## Migraciones manuales contra la base de datos real de Render
+## Flujo automático de despliegue del backend
 
-`[DEV-07]` corre migraciones **manualmente**, no automáticamente en cada
-deploy — decisión explícita: una migración con error no debe tumbar el
-Web Service en producción sin aviso previo. El `Start Command` de Render
-NO encadena `alembic upgrade head`; solo levanta `uvicorn`.
+Cada push a `main` (en la práctica, la fusión del PR `develop` → `main`)
+dispara `.github/workflows/ci.yml` en este orden:
 
-Esto significa que, cada vez que se fusiona una migración nueva a
-`develop`/`main`, alguien tiene que aplicarla a mano contra la base de
-datos de Render. Pasos:
+1. `backend-calidad` (lint, formato y pruebas) y `backend-migraciones`
+   (ida y vuelta de Alembic contra un Postgres desechable) corren en
+   paralelo.
+2. Si ambos pasan, `migrate-render` aplica `alembic upgrade head` contra
+   la base de datos de Render y, **solo después**, llama al Deploy Hook de
+   Render para desplegar el Web Service. Así el código nuevo nunca arranca
+   antes de que su migración esté aplicada.
+
+Secrets de GitHub Actions requeridos (Settings → Secrets and variables →
+Actions):
+
+| Secret                | Contenido                                                           |
+| --------------------- | ------------------------------------------------------------------- |
+| `RENDER_DATABASE_URL` | External Database URL de Render con prefijo `postgresql+psycopg://` |
+| `RENDER_DEPLOY_HOOK`  | URL del Deploy Hook del Web Service (Settings → Deploy Hook)        |
+
+Ambos son secretos: quien tenga la URL del hook puede desplegar. Nunca se
+escriben en archivos del repo ni se imprimen en los logs del job.
+
+En Render, el Web Service debe tener **Auto-Deploy = Off**: el Deploy Hook
+del CI es el único disparador. Si Auto-Deploy quedara encendido, Render
+desplegaría en paralelo con la migración.
+
+**Despliegue manual** (si el job falla después de migrar o hay que
+redesplegar sin cambios): dashboard de Render → Web Service → **Manual
+Deploy** → _Deploy latest commit_. Si además hay una migración pendiente,
+aplicarla antes siguiendo la sección siguiente.
+
+El frontend no pasa por este flujo: se despliega aparte mediante la
+integración de Vercel con el repositorio.
+
+## Plan B: migraciones manuales contra la base de datos real de Render
+
+El camino normal es el flujo automático de la sección anterior: el job
+`migrate-render` aplica las migraciones y luego despliega. Este
+procedimiento manual queda **solo** para cuando ese job falla o para una
+corrección puntual fuera del flujo de `main`.
+
+**Caso especial — el paso del Deploy Hook falló después de migrar:** el
+esquema de la base ya quedó migrado pero el código desplegado sigue siendo
+el anterior. No hay que repetir la migración: hacer de inmediato **Manual
+Deploy** en Render (Web Service → Manual Deploy → _Deploy latest commit_)
+para que el código alcance al esquema.
+
+El `Start Command` de Render NO encadena `alembic upgrade head`; solo
+levanta `uvicorn` — decisión explícita de `[DEV-07]`: una migración con
+error no debe tumbar el Web Service en producción sin aviso previo. Por
+eso la migración vive en el CI (o en este procedimiento), nunca en el
+arranque del servicio. Pasos:
 
 ### 1. Conseguir la URL externa de la base de datos
 
