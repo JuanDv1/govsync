@@ -12,7 +12,12 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --require-hashes --only-binary ":all:" -r requirements.txt
 
-COPY . .
+# Copia explícita de lo que la imagen necesita (nunca `COPY . .`): el código de
+# la app y las migraciones. Así un `.env` local, pruebas o scripts nunca terminan
+# dentro de la imagen aunque falte una regla en .dockerignore.
+COPY app/ ./app/
+COPY alembic/ ./alembic/
+COPY alembic.ini .
 
 # No ejecutar como root (OWASP A05: configuración de seguridad).
 RUN useradd --create-home --uid 1001 govsync && chown -R govsync:govsync /app

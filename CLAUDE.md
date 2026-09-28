@@ -107,7 +107,7 @@ of this writing — `solicitar()`'s body and the `api` methods are commented out
 it must preserve `error.detalles` from failed requests (carries `columnas_faltantes`,
 `pestanas_faltantes`, `archivos_faltantes` from the backend so the UI can show actionable messages,
 not just "failed") — `ErrorApi` already models this shape. `components/` holds shared UI
-(`Estados.jsx` for loading/error/empty states — `Error` is implemented; `CargaDeArchivo.jsx` for
+(`Estados.jsx` for loading/error/empty states — `EstadoError` is implemented; `CargaDeArchivo.jsx` for
 file upload, still a stub `[UX-02]`), `pages/` holds route-level screens (`NuevoCorte.jsx`,
 `Cortes.jsx`, `MatrizRelacion.jsx`) not yet wired into `App.jsx`'s router.
 

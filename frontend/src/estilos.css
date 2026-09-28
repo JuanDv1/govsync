@@ -78,7 +78,7 @@ body {
   white-space: nowrap;
 }
 
-/* [UX-03] Estado de error accionable (Estados.jsx::Error). */
+/* [UX-03] Estado de error accionable (Estados.jsx::EstadoError). */
 .estado-error {
   display: flex;
   flex-direction: column;

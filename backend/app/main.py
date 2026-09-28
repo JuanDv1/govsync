@@ -31,15 +31,6 @@ def crear_app() -> FastAPI:
         description="Seguimiento al Plan de Desarrollo Territorial · Santa Rosa, Cauca",
     )
 
-    # CORS restringido a los orígenes declarados; nunca '*' con credenciales.
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
-        allow_credentials=True,
-        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type"],
-    )
-
     # [SEC-03] Respaldo autoritativo del tamaño máximo de subida (docs/
     # SEGURIDAD.md, sección SEC-03; hallazgo transversal a HU-02/03/04,
     # 2026-09-20): `max_upload_bytes` (25 MB por defecto) también se revisa
@@ -55,6 +46,19 @@ def crear_app() -> FastAPI:
     # también `app/modules/cortes/api/router.py::cargar_archivo` para la
     # otra mitad del diseño.
     app.add_middleware(RequestBodyLimitMiddleware, max_body_size=settings.max_upload_bytes)
+
+    # CORS restringido a los orígenes declarados; nunca '*' con credenciales.
+    # Debe ser el ÚLTIMO add_middleware: en Starlette el último agregado es el
+    # más externo. Si RequestBodyLimitMiddleware quedara por fuera, su 413 saldría
+    # sin cabeceras CORS y el navegador lo mostraría como error de CORS en vez de
+    # "archivo demasiado grande" (ver tests/test_main.py).
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins_list,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type"],
+    )
 
     registrar_manejadores(app)
 

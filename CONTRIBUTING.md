@@ -55,6 +55,7 @@ Basado en [Conventional Commits](https://www.conventionalcommits.org/).
 | `test`     | Agregar o corregir tests                       |
 | `chore`    | Mantenimiento, dependencias, config            |
 | `perf`     | Mejora de rendimiento                          |
+| `ci`       | Cambios en GitHub Actions / pipeline de CI     |
 
 ## Ejemplo
 

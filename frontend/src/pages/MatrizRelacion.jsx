@@ -83,7 +83,7 @@ import { useParams } from "react-router-dom";
 import { api } from "../api/cliente.js";
 import {
   Cargando,
-  Error as EstadoError,
+  EstadoError,
   SinCorrespondencia,
   Vacio,
 } from "../components/Estados.jsx";

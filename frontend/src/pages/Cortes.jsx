@@ -12,11 +12,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { api } from "../api/cliente.js";
-import {
-  Cargando,
-  Error as EstadoError,
-  Vacio,
-} from "../components/Estados.jsx";
+import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import Card from "../components/shared/Card.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
 
