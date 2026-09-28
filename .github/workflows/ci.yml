@@ -65,6 +65,12 @@ jobs:
       # La cobertura mínima del DoD (70 %) se exige aquí, no en pyproject.toml,
       # para no bloquear la ejecución local durante el desarrollo.
       - run: python -m pytest --cov-fail-under=70
+      - name: Publica el reporte de cobertura para SonarCloud
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura-backend
+          path: backend/coverage.xml
+          retention-days: 7
 
   backend-migraciones:
     name: Backend — migraciones contra PostgreSQL 16
@@ -147,10 +153,19 @@ jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
+    # Depende de backend-calidad para reutilizar su coverage.xml (artefacto
+    # cobertura-backend) en vez de correr pytest dos veces; sin él, SonarCloud
+    # reporta cobertura 0 %.
+    needs: [backend-calidad]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Descarga el reporte de cobertura
+        uses: actions/download-artifact@v4
+        with:
+          name: cobertura-backend
+          path: backend
       - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
