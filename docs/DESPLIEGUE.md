@@ -1,5 +1,41 @@
 # Despliegue — GovSync
 
+## Flujo automático de despliegue del backend
+
+Cada push a `main` (en la práctica, la fusión del PR `develop` → `main`)
+dispara `.github/workflows/ci.yml` en este orden:
+
+1. `backend-calidad` (lint, formato y pruebas) y `backend-migraciones`
+   (ida y vuelta de Alembic contra un Postgres desechable) corren en
+   paralelo.
+2. Si ambos pasan, `migrate-render` aplica `alembic upgrade head` contra
+   la base de datos de Render y, **solo después**, llama al Deploy Hook de
+   Render para desplegar el Web Service. Así el código nuevo nunca arranca
+   antes de que su migración esté aplicada.
+
+Secrets de GitHub Actions requeridos (Settings → Secrets and variables →
+Actions):
+
+| Secret                | Contenido                                                           |
+| --------------------- | ------------------------------------------------------------------- |
+| `RENDER_DATABASE_URL` | External Database URL de Render con prefijo `postgresql+psycopg://` |
+| `RENDER_DEPLOY_HOOK`  | URL del Deploy Hook del Web Service (Settings → Deploy Hook)        |
+
+Ambos son secretos: quien tenga la URL del hook puede desplegar. Nunca se
+escriben en archivos del repo ni se imprimen en los logs del job.
+
+En Render, el Web Service debe tener **Auto-Deploy = Off**: el Deploy Hook
+del CI es el único disparador. Si Auto-Deploy quedara encendido, Render
+desplegaría en paralelo con la migración.
+
+**Despliegue manual** (si el job falla después de migrar o hay que
+redesplegar sin cambios): dashboard de Render → Web Service → **Manual
+Deploy** → _Deploy latest commit_. Si además hay una migración pendiente,
+aplicarla antes siguiendo la sección siguiente.
+
+El frontend no pasa por este flujo: se despliega aparte mediante la
+integración de Vercel con el repositorio.
+
 ## Migraciones manuales contra la base de datos real de Render
 
 `[DEV-07]` corre migraciones **manualmente**, no automáticamente en cada

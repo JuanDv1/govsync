@@ -85,6 +85,10 @@ Evidencia: `test_validacion_archivos.py` (16 pruebas), 170 passed en local
       repositorio local** (son ajustes de GitHub, no de código); además
       `[DEV-06]` (SonarCloud/CodeQL) todavía no está implementado, así que este
       secreto ni siquiera existe todavía
+- [ ] Los PRs que abre Dependabot **no** leen los secrets de GitHub Actions:
+      usan el almacén de secrets de **Dependabot** (Settings → Secrets and
+      variables → Dependabot). Para que el job `sonarcloud` funcione en esos
+      PRs, `SONAR_TOKEN` debe estar registrado también ahí
 
 ## Cadena de suministro de dependencias
 
