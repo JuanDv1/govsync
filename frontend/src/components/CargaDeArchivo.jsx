@@ -35,7 +35,7 @@
  * — esos varían por tipo y son responsabilidad de cada pantalla `[HU-0x][FE-02]`.
  *
  * `error` sigue la forma de `ErrorApi` (`.message`, `.codigo`, `.detalles`) y
- * se delega tal cual a `Estados.jsx::Error` — [SEC-03] vive en el backend
+ * se delega tal cual a `Estados.jsx::EstadoError` — [SEC-03] vive en el backend
  * (docs/SEGURIDAD.md), este componente no reimplementa esas reglas; el
  * `accept=".xlsx"` y `TAMANO_MAXIMO_BYTES` de abajo son solo ayuda de UX,
  * no una validación real.
@@ -43,7 +43,7 @@
 
 import { useId, useState } from "react";
 import { AlertTriangle, Check, FileSpreadsheet } from "lucide-react";
-import { Cargando, Error as EstadoError } from "./Estados.jsx";
+import { Cargando, EstadoError } from "./Estados.jsx";
 
 const TAMANO_MAXIMO_BYTES = 2_097_152; // 2 MB — acordado con Cristhian,
 // archivos reales hoy < 200 KB (ver docs/DECISIONES.md D12)

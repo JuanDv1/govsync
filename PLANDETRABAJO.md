@@ -227,7 +227,7 @@ migraciones contra PostgreSQL 16, y build del frontend.
 | #   | Tarjeta          | Quién      | Archivo                                         | CA         |
 | --- | ---------------- | ---------- | ----------------------------------------------- | ---------- |
 | 2.5 | `[UX-04]`        | Karold     | `components/Estados.jsx`                        | —          |
-| 2.6 | `[UX-03]`        | Juan David | `components/Estados.jsx::Error`                 | —          |
+| 2.6 | `[UX-03]`        | Juan David | `components/Estados.jsx::EstadoError`           | —          |
 | 2.7 | `[HU-01][FE-01]` | Juan David | `cortes/api/router.py` + registrar en `main.py` | CA-1, CA-8 |
 | 2.8 | `[HU-01][FE-02]` | Karold     | `pages/NuevoCorte.jsx` paso 1                   | CA-1, CA-2 |
 

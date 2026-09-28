@@ -44,6 +44,7 @@ Ver docs/DATOS.md para el detalle medido.
 from __future__ import annotations
 
 import io
+import math
 import re
 import unicodedata
 import zipfile
@@ -65,7 +66,7 @@ def normalizar_encabezado(texto: object) -> str:
     """
     if texto is None:
         return ""
-    if isinstance(texto, float) and texto != texto:  # NaN
+    if isinstance(texto, float) and math.isnan(texto):
         return ""
     sin_tildes = unicodedata.normalize("NFKD", str(texto))
     sin_tildes = "".join(c for c in sin_tildes if not unicodedata.combining(c))
@@ -248,7 +249,7 @@ def texto(valor: object) -> str | None:
     """
     if valor is None:
         return None
-    if isinstance(valor, float) and valor != valor:  # NaN
+    if isinstance(valor, float) and math.isnan(valor):
         return None
     limpio = str(valor).strip()
     return limpio or None
@@ -297,7 +298,7 @@ def numero(valor: object) -> Decimal | None:
     """
     if valor is None:
         return None
-    if isinstance(valor, float) and valor != valor:  # NaN
+    if isinstance(valor, float) and math.isnan(valor):
         return None
     if isinstance(valor, Decimal):
         return valor
@@ -335,7 +336,7 @@ def fecha(valor: object) -> date | None:
         return valor.date()
     if isinstance(valor, date):
         return valor
-    if isinstance(valor, float) and valor != valor:  # NaN
+    if isinstance(valor, float) and math.isnan(valor):
         return None
 
     texto_valor = str(valor).strip()

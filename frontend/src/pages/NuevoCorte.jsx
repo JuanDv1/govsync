@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { Check } from "lucide-react";
 import { api } from "../api/cliente.js";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
-import { Cargando, Error as EstadoError } from "../components/Estados.jsx";
+import { Cargando, EstadoError } from "../components/Estados.jsx";
 import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
 import Card from "../components/shared/Card.jsx";
 import SectionHeader from "../components/shared/SectionHeader.jsx";

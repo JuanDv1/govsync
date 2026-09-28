@@ -1,0 +1,16 @@
+# Segunda barrera tras la copia explícita del Dockerfile: evita que secretos,
+# entornos virtuales y artefactos locales entren al contexto de build. Los
+# patrones de Docker solo aplican en la raíz del contexto: `**/` los extiende
+# a subdirectorios (hay __pycache__ dentro de app/).
+.env
+.env.*
+.venv/
+venv/
+**/__pycache__/
+**/*.py[co]
+**/.pytest_cache/
+**/.ruff_cache/
+coverage.xml
+.coverage
+tests/
+scripts/

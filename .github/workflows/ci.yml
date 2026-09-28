@@ -16,7 +16,9 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-      - run: npm ci
+      # --ignore-scripts: un paquete comprometido no puede ejecutar scripts de
+      # instalación (equivalente a --only-binary en pip).
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run format:check
 
@@ -29,7 +31,9 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-      - run: npm ci
+      # --ignore-scripts: un paquete comprometido no puede ejecutar scripts de
+      # instalación (equivalente a --only-binary en pip).
+      - run: npm ci --ignore-scripts
       - run: npm test
 
   build:
@@ -41,7 +45,9 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-      - run: npm ci
+      # --ignore-scripts: un paquete comprometido no puede ejecutar scripts de
+      # instalación (equivalente a --only-binary en pip).
+      - run: npm ci --ignore-scripts
       - run: npm run build
 
   backend-calidad:
@@ -170,8 +176,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm ci
-      - run: git log -1 --pretty=%B | npx commitlint --config commitlint.config.cjs
+      # --ignore-scripts: un paquete comprometido no puede ejecutar scripts de
+      # instalación (equivalente a --only-binary en pip).
+      - run: npm ci --ignore-scripts
+      # Binario ya instalado y fijado en package-lock.json; `npx` podría
+      # descargar un paquete no fijado.
+      - run: git log -1 --pretty=%B | ./node_modules/.bin/commitlint --config commitlint.config.cjs
 
   sonarcloud:
     name: SonarCloud

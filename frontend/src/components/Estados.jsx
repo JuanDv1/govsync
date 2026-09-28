@@ -7,7 +7,7 @@
  *
  * Se centralizan para que cada pantalla los trate igual.
  *
- * LO IMPORTANTE ESTÁ EN `Error`: un error del backend puede traer `detalles`
+ * LO IMPORTANTE ESTÁ EN `EstadoError`: un error del backend puede traer `detalles`
  * (qué columna o pestaña falta). Mostrarlos es la diferencia entre «no se pudo
  * cargar» y un mensaje accionable — que es justamente lo que piden
  * HU-02/CA-3, HU-03/CA-4 y HU-01/CA-3.
@@ -35,9 +35,8 @@ export function SinCorrespondencia({ texto = "Sin correspondencia" }) {
   return <span className="estado-sin-correspondencia">{texto}</span>;
 }
 
-// [UX-03] Este componente se llama igual que el `Error` nativo de JS. Si el
-// archivo que lo consume también hace `throw new Error(...)`, importar con
-// alias: import { Error as EstadoError } from "./Estados.jsx".
+// [UX-03] Se llama `EstadoError` (no `Error`) para no ocultar el `Error`
+// nativo de JS en los archivos que lo importan.
 
 //: Claves de `detalles` documentadas hoy (ver comentario de api/cliente.js).
 // Cualquier clave nueva que el backend agregue se muestra igual, con una
@@ -66,7 +65,7 @@ function listarDetalles(detalles) {
     });
 }
 
-export function Error({ error, onReintentar }) {
+export function EstadoError({ error, onReintentar }) {
   if (!error) return null;
 
   const mensaje = error.message || "Ocurrió un error inesperado.";
