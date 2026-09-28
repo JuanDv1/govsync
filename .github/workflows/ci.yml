@@ -197,7 +197,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Descarga el reporte de cobertura
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cobertura-backend
           path: backend
