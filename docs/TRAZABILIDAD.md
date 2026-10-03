@@ -156,6 +156,80 @@ activo detectado en producción.
 
 ---
 
+> Nota (2026-10-03): se agregó un octavo campo, `nombre_proyecto`, a
+> `FilaMatriz`/`MatrizRespuesta` -- NO es un CA nuevo de HU-07 (sus seis
+> columnas confirmadas no cambian), es la absorción de HU10-CA17 (ver
+> sección HU-10 más abajo): Emilse pidió el nombre del proyecto junto al
+> BPIN en Reunión 5, y como HU-10 ya estaba modificando este mismo
+> contrato de salida (para agregar los filtros), el equipo decidió
+> absorber también ese campo ahí en vez de abrir una revisión formal
+> separada de HU-07. Mismo criterio NULL explícito (CA-8) que el resto de
+> columnas.
+
+## E-02 / HU-10 — Filtrar matriz de relación (Sprint 2)
+
+> Historia fusiona HU-10a/b/c/d/e. CA16 (Programa) y CA17 (nombre del
+> proyecto) se agregaron el 2026-10-03, tras validar el alcance original
+> (CA01-15) contra lo que la funcionaria Emilse describió necesitar en
+> `TranscripcionReunion5Emilse.md` y `TranscripcionReunion3Emilse.md` (su
+> PowerBI de referencia organiza el seguimiento "por sectores, por
+> programa y por BPIN", y pidió explícitamente "el código de BPIN, el
+> nombre del proyecto y el indicador de producto" para poder filtrar).
+> Ambos campos ya existían en BD (`MetaORM.programa`, D22;
+> `ProyectoORM.nombre_proyecto`, HU-04/CA-2) -- no requirieron migración.
+> CA17 se absorbió formalmente en el contrato de salida de HU-07 (ver nota
+> arriba en esa sección) en vez de abrir una revisión separada de una
+> historia ya cerrada.
+>
+> DECISIÓN TÉCNICA (2026-10-03, ver docstring de `consultas.py`): "Sector"
+> (CA-7) y "Programa" (CA-16) filtran sobre `MetaORM.sector`/`programa`
+> (el PDT), no sobre `RubroORM.nombre_sector_ccpet` (la clasificación
+> presupuestal CCPET) -- existen los dos campos en el esquema y no son
+> intercambiables. Se eligió el de Meta para que una meta sin cruce
+> presupuestal (CA-8) no desaparezca silenciosamente al filtrar por su
+> sector/programa del PDT. Pendiente de confirmar con datos reales de
+> otro municipio si `MetaORM.sector`/`programa` vienen poblados siempre.
+>
+> DECISIÓN TÉCNICA: parámetros de filtro como lista repetible
+> (`?bpin=a&bpin=b`, forma nativa de FastAPI `Query`), no CSV -- evita
+> parseo manual y es el patrón estándar del framework.
+>
+> DECISIÓN TÉCNICA (CA-3, autocompletar): no hay endpoint de autocompletado
+> separado. Con los volúmenes reales medidos (CA-15: 144 metas / 485
+> ejecución / 319 contratación por corte), la lista completa de opciones
+> por criterio (`GET /matriz-relacion/{corte_id}/opciones-filtro`) es
+> pequeña; el filtrado "contiene, desde 3 caracteres" sobre esa lista ya
+> cargada es responsabilidad del frontend, no una consulta nueva al
+> backend.
+
+| CA                                                        | Escenario                         | Archivo                                                  | Estado                                                                         | Prueba                                                                                                                                                                     | Evidencia                                                                                                                                                                                                                                                    |
+| --------------------------------------------------------- | --------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| CA01 (panel de filtros, opciones solo del corte mostrado) | Panel de filtros                  | `trazabilidad/api/router.py`, `persistence/consultas.py` | Probado (backend) / Pendiente (frontend)                                       | `test_router_trazabilidad.py::test_opciones_filtro_devuelve_los_valores_del_corte`, `test_consultas_matriz.py::TestObtenerOpcionesFiltro` (2 pruebas)                      | `GET /matriz-relacion/{corte_id}/opciones-filtro` nuevo, reutiliza el mismo cruce de `_construir_consulta_base` sin filtros para que las opciones sean exactamente "lo que existe en este corte". Frontend (panel de filtros en sí) sin implementar todavía. |
+| CA02 (filtrar por BPIN)                                   | Filtrar por BPIN                  | idem                                                     | Probado (backend) / Pendiente (frontend)                                       | `test_consultas_matriz.py::TestHU10Filtros::test_filtrar_por_bpin`, `test_router_trazabilidad.py` (combinado en `test_matriz_filtra_por_sector` y análogos para el patrón) | `bpin: list[str] \| None` vía `Query`, `IN` sobre `proyectos_del_corte.c.bpin`.                                                                                                                                                                              |
+| CA03 (autocompletar BPIN y Contrato)                      | Autocompletar                     | idem                                                     | Parcial (backend expone las listas; "contiene desde 3 caracteres" es frontend) | `TestObtenerOpcionesFiltro`                                                                                                                                                | Ver DECISIÓN TÉCNICA arriba: sin endpoint de autocompletado dedicado.                                                                                                                                                                                        |
+| CA04 (filtrar por Indicador)                              | Filtrar por Indicador             | idem                                                     | Probado (backend) / Pendiente (frontend)                                       | `test_consultas_matriz.py::TestHU10Filtros::test_filtrar_por_indicador`                                                                                                    | `cod_indicador_producto: list[str] \| None`, `IN` sobre `MetaORM.cod_indicador_producto`. Selector muestra "código – nombre" vía `IndicadorOpcion` (`opciones-filtro`).                                                                                      |
+| CA05 (filtrar por Producto)                               | Filtrar por Producto              | idem                                                     | Probado (backend) / Pendiente (frontend)                                       | `::test_filtrar_por_producto`                                                                                                                                              | `producto: list[str] \| None`, `IN` sobre `MetaORM.nombre_producto`.                                                                                                                                                                                         |
+| CA06 (filtrar por Contrato)                               | Filtrar por Contrato              | idem                                                     | Probado (backend) / Pendiente (frontend)                                       | `::test_filtrar_por_contrato`, `test_router_trazabilidad.py::test_matriz_combina_dos_valores_del_mismo_criterio_con_or` (patrón compartido)                                | `numero_contrato: list[str] \| None`, `IN` sobre `ContratoORM.numero_contrato`.                                                                                                                                                                              |
+| CA07 (filtrar por Sector)                                 | Filtrar por Sector                | idem                                                     | Probado (backend) / Pendiente (frontend)                                       | `::test_filtrar_por_sector`, `::test_sector_de_una_meta_sin_cruce_presupuestal_sigue_filtrable`, `test_router_trazabilidad.py::test_matriz_filtra_por_sector`              | `sector: list[str] \| None`, `IN` sobre `MetaORM.sector` (ver DECISIÓN TÉCNICA "Sector" arriba).                                                                                                                                                             |
+| CA08 (OR dentro del mismo criterio)                       | Varios valores del mismo criterio | idem                                                     | Probado (backend)                                                              | `::test_varios_valores_del_mismo_criterio_es_or`, `test_router_trazabilidad.py::test_matriz_combina_dos_valores_del_mismo_criterio_con_or`                                 | Cada filtro es `columna.in_(valores)`.                                                                                                                                                                                                                       |
+| CA09 (AND entre criterios distintos)                      | Criterios distintos combinados    | idem                                                     | Probado (backend)                                                              | `::test_criterios_distintos_combinados_es_and`, `::test_criterios_distintos_combinados_caso_feliz`                                                                         | Cada `.where()` encadenado se combina con AND (SQLAlchemy, comportamiento por defecto).                                                                                                                                                                      |
+| CA10 (modificar un filtro conserva los demás)             | Modificar un filtro               | —                                                        | Pendiente (frontend)                                                           | —                                                                                                                                                                          | Responsabilidad de estado de UI, no de esta consulta (cada llamada ya recibe el conjunto completo de filtros activos).                                                                                                                                       |
+| CA11 (sin resultados)                                     | Sin resultados                    | `trazabilidad/api/router.py`                             | Probado (backend, implícito: `total_filas: 0`) / Pendiente (mensaje de UI)     | cubierto por cualquier prueba con `total == 0` (p. ej. `test_criterios_distintos_combinados_es_and`)                                                                       | El backend ya devuelve `total_filas: 0` y `filas: []`; el mensaje "No hay registros..." y el botón "Limpiar filtros" son de frontend.                                                                                                                        |
+| CA12 (limpiar filtros)                                    | Limpiar filtros                   | —                                                        | Pendiente (frontend)                                                           | —                                                                                                                                                                          | Sin filtros (`None`/listas vacías) ya devuelve todos los registros — comportamiento por defecto, sin código adicional.                                                                                                                                       |
+| CA13 (persistencia de filtros)                            | Persistencia                      | —                                                        | Pendiente (frontend)                                                           | —                                                                                                                                                                          | Responsabilidad de estado de UI.                                                                                                                                                                                                                             |
+| CA14 (registros sin valor en el criterio)                 | Registros sin valor               | `persistence/consultas.py`                               | Probado (backend)                                                              | `TestHU10Filtros::test_registro_sin_valor_en_el_criterio_no_aparece_al_filtrar`                                                                                            | Una meta sin contrato no aparece al filtrar por Contrato, sí aparece sin ese filtro.                                                                                                                                                                         |
+| CA15 (tiempo de respuesta ≤3s)                            | Tiempo de respuesta               | —                                                        | `[VALIDAR volumen y umbral]`, pendiente                                        | —                                                                                                                                                                          | Ver nota en el Excel de requisitos: volumen real bajo (144/485/319 por corte), probablemente no necesita índice todavía.                                                                                                                                     |
+| CA16 (filtrar por Programa)                               | Filtrar por Programa              | `persistence/consultas.py`                               | Probado (backend) / Pendiente (frontend)                                       | `TestHU10Filtros::test_filtrar_por_programa`                                                                                                                               | `programa: list[str] \| None`, `IN` sobre `MetaORM.programa`. Agregado 2026-10-03 tras validar con Reunión 3 de Emilse.                                                                                                                                      |
+| CA17 (nombre del proyecto visible en la matriz)           | Mostrar nombre del proyecto       | `persistence/consultas.py`, `api/router.py`              | Probado (backend) / Pendiente (frontend)                                       | `test_consultas_matriz.py::TestHU10NombreProyecto` (2 pruebas)                                                                                                             | `nombre_proyecto` agregado a `FilaMatriz`/`MatrizRespuesta` (absorbido del contrato de HU-07, ver nota arriba). NULL explícito si la meta no tiene proyecto. Agregado 2026-10-03 tras pedido explícito de Emilse en Reunión 5.                               |
+
+Suite completa: 344 passed en local (2026-10-03, incluye 19 pruebas nuevas
+de HU-10: 13 en `TestHU10Filtros`, 2 en `TestHU10NombreProyecto`, 2 en
+`TestObtenerOpcionesFiltro`, 2 de endpoint en `test_router_trazabilidad.py`
+más las que reutilizan el patrón compartido). `test_arquitectura.py` y
+`ruff check`/`ruff format --check` sin hallazgos.
+
+---
+
 ## Cómo llenar esta tabla
 
 1. Cuando abra una rama para una tarjeta, cambie el Estado a `En progreso`.
