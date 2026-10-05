@@ -6,7 +6,7 @@ TARJETAS: [HU-07][BE-01] Servicio de cruce de las tres fuentes
           [HU-07][BE-03] Registro de no coincidencias sin asociación ficticia
           [HU-10] Filtrar la matriz por BPIN, Indicador, Producto, Contrato,
           Sector y Programa (agregado Sprint 2)
-CUBRE: HU-07 / CA-2 a CA-8. HU-10 / CA-1 a CA-17 (ver docs/TRAZABILIDAD.md).
+CUBRE: HU-07 / CA-2 a CA-8. HU-10 / CA-1 a CA-17 (ver docs/archivo/sprint-1/TRAZABILIDAD.md).
 
 =============================================================================
 ESTRUCTURA DEL CRUCE
@@ -82,7 +82,7 @@ lado del servidor: [HU-07][FE-01] pide el endpoint con paginación.
 IMPLEMENTACIÓN [HU-07][BE-01]/[BE-02]/[BE-03]
 =============================================================================
 Las tres tarjetas viven en la misma sentencia (mismo archivo, misma función,
-per PLANDETRABAJO.md 5.1-5.3): no son separables en el código porque CA-2..
+per docs/archivo/sprint-1/PLANDETRABAJO.md 5.1-5.3): no son separables en el código porque CA-2..
 CA-6 (BE-01, Juan Esteban), CA-7 (BE-02, Cristhian) y CA-8 (BE-03, Juan
 Esteban) son propiedades de LA MISMA consulta, no funciones independientes —
 no se puede escribir un JOIN correcto sin decidir a la vez cómo tratar el
@@ -93,7 +93,7 @@ Claves de columna (las mismas seis confirmadas en HU-07/CA-3..CA-6, fijas
 también en `frontend/src/pages/MatrizRelacion.jsx::COLUMNAS`). Ya no hay una
 constante `COLUMNAS` en `trazabilidad/api/router.py` que las centralice: era
 código muerto (`MatrizRespuesta` nunca la usó) y se borró el 2026-09-21 (ver
-docs/TRAZABILIDAD.md). El contrato sigue siendo real, solo que hoy vive como
+docs/archivo/sprint-1/TRAZABILIDAD.md). El contrato sigue siendo real, solo que hoy vive como
 coincidencia intencional de cadenas literales entre esta consulta y el
 frontend, no como una única fuente en código:
 
@@ -168,7 +168,7 @@ son intercambiables:
   corta es la señal).
 
 CA17 (nombre del proyecto visible en la matriz, absorbido en HU-10 el
-2026-10-03 -- decisión del equipo, documentado en docs/TRAZABILIDAD.md):
+2026-10-03 -- decisión del equipo, documentado en docs/archivo/sprint-1/TRAZABILIDAD.md):
 `ProyectoORM.nombre_proyecto` se agrega a la subconsulta `proyectos_del_corte`
 y a `FilaMatriz` como campo nuevo. No agrega fan-out: ya existe un proyecto
 por fila en esa subconsulta (un indicador -> un proyecto vía

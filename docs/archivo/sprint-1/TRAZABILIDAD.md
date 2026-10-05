@@ -1,3 +1,5 @@
+> Archivado: documento histórico del Sprint 1, no se mantiene.
+
 # Trazabilidad HU → CA → Código → Prueba — Sprint 1
 
 Se llena a medida que avanza el sprint, no al final. Cada fila se marca

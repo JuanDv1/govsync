@@ -13,7 +13,7 @@
  * `GET /matriz-relacion/{id}` (`trazabilidad/api/router.py::MatrizRespuesta`)
  * solo devuelve `filas`. El router llegó a tener una constante `COLUMNAS`
  * pensada para centralizar este contrato, pero nunca se usó (código muerto)
- * y se borró el 2026-09-21 (ver docs/TRAZABILIDAD.md). Los encabezados de
+ * y se borró el 2026-09-21 (ver docs/archivo/sprint-1/TRAZABILIDAD.md). Los encabezados de
  * abajo quedan fijos en este archivo, en el mismo orden y claves que el
  * contrato confirmado en HU-07/CA-3..CA-6. Si el backend llega a exponer
  * `columnas` en la respuesta, este archivo debe pasar a consumirla en vez
@@ -35,8 +35,9 @@
  *    ni `parseInt()` sobre `cod_bpin`, `cod_indicador_producto` ni
  *    `cod_indicador_ejecucion`.
  *
- * ALCANCE DE FE-04 (tarjeta Trello, sin CA propio en PLANDETRABAJO.md —
- * ver docs/TRAZABILIDAD.md/CA-1 para la evidencia; CA-2 es un contrato
+ * ALCANCE DE FE-04 (tarjeta Trello, sin CA propio en
+ * docs/archivo/sprint-1/PLANDETRABAJO.md —
+ * ver docs/archivo/sprint-1/TRAZABILIDAD.md/CA-1 para la evidencia; CA-2 es un contrato
  * puramente de backend, "usa información ya procesada, no relee Excel", y
  * no tiene una contraparte de UI, así que esta tarjeta no le agrega nada
  * nuevo salvo la etiqueta heredada del Trello):
@@ -71,7 +72,7 @@
  * - Sin framework de pruebas automatizadas de frontend en el repo (ver
  *   `frontend/package.json` — no hay vitest/jest/@testing-library ni script
  *   `test`). Mismo precedente que CA-3..CA-8 de esta misma pantalla
- *   (docs/TRAZABILIDAD.md): validación manual en navegador contra el
+ *   (docs/archivo/sprint-1/TRAZABILIDAD.md): validación manual en navegador contra el
  *   backend real, con el corte de referencia de docs/DECISIONES.md D4.
  *   Agregar infraestructura de pruebas de frontend es una decisión de
  *   arquitectura propia que el equipo debe tomar explícitamente en una

@@ -6,7 +6,7 @@ TARJETAS: [HU-03][BE-01] lector de las dos pestañas
           [HU-03][BE-04] validación de presencia de ambas pestañas
           [HU-03][BE-05] detección de archivo que no corresponde
 CUBRE: HU-03 / CA-2, CA-4, CA-5, CA-7 (numeración interna del código,
-       reconciliada con `docs/TRAZABILIDAD.md`; el documento de la HU en
+       reconciliada con `docs/archivo/sprint-1/TRAZABILIDAD.md`; el documento de la HU en
        Obsidian las numera CA01-CA06 — mismo contenido, orden distinto)
 
 =============================================================================

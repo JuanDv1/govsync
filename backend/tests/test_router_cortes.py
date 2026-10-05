@@ -401,7 +401,7 @@ def test_post_archivos_pdt_devuelve_201(cliente_con_lectores):
 def test_post_archivos_ejecucion_devuelve_201(cliente_con_lectores):
     """Confirma que el guard que rechazaba EJECUCION con 501 ya no existe:
     [HU-03][BE-06] cerró en develop, reemplazar_presupuesto ya no lanza
-    NotImplementedError (ver docs/TRAZABILIDAD.md, HU-03/CA-1)."""
+    NotImplementedError (ver docs/archivo/sprint-1/TRAZABILIDAD.md, HU-03/CA-1)."""
     corte_id = _crear_corte_borrador(cliente_con_lectores)
 
     respuesta = cliente_con_lectores.post(
@@ -432,7 +432,7 @@ def test_post_archivos_ejecucion_devuelve_201(cliente_con_lectores):
 def test_post_archivos_proyectos_devuelve_201(cliente_con_lectores):
     """Confirma que el guard que rechazaba PROYECTOS con 501 ya no existe:
     [HU-04][BE-01] cerró en develop, LectorProyectos.leer ya no lanza
-    NotImplementedError (ver docs/TRAZABILIDAD.md, HU-04/CA-1)."""
+    NotImplementedError (ver docs/archivo/sprint-1/TRAZABILIDAD.md, HU-04/CA-1)."""
     corte_id = _crear_corte_borrador(cliente_con_lectores)
 
     respuesta = cliente_con_lectores.post(

@@ -77,15 +77,11 @@ cases, orchestration) → `domain/` (entities, value objects, ports/interfaces, 
 exceptions) ← `persistence/` (SQLAlchemy models, repositories, Excel readers). Dependencies point
 toward the domain; persistence implements the domain's ports.
 
-**Skeleton status:** this repo is built card-by-card per `PLANDETRABAJO.md`, so large parts of the
-layout described below are contracts, not finished code — a stub raises `NotImplementedError`, has
-a `# TODO [tarjeta]` comment, or has its body commented out. This file describes the target shape;
-it is not re-verified on every merge, so before assuming something is implemented, check the
-file's own docstring/TODO (it names the owning card) or just read the function body.
-
 Modules: `cortes` (the tracking "corte" — the aggregate everything else hangs off), `ingesta`
 (Excel readers/parsers for the three source files), `trazabilidad` (cross-reference queries/matrix
-between indicators, budget execution, and BPIN projects). Shared kernel: `app/shared/codigos.py`
+between indicators, budget execution, and BPIN projects). `alertas/` and `avance_fisico/` exist as
+empty module directories (`.gitkeep` only, no code) — placeholders for future épicas, not stubs to
+fill in without a card. Shared kernel: `app/shared/codigos.py`
 (the `CodigoIndicadorProducto` value object — the 9-digit key that joins all four data sources;
 **always store as text, never as int**, since real codes like `040110500` start with a leading
 zero) and `app/shared/errors.py` (`GovSyncError` hierarchy — domain exceptions in Spanish, no
@@ -94,22 +90,48 @@ zero) and `app/shared/errors.py` (`GovSyncError` hierarchy — domain exceptions
 no usable prod defaults for secrets), DB session (`database.py`), FastAPI dependencies
 (`dependencias.py`), and the single exception-to-HTTP translation point (`errores.py`).
 
-Authentication is deliberately out of scope for the current sprint (`[REF-05]`) — don't add auth
-scaffolding unless asked.
+Authentication stays out of scope (`[REF-05]`, see `docs/DECISIONES.md` D2) — don't add auth
+scaffolding unless a card explicitly asks for it.
 
 File upload rules (`[SEC-03]`, enforced in `cortes/application/casos_uso.py`, not in the API
 layer): only `.xlsx`, size checked before reading into memory, filename sanitized against path
 traversal, macro-enabled `.xlsm` rejected outright, required sheets validated before processing.
 An invalid file is rejected **in full** — never partial data.
 
-Frontend (`frontend/src/`): `api/cliente.js` is the shared HTTP client (`[UX-01]`, still a stub as
-of this writing — `solicitar()`'s body and the `api` methods are commented out/empty). Once built,
-it must preserve `error.detalles` from failed requests (carries `columnas_faltantes`,
-`pestanas_faltantes`, `archivos_faltantes` from the backend so the UI can show actionable messages,
-not just "failed") — `ErrorApi` already models this shape. `components/` holds shared UI
-(`Estados.jsx` for loading/error/empty states — `EstadoError` is implemented; `CargaDeArchivo.jsx` for
-file upload, still a stub `[UX-02]`), `pages/` holds route-level screens (`NuevoCorte.jsx`,
-`Cortes.jsx`, `MatrizRelacion.jsx`) not yet wired into `App.jsx`'s router.
+Frontend (`frontend/src/`): `api/cliente.js` is the shared HTTP client (`[UX-01]`), implemented —
+`solicitar()` and the `api` methods (`crearCorte`, `listarCortes`, `obtenerCorte`, `registrarCorte`,
+`cargarArchivo`, `matriz`) are wired to the backend. It preserves `error.detalles` from failed
+requests (carries `columnas_faltantes`, `pestanas_faltantes`, `archivos_faltantes` from the backend
+so the UI can show actionable messages, not just "failed") — `ErrorApi` models this shape.
+`components/` holds shared UI (`Estados.jsx` for loading/error/empty states, `EstadoError`
+implemented; `CargaDeArchivo.jsx`, implemented drag-and-drop upload control shared by the three
+source-file uploads, `[UX-02]`), `pages/` holds route-level screens (`NuevoCorte.jsx`, `Cortes.jsx`,
+`MatrizRelacion.jsx`, `Login.jsx`) wired into `App.jsx`'s router (`/login`, `/cortes`,
+`/cortes/nuevo`, `/cortes/:corteId`, `/matriz/:corteId?`).
+
+## Where things live
+
+- Card status, priority, owner, estimate: **Trello only** — no Markdown file replicates it. List
+  flow: `Sprint2` → `Tareas en proceso` → `Código (PR abierto)` → `Testing` (in `develop`) →
+  `Tareas hechas` (in `main`).
+- Process rules (definition of done, AI-assisted code convention): [docs/PROCESO.md](docs/PROCESO.md).
+- Architecture/scope decisions that cut across more than one HU:
+  [docs/DECISIONES.md](docs/DECISIONES.md). A decision specific to a single HU goes in that HU's
+  spec, "Decisiones aplicadas" section (`docs/specs/_plantilla.md`), not here.
+- API contract: the OpenAPI FastAPI generates (`/docs`). New HUs get a spec in `docs/specs/`
+  (criteria, business rules, contract pointer, errors); already-shipped Sprint 1 HUs
+  (E02-HU01..04, E02-HU07) are documented in `docs/ESPECIFICACIONES_TECNICAS.md`.
+- Requirements for new HUs live in `docs/requisitos/` (Excel, one sheet per HU). A spec in
+  `docs/specs/` is the authoritative source only once its `Estado de la Specification:` line says
+  `Aprobada`; while it says `Borrador`, the Excel sheet is still the source of truth.
+- ID convention: epic-qualified from now on (`E04-HU01`, criteria `E04-HU01-CA05`). Sprint 1's
+  unqualified `HU-0N` is equivalent to `E02-HU0N`.
+- Every new endpoint declares `response_model`, `summary`, and error `responses` — the generated
+  OpenAPI is the contract.
+- Real shape of the three source Excel files: [docs/DATOS.md](docs/DATOS.md).
+- Security/OWASP: [docs/SEGURIDAD.md](docs/SEGURIDAD.md). Deployment: [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
+- Sprint 1 historical docs (plan, CA traceability, test cases) no longer maintained:
+  `docs/archivo/sprint-1/`.
 
 ## Conventions
 
