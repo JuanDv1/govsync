@@ -4,7 +4,9 @@ CAPA: Persistencia
 TARJETAS: [HU-07][BE-01] Servicio de cruce de las tres fuentes
           [HU-07][BE-02] Manejo de relaciones múltiples sin colapsar
           [HU-07][BE-03] Registro de no coincidencias sin asociación ficticia
-CUBRE: HU-07 / CA-2 a CA-8
+          [HU-10] Filtrar la matriz por BPIN, Indicador, Producto, Contrato,
+          Sector y Programa (agregado Sprint 2)
+CUBRE: HU-07 / CA-2 a CA-8. HU-10 / CA-1 a CA-17 (ver docs/TRAZABILIDAD.md).
 
 =============================================================================
 ESTRUCTURA DEL CRUCE
@@ -120,6 +122,71 @@ de paginación real vive en `[HU-07][FE-01]`, sin implementación de endpoint
 todavía; sin el total, esa tarjeta no podría construir los controles de
 paginación al llegarle el turno. Es un cambio de forma acotado a esta
 función si el equipo prefiere otra forma.
+
+=============================================================================
+HU-10 — FILTROS DE LA MATRIZ (agregado Sprint 2)
+=============================================================================
+Seis criterios, cada uno un `list[str] | None` en `_construir_consulta_base`
+(y en `construir_matriz`). Mismo criterio que `estado_cruce`/`busqueda`
+(HU-07): WHERE sobre el resultado YA unido, nunca cambia el tipo de JOIN
+(Regla 2 sigue intacta — un filtro no convierte un LEFT JOIN en INNER).
+
+  - bpin                   -> proyectos_del_corte.c.bpin              (CA02)
+  - cod_indicador_producto -> MetaORM.cod_indicador_producto           (CA04)
+  - producto               -> MetaORM.nombre_producto                 (CA05)
+  - numero_contrato        -> ContratoORM.numero_contrato              (CA06)
+  - sector                 -> MetaORM.sector                          (CA07)
+  - programa                -> MetaORM.programa                       (CA16)
+
+CA08 (OR dentro del mismo criterio): cada parámetro es una lista; se
+traduce a `columna.in_(valores)`, no a múltiples OR encadenados a mano.
+CA09 (AND entre criterios distintos): cada parámetro no vacío agrega su
+propio `.where(...)` -- SQLAlchemy los combina con AND por defecto al
+encadenar `.where()`, igual que ya hacía `estado_cruce` + `busqueda`.
+
+DECISIÓN TÉCNICA -- "Sector": HAY DOS CAMPOS DE SECTOR EN EL ESQUEMA, y no
+son intercambiables:
+  - `RubroORM.nombre_sector_ccpet` -- clasificación presupuestal (CCPET),
+    solo presente cuando el rubro YA cruzó (Regla 1b exige sector CCPET
+    válido para que el rubro participe del JOIN).
+  - `MetaORM.sector` -- sector del propio Plan Indicativo (PDT), agregado
+    2026-09-23 (D22), presente en TODA meta sin depender de si cruzó con
+    presupuesto o contrato.
+  Se eligió `MetaORM.sector`: filtrar por sector es una propiedad de LA
+  META (de dónde viene en el PDT), no del resultado del cruce -- una meta
+  de "Educación" sin match presupuestal (CA-8) debe seguir apareciendo al
+  filtrar por Sector=Educación, igual que aparece sin filtro. Usar el
+  sector de Rubro haría que el filtro excluyera silenciosamente metas sin
+  cruce completo, violando el espíritu de CA-8. Mismo razonamiento aplica
+  a CA16 (Programa), que solo existe en MetaORM -- así ambos filtros
+  quedan consistentes entre sí (misma fila, mismo origen).
+  Pendiente de confirmar con datos reales: si `MetaORM.sector` viene vacío
+  en algún corte real (el PDT no siempre trae esa columna poblada), el
+  filtro por Sector devolvería menos opciones de las esperadas -- no es un
+  defecto de esta consulta, es una limitación de los datos de origen que
+  `obtener_opciones_filtro` hará visible (una lista de opciones vacía o
+  corta es la señal).
+
+CA17 (nombre del proyecto visible en la matriz, absorbido en HU-10 el
+2026-10-03 -- decisión del equipo, documentado en docs/TRAZABILIDAD.md):
+`ProyectoORM.nombre_proyecto` se agrega a la subconsulta `proyectos_del_corte`
+y a `FilaMatriz` como campo nuevo. No agrega fan-out: ya existe un proyecto
+por fila en esa subconsulta (un indicador -> un proyecto vía
+`proyecto_indicador`), agregar una columna más no cambia la cardinalidad.
+
+CA01/CA03 (opciones de filtro + autocompletar): `obtener_opciones_filtro`
+reconstruye el MISMO cruce sin ningún filtro aplicado (reutiliza
+`_construir_consulta_base` con todos los parámetros en None) y extrae los
+valores DISTINCT no nulos de cada columna filtrable -- así las opciones
+ofrecidas son exactamente "los valores que existen en el corte mostrado"
+(CA01), nunca catálogos globales de otra tabla. DECISIÓN TÉCNICA: no hay
+endpoint de autocompletado aparte (CA03): con los volúmenes reales medidos
+(144 metas / 485 ejecución / 319 contratación por corte -- CA15) la lista
+completa de opciones para un criterio es pequeña; el filtrado "contiene,
+desde 3 caracteres, sin distinguir mayúsculas/guiones" sobre esa lista ya
+cargada es trabajo de frontend, no una consulta nueva al backend. Si el
+volumen real de otro municipio desmiente esta escala (la misma duda que ya
+deja abierta CA15), este supuesto se revisa junto con el índice.
 """
 
 from __future__ import annotations
@@ -143,20 +210,19 @@ from app.modules.cortes.persistence.models import (
 
 @dataclass(frozen=True, slots=True)
 class FilaMatriz:
-    """Una fila de la matriz de relación (HU-07/CA-3 a CA-6).
+    """Una fila de la matriz de relación (HU-07/CA-3 a CA-6, HU-10/CA-17).
 
     Las seis columnas confirmadas más `presupuesto_apropiado` (agregada
-    2026-09-23, a pedido del equipo: "algo de presupuesto pero no tan
-    detallado, lo general" — un solo monto, la apropiación definitiva del
-    rubro cruzado, no las cinco columnas de `Rubro`). Un campo en `None` es
-    un NULL EXPLÍCITO (CA-8): "esa fuente no tenía información para este
-    indicador", nunca "el dato vino vacío" — ver Regla 2 del docstring del
-    módulo.
+    2026-09-23) y `nombre_proyecto` (agregada HU-10, 2026-10-03 -- ver
+    docstring del módulo). Un campo en `None` es un NULL EXPLÍCITO (CA-8):
+    "esa fuente no tenía información para este indicador", nunca "el dato
+    vino vacío" — ver Regla 2 del docstring del módulo.
     """
 
     cod_indicador_producto: str
     nombre_producto: str | None
     cod_bpin: str | None
+    nombre_proyecto: str | None
     cod_indicador_ejecucion: str | None
     numero_contrato: str | None
     descripcion_contrato: str | None
@@ -171,6 +237,24 @@ class ResultadoMatriz:
     total: int
     pagina: int
     tamano_pagina: int
+
+
+@dataclass(frozen=True, slots=True)
+class OpcionesFiltro:
+    """HU-10/CA-1: valores disponibles por criterio, SOLO los que existen
+    en el corte mostrado (se calculan sobre el mismo cruce de
+    `_construir_consulta_base`, sin ningún filtro aplicado).
+
+    `indicadores` son pares (código, nombre_producto) -- CA04 pide mostrar
+    "código – nombre" en el selector, no el código solo.
+    """
+
+    bpin: list[str]
+    indicadores: list[tuple[str, str | None]]
+    productos: list[str]
+    contratos: list[str]
+    sectores: list[str]
+    programas: list[str]
 
 
 #: Tipo Gasto = INVERSIÓN (regla de negocio agregada 2026-09-23, a pedido del
@@ -190,6 +274,12 @@ def _construir_consulta_base(
     *,
     estado_cruce: str | None = None,
     busqueda: str | None = None,
+    bpin: list[str] | None = None,
+    cod_indicador_producto: list[str] | None = None,
+    producto: list[str] | None = None,
+    numero_contrato: list[str] | None = None,
+    sector: list[str] | None = None,
+    programa: list[str] | None = None,
 ):
     """El cruce de las cuatro fuentes, SIN paginar — compartido entre el
     conteo total y la página pedida (ver `construir_matriz`).
@@ -218,11 +308,17 @@ def _construir_consulta_base(
     correcto aquí porque la pregunta que responden ("¿esta meta tiene
     contrato?") es sobre el resultado del cruce, no sobre qué filas de Rubro/
     Contrato participan en él (esa es la Regla 1).
+
+    `bpin`/`cod_indicador_producto`/`producto`/`numero_contrato`/`sector`/
+    `programa` (HU-10, ver docstring del módulo): mismo principio, cada uno
+    un WHERE `IN` sobre el resultado ya unido. Listas vacías o `None` no
+    agregan ninguna condición (equivalente a "sin filtro en ese criterio").
     """
     proyectos_del_corte = (
         select(
             ProyectoIndicadorORM.cod_indicador_producto.label("cod_indicador_producto"),
             ProyectoORM.bpin.label("bpin"),
+            ProyectoORM.nombre_proyecto.label("nombre_proyecto"),
         )
         .join(ProyectoORM, ProyectoORM.id == ProyectoIndicadorORM.proyecto_id)
         .where(ProyectoORM.corte_id == corte_id)
@@ -245,6 +341,7 @@ def _construir_consulta_base(
             MetaORM.cod_indicador_producto,
             MetaORM.nombre_producto,
             proyectos_del_corte.c.bpin.label("cod_bpin"),
+            proyectos_del_corte.c.nombre_proyecto,
             RubroORM.cod_indicador_producto.label("cod_indicador_ejecucion"),
             ContratoORM.numero_contrato,
             ContratoORM.objeto.label("descripcion_contrato"),
@@ -300,6 +397,21 @@ def _construir_consulta_base(
             )
         )
 
+    # HU-10/CA-2, CA-4 a CA-7, CA-16: un IN por criterio, AND entre criterios
+    # distintos (CA-9), OR dentro del mismo criterio (CA-8) vía `in_()`.
+    if bpin:
+        consulta = consulta.where(proyectos_del_corte.c.bpin.in_(bpin))
+    if cod_indicador_producto:
+        consulta = consulta.where(MetaORM.cod_indicador_producto.in_(cod_indicador_producto))
+    if producto:
+        consulta = consulta.where(MetaORM.nombre_producto.in_(producto))
+    if numero_contrato:
+        consulta = consulta.where(ContratoORM.numero_contrato.in_(numero_contrato))
+    if sector:
+        consulta = consulta.where(MetaORM.sector.in_(sector))
+    if programa:
+        consulta = consulta.where(MetaORM.programa.in_(programa))
+
     return consulta
 
 
@@ -311,8 +423,16 @@ def construir_matriz(
     *,
     estado_cruce: str | None = None,
     busqueda: str | None = None,
+    bpin: list[str] | None = None,
+    cod_indicador_producto: list[str] | None = None,
+    producto: list[str] | None = None,
+    numero_contrato: list[str] | None = None,
+    sector: list[str] | None = None,
+    programa: list[str] | None = None,
 ) -> ResultadoMatriz:
     """[HU-07][BE-01]/[BE-02]/[BE-03]: cruce de las 4 fuentes (CA-2 a CA-8).
+    HU-10: filtros estructurados por BPIN, Indicador, Producto, Contrato,
+    Sector y Programa (CA-2, CA-4 a CA-7, CA-16), combinables (CA-8/CA-9).
 
     CA-2: usa información YA PROCESADA y persistida (`meta`/`proyecto`/
     `rubro`/`contrato`) — no vuelve a leer ningún Excel. La unificación de
@@ -321,11 +441,22 @@ def construir_matriz(
 
     `estado_cruce`: `None` (todas), `"completo"`, `"sin_proyecto"`,
     `"sin_ejecucion"`, `"sin_contrato"` o `"sin_cruce"`. `busqueda`: texto
-    libre sobre código de indicador, BPIN o número de contrato. Ambos se
-    filtran ANTES de paginar (WHERE en `_construir_consulta_base`), no
-    después: filtrar la página ya traída rompería `total`/`totalPaginas`.
+    libre sobre código de indicador, BPIN o número de contrato. Los filtros
+    de HU-10 son listas (`in_()`, CA-8); todos se filtran ANTES de paginar
+    (WHERE en `_construir_consulta_base`), no después: filtrar la página ya
+    traída rompería `total`/`totalPaginas`.
     """
-    consulta_base = _construir_consulta_base(corte_id, estado_cruce=estado_cruce, busqueda=busqueda)
+    consulta_base = _construir_consulta_base(
+        corte_id,
+        estado_cruce=estado_cruce,
+        busqueda=busqueda,
+        bpin=bpin,
+        cod_indicador_producto=cod_indicador_producto,
+        producto=producto,
+        numero_contrato=numero_contrato,
+        sector=sector,
+        programa=programa,
+    )
 
     total = sesion.scalar(select(func.count()).select_from(consulta_base.subquery())) or 0
 
@@ -340,6 +471,7 @@ def construir_matriz(
             cod_indicador_producto=fila.cod_indicador_producto,
             nombre_producto=fila.nombre_producto,
             cod_bpin=fila.cod_bpin,
+            nombre_proyecto=fila.nombre_proyecto,
             cod_indicador_ejecucion=fila.cod_indicador_ejecucion,
             numero_contrato=fila.numero_contrato,
             descripcion_contrato=fila.descripcion_contrato,
@@ -348,3 +480,60 @@ def construir_matriz(
         for fila in filas_crudas
     ]
     return ResultadoMatriz(filas=filas, total=total, pagina=pagina, tamano_pagina=tamano_pagina)
+
+
+def obtener_opciones_filtro(sesion: Session, corte_id: uuid.UUID) -> OpcionesFiltro:
+    """HU-10/CA-1: valores disponibles para cada criterio de filtro, SOLO
+    los que existen en el corte mostrado -- ver DECISIÓN TÉCNICA en el
+    docstring del módulo (CA01/CA03). Reutiliza `_construir_consulta_base`
+    sin ningún filtro, exactamente el mismo cruce que ve la matriz.
+    """
+    consulta_base = _construir_consulta_base(corte_id).subquery()
+
+    def _valores(columna) -> list[str]:
+        filas = sesion.execute(
+            select(columna).select_from(consulta_base).where(columna.is_not(None)).distinct()
+        ).all()
+        return sorted({fila[0] for fila in filas})
+
+    bpin = _valores(consulta_base.c.cod_bpin)
+    productos = _valores(consulta_base.c.nombre_producto)
+    contratos = _valores(consulta_base.c.numero_contrato)
+
+    indicadores_crudos = sesion.execute(
+        select(consulta_base.c.cod_indicador_producto, consulta_base.c.nombre_producto).distinct()
+    ).all()
+    indicadores = sorted({(fila[0], fila[1]) for fila in indicadores_crudos})
+
+    # Sector/Programa viven en MetaORM, no en `consulta_base` (ver decisión
+    # de "Sector" en el docstring del módulo) -- se consultan directo sobre
+    # MetaORM acotado al corte, no sobre el cruce ya unido.
+    sectores = sorted(
+        {
+            fila[0]
+            for fila in sesion.execute(
+                select(MetaORM.sector)
+                .where(MetaORM.corte_id == corte_id, MetaORM.sector.is_not(None))
+                .distinct()
+            ).all()
+        }
+    )
+    programas = sorted(
+        {
+            fila[0]
+            for fila in sesion.execute(
+                select(MetaORM.programa)
+                .where(MetaORM.corte_id == corte_id, MetaORM.programa.is_not(None))
+                .distinct()
+            ).all()
+        }
+    )
+
+    return OpcionesFiltro(
+        bpin=bpin,
+        indicadores=indicadores,
+        productos=productos,
+        contratos=contratos,
+        sectores=sectores,
+        programas=programas,
+    )
