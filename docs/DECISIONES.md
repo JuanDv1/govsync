@@ -4,9 +4,29 @@ Registro de decisiones tomadas por el equipo, con su evidencia y su estado.
 Formato por entrada: **Decisión**, **Motivo/Evidencia**, **Alternativas consideradas**,
 **Estado**, **Quién y cuándo**.
 
+## Cómo leer este documento
+
+Cada entrada lleva una marca de **Clasificación**:
+
+- **Decisión de arquitectura/alcance** — afecta el diseño del sistema o el
+  alcance comprometido con la clienta o el docente, más allá de una tarjeta
+  puntual. Es lo que un ADR (Architecture Decision Record) registraría en
+  otros proyectos.
+- **Registro de tarjeta** — deja constancia de una reconciliación, un
+  hallazgo o una interpretación tomada al construir una tarjeta concreta; no
+  introduce una decisión de arquitectura nueva.
+
+Esta marca es una clasificación agregada en la reorganización documental de
+2026-10-05; no cambia el contenido original de cada entrada ni su **Estado**
+(RATIFICADA/PROPUESTA/VIGENTE/SUPUESTO/etc.), que sigue siendo la fuente real
+de si algo ya es definitivo. Una entrada marcada **PROPUESTA** o
+**PENDIENTE** no se vuelve vigente por estar clasificada aquí.
+
 ---
 
 ## D1 · La migración de Alembic es la única fuente de verdad del esquema
+
+**Clasificación:** Decisión de arquitectura/alcance.
 
 **Decisión:** el esquema vigente es el que resulta de las migraciones en
 `backend/alembic/versions/`. Los archivos `govsync_schema.sql`,
@@ -31,6 +51,8 @@ movida a "Tareas hechas" en Trello).
 ---
 
 ## D2 · Autenticación (E-01) diferida al Sprint 2
+
+**Clasificación:** Decisión de arquitectura/alcance.
 
 **Decisión:** las Historias de Usuario de la épica E-01 (Gestión de Acceso y
 Roles) no entran al Sprint 1. El esqueleto no incluye módulo de identidad ni
@@ -61,6 +83,9 @@ de estimar la tarjeta.
 
 ## D3 · Qué archivo es "el archivo del municipio" en HU-01/CA-5
 
+**Clasificación:** Registro de tarjeta — pendiente de validar con la
+clienta. No tratar como requisito hasta que se confirme (ver **Estado**).
+
 **Decisión (supuesto de trabajo, no confirmado):** "el archivo del
 municipio" que se reutiliza junto con el PDT (HU-01/CA-5) es la plantilla de
 proyectos BPIN (`TipoArchivoFuente.PROYECTOS`), por ser la única de las tres
@@ -85,6 +110,8 @@ completo, antes de cerrar Fase 4 de `PLANDETRABAJO.md`.
 ---
 
 ## D4 · Corte de referencia para medir los atributos de rendimiento (Tabla 7, Entrega 1)
+
+**Clasificación:** Decisión de arquitectura/alcance.
 
 **Decisión:** el corte de referencia contra el que se miden los umbrales de
 rendimiento declarados en la Entrega 1 (procesamiento completo de un corte en
@@ -130,6 +157,8 @@ medición de los 60 s / 4 s sea comparable entre sprints.
 
 ## D5 · Reconciliación de numeración de CA entre Excel y Trello (HU-01, HU-07)
 
+**Clasificación:** Registro de tarjeta.
+
 **Hallazgo:** `Levantamiento de Requisitos.md` tenía menos Criterios de
 Aceptación de los que ya estaban definidos y en uso: HU-01 llegaba solo hasta
 CA-7 y HU-07 solo tenía CA-1 y CA-4, mientras que el checklist "Criterios de
@@ -165,6 +194,8 @@ nunca tuvo tarjeta ni ítem de checklist para esta regla.
 ---
 
 ## D6 · Reconciliación de numeración de CA entre Excel, Trello y PLANDETRABAJO.md (HU-02, HU-03, HU-04)
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo:** al revisar un export actualizado de Trello, se encontró el mismo
 patrón que motivó D5, ahora en HU-02, HU-03 y HU-04: el checklist de Trello
@@ -211,6 +242,8 @@ Trello no se modifica: ya tenía la numeración correcta.
 
 ## D7 · La entidad Corte tiene dos estados: BORRADOR y REGISTRADO
 
+**Clasificación:** Decisión de arquitectura/alcance.
+
 **Decisión:** `Corte` modela explícitamente dos estados — `BORRADOR` (creado
 solo con vigencia y fecha, acepta cargas de archivos) y `REGISTRADO` (las
 tres fuentes obligatorias presentes, entra al histórico). El paso de uno a
@@ -243,6 +276,8 @@ documental.
 ---
 
 ## D8 · Reconciliación de CA-8 entre PLANDETRABAJO.md/TRAZABILIDAD.md y CASOS_DE_PRUEBA.md (HU-01)
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo:** `docs/CASOS_DE_PRUEBA.md` (CP-HU01-08) marcaba CA-8 como "✅
 Probado" con evidencia de `test_casos_uso_cortes.py` (capa de aplicación,
@@ -288,6 +323,8 @@ vigente como precedente.
 
 ## D9 · Qué hace que dos cortes se consideren duplicados
 
+**Clasificación:** Decisión de arquitectura/alcance.
+
 **Decisión:** se rechaza la creación de un corte si ya existe otro con la
 misma vigencia y la misma fecha_corte exacta. Con D11 (un solo corte en
 BORRADOR activo a la vez), este conflicto solo puede darse entre cortes ya
@@ -313,6 +350,9 @@ coincidencia de número entre dos sistemas de numeración diferentes.
 
 ## D10 · La creación del corte requiere una acción explícita
 
+**Clasificación:** Registro de tarjeta — **Estado: PROPUESTA**. No tratar
+como vigente hasta que el equipo la ratifique.
+
 **Decisión:** `POST /cortes` se dispara solo con un clic explícito (ej.
 "Continuar") al cerrar el paso de vigencia/fecha, nunca porque la
 validación del formulario pase mientras se escribe.
@@ -332,6 +372,8 @@ dos sin saber cuál se espera.
 ---
 
 ## D11 · Solo un corte en BORRADOR activo a la vez
+
+**Clasificación:** Decisión de arquitectura/alcance.
 
 **Decisión:** al crear un corte, se rechaza si ya existe otro en BORRADOR.
 Corregirlo requiere `PATCH /cortes/{id}`, que no existe hoy.
@@ -373,6 +415,8 @@ original dejó abiertas:
 
 ## D12 · Límite de tamaño de archivo verificado en el cliente
 
+**Clasificación:** Registro de tarjeta.
+
 **Decisión:** el frontend rechaza, antes de intentar subir, cualquier
 archivo mayor a 2.097.152 bytes (2 MB) — aviso inmediato en
 `CargaDeArchivo.jsx`, sin llamar a `onCargar`.
@@ -389,6 +433,8 @@ cliente es más conservador, no lo reemplaza ni lo duplica.
 **Ratificado:** 2026-09-15, acordado con Cristhian.
 
 ## D13 · `[HU-04][BE-03]` reabierta y corregida: separadores y descartes registrados
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo (2026-09-19, Juan David + verificación cruzada):** el texto
 literal de la tarjeta Trello `[HU-04][BE-03]` exige, en "casos borde
@@ -448,6 +494,8 @@ bug). 258 passed en local (2026-09-19).
 
 ## D14 · Categorización de descartes en `extraer_todos` (no cambia qué se descarta)
 
+**Clasificación:** Registro de tarjeta.
+
 **Hallazgo (2026-09-19, Juan David, construyendo `[HU-04][FE-03]`):** tras
 D13, `extraer_todos` registra correctamente todo candidato numérico de
 longitud inválida como descarte — pero un número suelto dentro de texto
@@ -496,6 +544,8 @@ ejemplos reales reportados por Juan David. 262 passed en local
 
 ## D15 · `[HU-02][FE-02]`: un solo mensaje de error cubre "pestaña no encontrada" y "archivo incorrecto"
 
+**Clasificación:** Registro de tarjeta.
+
 **Decisión:** el frontend muestra `error.message` del backend tal cual para
 los dos casos de rechazo del PDT, sin fabricar un tercer texto propio.
 
@@ -537,6 +587,8 @@ introducir una heurística de detección en frontend o backend.
 ---
 
 ## D16 · `[HU-04][FE-03]`: `ResultadoLectura.codigos` se deduplica por `.valor`, preservando el orden de primera aparición
+
+**Clasificación:** Registro de tarjeta.
 
 **Decisión:** el nuevo campo `codigos: list[CodigoIndicadorProducto]`
 (`ResultadoLectura`/`ArchivoFuente`, mismo patrón que `descartes` de D14)
@@ -585,6 +637,8 @@ por orden de aparición), 2026-09-20.
 
 ## D17 · `[HU-07][FE-04]`: paginación visible en vez de virtualización, y método de verificación
 
+**Clasificación:** Registro de tarjeta.
+
 **Decisión:** la tarjeta Trello `[HU-07][FE-04]` acepta explícitamente
 "virtualización o paginación visible" para no renderizar miles de filas de
 golpe. Se implementó PAGINACIÓN VISIBLE (controles "Anterior/Siguiente" en
@@ -630,6 +684,9 @@ PENDIENTE.
 ---
 
 ## D18 · Rango válido de `vigencia`: hallazgo del QA manual y decisión de rango fijo
+
+**Clasificación:** Decisión de arquitectura/alcance (fija el patrón de que
+las reglas de validación viven en el dominio, no en el esquema de transporte).
 
 **Hallazgo:** durante la ejecución manual de `docs/QA_manual_sprint1.md`
 (2026-09-23) se detectó que `vigencia` no tenía ninguna validación de rango
@@ -693,6 +750,9 @@ rechazar datos nuevos.
 
 ## D19 · Se adopta Tailwind CSS para las pantallas nuevas del frontend
 
+**Clasificación:** Decisión de arquitectura/alcance — **Estado: PROPUESTA**.
+No tratar como vigente hasta que el equipo la ratifique.
+
 **Decisión:** a partir de esta tarjeta (estilo visual de Login y Nuevo
 corte), el frontend usa Tailwind CSS para las pantallas y componentes que
 se construyan o restilicen de aquí en adelante. Las pantallas y
@@ -734,6 +794,9 @@ demás decisiones de arquitectura de este documento.
 ---
 
 ## D20 · Sidebar AppShell + átomos compartidos, adaptados de `DESIGN_SPEC.md` (mockup Figma Make), sin RBAC
+
+**Clasificación:** Decisión de arquitectura/alcance — **Estado: PROPUESTA**.
+No tratar como vigente hasta que el equipo la ratifique.
 
 **Decisión:** se reemplazó la barra superior simple de `Disposicion.jsx`
 por un sidebar fijo (`w-52`, navy) siguiendo `DESIGN_SPEC.md` §4.1, y se
@@ -786,6 +849,8 @@ del equipo.
 ---
 
 ## D21 · `/cortes/:corteId` reanuda un corte en BORRADOR desde el frontend
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo (2026-09-21, probando el flujo de punta a punta):** un corte
 creado y abandonado a mitad del wizard (por ejemplo, cerrando la pestaña
@@ -843,6 +908,8 @@ alcance a ratificar.
 ---
 
 ## D22 · Columnas faltantes en PDT/Ejecución, dos reglas de negocio nuevas en la matriz, y definición de filtros
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo (2026-09-23, revisión de columnas pedida por el equipo):**
 comparando la lista de columnas de PDT/Ejecución/Proyectos contra el
