@@ -33,8 +33,31 @@ redesplegar sin cambios): dashboard de Render → Web Service → **Manual
 Deploy** → _Deploy latest commit_. Si además hay una migración pendiente,
 aplicarla antes siguiendo la sección siguiente.
 
-El frontend no pasa por este flujo: se despliega aparte mediante la
-integración de Vercel con el repositorio.
+## Despliegue del frontend (Vercel)
+
+El frontend no pasa por `ci.yml`: no hay workflow de GitHub Actions para
+desplegarlo, y el repositorio no tiene `vercel.json`. Se despliega aparte
+mediante la integración directa de Vercel con el repositorio de GitHub.
+
+Verificable desde este repositorio:
+
+- La plantilla de PR (`.github/pull_request_template.md`) incluye "Revisé el
+  preview deploy de Vercel (link en los checks del PR)" — confirma que Vercel
+  está integrado con el repositorio y publica un preview por PR.
+- El build de producción es `npm run build` (Vite) y el cliente HTTP lee la
+  URL del backend de `import.meta.env.VITE_API_URL`
+  (`frontend/src/api/cliente.js`) — esa variable debe existir en el entorno
+  de Vercel con la URL del backend en Render.
+- El frontend vive en `frontend/`, no en la raíz del repositorio.
+
+**[CONFIRMAR]** (no verificable desde el repositorio, depende de la
+configuración del proyecto en el dashboard de Vercel):
+
+- Root Directory del proyecto de Vercel (`frontend/`).
+- Qué rama dispara el deploy de producción (`main`, `develop` u otra) y si el
+  resto generan solo previews.
+- Valor real de `VITE_API_URL` configurado por entorno (producción/preview).
+- Dominio del deploy de producción.
 
 ## Plan B: migraciones manuales contra la base de datos real de Render
 
