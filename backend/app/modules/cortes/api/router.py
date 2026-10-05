@@ -246,7 +246,7 @@ async def cargar_archivo(
     (`TipoArchivoNoDisponible`) se retiró: `RepositorioDatosCorteSQL.
     reemplazar_presupuesto` (`[HU-03][BE-06]`) y `LectorProyectos.leer`
     (`[HU-04][BE-01]`) ya no lanzan `NotImplementedError` en `develop`.
-    Ver docs/TRAZABILIDAD.md (HU-03/CA-1, HU-04/CA-1) para la evidencia.
+    Ver docs/archivo/sprint-1/TRAZABILIDAD.md (HU-03/CA-1, HU-04/CA-1) para la evidencia.
 
     Hallazgo transversal a HU-02/03/04, 2026-09-20 (corregido aquí y en
     `main.py`): antes se leía `archivo: UploadFile` completo a memoria
