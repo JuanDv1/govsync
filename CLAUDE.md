@@ -115,13 +115,15 @@ source-file uploads, `[UX-02]`), `pages/` holds route-level screens (`NuevoCorte
   flow: `Sprint2` → `Tareas en proceso` → `Código (PR abierto)` → `Testing` (in `develop`) →
   `Tareas hechas` (in `main`).
 - Process rules (definition of done, AI-assisted code convention): [docs/PROCESO.md](docs/PROCESO.md).
-- Architecture/scope decisions: [docs/DECISIONES.md](docs/DECISIONES.md).
+- Architecture/scope decisions that cut across more than one HU:
+  [docs/DECISIONES.md](docs/DECISIONES.md). A decision specific to a single HU goes in that HU's
+  spec, "Decisiones aplicadas" section (`docs/specs/_plantilla.md`), not here.
 - API contract: the OpenAPI FastAPI generates (`/docs`). New HUs get a spec in `docs/specs/`
   (criteria, business rules, contract pointer, errors); already-shipped Sprint 1 HUs
   (E02-HU01..04, E02-HU07) are documented in `docs/ESPECIFICACIONES_TECNICAS.md`.
 - Requirements for new HUs live in `docs/requisitos/` (Excel, one sheet per HU). A spec in
-  `docs/specs/` is the authoritative source only once its `Spec:` line says `Aprobada`; while it
-  says `Borrador`, the Excel sheet is still the source of truth.
+  `docs/specs/` is the authoritative source only once its `Estado de la Specification:` line says
+  `Aprobada`; while it says `Borrador`, the Excel sheet is still the source of truth.
 - ID convention: epic-qualified from now on (`E04-HU01`, criteria `E04-HU01-CA05`). Sprint 1's
   unqualified `HU-0N` is equivalent to `E02-HU0N`.
 - Every new endpoint declares `response_model`, `summary`, and error `responses` — the generated

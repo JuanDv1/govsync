@@ -31,7 +31,7 @@ archivo/capa a tocar sin un stub previo.
 ### R2 · El contrato está en la spec aprobada o en el código ya escrito, no en la conversación con la IA
 
 Para una HU nueva, el contrato es la spec de `docs/specs/` una vez su línea
-`Spec:` diga `Aprobada` (mientras diga `Borrador`, manda la hoja del Excel en
+`Estado de la Specification:` diga `Aprobada` (mientras diga `Borrador`, manda la hoja del Excel en
 `docs/requisitos/`), junto con el endpoint ya expuesto en el OpenAPI que
 genera FastAPI. Para código que ya existe, el docstring del archivo sigue
 siendo su contrato. Cuando le pida código a la IA, péguele ese contrato
