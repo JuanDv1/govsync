@@ -2,7 +2,7 @@
 
 > Documento de referencia para adaptar el diseño de **GovSync** (plataforma de seguimiento del Plan de Desarrollo Municipal) a otro proyecto en Claude Code. Cubre stack, tokens de diseño, layout general, secuencia de pantallas por rol, y patrones de componentes reutilizables.
 >
-> **Nota (docs/DECISIONES.md D19):** este documento describe un mockup de Figma Make más grande que el alcance del sprint actual — incluye RBAC por rol y seis pantallas (Tablero, Conciliación, Avance físico, Gestión de usuarios, entre otras) que no tienen tarjeta en `PLANDETRABAJO.md` y no existen en este repo. Se conserva aquí como referencia de diseño; D19 documenta exactamente qué parte se adaptó al código real y qué parte no.
+> **Nota (docs/DECISIONES.md D19):** este documento describe un mockup de Figma Make más grande que el alcance del sprint actual — incluye RBAC por rol y seis pantallas (Tablero, Conciliación, Avance físico, Gestión de usuarios, entre otras) que no tienen tarjeta en `docs/archivo/sprint-1/PLANDETRABAJO.md` y no existen en este repo. Se conserva aquí como referencia de diseño; D19 documenta exactamente qué parte se adaptó al código real y qué parte no.
 
 ---
 

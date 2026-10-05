@@ -34,7 +34,7 @@ Validación: <ej. Pruebas unitarias + Revisión manual>
 - [ ] Actualicé documentación si aplica
 - [ ] No incluí cambios no relacionados al objetivo de este PR
 - [ ] Si hay código asistido por IA: está marcado con la convención de arriba, y fue validado (pruebas y/o revisión manual, no solo "funcionó")
-- [ ] Si hay CA nuevos implementados: actualicé `docs/TRAZABILIDAD.md`
+- [ ] Si hay CA nuevos implementados: están cubiertos por pruebas con su ID en el nombre, y la spec de la HU en `docs/specs/` queda enlazada
 
 ## Issue relacionado
 
