@@ -1,3 +1,5 @@
+> Archivado: documento histórico del Sprint 1, no se mantiene.
+
 # Documentación con Swagger (OpenAPI)
 
 ## Regla del equipo
