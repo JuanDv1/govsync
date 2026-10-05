@@ -210,6 +210,33 @@ class Corte:
         self.vigencia = vigencia
         self.fecha_corte = fecha_corte
 
+    def verificar_modificable(self) -> None:
+        """HU-06/CA-8 (docs del Excel de requisitos, E-02): un corte
+        REGISTRADO ya no admite el flujo de reemplazo "durante creación"
+        (`ServicioCortes.cargar_archivo`). Pasado ese punto, "cargar"/
+        "reemplazar" un archivo es responsabilidad de HU-05 ("Editar
+        archivos" del corte más reciente, con su propio registro de
+        auditoría) -- HU-05 todavía no está implementada; esta regla solo
+        cierra la puerta del lado de HU-06, no sustituye a HU-05.
+
+        Antes de esta regla, `cargar_archivo` no distinguía BORRADOR de
+        REGISTRADO (ver SUPUESTO ya registrado en el docstring de
+        `cargar_archivo`, casos_uso.py) -- un corte ya finalizado podía
+        seguir recibiendo archivos por esta vía sin dejar ningún rastro de
+        auditoría, exactamente lo que CA-8 prohíbe.
+        """
+        if self.estado != EstadoCorte.BORRADOR:
+            raise OperacionNoPermitida(
+                "Este corte ya fue registrado; no se pueden cargar ni "
+                "reemplazar archivos por este flujo. Para corregir un "
+                "archivo de un corte ya registrado use la edición de "
+                "archivos del corte más reciente (HU-05).",
+                detalles={
+                    "motivo": "corte_no_es_borrador",
+                    "estado_actual": self.estado.value,
+                },
+            )
+
     def puede_reutilizar(self, tipo: TipoArchivoFuente) -> bool:
         """HU-01/CA-5, CA-7: solo PDT y PROYECTOS son reutilizables.
 

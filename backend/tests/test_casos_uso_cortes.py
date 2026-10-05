@@ -434,6 +434,28 @@ class TestCargarArchivo:
         with pytest.raises(ValueError):
             servicio.cargar_archivo(corte.id, TipoArchivoFuente.PDT, _XLSX_VALIDO, "plan.xlsx")
 
+    def test_rechaza_cargar_archivo_si_el_corte_ya_esta_registrado(self, servicio):
+        """E-02/HU-06, CA-8: el flujo de "reemplazar durante creación" se
+        cierra en cuanto el corte pasa a REGISTRADO -- corregir un archivo
+        de ahí en adelante es HU-05 ("Editar archivos"), todavía sin
+        implementar. Falla ANTES de tocar el lector (igual que SEC-03):
+        no tiene sentido gastar la validación/lectura del archivo si la
+        operación ya se va a rechazar por el estado del corte."""
+        corte = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2026, fecha_corte=date(2026, 9, 8)
+        )
+        lector = _LectorFalso()
+        self._servicio_con_lector(servicio, lector)
+        commits_previos = servicio.llamadas["commit"]
+
+        with pytest.raises(OperacionNoPermitida) as exc:
+            servicio.cargar_archivo(corte.id, TipoArchivoFuente.PDT, _XLSX_VALIDO, "plan.xlsx")
+
+        assert exc.value.detalles["motivo"] == "corte_no_es_borrador"
+        assert lector.llamadas == []
+        assert servicio.llamadas["commit"] == commits_previos
+        assert servicio.llamadas["rollback"] == 0
+
     def test_archivo_invalido_lo_rechaza_sec03_antes_de_tocar_el_lector(self, servicio):
         lector = _LectorFalso(resultado=ResultadoLectura(tipo=TipoArchivoIngesta.PDT))
         self._servicio_con_lector(servicio, lector)
