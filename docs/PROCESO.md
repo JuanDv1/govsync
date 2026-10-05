@@ -16,20 +16,28 @@ listas es: `Sprint2` → `Tareas en proceso` → `Código (PR abierto)` →
 Léanlas antes de escribir la primera línea. Son cinco y evitan el 90 % de los
 choques.
 
-### R1 · Nadie crea archivos que no estén en su tarjeta
+### R1 · No cree archivos que no estén en su tarjeta
 
-El esqueleto ya tiene la estructura completa. Cada tarjeta dice qué archivo
-toca. Si siente que necesita uno nuevo, primero pregunte en el grupo: casi
-siempre significa que la lógica va en un archivo que ya existe, en otra capa.
+Antes de crear un archivo nuevo, revise si la lógica va en un módulo o capa
+que ya existe en `backend/app/modules/<modulo>/` — casi siempre es así. Si no
+está seguro, pregunte en el grupo antes de abrir un archivo nuevo.
 
-### R2 · El contrato está en el _stub_, no en la conversación con la IA
+**[CONFIRMAR]:** en el Sprint 1 cada tarjeta apuntaba a un archivo-stub
+pre-creado con su contrato en el docstring (ver `docs/archivo/sprint-1/PLANDETRABAJO.md`);
+no hay verificación de que ese mismo patrón de stubs pre-creados se siga
+preparando para HU nuevas, o si la tarjeta de Trello ahora solo describe el
+archivo/capa a tocar sin un stub previo.
 
-Cada archivo del esqueleto tiene un docstring con su capa, su tarjeta, sus CA y
-las trampas conocidas de los datos reales. **Ese docstring es el contrato.**
-Cuando le pida código a la IA, péguele el archivo completo (más abajo, en
-§3, está la plantilla). Si la IA propone cambiar la firma de un método público
-o mover algo de capa, no lo acepte sin avisar al grupo: esa firma es de la que
-dependen los demás.
+### R2 · El contrato está en la spec aprobada o en el código ya escrito, no en la conversación con la IA
+
+Para una HU nueva, el contrato es la spec de `docs/specs/` una vez su línea
+`Spec:` diga `Aprobada` (mientras diga `Borrador`, manda la hoja del Excel en
+`docs/requisitos/`), junto con el endpoint ya expuesto en el OpenAPI que
+genera FastAPI. Para código que ya existe, el docstring del archivo sigue
+siendo su contrato. Cuando le pida código a la IA, péguele ese contrato
+completo (más abajo, en §3, está la plantilla). Si la IA propone cambiar la
+firma de un método público o mover algo de capa, no lo acepte sin avisar al
+grupo: esa firma es de la que dependen los demás.
 
 ### R3 · La prueba de arquitectura manda
 
@@ -89,8 +97,9 @@ TAREA: [pegue el nombre de la tarjeta de Trello]
 
 ARCHIVO A IMPLEMENTAR: [ruta]
 
-Este es el archivo actual, con su contrato en el docstring:
-[PEGUE EL ARCHIVO COMPLETO DEL ESQUELETO]
+Este es el archivo actual, con su contrato en el docstring (o, si el archivo
+es nuevo, la spec aprobada de docs/specs/ y el endpoint del OpenAPI):
+[PEGUE EL ARCHIVO COMPLETO, O LA SPEC/OPENAPI SI AÚN NO EXISTE]
 
 CRITERIOS DE ACEPTACIÓN QUE DEBE CUMPLIR:
 [pegue los CA del checklist de la tarjeta, textuales]
