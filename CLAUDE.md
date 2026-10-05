@@ -119,6 +119,13 @@ source-file uploads, `[UX-02]`), `pages/` holds route-level screens (`NuevoCorte
 - API contract: the OpenAPI FastAPI generates (`/docs`). New HUs get a spec in `docs/specs/`
   (criteria, business rules, contract pointer, errors); already-shipped Sprint 1 HUs
   (E02-HU01..04, E02-HU07) are documented in `docs/ESPECIFICACIONES_TECNICAS.md`.
+- Requirements for new HUs live in `docs/requisitos/` (Excel, one sheet per HU). A spec in
+  `docs/specs/` is the authoritative source only once its `Spec:` line says `Aprobada`; while it
+  says `Borrador`, the Excel sheet is still the source of truth.
+- ID convention: epic-qualified from now on (`E04-HU01`, criteria `E04-HU01-CA05`). Sprint 1's
+  unqualified `HU-0N` is equivalent to `E02-HU0N`.
+- Every new endpoint declares `response_model`, `summary`, and error `responses` — the generated
+  OpenAPI is the contract.
 - Real shape of the three source Excel files: [docs/DATOS.md](docs/DATOS.md).
 - Security/OWASP: [docs/SEGURIDAD.md](docs/SEGURIDAD.md). Deployment: [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 - Sprint 1 historical docs (plan, CA traceability, test cases) no longer maintained:
