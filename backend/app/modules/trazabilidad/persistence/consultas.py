@@ -80,7 +80,7 @@ lado del servidor: [HU-07][FE-01] pide el endpoint con paginación.
 IMPLEMENTACIÓN [HU-07][BE-01]/[BE-02]/[BE-03]
 =============================================================================
 Las tres tarjetas viven en la misma sentencia (mismo archivo, misma función,
-per PLANDETRABAJO.md 5.1-5.3): no son separables en el código porque CA-2..
+per docs/archivo/sprint-1/PLANDETRABAJO.md 5.1-5.3): no son separables en el código porque CA-2..
 CA-6 (BE-01, Juan Esteban), CA-7 (BE-02, Cristhian) y CA-8 (BE-03, Juan
 Esteban) son propiedades de LA MISMA consulta, no funciones independientes —
 no se puede escribir un JOIN correcto sin decidir a la vez cómo tratar el
@@ -91,7 +91,7 @@ Claves de columna (las mismas seis confirmadas en HU-07/CA-3..CA-6, fijas
 también en `frontend/src/pages/MatrizRelacion.jsx::COLUMNAS`). Ya no hay una
 constante `COLUMNAS` en `trazabilidad/api/router.py` que las centralice: era
 código muerto (`MatrizRespuesta` nunca la usó) y se borró el 2026-09-21 (ver
-docs/TRAZABILIDAD.md). El contrato sigue siendo real, solo que hoy vive como
+docs/archivo/sprint-1/TRAZABILIDAD.md). El contrato sigue siendo real, solo que hoy vive como
 coincidencia intencional de cadenas literales entre esta consulta y el
 frontend, no como una única fuente en código:
 

@@ -6,8 +6,8 @@ TARJETA: [HU-07][FE-01] Endpoint de la matriz con paginación
 Se intentó enviar las columnas junto con los datos (constante `COLUMNAS`,
 para que el contrato de las seis columnas confirmadas viviera en un solo
 lugar) pero `MatrizRespuesta` nunca llegó a usarla — quedó como código
-muerto y se borró el 2026-09-21 (ver docs/TRAZABILIDAD.md, nota
-2026-09-19, y la fila HU-07 en la tabla de infraestructura). Confirmado
+muerto y se borró el 2026-09-21 (ver docs/archivo/sprint-1/TRAZABILIDAD.md,
+nota 2026-09-19, y la fila HU-07 en la tabla de infraestructura). Confirmado
 con Cristhian y Karold: el frontend no depende de recibirlas desde la
 API (`MatrizRelacion.jsx` ya las fija localmente). No reintroducir sin
 resolver primero cómo se consumiría realmente.
@@ -16,7 +16,7 @@ ALCANCE: GET /matriz-relacion/{corte_id} y GET /matriz-relacion/actual
 (este último, 2026-09-21, cierra el TODO que dependía de
 `ServicioCortes.obtener_corte_actual()` en `casos_uso.py`). El chequeo
 de "las tres fuentes cargadas" (409) vive aquí, no en una capa de
-aplicación nueva — PLANDETRABAJO.md (5.1-5.4) solo asigna 2 archivos a
+aplicación nueva — docs/archivo/sprint-1/PLANDETRABAJO.md (5.1-5.4) solo asigna 2 archivos a
 HU-07 backend (consultas.py, este router), sin `trazabilidad/application/`.
 Es una excepción deliberada al patrón de `cortes/api/router.py` (que sí
 delega todo a casos_uso.py): el chequeo reutiliza `Corte.archivos_faltantes()`,

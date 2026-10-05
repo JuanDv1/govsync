@@ -3,7 +3,7 @@
 TARJETAS: [HU-02][BE-01] (encontrar y leer la pestaña correcta del PDT),
           [HU-03][BE-03] (mapear_columnas: unificación de los dos nombres de
           columna del indicador), [HU-04][BE-01] (rellenar_celdas_combinadas)
-CUBRE: HU-02 / CA-2, HU-03 / CA-3 (CP-HU03-03 en docs/CASOS_DE_PRUEBA.md).
+CUBRE: HU-02 / CA-2, HU-03 / CA-3 (CP-HU03-03 en docs/archivo/sprint-1/CASOS_DE_PRUEBA.md).
 El rechazo por columnas faltantes (CA-3 de HU-02) es [HU-02][BE-02], la
 siguiente tarjeta; aquí solo se prueba la mecánica genérica de cada función.
 

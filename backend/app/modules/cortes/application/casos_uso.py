@@ -311,7 +311,7 @@ class ServicioCortes:
         Agregado por [HU-01][FE-01] (capa API) para soportar el detalle por
         id. No cambia ningun metodo existente; requiere coordinacion con
         Juan Esteban antes de fusionar, porque toca la capa de aplicacion
-        (ver docs/TRAZABILIDAD.md y CODEOWNERS).
+        (ver docs/archivo/sprint-1/TRAZABILIDAD.md y CODEOWNERS).
         """
         corte = self._cortes.obtener(corte_id)
         if corte is None:
