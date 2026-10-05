@@ -173,16 +173,16 @@ class ServicioCortes:
         viajan dentro de la misma transacción: si el Load falla, se revierte
         completo (HU-02/CA-3: rechazo total, nunca datos parciales).
 
-        SUPUESTO (MENOR — registrado, no bloqueante): no se restringe el
-        estado del corte (BORRADOR vs REGISTRADO). Ninguna CA de HU-02/03/04
-        lo exige explícitamente; corregir un archivo de un corte ya
-        REGISTRADO es HU-05/HU-06, todavía sin implementar. Si el equipo
-        decide que solo debe poder cargarse contra un corte en BORRADOR, hay
-        que agregar esa validación aquí explícitamente.
+        RESUELTO (E-02/HU-06, CA-8): se restringe el estado del corte a
+        BORRADOR vía `Corte.verificar_modificable()`. Un corte REGISTRADO
+        rechaza esta vía con 409; su corrección es HU-05 ("Editar
+        archivos"), todavía sin implementar -- esta validación solo cierra
+        la puerta del lado de HU-06.
         """
         corte = self._cortes.obtener(corte_id)
         if corte is None:
             raise RecursoNoEncontrado(f"No existe un corte con id {corte_id}.")
+        corte.verificar_modificable()
 
         lector = self._lectores.get(tipo)
         if lector is None:
