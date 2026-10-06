@@ -77,9 +77,10 @@ Evidencia: `test_validacion_archivos.py` (16 pruebas), 170 passed en local
       y `frontend/.env.example` están trackeados; `.gitignore` cubre `.env`,
       `.env.local` y `backend/.env`
 - [x] Variables de entorno documentadas en `.env.example` sin valores reales —
-      `SECRET_KEY=dev-only-insecure-key-change-me` es explícitamente un
-      placeholder; `config.py` tiene un `field_validator` que **lanza excepción**
-      si `environment=="production"` y el secreto sigue empezando por `dev-only`
+      `KEYCLOAK_ISSUER=http://localhost:8080/realms/govsync` es explícitamente
+      un placeholder de desarrollo; `config.py` tiene un `field_validator` que
+      **lanza excepción** si `environment=="production"` y el emisor sigue
+      conteniendo `localhost`
 - [ ] `SONAR_TOKEN` y credenciales de despliegue viven en GitHub Secrets, no
       en el código ni en `docker-compose.yml` — **no verificable desde el
       repositorio local** (son ajustes de GitHub, no de código). `[DEV-06]` ya
