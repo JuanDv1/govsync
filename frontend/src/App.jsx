@@ -10,6 +10,7 @@
 import { Route, Routes } from "react-router-dom";
 import NuevoCorte from "./pages/NuevoCorte.jsx";
 import Cortes from "./pages/Cortes.jsx";
+import EditarArchivosCorteActual from "./pages/EditarArchivosCorteActual.jsx";
 import Login from "./pages/Login.jsx";
 
 import Disposicion from "./components/Disposicion.jsx";
@@ -49,6 +50,12 @@ export default function App() {
             sobre los dinámicos, así que el orden de estas dos rutas no
             importa para que no choquen entre sí. */}
         <Route path="/cortes/:corteId" element={<NuevoCorte />} />
+        {/* [E02-HU05] Editar archivos del corte actual, ya REGISTRADO —
+            distinta de "/cortes/:corteId" (reanudar un BORRADOR, arriba). */}
+        <Route
+          path="/cortes/:corteId/editar"
+          element={<EditarArchivosCorteActual />}
+        />
         <Route path="/matriz/:corteId?" element={<MatrizRelacion />} />
         <Route path="*" element={<Pendiente />} />
       </Route>

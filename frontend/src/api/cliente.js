@@ -162,4 +162,39 @@ export const api = {
     if (busqueda) parametros.set("busqueda", busqueda);
     return solicitar(`/api/v1/matriz-relacion/${corteId}?${parametros}`);
   },
+
+  /**
+   * [E02-HU05/CA-2] PROPUESTA — este endpoint todavía NO existe en el
+   * backend (ver docs/specs/E02-HU05-modificar-archivos-corte-actual.md,
+   * sección Contrato). Reemplaza el archivo de `tipo` en el corte actual ya
+   * Registrado — a propósito una ruta distinta de `cargarArchivo`
+   * (`POST /cortes/{id}/archivos/{tipo}`), que [E02-HU06] bloquea con 409
+   * para cualquier corte Registrado (`Corte.verificar_modificable`).
+   *
+   * `[VALIDAR]` en la spec (CA-3/Contrato): no está decidido si validar el
+   * archivo debe ser un paso previo separado de aplicarlo (Opción A) o si
+   * basta con confirmar primero y revertir si resulta inválido (Opción B).
+   * Esta función asume la Opción B — un solo endpoint que valida y aplica —
+   * porque es la única forma de tener algo invocable hoy; si el equipo
+   * decide la Opción A, esta función pasa a ser la de "aplicar" y hace
+   * falta otra para "validar sin aplicar".
+   *
+   * Hasta que el backend lo implemente, toda llamada falla con
+   * `ErrorApi({ codigo: "error_red" })` o un 404 genérico — `EditarArchivosCorteActual.jsx`
+   * ya maneja ese error como cualquier otro de la API, no lo distingue.
+   */
+  reemplazarArchivoCorteActual: (corteId, tipo, archivo) =>
+    solicitar(`/api/v1/cortes/${corteId}/archivos/${tipo}/reemplazo`, {
+      metodo: "POST",
+      archivo,
+    }),
+
+  /**
+   * [E02-HU05/CA-6] PROPUESTA — este endpoint todavía NO existe. Historial
+   * de reemplazos de archivos del corte: se espera una lista de entradas
+   * `{ tipo, nombre_archivo_anterior, usuario, fecha_hora }`. El archivo
+   * `.xlsx` anterior no se conserva (decisión cerrada, ver la spec) — solo
+   * este registro.
+   */
+  historialCorte: (corteId) => solicitar(`/api/v1/cortes/${corteId}/historial`),
 };
