@@ -311,91 +311,95 @@ export default function NuevoCorte() {
         </Card>
 
         <div className="flex flex-col gap-5">
-          <CargaDeArchivo
-            tipo="PDT"
-            etiqueta="Plan Indicativo"
-            cargado={pdtDisponible}
-            resultado={
-              resultadoPdt &&
-              // HU-02/CA-5: "confirma visualmente cuántas metas fueron
-              // reconocidas" — `filas_reconocidas` es el conteo genérico que
-              // expone `ArchivoFuenteRespuestaParcial`; esta pantalla es la
-              // que sabe que para PDT esas filas son "metas" (el componente
-              // compartido no lo interpreta, ver su docstring).
-              `${resultadoPdt.filas_reconocidas} metas reconocidas.`
-            }
-            error={errorPdt}
-            onCargar={subirPdt}
-          />
+          {!yaRegistrado && (
+            <>
+              <CargaDeArchivo
+                tipo="PDT"
+                etiqueta="Plan Indicativo"
+                cargado={pdtDisponible}
+                resultado={
+                  resultadoPdt &&
+                  // HU-02/CA-5: "confirma visualmente cuántas metas fueron
+                  // reconocidas" — `filas_reconocidas` es el conteo genérico que
+                  // expone `ArchivoFuenteRespuestaParcial`; esta pantalla es la
+                  // que sabe que para PDT esas filas son "metas" (el componente
+                  // compartido no lo interpreta, ver su docstring).
+                  `${resultadoPdt.filas_reconocidas} metas reconocidas.`
+                }
+                error={errorPdt}
+                onCargar={subirPdt}
+              />
 
-          <CargaDeArchivo
-            tipo="EJECUCION"
-            etiqueta="Ejecución presupuestal"
-            cargado={ejecucionDisponible}
-            resultado={
-              resultadoEjecucion &&
-              // [HU-03][FE-02]: el backend ya distingue ejecución de
-              // contratación (`filas_ejecucion_reconocidas`/
-              // `filas_contratacion_reconocidas`, ver cortes/api/router.py) —
-              // se muestran por separado en vez del total genérico, que
-              // mezclaría dos fuentes distintas en un solo número.
-              `${resultadoEjecucion.filas_ejecucion_reconocidas ?? 0} filas de ejecución y ` +
-                `${resultadoEjecucion.filas_contratacion_reconocidas ?? 0} de contratación reconocidas.`
-            }
-            error={errorEjecucion}
-            onCargar={subirEjecucion}
-          />
+              <CargaDeArchivo
+                tipo="EJECUCION"
+                etiqueta="Ejecución presupuestal"
+                cargado={ejecucionDisponible}
+                resultado={
+                  resultadoEjecucion &&
+                  // [HU-03][FE-02]: el backend ya distingue ejecución de
+                  // contratación (`filas_ejecucion_reconocidas`/
+                  // `filas_contratacion_reconocidas`, ver cortes/api/router.py) —
+                  // se muestran por separado en vez del total genérico, que
+                  // mezclaría dos fuentes distintas en un solo número.
+                  `${resultadoEjecucion.filas_ejecucion_reconocidas ?? 0} filas de ejecución y ` +
+                    `${resultadoEjecucion.filas_contratacion_reconocidas ?? 0} de contratación reconocidas.`
+                }
+                error={errorEjecucion}
+                onCargar={subirEjecucion}
+              />
 
-          <CargaDeArchivo
-            tipo="PROYECTOS"
-            etiqueta="Plantilla de proyectos BPIN"
-            cargado={proyectosDisponibles}
-            resultado={
-              resultadoProyectos && (
-                <>
-                  {/* [HU-04][FE-02]: confirmación del conteo genérico, mismo
+              <CargaDeArchivo
+                tipo="PROYECTOS"
+                etiqueta="Plantilla de proyectos BPIN"
+                cargado={proyectosDisponibles}
+                resultado={
+                  resultadoProyectos && (
+                    <>
+                      {/* [HU-04][FE-02]: confirmación del conteo genérico, mismo
                     criterio que ya usa PDT — esta pantalla es la que sabe
                     que para PROYECTOS esas filas son "proyectos". */}
-                  <p className="text-xs text-gray-600">
-                    {resultadoProyectos.filas_reconocidas} proyectos
-                    reconocidos.
-                  </p>
+                      <p className="text-xs text-gray-600">
+                        {resultadoProyectos.filas_reconocidas} proyectos
+                        reconocidos.
+                      </p>
 
-                  {/* [HU-04][FE-02]/CA-2: mensaje explícito exigido por la
+                      {/* [HU-04][FE-02]/CA-2: mensaje explícito exigido por la
                     tarjeta — evita que la administradora crea que el
                     sistema rechazó el archivo por no tener estructura
                     estándar. El backend ya lo conserva tal cual
                     (HU-04/CA-2, lectores/proyectos.py), esto solo lo
                     comunica. */}
-                  <p className="carga-de-archivo-nota mt-1 text-xs">
-                    El archivo se conservó tal cual fue cargado, aunque su
-                    estructura no sea estándar.
-                  </p>
+                      <p className="carga-de-archivo-nota mt-1 text-xs">
+                        El archivo se conservó tal cual fue cargado, aunque su
+                        estructura no sea estándar.
+                      </p>
 
-                  {/* [HU-04][FE-03], Opción B: lista simple, sin componente
+                      {/* [HU-04][FE-03], Opción B: lista simple, sin componente
                     nuevo ni agrupación -- los códigos descartados sí la
                     necesitan (categoria), los válidos no aportan nada
                     agrupándolos. */}
-                  {resultadoProyectos.codigos.length > 0 && (
-                    <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                      {resultadoProyectos.codigos.map((codigo) => (
-                        <li key={codigo} className="codigo text-xs">
-                          {codigo}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                      {resultadoProyectos.codigos.length > 0 && (
+                        <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                          {resultadoProyectos.codigos.map((codigo) => (
+                            <li key={codigo} className="codigo text-xs">
+                              {codigo}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
 
-                  {/* [HU-04][FE-03]: ya construido en PR #79, solo se integra. */}
-                  <VistaPreviaDescartes
-                    descartes={resultadoProyectos.descartes}
-                  />
-                </>
-              )
-            }
-            error={errorProyectos}
-            onCargar={subirProyectos}
-          />
+                      {/* [HU-04][FE-03]: ya construido en PR #79, solo se integra. */}
+                      <VistaPreviaDescartes
+                        descartes={resultadoProyectos.descartes}
+                      />
+                    </>
+                  )
+                }
+                error={errorProyectos}
+                onCargar={subirProyectos}
+              />
+            </>
+          )}
 
           <div className="flex items-center justify-between border-t border-gray-100 pt-5">
             {yaRegistrado ? (
