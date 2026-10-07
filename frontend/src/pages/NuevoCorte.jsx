@@ -252,6 +252,12 @@ export default function NuevoCorte() {
 
     const todosCargados =
       pdtDisponible && proyectosDisponibles && ejecucionDisponible;
+    // E02-HU06/CA07: nombres tal como aparecen en "Fuentes obligatorias".
+    const fuentesFaltantes = [
+      !pdtDisponible && "Plan Indicativo",
+      !ejecucionDisponible && "Ejecución presupuestal",
+      !proyectosDisponibles && "Plantilla de proyectos BPIN",
+    ].filter(Boolean);
     const yaRegistrado = corte.estado === "REGISTRADO";
 
     function estadoFuente(archivo, resultado) {
@@ -421,14 +427,21 @@ export default function NuevoCorte() {
                 <button
                   type="button"
                   disabled={!todosCargados || registrando}
+                  aria-describedby={
+                    todosCargados ? undefined : "fuentes-faltantes"
+                  }
                   onClick={manejarRegistro}
                   className="self-start rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Registrar corte
                 </button>
                 {!todosCargados && (
-                  <p className="text-[11px] italic text-gray-400">
-                    Cargue los tres archivos para registrar el corte.
+                  <p
+                    id="fuentes-faltantes"
+                    className="text-[11px] italic text-gray-400"
+                  >
+                    Cargue los tres archivos para registrar el corte. Falta:{" "}
+                    {fuentesFaltantes.join(", ")}.
                   </p>
                 )}
                 {registrando && <Cargando mensaje="Registrando corte…" />}
