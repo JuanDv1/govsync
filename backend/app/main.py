@@ -75,7 +75,7 @@ def crear_app() -> FastAPI:
     def salud() -> dict[str, str]:
         """Alias de /health, mantenido bajo el prefijo /api/v1 por
         compatibilidad. /health es la fuente de verdad (ver docstring de
-        health() y PLANDETRABAJO.md, nota de la tarjeta 6.5)."""
+        health() y docs/archivo/sprint-1/PLANDETRABAJO.md, nota de la tarjeta 6.5)."""
         return health()
 
     return app

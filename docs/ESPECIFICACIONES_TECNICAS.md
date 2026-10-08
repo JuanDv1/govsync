@@ -6,8 +6,15 @@ Responde a la recomendación del profesor en la revisión de Entrega 1:
 > Sprint 1: endpoint y método, esquema de entrada y de salida, tablas que
 > toca, reglas de validación y comportamiento ante error.»
 
+**Alcance vigente:** cubre el contrato ya entregado de E02-HU01..04 y
+E02-HU07 (HU-01 a HU-04 y HU-07 del Sprint 1, sin épica asignada en su
+momento — ver `docs/DECISIONES.md`). Las historias nuevas no usan este
+documento: su contrato vive en `docs/specs/` (una spec por HU) y en el
+OpenAPI que genera FastAPI.
+
 **Fuente de esta especificación, en orden:** los Criterios de Aceptación
-aprobados en `Levantamiento de Requisitos.md`, las Reglas de negocio y
+aprobados en `docs/requisitos/GovSync_Levantamiento_Requisitos_v2_2_Sprint2.xlsx`,
+las Reglas de negocio y
 Decisiones de Diseño en `claude/Sprint1_Decisiones_de_Diseno.md` (D1–D14), y
 el código-esqueleto ya existente en el repositorio (routers, `casos_uso.py`,
 `errors.py`, `models.py`, lectores de `ingesta/persistence/lectores/`,
@@ -307,10 +314,10 @@ columnas mínimas. No se debe portar aquí la severidad de HU-02-CA04/HU-03-CA05
 ## HU-07 — Visualizar la matriz de relación del corte actual
 
 **CA cubiertos: HU07-CA01 a CA08 (reconciliados el 2026-09-08 con el checklist
-de Trello y con `Levantamiento de Requisitos.md`) — ver `docs/DECISIONES.md`,
+de Trello y con el Excel de requisitos) — ver `docs/DECISIONES.md`,
 D5.**
 
-Antes de la reconciliación, `Levantamiento de Requisitos.md` solo tenía
+Antes de la reconciliación, el Excel de requisitos solo tenía
 HU07-CA01 y HU07-CA04, y el código (`consultas.py`, `trazabilidad/api/router.py`)
 referenciaba "CA-2 a CA-8" como si ya existieran formalmente. No eran
 criterios inventados: sí existían, en el checklist "Criterios de aceptación"

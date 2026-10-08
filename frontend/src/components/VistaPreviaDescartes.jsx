@@ -26,7 +26,7 @@
  * `CargaDeArchivo` ni de `NuevoCorte.jsx`.
  */
 
-// PROPUESTA DE TEXTO, NO DECIDIDA — verificado contra PLANDETRABAJO.md,
+// PROPUESTA DE TEXTO, NO DECIDIDA — verificado contra docs/archivo/sprint-1/PLANDETRABAJO.md,
 // ESPECIFICACIONES_TECNICAS.md y DECISIONES.md: ninguno define copy de
 // interfaz para estas tres categorías (D14 solo las nombra a nivel técnico:
 // POSIBLE_CERO_PERDIDO/LONGITUD_CORTA/LONGITUD_LARGA). Estos tres títulos

@@ -1,3 +1,5 @@
+> Archivado: documento histórico del Sprint 1, no se mantiene.
+
 # Plan de trabajo — Sprint 1
 
 Orden de implementación de las 59 tarjetas del tablero, con quién hace qué,

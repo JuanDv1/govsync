@@ -17,7 +17,7 @@ ALCANCE DE ESTA ENTREGA
 `RepositorioCortesSQL` queda completo (los seis métodos del puerto). La etapa
 Load (`RepositorioDatosCorteSQL`) se implementa con cada tarjeta que la
 consume: `copiar_datos` con [BD-03] (bug activo detectado en producción: HU-01/
-CA-5, ya mergeado, lo llama sin protección — ver docs/TRAZABILIDAD.md),
+CA-5, ya mergeado, lo llama sin protección — ver docs/archivo/sprint-1/TRAZABILIDAD.md),
 `reemplazar_metas` con [HU-02][BE-04], `reemplazar_presupuesto` con
 [HU-03][BE-06], `reemplazar_proyectos` con [HU-04][BE-04].
 
