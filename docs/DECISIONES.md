@@ -1040,3 +1040,50 @@ falta construir. Primer archivo a diseñar: a definir entre
 `modules/identidad/` (nuevo) y `core/dependencias.py`.
 
 **Registrado:** 2026-10-02, Cristhian (`CrisCamUO`).
+
+**Actualización (2026-10-06):** `modules/identidad/` (dominio +
+persistencia), `core/dependencias.py` (`exigir_roles`, `UsuarioActualDep`)
+y el servicio `keycloak` de `docker-compose.yml` ya están construidos y
+probados (349 pruebas en verde, `test_arquitectura.py` incluido). Pendiente
+real de los 4 puntos: (3) solo hay smoke test en CI (`backend-keycloak`:
+confirma que el contenedor arranca, no aprovisiona realm/token real
+todavía) y (4) no empezado. Commit `acf93e0` en la rama `feat/login/be/fe`.
+
+---
+
+## D24 · Qué rol exige cada endpoint de `cortes`/`trazabilidad`
+
+**Decisión:** los cuatro endpoints de lectura exigen solo autenticación
+(cualquiera de los 3 roles, vía `UsuarioActualDep` sin chequeo de rol); los
+cuatro de escritura exigen `exigir_roles(Rol.ADMINISTRADOR, Rol.GESTOR)`:
+
+| Endpoint                            | Rol exigido                 |
+| ----------------------------------- | --------------------------- |
+| `GET /cortes`                       | autenticado (cualquier rol) |
+| `GET /cortes/{id}`                  | autenticado (cualquier rol) |
+| `GET /matriz-relacion/actual`       | autenticado (cualquier rol) |
+| `GET /matriz-relacion/{corte_id}`   | autenticado (cualquier rol) |
+| `POST /cortes`                      | `administrador` o `gestor`  |
+| `POST /cortes/{id}/archivos/{tipo}` | `administrador` o `gestor`  |
+| `PATCH /cortes/{id}`                | `administrador` o `gestor`  |
+| `POST /cortes/{id}/registrar`       | `administrador` o `gestor`  |
+
+**Motivo:** coincide con la descripción de roles de D23 — `gestor` "sube/
+corrige cortes y archivos" (exactamente los cuatro endpoints de escritura),
+`visitante` "solo lectura". `administrador` y `gestor` quedan con los
+mismos permisos en este conjunto de endpoints porque ninguna de las ocho
+rutas describe una acción exclusiva de `administrador` — la única
+diferencia entre esos dos roles hoy es conceptual (D23), no una regla de
+autorización todavía necesaria en código. Si aparece una acción
+exclusivamente de `administrador`, se diferencia en esa tarjeta, no aquí.
+
+**Impacto en archivos que no son de esta tarjeta:** `tests/
+test_router_cortes.py` y `tests/test_router_trazabilidad.py` (de Juan
+Esteban/Juan David según sus propios docstrings) necesitan
+`app.dependency_overrides[obtener_usuario_actual]` en cada fixture que
+construye un `TestClient`, para no empezar a fallar con 401 — cambio
+mecánico, avisado y aprobado antes de tocarlos.
+
+**Estado:** RATIFICADA — aprobada por Cristhian antes de implementar.
+
+**Registrado:** 2026-10-06, Cristhian (`CrisCamUO`).

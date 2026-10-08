@@ -30,9 +30,18 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.database import Base, get_session
+from app.core.dependencias import obtener_usuario_actual
 from app.main import crear_app
+from app.modules.identidad.domain.entidades import Rol, Usuario
 
 XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+#: [HU-E01-02] / D24: usuario de prueba por defecto para las pruebas HTTP
+#: que no se centran en autenticación/autorización. GESTOR porque ya
+#: satisface tanto los endpoints de lectura como los de escritura (D24).
+USUARIO_DE_PRUEBA = Usuario(
+    id="usuario-de-prueba", correo="prueba@santarosa.gov.co", roles=frozenset({Rol.GESTOR})
+)
 
 # Importa los modelos ORM para que Base.metadata conozca todas las tablas antes
 # de create_all; sin este import la base de pruebas se crea vacía.
@@ -73,6 +82,7 @@ def cliente(motor, sesion):
         yield sesion
 
     app.dependency_overrides[get_session] = _sesion_de_prueba
+    app.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
