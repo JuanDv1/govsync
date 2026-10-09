@@ -1,0 +1,22 @@
+[1mdiff --git a/frontend/src/pages/NuevoCorte.jsx b/frontend/src/pages/NuevoCorte.jsx[m
+[1mindex 28c6353..c9e05e2 100644[m
+[1m--- a/frontend/src/pages/NuevoCorte.jsx[m
+[1m+++ b/frontend/src/pages/NuevoCorte.jsx[m
+[36m@@ -311,6 +311,8 @@[m [mexport default function NuevoCorte() {[m
+         </Card>[m
+ [m
+         <div className="flex flex-col gap-5">[m
+[32m+[m[32m          {!yaRegistrado && ([m
+[32m+[m[32m            <>[m
+               <CargaDeArchivo[m
+                 tipo="PDT"[m
+                 etiqueta="Plan Indicativo"[m
+[36m@@ -396,6 +398,8 @@[m [mexport default function NuevoCorte() {[m
+                 error={errorProyectos}[m
+                 onCargar={subirProyectos}[m
+               />[m
+[32m+[m[32m            </>[m
+[32m+[m[32m          )}[m
+ [m
+           <div className="flex items-center justify-between border-t border-gray-100 pt-5">[m
+             {yaRegistrado ? ([m
