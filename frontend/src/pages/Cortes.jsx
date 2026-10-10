@@ -7,11 +7,18 @@
  * El backend ya entrega los cortes ordenados por fecha de corte y fecha de
  * creación descendentes. Esta pantalla conserva ese orden y no duplica la
  * regla de negocio en frontend.
+ *
+ * D24 (docs/DECISIONES.md): "Crear corte" (estado vacío) y "Continuar
+ * carga" (fila en BORRADOR) solo se muestran si `puedeEscribir`
+ * (administrador/gestor) — son acciones de escritura, igual que el "Nuevo
+ * corte" que `Disposicion.jsx` ya oculta para `visitante`. Es solo UI: el
+ * backend ya las rechaza con 403 de todas formas.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { api } from "../api/cliente.js";
+import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import Card from "../components/shared/Card.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
@@ -22,6 +29,7 @@ const TONO_ESTADO_CORTE = {
 };
 
 export default function Cortes() {
+  const { puedeEscribir } = useAutenticacion();
   const [intento, setIntento] = useState(0);
   const [resultado, setResultado] = useState({
     clave: null,
@@ -73,14 +81,20 @@ export default function Cortes() {
       {!cargando && !error && (!cortes || cortes.length === 0) && (
         <Vacio
           titulo="No hay cortes todavía"
-          descripcion="Crea un corte de seguimiento para iniciar el histórico."
+          descripcion={
+            puedeEscribir
+              ? "Crea un corte de seguimiento para iniciar el histórico."
+              : "Todavía no se ha creado ningún corte de seguimiento."
+          }
           accion={
-            <Link
-              to="/cortes/nuevo"
-              className="text-xs font-medium text-azul hover:text-navy"
-            >
-              Crear corte
-            </Link>
+            puedeEscribir ? (
+              <Link
+                to="/cortes/nuevo"
+                className="text-xs font-medium text-azul hover:text-navy"
+              >
+                Crear corte
+              </Link>
+            ) : null
           }
         />
       )}
@@ -131,13 +145,17 @@ export default function Cortes() {
                       >
                         Ver matriz
                       </Link>
-                    ) : (
+                    ) : puedeEscribir ? (
                       <Link
                         to={`/cortes/${corte.id}`}
                         className="text-[11px] font-medium text-azul hover:text-navy"
                       >
                         Continuar carga
                       </Link>
+                    ) : (
+                      <span className="text-[11px] text-gray-400">
+                        En borrador
+                      </span>
                     )}
                   </td>
                 </tr>

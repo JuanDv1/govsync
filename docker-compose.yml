@@ -35,6 +35,10 @@ services:
       - "8080:8080"
     volumes:
       - datos_keycloak:/opt/keycloak/data
+      # Theme de login con la marca de GovSync (D23, punto 4) — una vez
+      # arriba, hay que seleccionarlo a mano en Realm settings > Themes >
+      # Login theme. Montado de solo lectura: Keycloak lo lee, no lo escribe.
+      - ./keycloak/themes/govsync:/opt/keycloak/themes/govsync:ro
 
 volumes:
   datos_postgres:
