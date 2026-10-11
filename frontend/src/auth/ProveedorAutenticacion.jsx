@@ -23,7 +23,14 @@
  * Si el admin cierra la sesión desde Keycloak, esta pestaña no se entera
  * hasta que el token expire y falle un refresh.
  */
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import keycloak from "./keycloak.js";
 import { establecerProveedorToken } from "../api/cliente.js";
 
@@ -33,7 +40,7 @@ const ContextoAutenticacion = createContext(null);
 //: Rol.GESTOR)` exige en el backend para escribir — `visitante` queda fuera.
 //: Esto solo oculta la UI (el backend ya rechaza con 403 de todas formas);
 //: centralizado aquí para no repetir la lista de roles en cada pantalla.
-const ROLES_ESCRITURA = ["administrador", "gestor"];
+const ROLES_ESCRITURA = new Set(["administrador", "gestor"]);
 
 export function ProveedorAutenticacion({ children }) {
   const [cargando, setCargando] = useState(true);
@@ -66,25 +73,32 @@ export function ProveedorAutenticacion({ children }) {
       .finally(() => setCargando(false));
   }, []);
 
-  const usuario = estaAutenticado
-    ? {
-        nombre: keycloak.tokenParsed?.preferred_username ?? null,
-        correo: keycloak.tokenParsed?.email ?? null,
-        roles: keycloak.realmAccess?.roles ?? [],
-      }
-    : null;
+  // useMemo: el objeto de contexto no debe cambiar en cada render — si no,
+  // cada componente que consume useAutenticacion() se re-renderiza de más
+  // (hallazgo de SonarCloud, javascript:S6481). Depende solo de estado real
+  // (cargando/estaAutenticado); keycloak.tokenParsed/realmAccess no son
+  // estado de React, pero solo cambian junto con estaAutenticado.
+  const valor = useMemo(() => {
+    const usuario = estaAutenticado
+      ? {
+          nombre: keycloak.tokenParsed?.preferred_username ?? null,
+          correo: keycloak.tokenParsed?.email ?? null,
+          roles: keycloak.realmAccess?.roles ?? [],
+        }
+      : null;
 
-  const valor = {
-    cargando,
-    estaAutenticado,
-    usuario,
-    puedeEscribir:
-      usuario?.roles?.some((rol) => ROLES_ESCRITURA.includes(rol)) ?? false,
-    iniciarSesion: () =>
-      keycloak.login({ redirectUri: `${window.location.origin}/cortes` }),
-    cerrarSesion: () =>
-      keycloak.logout({ redirectUri: `${window.location.origin}/login` }),
-  };
+    return {
+      cargando,
+      estaAutenticado,
+      usuario,
+      puedeEscribir:
+        usuario?.roles?.some((rol) => ROLES_ESCRITURA.has(rol)) ?? false,
+      iniciarSesion: () =>
+        keycloak.login({ redirectUri: `${window.location.origin}/cortes` }),
+      cerrarSesion: () =>
+        keycloak.logout({ redirectUri: `${window.location.origin}/login` }),
+    };
+  }, [cargando, estaAutenticado]);
 
   return (
     <ContextoAutenticacion.Provider value={valor}>

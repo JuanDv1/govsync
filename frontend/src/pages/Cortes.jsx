@@ -28,6 +28,33 @@ const TONO_ESTADO_CORTE = {
   REGISTRADO: "verde",
 };
 
+/** D24: "Continuar carga" (escritura) solo si puedeEscribir — ver docstring. */
+function accionDeCorte(corte, puedeEscribir) {
+  if (corte.estado === "REGISTRADO") {
+    return (
+      <Link
+        to={`/matriz/${corte.id}`}
+        className="text-[11px] font-medium text-azul hover:text-navy"
+      >
+        Ver matriz
+      </Link>
+    );
+  }
+
+  if (puedeEscribir) {
+    return (
+      <Link
+        to={`/cortes/${corte.id}`}
+        className="text-[11px] font-medium text-azul hover:text-navy"
+      >
+        Continuar carga
+      </Link>
+    );
+  }
+
+  return <span className="text-[11px] text-gray-400">En borrador</span>;
+}
+
 export default function Cortes() {
   const { puedeEscribir } = useAutenticacion();
   const [intento, setIntento] = useState(0);
@@ -138,25 +165,7 @@ export default function Cortes() {
                     {corte.archivos?.length ?? 0} de 3
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    {corte.estado === "REGISTRADO" ? (
-                      <Link
-                        to={`/matriz/${corte.id}`}
-                        className="text-[11px] font-medium text-azul hover:text-navy"
-                      >
-                        Ver matriz
-                      </Link>
-                    ) : puedeEscribir ? (
-                      <Link
-                        to={`/cortes/${corte.id}`}
-                        className="text-[11px] font-medium text-azul hover:text-navy"
-                      >
-                        Continuar carga
-                      </Link>
-                    ) : (
-                      <span className="text-[11px] text-gray-400">
-                        En borrador
-                      </span>
-                    )}
+                    {accionDeCorte(corte, puedeEscribir)}
                   </td>
                 </tr>
               ))}

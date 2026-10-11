@@ -32,10 +32,10 @@ class _VerificadorFalso(VerificadorToken):
 
 class TestObtenerUsuarioActual:
     def test_sin_header_lanza_credenciales_invalidas(self) -> None:
+        verificador = _VerificadorFalso(_USUARIO_GESTOR)
+
         with pytest.raises(CredencialesInvalidas):
-            obtener_usuario_actual(
-                credenciales=None, verificador=_VerificadorFalso(_USUARIO_GESTOR)
-            )
+            obtener_usuario_actual(credenciales=None, verificador=verificador)
 
     def test_token_valido_devuelve_el_usuario(self) -> None:
         credenciales = HTTPAuthorizationCredentials(scheme="Bearer", credentials="token-valido")

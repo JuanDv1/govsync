@@ -190,7 +190,9 @@ body {
 
 .govsync-alert-warning {
   background-color: #fffbeb;
-  color: #d97706;
+  /* #d97706 (semaforo.amarillo) no cumplía 4.5:1 contra este fondo
+     (SonarCloud css:S7924) — #92400e sí, y sigue leyéndose como "ámbar". */
+  color: #92400e;
 }
 
 .govsync-alert-info {
