@@ -79,6 +79,10 @@ de estimar la tarjeta.
 
 **Registrado:** 2026-09-08.
 
+**Nota (2026-10-02):** Sprint 2 revisita esta decisión — ver **D23** (se
+confirma que E-01 entra, con Keycloak como mecanismo en vez del JWT propio
+que esta entrada daba por sentado).
+
 ---
 
 ## D3 · Qué archivo es "el archivo del municipio" en HU-01/CA-5
@@ -1027,3 +1031,126 @@ PROPUESTA (filtros adicionales del punto 6, pendientes de que el equipo
 decida cuáles construir).
 
 **Registrado:** 2026-09-23, Cristhian (`CrisCamUO`).
+
+---
+
+## D23 · Sprint 2: E-01 se implementa con Keycloak, no con JWT propio
+
+**Decisión:** `[REF-05]`/D2 se da por resuelto para Sprint 2 — la épica E-01
+(Gestión de Acceso y Roles) entra, y el mecanismo elegido es **Keycloak**
+como proveedor de identidad (OIDC, flujo Authorization Code + PKCE), no un
+JWT firmado por el propio backend.
+
+**Motivo:** se necesita escalabilidad y gestión avanzada de usuarios/roles
+(altas, bajas, recuperación de contraseña, grupos) sin construir esa
+infraestructura a mano. D2 ya anticipaba esta tarjeta (`[HU-E01-01]`,
+~5 SP, `modules/identidad/` + `core/dependencias.py`) asumiendo JWT propio;
+el cambio a Keycloak la hace más grande y agrega una pieza de
+infraestructura nueva (el propio servidor Keycloak), no solo código.
+
+**Alternativas consideradas:** JWT propio (`config.py::secret_key`/
+`algorithm`/`access_token_expire_minutes`, ya anticipado en el esqueleto) —
+más simple de desplegar, sin servicio adicional, pero exige construir a
+mano gestión de usuarios, roles, expiración/rotación y recuperación de
+contraseña. Se descarta porque evitar justo ese trabajo es el motivo de
+elegir Keycloak.
+
+**Qué cambia respecto al plan original de D2:**
+
+- `config.py::secret_key`/`algorithm`/`access_token_expire_minutes`
+  (pensado para JWT propio) queda sin uso para este propósito — pendiente
+  decidir si se elimina o se reaprovecha para otra cosa.
+- La validación de token en el backend es contra el JWKS de Keycloak
+  (RS256), no con un secreto compartido.
+- El flujo de login ya no es el formulario propio de `Login.jsx` tal cual:
+  Keycloak redirige a su propia pantalla, salvo que se le aplique un theme
+  con la identidad visual de GovSync.
+- Se agrega infraestructura nueva: un servicio de Keycloak (+ su propia
+  BD/esquema) en `docker-compose.yml` para desarrollo, y una decisión de
+  despliegue en producción todavía pendiente (Keycloak propio vs
+  gestionado).
+
+**Las 4 preguntas pendientes, resueltas (2026-10-02):**
+
+1. **Infraestructura:** solo local por ahora (`docker-compose.yml`), sin
+   decidir producción. Se construye y se demuestra en desarrollo/Code
+   Walkthrough sin comprometer presupuesto todavía; queda pendiente para
+   una tarjeta/entrega posterior decidir dónde corre Keycloak en
+   producción (self-host en Render vs gestionado por un tercero).
+2. **Modelo de roles:** **realm roles**, no client roles — una sola lista
+   de roles a nivel del realm, válida para el único cliente OIDC que hoy
+   consume este Keycloak (GovSync). Y los roles en sí **cambian respecto
+   al placeholder de `Login.jsx`** ("Planeación"/"Hacienda"/"Control
+   interno", que eran solo botones de maqueta deshabilitados): el
+   conjunto real a modelar es `administrador` (gestión completa),
+   `gestor` (sube/corrige cortes y archivos — ejecución presupuestal y
+   demás), `visitante` (solo lectura — p. ej. el alcalde o cualquier
+   consulta externa). `Login.jsx` necesita actualizar esos tres botones
+   de acceso de prueba cuando se construya esta tarjeta.
+3. **Pruebas en CI:** Keycloak real en un contenedor efímero dentro del
+   pipeline (no mocks/tokens firmados a mano), para cobertura de
+   integración real del flujo completo.
+4. **Pantalla de login:** se mantiene `Login.jsx` como superficie visual,
+   aplicando un **theme de Keycloak con la marca de GovSync** — Keycloak
+   sigue siendo quien autentica (Authorization Code + PKCE), pero su
+   pantalla se skinea para verse como el diseño actual, no como el tema
+   por defecto de Keycloak.
+
+**Cambio de regla asociado (2026-10-02):** para resolver el punto 3, el
+usuario levantó en general la regla de no modificar
+`.github/workflows/ci.yml` sin permiso puntual (vigente desde
+2026-09-13) — a partir de ahora ese archivo se trata como cualquier otro
+del repo, sin pedir permiso cada vez.
+
+**Estado:** PROPUESTA — las 4 decisiones de diseño quedan resueltas;
+falta construir. Primer archivo a diseñar: a definir entre
+`modules/identidad/` (nuevo) y `core/dependencias.py`.
+
+**Registrado:** 2026-10-02, Cristhian (`CrisCamUO`).
+
+**Actualización (2026-10-06):** `modules/identidad/` (dominio +
+persistencia), `core/dependencias.py` (`exigir_roles`, `UsuarioActualDep`)
+y el servicio `keycloak` de `docker-compose.yml` ya están construidos y
+probados (349 pruebas en verde, `test_arquitectura.py` incluido). Pendiente
+real de los 4 puntos: (3) solo hay smoke test en CI (`backend-keycloak`:
+confirma que el contenedor arranca, no aprovisiona realm/token real
+todavía) y (4) no empezado. Commit `acf93e0` en la rama `feat/login/be/fe`.
+
+---
+
+## D24 · Qué rol exige cada endpoint de `cortes`/`trazabilidad`
+
+**Decisión:** los cuatro endpoints de lectura exigen solo autenticación
+(cualquiera de los 3 roles, vía `UsuarioActualDep` sin chequeo de rol); los
+cuatro de escritura exigen `exigir_roles(Rol.ADMINISTRADOR, Rol.GESTOR)`:
+
+| Endpoint                            | Rol exigido                 |
+| ----------------------------------- | --------------------------- |
+| `GET /cortes`                       | autenticado (cualquier rol) |
+| `GET /cortes/{id}`                  | autenticado (cualquier rol) |
+| `GET /matriz-relacion/actual`       | autenticado (cualquier rol) |
+| `GET /matriz-relacion/{corte_id}`   | autenticado (cualquier rol) |
+| `POST /cortes`                      | `administrador` o `gestor`  |
+| `POST /cortes/{id}/archivos/{tipo}` | `administrador` o `gestor`  |
+| `PATCH /cortes/{id}`                | `administrador` o `gestor`  |
+| `POST /cortes/{id}/registrar`       | `administrador` o `gestor`  |
+
+**Motivo:** coincide con la descripción de roles de D23 — `gestor` "sube/
+corrige cortes y archivos" (exactamente los cuatro endpoints de escritura),
+`visitante` "solo lectura". `administrador` y `gestor` quedan con los
+mismos permisos en este conjunto de endpoints porque ninguna de las ocho
+rutas describe una acción exclusiva de `administrador` — la única
+diferencia entre esos dos roles hoy es conceptual (D23), no una regla de
+autorización todavía necesaria en código. Si aparece una acción
+exclusivamente de `administrador`, se diferencia en esa tarjeta, no aquí.
+
+**Impacto en archivos que no son de esta tarjeta:** `tests/
+test_router_cortes.py` y `tests/test_router_trazabilidad.py` (de Juan
+Esteban/Juan David según sus propios docstrings) necesitan
+`app.dependency_overrides[obtener_usuario_actual]` en cada fixture que
+construye un `TestClient`, para no empezar a fallar con 401 — cambio
+mecánico, avisado y aprobado antes de tocarlos.
+
+**Estado:** RATIFICADA — aprobada por Cristhian antes de implementar.
+
+**Registrado:** 2026-10-06, Cristhian (`CrisCamUO`).

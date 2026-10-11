@@ -1,0 +1,220 @@
+/* Theme de login de GovSync ([HU-E01-01], docs/DECISIONES.md D23).
+ * Traduce a CSS plano los tokens de frontend/tailwind.config.js (este
+ * theme no carga Tailwind) — mismos valores hex, mismo layout de
+ * frontend/src/pages/Login.jsx. Clases propias (govsync-*), no las del
+ * theme base de Keycloak: evita depender de nombres que pueden cambiar
+ * entre versiones.
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  color: #1a202c;
+}
+
+.govsync-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.govsync-aside {
+  display: flex;
+  flex: 0 0 42%;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: #1a3a6b; /* navy */
+  padding: 3rem;
+  color: #fff;
+}
+
+.govsync-wordmark {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #fff;
+}
+
+.govsync-wordmark-accent {
+  color: #5ba3e0; /* azul.claro */
+}
+
+.govsync-tagline {
+  margin-top: 0.25rem;
+  margin-bottom: 0;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #90b8dc; /* azul.tenue */
+}
+
+.govsync-aside-info {
+  border-left: 2px solid #2b6cb0; /* azul */
+  padding-left: 1rem;
+}
+
+.govsync-aside-text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: #bee3f8;
+}
+
+.govsync-aside-text-strong {
+  font-weight: 500;
+  color: #fff;
+}
+
+.govsync-aside-municipio {
+  margin: 0.5rem 0 0;
+  font-size: 0.75rem;
+  color: #5ba3e0; /* azul.claro */
+}
+
+.govsync-aside-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #4a7fa5; /* azul.apagado */
+}
+
+.govsync-form-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff;
+  padding: 2rem;
+}
+
+.govsync-form-card {
+  width: 22rem;
+  max-width: 100%;
+}
+
+.govsync-form-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a3a6b; /* navy */
+}
+
+.govsync-form-subtitle {
+  margin: 0 0 1.75rem;
+  font-size: 0.75rem;
+  color: #718096;
+}
+
+.govsync-field {
+  margin-bottom: 1rem;
+}
+
+.govsync-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #718096;
+}
+
+.govsync-input {
+  width: 100%;
+  border-radius: 2px;
+  border: 1px solid #cbd5e0;
+  background-color: #f7f9fc; /* fondo.input */
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.govsync-input:focus {
+  outline: none;
+  border-color: #2b6cb0; /* azul */
+  box-shadow: 0 0 0 1px #2b6cb0;
+}
+
+.govsync-input-error {
+  display: block;
+  margin-top: 0.375rem;
+  font-size: 0.75rem;
+  color: #c53030; /* critico */
+}
+
+.govsync-submit {
+  width: 100%;
+  border: none;
+  border-radius: 2px;
+  background-color: #1a3a6b; /* navy */
+  padding: 0.625rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.govsync-submit:hover {
+  background-color: #2c5282; /* navy.hover */
+}
+
+.govsync-alert {
+  margin-bottom: 1rem;
+  border-radius: 2px;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.govsync-alert-error {
+  background-color: #fff5f5;
+  color: #c53030;
+}
+
+.govsync-alert-success {
+  background-color: #f0fff4;
+  color: #276749;
+}
+
+.govsync-alert-warning {
+  background-color: #fffbeb;
+  /* #d97706 (semaforo.amarillo) no cumplía 4.5:1 contra este fondo
+     (SonarCloud css:S7924) — #92400e sí, y sigue leyéndose como "ámbar". */
+  color: #92400e;
+}
+
+.govsync-alert-info {
+  background-color: #ebf8ff;
+  color: #2b6cb0;
+}
+
+.govsync-form-info {
+  margin-top: 1.75rem;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1.25rem;
+  font-size: 0.75rem;
+  color: #a0aec0;
+}
+
+@media (max-width: 768px) {
+  .govsync-shell {
+    flex-direction: column;
+  }
+
+  .govsync-aside {
+    flex: none;
+    padding: 2rem;
+  }
+}

@@ -26,7 +26,7 @@ from fastapi.testclient import TestClient
 from openpyxl import Workbook
 
 from app.core.config import Settings, get_settings
-from app.core.dependencias import obtener_servicio_cortes
+from app.core.dependencias import obtener_servicio_cortes, obtener_usuario_actual
 from app.main import crear_app
 from app.modules.cortes.application.casos_uso import ServicioCortes
 from app.modules.cortes.domain.entidades import (
@@ -42,6 +42,7 @@ from app.modules.ingesta.domain.contratos import (
     TipoArchivo,
 )
 from app.shared.codigos import CategoriaDescarte, CodigoIndicadorProducto, DescarteIndicador
+from tests.conftest import USUARIO_DE_PRUEBA
 
 HOY = date(2026, 9, 8)
 
@@ -184,6 +185,7 @@ def cliente():
 
     app = crear_app()
     app.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+    app.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
     with TestClient(app) as c:
         c.repo_cortes = repo_cortes  # D11: acceso directo para registrar cortes en pruebas
         yield c
@@ -349,6 +351,7 @@ def cliente_con_lectores():
 
     app = crear_app()
     app.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+    app.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
     with TestClient(app) as c:
         c.repo_cortes = repo_cortes
         yield c
@@ -544,6 +547,7 @@ def test_post_archivos_tamano_excedido_sin_content_length_devuelve_413(monkeypat
     # porque son objetos Python independientes del `FastAPI` que los envuelve.
     app_normal = crear_app()
     app_normal.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+    app_normal.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
     corte_id = _crear_corte_borrador(TestClient(app_normal))
 
     monkeypatch.setenv("MAX_UPLOAD_BYTES", "20")
@@ -551,6 +555,7 @@ def test_post_archivos_tamano_excedido_sin_content_length_devuelve_413(monkeypat
     try:
         app = crear_app()
         app.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+        app.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
         cliente = TestClient(app)
 
         boundary = "boundaryDePrueba"

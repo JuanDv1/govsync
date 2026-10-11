@@ -63,10 +63,15 @@ from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartException
 
 from app.core.config import Settings, get_settings
-from app.core.dependencias import ServicioCortesDep
+from app.core.dependencias import ServicioCortesDep, UsuarioActualDep, exigir_roles
 from app.modules.cortes.domain.entidades import Corte, TipoArchivoFuente
+from app.modules.identidad.domain.entidades import Rol, Usuario
 from app.shared.codigos import CategoriaDescarte
 from app.shared.errors import ArchivoInvalido
+
+#: D24 (docs/DECISIONES.md): los cuatro endpoints de escritura de este
+#: router exigen administrador o gestor — visitante es de solo lectura.
+EscrituraDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR, Rol.GESTOR))]
 
 router = APIRouter(prefix="/cortes", tags=["Cortes de seguimiento"])
 
@@ -175,7 +180,9 @@ def _a_dto(corte: Corte) -> CorteRespuesta:
 
 
 @router.post("", response_model=CorteRespuesta, status_code=status.HTTP_201_CREATED)
-def crear_corte(entrada: CorteEntrada, servicio: ServicioCortesDep) -> CorteRespuesta:
+def crear_corte(
+    entrada: CorteEntrada, servicio: ServicioCortesDep, usuario: EscrituraDep
+) -> CorteRespuesta:
     """HU-01 / CA-1, CA-2.
 
     El 422 de fecha futura ya lo lanza `Corte.validar_fecha` (dominio) y ya
@@ -186,13 +193,15 @@ def crear_corte(entrada: CorteEntrada, servicio: ServicioCortesDep) -> CorteResp
 
 
 @router.get("", response_model=list[CorteRespuesta])
-def listar_cortes(servicio: ServicioCortesDep) -> list[CorteRespuesta]:
+def listar_cortes(servicio: ServicioCortesDep, usuario: UsuarioActualDep) -> list[CorteRespuesta]:
     """HU-01 / CA-8 (junto con GET /cortes/{id}): histórico de cortes."""
     return [_a_dto(corte) for corte in servicio.listar_cortes()]
 
 
 @router.get("/{corte_id}", response_model=CorteRespuesta)
-def obtener_corte(corte_id: UUID, servicio: ServicioCortesDep) -> CorteRespuesta:
+def obtener_corte(
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: UsuarioActualDep
+) -> CorteRespuesta:
     """HU-01 / CA-8 (junto con GET /cortes): detalle de un corte por id.
 
     El 404 ya lo lanza `ServicioCortes.obtener_corte` y ya está mapeado a
@@ -236,6 +245,7 @@ async def cargar_archivo(
     request: Request,
     servicio: ServicioCortesDep,
     configuracion: Annotated[Settings, Depends(get_settings)],
+    usuario: EscrituraDep,
 ) -> ArchivoFuenteRespuestaParcial:
     """HU-02/CA-1, HU-03/CA-1, HU-04/CA-1: los 3 tipos cierran de punta a punta.
 
@@ -339,7 +349,10 @@ async def cargar_archivo(
 
 @router.patch("/{corte_id}", response_model=CorteRespuesta)
 def corregir_corte(
-    corte_id: UUID, entrada: CorteCorreccion, servicio: ServicioCortesDep
+    corte_id: UUID,
+    entrada: CorteCorreccion,
+    servicio: ServicioCortesDep,
+    usuario: EscrituraDep,
 ) -> CorteRespuesta:
     """D11 (docs/DECISIONES.md, aclaración 2026-09-19): corrige vigencia/
     fecha de un corte en BORRADOR.
@@ -354,7 +367,9 @@ def corregir_corte(
 
 
 @router.post("/{corte_id}/registrar", response_model=CorteRespuesta)
-def registrar_corte(corte_id: UUID, servicio: ServicioCortesDep) -> CorteRespuesta:
+def registrar_corte(
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep
+) -> CorteRespuesta:
     """HU-01 / CA-3, CA-4: transición BORRADOR -> REGISTRADO.
 
     404 (corte inexistente) y 409 (falta algún archivo obligatorio, con

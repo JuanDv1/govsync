@@ -42,7 +42,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-from app.core.dependencias import ServicioCortesDep, SesionDep
+from app.core.dependencias import ServicioCortesDep, SesionDep, UsuarioActualDep
 from app.modules.cortes.domain.entidades import Corte, TipoArchivoFuente
 from app.modules.trazabilidad.persistence.consultas import construir_matriz, obtener_opciones_filtro
 from app.shared.errors import OperacionNoPermitida
@@ -137,6 +137,7 @@ def _verificar_fuentes_completas(corte: Corte) -> None:
 def obtener_matriz_actual(
     servicio: ServicioCortesDep,
     sesion: SesionDep,
+    usuario: UsuarioActualDep,
     pagina: int = 1,
     tamano_pagina: int = 50,
     estado_cruce: EstadoCruce | None = None,
@@ -231,6 +232,7 @@ def obtener_matriz(
     corte_id: UUID,
     servicio: ServicioCortesDep,
     sesion: SesionDep,
+    usuario: UsuarioActualDep,
     pagina: int = 1,
     tamano_pagina: int = 50,
     estado_cruce: EstadoCruce | None = None,

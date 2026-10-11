@@ -10,6 +10,7 @@
     "lint": "eslint src"
   },
   "dependencies": {
+    "keycloak-js": "^26.0.7",
     "lucide-react": "^1.49.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

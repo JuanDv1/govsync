@@ -20,7 +20,7 @@ npm run build         # frontend build
 npm run lint          # eslint on frontend/src
 npm run format        # prettier --write .
 npm run format:check
-docker compose up -d  # Postgres 16 only — backend and frontend run locally for hot reload
+docker compose up -d  # Postgres 16 + Keycloak (dev mode) — backend and frontend run locally for hot reload
 ```
 
 Backend (from `backend/`, with a Python 3.12+ venv active):
@@ -79,9 +79,10 @@ toward the domain; persistence implements the domain's ports.
 
 Modules: `cortes` (the tracking "corte" — the aggregate everything else hangs off), `ingesta`
 (Excel readers/parsers for the three source files), `trazabilidad` (cross-reference queries/matrix
-between indicators, budget execution, and BPIN projects). `alertas/` and `avance_fisico/` exist as
-empty module directories (`.gitkeep` only, no code) — placeholders for future épicas, not stubs to
-fill in without a card. Shared kernel: `app/shared/codigos.py`
+between indicators, budget execution, and BPIN projects), `identidad` (Keycloak token
+verification and the `Rol`/`Usuario` domain types — see Architecture above). `alertas/` and
+`avance_fisico/` exist as empty module directories (`.gitkeep` only, no code) — placeholders for
+future épicas, not stubs to fill in without a card. Shared kernel: `app/shared/codigos.py`
 (the `CodigoIndicadorProducto` value object — the 9-digit key that joins all four data sources;
 **always store as text, never as int**, since real codes like `040110500` start with a leading
 zero) and `app/shared/errors.py` (`GovSyncError` hierarchy — domain exceptions in Spanish, no
@@ -90,8 +91,21 @@ zero) and `app/shared/errors.py` (`GovSyncError` hierarchy — domain exceptions
 no usable prod defaults for secrets), DB session (`database.py`), FastAPI dependencies
 (`dependencias.py`), and the single exception-to-HTTP translation point (`errores.py`).
 
-Authentication stays out of scope (`[REF-05]`, see `docs/DECISIONES.md` D2) — don't add auth
-scaffolding unless a card explicitly asks for it.
+Authentication/authorization (`[HU-E01-01]`, see `docs/DECISIONES.md` D23/D24 — supersedes D2)
+is implemented via **Keycloak** (OIDC, Authorization Code + PKCE), not a self-issued JWT: the
+backend only validates tokens against the realm's JWKS, never signs or stores a password. Module
+`identidad` (`app/modules/identidad/`) holds `Rol`/`Usuario`/`VerificadorToken` (domain) and
+`VerificadorTokenKeycloak` (persistence, PyJWT + `cryptography`, RS256). `core/dependencias.py`
+exposes `UsuarioActualDep` (authentication only) and `exigir_roles(*roles)` (authorization —
+raises `PermisoInsuficiente`, mapped to 403). Three realm roles: `administrador` (primary
+operational role — uploads/corrects, broad access), `gestor` (reserved for a future
+budget-specific role, not yet defined — currently has the same permissions as `administrador`
+since no card has required splitting them), `visitante` (read-only). D24 maps which endpoints
+need which: reads are open to any authenticated role, writes on `cortes`/`trazabilidad` require
+`administrador`/`gestor`. Login theme at `keycloak/themes/govsync/` mirrors `Login.jsx`'s
+two-column layout — select it per-realm in Keycloak (`Realm settings → Themes → Login theme`),
+not automated. CI only has a smoke test (`backend-keycloak` job: confirms the container boots on
+the runner) — no real-token integration test yet.
 
 File upload rules (`[SEC-03]`, enforced in `cortes/application/casos_uso.py`, not in the API
 layer): only `.xlsx`, size checked before reading into memory, filename sanitized against path
@@ -100,14 +114,22 @@ An invalid file is rejected **in full** — never partial data.
 
 Frontend (`frontend/src/`): `api/cliente.js` is the shared HTTP client (`[UX-01]`), implemented —
 `solicitar()` and the `api` methods (`crearCorte`, `listarCortes`, `obtenerCorte`, `registrarCorte`,
-`cargarArchivo`, `matriz`) are wired to the backend. It preserves `error.detalles` from failed
-requests (carries `columnas_faltantes`, `pestanas_faltantes`, `archivos_faltantes` from the backend
-so the UI can show actionable messages, not just "failed") — `ErrorApi` models this shape.
-`components/` holds shared UI (`Estados.jsx` for loading/error/empty states, `EstadoError`
-implemented; `CargaDeArchivo.jsx`, implemented drag-and-drop upload control shared by the three
-source-file uploads, `[UX-02]`), `pages/` holds route-level screens (`NuevoCorte.jsx`, `Cortes.jsx`,
-`MatrizRelacion.jsx`, `Login.jsx`) wired into `App.jsx`'s router (`/login`, `/cortes`,
-`/cortes/nuevo`, `/cortes/:corteId`, `/matriz/:corteId?`).
+`cargarArchivo`, `matriz`) are wired to the backend, and it attaches `Authorization: Bearer` from
+whatever `establecerProveedorToken()` last set (called once by `ProveedorAutenticacion.jsx`). It
+preserves `error.detalles` from failed requests (carries `columnas_faltantes`, `pestanas_faltantes`,
+`archivos_faltantes` from the backend so the UI can show actionable messages, not just "failed") —
+`ErrorApi` models this shape. `auth/` (`[HU-E01-01]`) holds `keycloak.js` (the single `Keycloak`
+instance) and `ProveedorAutenticacion.jsx` (initializes it once — with silent-check-sso via
+`public/silent-check-sso.html`, so a page reload doesn't lose an active session — and exposes
+`usuario`/`estaAutenticado`/`puedeEscribir`/`iniciarSesion`/`cerrarSesion` through
+`useAutenticacion()`). `components/` holds shared UI (`Estados.jsx` for loading/error/empty states,
+`EstadoError` implemented; `CargaDeArchivo.jsx`, implemented drag-and-drop upload control shared by
+the three source-file uploads, `[UX-02]`; `Disposicion.jsx`, the sidebar shell — hides "Nuevo
+corte" unless `puedeEscribir`, same role gate `Cortes.jsx` applies to "Crear corte"/"Continuar
+carga"), `pages/` holds route-level screens (`NuevoCorte.jsx`, `Cortes.jsx`, `MatrizRelacion.jsx`,
+`Login.jsx` — redirects to Keycloak on click, no longer a form) wired into `App.jsx`'s router
+(`/login`, `/cortes`, `/cortes/nuevo`, `/cortes/:corteId`, `/matriz/:corteId?`); every route except
+`/login` is wrapped in `RutaProtegida`, which redirects to `/login` without an active session.
 
 ## Where things live
 
@@ -130,6 +152,9 @@ source-file uploads, `[UX-02]`), `pages/` holds route-level screens (`NuevoCorte
   OpenAPI is the contract.
 - Real shape of the three source Excel files: [docs/DATOS.md](docs/DATOS.md).
 - Security/OWASP: [docs/SEGURIDAD.md](docs/SEGURIDAD.md). Deployment: [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
+- Keycloak login theme source: `keycloak/themes/govsync/` (mounted read-only into the `keycloak`
+  service by `docker-compose.yml`). Production hosting for Keycloak is an open decision (D23) —
+  local-only for now.
 - Sprint 1 historical docs (plan, CA traceability, test cases) no longer maintained:
   `docs/archivo/sprint-1/`.
 

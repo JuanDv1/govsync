@@ -20,6 +20,7 @@ from app.shared.errors import (
     CredencialesInvalidas,
     GovSyncError,
     OperacionNoPermitida,
+    PermisoInsuficiente,
     RecursoNoEncontrado,
     ReglaDeNegocioViolada,
 )
@@ -28,6 +29,7 @@ _log = logging.getLogger("govsync")
 
 _MAPA_HTTP: dict[type[GovSyncError], int] = {
     CredencialesInvalidas: status.HTTP_401_UNAUTHORIZED,
+    PermisoInsuficiente: status.HTTP_403_FORBIDDEN,
     OperacionNoPermitida: status.HTTP_409_CONFLICT,
     RecursoNoEncontrado: status.HTTP_404_NOT_FOUND,
     ReglaDeNegocioViolada: status.HTTP_422_UNPROCESSABLE_CONTENT,
