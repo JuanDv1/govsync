@@ -11,7 +11,11 @@
  *
  * Accesibilidad mínima sin librerías nuevas: al montarse enfoca el botón
  * de "Cancelar" (acción segura por defecto si alguien presiona Enter sin
- * querer) y Escape equivale a cancelar, igual que el clic en el overlay.
+ * querer) y Escape equivale a cancelar. El overlay NO tiene su propio
+ * manejador de clic a propósito (SonarCloud: un elemento no interactivo
+ * con `onClick` necesita soporte de teclado, y un `<div>` no es el
+ * elemento correcto para eso) — cerrar el modal ya tiene dos caminos
+ * accesibles de sobra: el botón "Cancelar" y Escape.
  */
 import { useEffect, useRef } from "react";
 
@@ -38,20 +42,12 @@ export default function ModalConfirmacion({
   }, [onCancelar]);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      role="presentation"
-      onClick={onCancelar}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="modal-confirmacion-titulo"
         aria-describedby="modal-confirmacion-mensaje"
-        // Detiene la propagación del clic: el overlay cierra el modal al
-        // hacer clic afuera, pero un clic dentro de la tarjeta no debe
-        // propagarse hasta el overlay y cerrarla por accidente.
-        onClick={(evento) => evento.stopPropagation()}
         className="w-full max-w-sm rounded-sm border border-gray-200 bg-white p-5 shadow-lg"
       >
         <p

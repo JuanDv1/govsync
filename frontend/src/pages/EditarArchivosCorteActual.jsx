@@ -127,9 +127,9 @@ export default function EditarArchivosCorteActual() {
           setClaveCorteCargado(clave);
         }
       })
-      .catch((errorApi) => {
+      .catch((error_) => {
         if (vigente) {
-          setErrorCarga(errorApi);
+          setErrorCarga(error_);
           setClaveCorteCargado(clave);
         }
       });
@@ -152,9 +152,9 @@ export default function EditarArchivosCorteActual() {
           setClaveHistorialCargado(clave);
         }
       })
-      .catch((errorApi) => {
+      .catch((error_) => {
         if (vigente) {
-          setErrorHistorial(errorApi);
+          setErrorHistorial(error_);
           setClaveHistorialCargado(clave);
         }
       });
@@ -244,11 +244,11 @@ export default function EditarArchivosCorteActual() {
       // historial sin recargar la página — se refresca la misma consulta
       // que ya tiene su propio loading/error más abajo.
       setIntentoHistorial((n) => n + 1);
-    } catch (errorApi) {
+    } catch (error_) {
       // CA-8: no se tocó `resultados` ni `corte` — la pantalla queda igual
       // que antes del intento, mismo efecto visible que el rollback. Por
       // eso tampoco se refresca el historial aquí: nada cambió de verdad.
-      setErrores((anteriores) => ({ ...anteriores, [tipo]: errorApi }));
+      setErrores((anteriores) => ({ ...anteriores, [tipo]: error_ }));
     }
   }
 
