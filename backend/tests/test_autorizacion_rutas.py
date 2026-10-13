@@ -8,6 +8,8 @@ CUBRE (D24, docs/DECISIONES.md):
 
 from __future__ import annotations
 
+import uuid
+
 from fastapi.testclient import TestClient
 
 from app.core.database import get_session
@@ -50,6 +52,19 @@ class TestSinToken:
         )
 
         assert respuesta.status_code == 401
+
+    def test_get_opciones_filtro_sin_token_devuelve_401(self, sesion) -> None:
+        """Fix [E01-HU02]: era el unico endpoint de lectura de
+        cortes/trazabilidad sin UsuarioActualDep -- D24 exige autenticacion
+        (cualquier rol) en los cuatro endpoints de lectura, y esta ruta
+        quedo fuera por un descuido al agregarse en HU-10 (Sprint 2)."""
+        cliente = _cliente_con_sesion_real_sin_usuario(sesion)
+        corte_id = uuid.uuid4()
+
+        respuesta = cliente.get(f"/api/v1/matriz-relacion/{corte_id}/opciones-filtro")
+
+        assert respuesta.status_code == 401
+        assert respuesta.json()["codigo"] == "credenciales_invalidas"
 
 
 class TestRolVisitante:

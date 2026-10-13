@@ -1204,3 +1204,12 @@ mecánico, avisado y aprobado antes de tocarlos.
 **Estado:** RATIFICADA — aprobada por Cristhian antes de implementar.
 
 **Registrado:** 2026-10-06, Cristhian (`CrisCamUO`).
+
+**Actualización 2026-10-13 ([E01-HU02], fix):** `GET /matriz-relacion/
+{corte_id}/opciones-filtro` (agregado en HU-10, Sprint 2, después de que
+esta decisión quedara ratificada) había quedado fuera de la tabla de
+arriba y sin `UsuarioActualDep` -- el único endpoint de lectura del
+módulo sin autenticación. Corregido para seguir la misma regla que los
+otros cuatro de lectura: autenticado, cualquier rol. La tabla de arriba
+no se reescribe (quedaría desactualizada respecto al estado en que fue
+ratificada); esta nota deja registrado el hallazgo y la corrección.
