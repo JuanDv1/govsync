@@ -12,7 +12,7 @@ parcial) las verifica el job de CI que aplica la migración.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 from sqlalchemy import select
@@ -22,9 +22,13 @@ from app.modules.cortes.domain.entidades import (
     ArchivoFuente,
     Corte,
     EstadoCorte,
+    HistorialReemplazoArchivo,
     TipoArchivoFuente,
 )
-from app.modules.cortes.persistence.models import ArchivoFuenteORM
+from app.modules.cortes.persistence.models import (
+    ArchivoFuenteORM,
+    HistorialReemplazoArchivoORM,
+)
 from app.modules.cortes.persistence.repositorios import RepositorioCortesSQL
 from app.shared.errors import RecursoNoEncontrado
 
@@ -224,3 +228,97 @@ def test_el_repositorio_no_hace_commit(repo, sesion) -> None:
     sesion.rollback()
 
     assert repo.obtener(corte.id) is None
+
+
+def test_registrar_archivo_actualiza_fecha_carga_al_reemplazar(repo, sesion) -> None:
+    """[E02-HU05][CA01] hallazgo de la spec: antes de este fix,
+    `fecha_carga` quedaba congelada en el valor del INSERT original (el
+    `server_default` solo se evalúa ahí) -- un reemplazo posterior no
+    actualizaba la fecha que CA01 pide mostrar.
+
+    `fecha_original` se fija a mano (en vez de comparar contra el
+    `server_default` real) para que la prueba no dependa de que las dos
+    operaciones caigan en segundos de reloj distintos -- precision de
+    `CURRENT_TIMESTAMP` en SQLite."""
+    corte = repo.guardar(Corte(vigencia=2026, fecha_corte=date(2026, 6, 30)))
+    repo.registrar_archivo(
+        corte.id, ArchivoFuente(TipoArchivoFuente.PDT, "pdt_v1.xlsx", filas_reconocidas=10)
+    )
+    fila = sesion.scalars(
+        select(ArchivoFuenteORM).where(ArchivoFuenteORM.corte_id == corte.id)
+    ).one()
+    fila.fecha_carga = datetime(2020, 1, 1, 0, 0, 0)
+    sesion.flush()
+
+    repo.registrar_archivo(
+        corte.id, ArchivoFuente(TipoArchivoFuente.PDT, "pdt_v2.xlsx", filas_reconocidas=42)
+    )
+
+    fecha_tras_reemplazo = repo.obtener(corte.id).archivos[TipoArchivoFuente.PDT].fecha_carga
+    assert fecha_tras_reemplazo > datetime(2020, 1, 1, 0, 0, 0, tzinfo=fecha_tras_reemplazo.tzinfo)
+
+
+def test_registrar_historial_reemplazo_y_listar_lo_recupera(repo) -> None:
+    """[E02-HU05][CA06]: round-trip del registro de auditoría."""
+    corte = repo.guardar(Corte(vigencia=2026, fecha_corte=date(2026, 6, 30)))
+
+    repo.registrar_historial_reemplazo(
+        HistorialReemplazoArchivo(
+            corte_id=corte.id,
+            tipo=TipoArchivoFuente.PDT,
+            nombre_archivo_anterior="pdt_v1.xlsx",
+            nombre_archivo_nuevo="pdt_v2.xlsx",
+            usuario="ana@muni.gov.co",
+        )
+    )
+
+    historial = repo.listar_historial_reemplazos(corte.id)
+
+    assert len(historial) == 1
+    assert historial[0].nombre_archivo_anterior == "pdt_v1.xlsx"
+    assert historial[0].nombre_archivo_nuevo == "pdt_v2.xlsx"
+    assert historial[0].usuario == "ana@muni.gov.co"
+    assert historial[0].fecha is not None
+
+
+def test_listar_historial_reemplazos_ordena_del_mas_reciente_al_mas_antiguo(repo, sesion) -> None:
+    """`fecha` la asigna `server_default=func.now()` -- con precision de
+    segundo en SQLite, dos inserciones en el mismo test podrian coincidir
+    (nunca pasaria en produccion, donde cada reemplazo es una peticion HTTP
+    separada). Para que el orden sea determinista sin depender del reloj
+    del test, se fija `fecha` explicitamente despues de insertar, igual que
+    `test_listar_ordena_del_mas_reciente_al_mas_antiguo` fija
+    `fecha_creacion` para el mismo proposito."""
+    corte = repo.guardar(Corte(vigencia=2026, fecha_corte=date(2026, 6, 30)))
+    for nombre in ("pdt_v2.xlsx", "pdt_v3.xlsx"):
+        repo.registrar_historial_reemplazo(
+            HistorialReemplazoArchivo(
+                corte_id=corte.id,
+                tipo=TipoArchivoFuente.PDT,
+                nombre_archivo_anterior=None,
+                nombre_archivo_nuevo=nombre,
+                usuario="ana@muni.gov.co",
+            )
+        )
+
+    filas = sesion.scalars(
+        select(HistorialReemplazoArchivoORM).where(
+            HistorialReemplazoArchivoORM.corte_id == corte.id
+        )
+    ).all()
+    for fila in filas:
+        if fila.nombre_archivo_nuevo == "pdt_v2.xlsx":
+            fila.fecha = datetime(2026, 1, 1, 10, 0, 0)
+        else:
+            fila.fecha = datetime(2026, 1, 1, 10, 0, 1)
+    sesion.flush()
+
+    historial = repo.listar_historial_reemplazos(corte.id)
+
+    assert [h.nombre_archivo_nuevo for h in historial] == ["pdt_v3.xlsx", "pdt_v2.xlsx"]
+
+
+def test_listar_historial_reemplazos_de_corte_sin_reemplazos_devuelve_vacio(repo) -> None:
+    corte = repo.guardar(Corte(vigencia=2026, fecha_corte=date(2026, 6, 30)))
+
+    assert repo.listar_historial_reemplazos(corte.id) == []

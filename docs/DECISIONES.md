@@ -1204,3 +1204,86 @@ mecánico, avisado y aprobado antes de tocarlos.
 **Estado:** RATIFICADA — aprobada por Cristhian antes de implementar.
 
 **Registrado:** 2026-10-06, Cristhian (`CrisCamUO`).
+
+---
+
+## D25 · [E02-HU05] Reemplazo de archivos del corte actual: Opción B, y hallazgos resueltos
+
+**Contexto:** `docs/specs/E02-HU05-modificar-archivos-corte-actual.md` dejaba
+abierta explícitamente la elección entre dos formas de implementar CA02/CA03/
+CA08 ("Pendiente de que el equipo decida con backend"):
+
+- **Opción A** — validar el archivo de reemplazo SIN aplicarlo, en una
+  llamada separada de la confirmación (CA03).
+- **Opción B** — un solo endpoint que confirma y aplica, revirtiendo con
+  rollback si el archivo resulta inválido o el Load falla (CA04/CA08).
+
+**Decisión:** Opción B.
+
+**Motivos:**
+
+1. CA03 ("Se reemplazará \<archivo anterior> por \<archivo nuevo>... ¿Desea
+   continuar?") ya describe un flujo de confirmación, no de validación
+   previa separada — la confirmación la hace el frontend ANTES de llamar al
+   backend; el backend no necesita una llamada de "preview" aparte.
+2. Reutiliza sin cambios el patrón transaccional que ya existe para HU-06
+   (`ServicioCortes.cargar_archivo`: EXTRACT+TRANSFORM fuera de la
+   transacción, LOAD dentro, rollback total si falla) — la Opción A hubiera
+   exigido un motor de validación que recalcula todo sin persistir nada, una
+   segunda noción de "sería válido si..." separada de "aplicarlo de
+   verdad", con riesgo real de que ambas diverjan.
+3. Menos código nuevo, mismo nivel de seguridad para el usuario (CA04/CA08
+   ya garantizan que un archivo inválido o un fallo de carga no deja nada a
+   medio aplicar).
+
+**Hallazgos de la spec resueltos con esta implementación** (`backend/app/
+modules/cortes/` — dominio `Corte.verificar_reemplazable`, aplicación
+`ServicioCortes.reemplazar_archivo_corte_actual`, API `PUT /cortes/{id}/
+archivos/{tipo}`):
+
+- **"Recalcular el cruce" (CA02/CA08) no necesita un paso explícito**:
+  confirmado — la matriz de HU-07 (`construir_matriz`) ya se arma con un
+  JOIN en el momento de la consulta sobre las tablas que el Load sobrescribe
+  (`reemplazar_metas`/`reemplazar_presupuesto`/`reemplazar_proyectos`); no
+  se agregó ningún código de "recalculo".
+- **No existía una clase de error 403**: ya resuelto por D24/PR #141
+  (`PermisoInsuficiente`) — CA09 reutiliza `EscrituraDep`
+  (`exigir_roles(ADMINISTRADOR, GESTOR)`) sin código nuevo de autorización.
+- **`fecha_carga` no se actualizaba al reemplazar** (CA01):
+  `RepositorioCortesSQL.registrar_archivo` ahora reescribe `fecha_carga`
+  también en la rama de reemplazo (antes solo se evaluaba el
+  `server_default` en el INSERT original). Beneficia también a HU-06,
+  no solo a esta HU.
+- **Auditoría (CA06)**: nueva tabla `historial_reemplazo_archivo`
+  (migración `5e231b94049b`) + `GET /cortes/{id}/historial-reemplazos`.
+  No se conserva el `.xlsx` reemplazado (decisión ya cerrada, fila 3.0 de
+  `03_DECISIONES_SPRINT2.xlsx`) — solo fuente, nombre anterior, usuario y
+  fecha.
+- **Ampliación del contrato de `GET /cortes`/`GET /cortes/{id}`**:
+  `ArchivoFuenteRespuesta` ahora expone `nombre_archivo` y `fecha_carga`
+  (CA01); ya existían en `ArchivoFuenteORM`, solo faltaba exponerlos.
+
+**Sigue `[VALIDAR]`, fuera de esta tarjeta (no se decide aquí):**
+
+- **CA07** (preservar avances físicos al reemplazar un archivo que elimina
+  una meta): depende de la fila `4.0` de `03_DECISIONES_SPRINT2.xlsx`
+  ("Preguntar a Emilse"), que sigue `Abierta`; `avance_fisico/`/`alertas/`
+  siguen sin ningún código (solo `.gitkeep`).
+- **Mapeo de roles Excel↔Keycloak** ("Administradora"/"Supervisor"/
+  "Alcalde" vs `administrador`/`gestor`/`visitante`): CA09 se implementó
+  con el mismo criterio ya ratificado por D24 (`administrador`+`gestor`
+  pueden escribir, `visitante` no) — el mapeo conceptual exacto nombre a
+  nombre sigue sin cerrarse formalmente.
+- **Actualización del "Plan de Acción"** en CA02: no existe ningún módulo
+  de Plan de Acción en el backend (E04-HU01 sin implementar) — no aplica
+  todavía.
+- **Copia de datos no se refresca** (hallazgo ya documentado en la spec):
+  un corte en Borrador que reutilizó PDT/PROYECTOS del corte actual antes
+  de este reemplazo no se actualiza automáticamente. Sin cambios en esta
+  tarjeta.
+
+**Estado:** RATIFICADA — decisión tomada por Juan Esteban con autorización
+expresa del equipo ("elige y haz lo que creas más conveniente") para
+desbloquear el desarrollo de [E02-HU05] backend.
+
+**Registrado:** 2026-10-13, Juan Esteban (`juanestebanmunoz`).
