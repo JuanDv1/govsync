@@ -333,3 +333,47 @@ class TestFiltrarPlanAccion:
         assert resumen.total == 1
         assert resumen.completo == 1
         assert resumen.parcial == 0
+
+    def test_filtra_por_indicador_exacto_ca01_d27(self):
+        filas = [
+            self._fila_agregada(cod="040110500"),
+            self._fila_agregada(cod="170202300"),
+        ]
+
+        resultado = filtrar_plan_accion(
+            filas, FiltrosPlanAccion(cod_indicador_producto=("040110500",))
+        )
+
+        assert [f.cod_indicador_producto for f in resultado] == ["040110500"]
+
+    def test_indicador_con_varios_valores_combina_con_or_ca05(self):
+        filas = [
+            self._fila_agregada(cod="1"),
+            self._fila_agregada(cod="2"),
+            self._fila_agregada(cod="3"),
+        ]
+
+        resultado = filtrar_plan_accion(filas, FiltrosPlanAccion(cod_indicador_producto=("1", "2")))
+
+        assert {f.cod_indicador_producto for f in resultado} == {"1", "2"}
+
+    def test_indicador_es_exacto_no_substring_a_diferencia_de_busqueda(self):
+        filas = [self._fila_agregada(cod="040110500")]
+
+        resultado = filtrar_plan_accion(filas, FiltrosPlanAccion(cod_indicador_producto=("0401",)))
+
+        assert resultado == []
+
+    def test_combinacion_indicador_y_sector_es_and_ca05(self):
+        filas = [
+            self._fila_agregada(cod="1", sector="Educación"),
+            self._fila_agregada(cod="1", sector="Salud"),
+        ]
+
+        resultado = filtrar_plan_accion(
+            filas,
+            FiltrosPlanAccion(cod_indicador_producto=("1",), sector=("Salud",)),
+        )
+
+        assert len(resultado) == 1
+        assert resultado[0].sector == "Salud"

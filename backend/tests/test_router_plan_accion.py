@@ -282,3 +282,31 @@ class TestFiltrosQueryParamsE04HU02:
 
         assert respuesta.status_code == 200
         assert len(respuesta.json()["filas"]) == 2
+
+    def test_filtra_por_indicador_exacto_d27(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_dos_metas(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/actual",
+            params={"cod_indicador_producto": "040110500"},
+        )
+
+        assert respuesta.status_code == 200
+        filas = respuesta.json()["filas"]
+        assert len(filas) == 1
+        assert filas[0]["cod_indicador_producto"] == "040110500"
+
+    def test_indicador_no_hace_match_parcial_a_diferencia_de_busqueda(
+        self, cliente, sesion
+    ) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_dos_metas(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/actual",
+            params={"cod_indicador_producto": "0401"},
+        )
+
+        assert respuesta.status_code == 200
+        assert respuesta.json()["filas"] == []

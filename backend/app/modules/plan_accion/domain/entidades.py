@@ -244,21 +244,22 @@ class FiltrosPlanAccion:
     el router); esta función SIEMPRE compara si `busqueda` no es None,
     sin reimponer el mínimo de 3 (eso es UX, no una regla de dominio).
 
-    NO incluye un filtro de "Indicador" separado de "Meta": CA01 nombra
-    "Sector, Indicador, Meta y Estado de cruce" como 4 entradas del panel,
-    pero ningún CA (02-08) define un comportamiento propio para
-    "Indicador" distinto de la búsqueda de "Meta" (CA04), y el modelo de
-    datos no distingue "Indicador" de "Meta" como campos independientes
-    (mismo punto ya señalado en D26 punto 5, docs/DECISIONES.md). SUPUESTO
-    MENOR (no afecta esquema, seguridad ni dinero): se expone un único
-    criterio de búsqueda de texto: si el equipo confirma que "Indicador"
-    debe ser un filtro EXACTO distinto de la búsqueda libre de "Meta", se
-    agrega un campo más aquí sin tocar los demás.
+    `cod_indicador_producto` (CA01, "Indicador"): filtro EXACTO, distinto
+    de `busqueda` -- corrección de D27 (docs/DECISIONES.md): el equipo
+    confirmó que "Indicador" es un cuarto criterio propio del panel (CA01
+    remite a los filtros de la matriz, y E02-HU10-CA04 define Indicador
+    como una lista "código - nombre" con buscador, no texto libre). Mismo
+    nombre de campo que usa `trazabilidad/api/router.py` para el filtro
+    equivalente de HU-10 (`cod_indicador_producto: list[str] | None`),
+    por consistencia de la API. Lista -- CA05 "varios valores de un mismo
+    criterio se combinan con OR" aplica igual que a `sector`/`estado_cruce`;
+    `None` o lista vacía significa "sin filtro en ese criterio".
     """
 
     sector: tuple[str, ...] | None = None
     estado_cruce: tuple[EstadoCruceMeta, ...] | None = None
     busqueda: str | None = None
+    cod_indicador_producto: tuple[str, ...] | None = None
 
 
 def _normalizar_texto(texto: str) -> str:
@@ -293,6 +294,10 @@ def filtrar_plan_accion(
     if filtros.estado_cruce:
         estados = set(filtros.estado_cruce)
         resultado = [f for f in resultado if f.estado_cruce in estados]
+
+    if filtros.cod_indicador_producto:
+        codigos = set(filtros.cod_indicador_producto)
+        resultado = [f for f in resultado if f.cod_indicador_producto in codigos]
 
     if filtros.busqueda:
         patron = _normalizar_texto(filtros.busqueda)
