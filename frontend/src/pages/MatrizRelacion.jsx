@@ -4,6 +4,8 @@
  * TARJETAS: [HU-07][FE-02] Tabla de la matriz de relación
  *           [HU-07][FE-03] Representación explícita de la información no relacionada
  *           [HU-07][FE-04] Integración y rendimiento de la tabla
+ *           [E02-HU10] Filtros de la matriz (panel, etiquetas activas);
+ *           ver `components/FiltrosMatriz.jsx` y `lib/filtros.js`
  *
  * ALCANCE DE FE-02 (CA-3 a CA-6): tabla con las seis columnas confirmadas
  * (código BPIN, indicador y/o producto, ejecución, contrato).
@@ -78,7 +80,8 @@
  *   arquitectura propia que el equipo debe tomar explícitamente en una
  *   tarjeta dedicada — no se introduce aquí de forma silenciosa.
  */
-import { useCallback, useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
+import { useCallback, useEffect, useId, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { api } from "../api/cliente.js";
@@ -88,8 +91,16 @@ import {
   SinCorrespondencia,
   Vacio,
 } from "../components/Estados.jsx";
+import FiltrosMatriz from "../components/FiltrosMatriz.jsx";
 import Card from "../components/shared/Card.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
+import {
+  FILTROS_VACIOS,
+  agregarValor,
+  contarActivos,
+  hayFiltros,
+  quitarValor,
+} from "../lib/filtros.js";
 import { cop } from "../lib/formato.js";
 
 //: Mismo orden y claves que el contrato confirmado en HU-07/CA-3..CA-6 — ver
@@ -233,6 +244,28 @@ export default function MatrizRelacion() {
   const [busquedaInput, setBusquedaInput] = useState("");
   const [busqueda, setBusqueda] = useState("");
 
+  // [E02-HU10] Filtros estructurados (BPIN, Indicador, Producto, Contrato,
+  // Sector, Programa): `{ <clave de query param>: [valores] }`, ver
+  // `lib/filtros.js`. Viven en estado local, no en la URL — mismo criterio
+  // que `estadoCruce`/`busqueda`, y el reset por corte de abajo ya cubre
+  // "al cambiar de corte se limpian" (HU10-CA13). Se aplican al seleccionar,
+  // sin botón "Aplicar". `pagina` NO se toca al paginar, así que los filtros
+  // se mantienen entre páginas.
+  const [filtros, setFiltros] = useState(FILTROS_VACIOS);
+  const [panelAbierto, setPanelAbierto] = useState(false);
+  const idPanel = useId();
+
+  // [E02-HU10] Opciones de filtro del corte: mismo patrón `{clave, datos,
+  // error}` que `resultado` (la clave identifica de qué corte/intento es lo
+  // guardado; si no coincide con `claveOpciones`, sigue cargando o son datos
+  // de otro corte y se ignoran). `intentoOpciones` es el "Reintentar".
+  const [intentoOpciones, setIntentoOpciones] = useState(0);
+  const [resultadoOpciones, setResultadoOpciones] = useState({
+    clave: null,
+    datos: null,
+    error: null,
+  });
+
   // Cambiar de corte es una pantalla distinta: se reinicia la página, los
   // filtros, y se descartan las filas que se estaban mostrando (pertenecen
   // al corte anterior, no tiene sentido conservarlas como "página previa"
@@ -250,6 +283,8 @@ export default function MatrizRelacion() {
     setEstadoCruce("");
     setBusquedaInput("");
     setBusqueda("");
+    setFiltros(FILTROS_VACIOS);
+    setPanelAbierto(false);
   }
 
   // Debounce de la búsqueda: espera a que el usuario deje de escribir antes
@@ -268,14 +303,28 @@ export default function MatrizRelacion() {
     setPagina(1);
   }
 
+  // [E02-HU10] Cualquier cambio de filtro vuelve a la página 1, igual que
+  // `cambiarEstadoCruce`: un resultado filtrado nuevo no tiene por qué tener
+  // tantas páginas como el anterior. Funcional (`anteriores`) para no leer un
+  // `filtros` viejo si llegan dos cambios seguidos.
+  function agregarFiltro(clave, valor) {
+    setFiltros((anteriores) => agregarValor(anteriores, clave, valor));
+    setPagina(1);
+  }
+
+  function quitarFiltro(clave, valor) {
+    setFiltros((anteriores) => quitarValor(anteriores, clave, valor));
+    setPagina(1);
+  }
+
   const claveActual = corteId
-    ? `${corteId}:${pagina}:${intento}:${estadoCruce}:${busqueda}`
+    ? `${corteId}:${pagina}:${intento}:${estadoCruce}:${busqueda}:${JSON.stringify(filtros)}`
     : null;
 
   useEffect(() => {
     if (!corteId) return;
 
-    const clave = `${corteId}:${pagina}:${intento}:${estadoCruce}:${busqueda}`;
+    const clave = `${corteId}:${pagina}:${intento}:${estadoCruce}:${busqueda}:${JSON.stringify(filtros)}`;
     let vigente = true;
 
     api
@@ -285,6 +334,7 @@ export default function MatrizRelacion() {
         TAMANO_PAGINA,
         estadoCruce || null,
         busqueda || null,
+        filtros,
       )
       .then((datos) => {
         if (!vigente) return;
@@ -299,10 +349,51 @@ export default function MatrizRelacion() {
     return () => {
       vigente = false;
     };
-  }, [corteId, pagina, intento, estadoCruce, busqueda]);
+  }, [corteId, pagina, intento, estadoCruce, busqueda, filtros]);
 
   const cargando = Boolean(claveActual) && resultado.clave !== claveActual;
   const error = resultado.clave === claveActual ? resultado.error : null;
+
+  // [E02-HU10] Opciones del corte: se piden al montar el corte (no al abrir
+  // el panel) para que el texto de las etiquetas y el autocompletado ya
+  // tengan datos. Solo hay setState dentro de los callbacks de la promesa.
+  const claveOpciones = corteId ? `${corteId}:${intentoOpciones}` : null;
+
+  useEffect(() => {
+    if (!corteId) return;
+
+    const clave = `${corteId}:${intentoOpciones}`;
+    let vigente = true;
+
+    api
+      .opcionesFiltro(corteId)
+      .then((datos) => {
+        if (!vigente) return;
+        setResultadoOpciones({ clave, datos, error: null });
+      })
+      .catch((errorApi) => {
+        if (!vigente) return;
+        setResultadoOpciones({ clave, datos: null, error: errorApi });
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [corteId, intentoOpciones]);
+
+  const opcionesVigentes = resultadoOpciones.clave === claveOpciones;
+  const cargandoOpciones = Boolean(claveOpciones) && !opcionesVigentes;
+  const opcionesFiltro = opcionesVigentes ? resultadoOpciones.datos : null;
+  const errorOpciones = opcionesVigentes ? resultadoOpciones.error : null;
+  const reintentarOpciones = useCallback(
+    () => setIntentoOpciones((n) => n + 1),
+    [],
+  );
+
+  // Sin botón (ni panel) si la matriz ni siquiera pudo cargar la primera
+  // vez: no hay nada que filtrar y el error ya ocupa la pantalla.
+  const puedeFiltrar = !(error && matrizVisible === null);
+  const filtrosActivos = contarActivos(filtros);
 
   // Carga inicial: todavía no hay ninguna fila que mostrar, así que la
   // pantalla completa de `Cargando` es aceptable (no hay nada montado que
@@ -382,6 +473,23 @@ export default function MatrizRelacion() {
               />
             </div>
 
+            {puedeFiltrar && (
+              <button
+                type="button"
+                aria-expanded={panelAbierto}
+                aria-controls={idPanel}
+                onClick={() => setPanelAbierto((abierto) => !abierto)}
+                className="inline-flex items-center gap-1.5 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Filtros{filtrosActivos > 0 ? ` (${filtrosActivos})` : ""}
+                <ChevronDown
+                  size={14}
+                  aria-hidden="true"
+                  className={panelAbierto ? "rotate-180" : ""}
+                />
+              </button>
+            )}
+
             {matrizVisible && (
               <span className="ml-auto shrink-0 text-[11px] text-gray-500">
                 {matrizVisible.total_filas} fila
@@ -389,6 +497,18 @@ export default function MatrizRelacion() {
               </span>
             )}
           </div>
+
+          <FiltrosMatriz
+            filtros={filtros}
+            opcionesFiltro={opcionesFiltro}
+            cargando={cargandoOpciones}
+            error={errorOpciones}
+            onAgregar={agregarFiltro}
+            onQuitar={quitarFiltro}
+            onReintentar={reintentarOpciones}
+            abierto={panelAbierto && puedeFiltrar}
+            idPanel={idPanel}
+          />
         </Card>
       )}
 
@@ -409,7 +529,7 @@ export default function MatrizRelacion() {
           <Vacio
             titulo="Sin datos para mostrar"
             descripcion={
-              estadoCruce || busqueda
+              estadoCruce || busqueda || hayFiltros(filtros)
                 ? "Ningún resultado coincide con el filtro o la búsqueda aplicados."
                 : "Este corte no tiene metas registradas en la matriz de relación."
             }
