@@ -1204,3 +1204,77 @@ mecánico, avisado y aprobado antes de tocarlos.
 **Estado:** RATIFICADA — aprobada por Cristhian antes de implementar.
 
 **Registrado:** 2026-10-06, Cristhian (`CrisCamUO`).
+
+---
+
+## D26 · Plan de Acción Consolidado (E-04/HU-01): "Ejecución", agregación por meta y restricción de rol
+
+**Estado: DECISIÓN TÉCNICA PENDIENTE DE RATIFICAR.** El equipo autorizó
+avanzar con una propuesta razonable, documentada aquí, en vez de bloquear
+el desarrollo hasta que el PO/Emilse confirme las decisiones #8 y #9 de
+`03_DECISIONES_SPRINT2.xlsx` (ambas siguen `Abierta` en el tracker del
+equipo a la fecha de este registro). Si el equipo decide algo distinto,
+esto se corrige en `app/modules/plan_accion/domain/entidades.py` (la
+agregación) o en `api/router.py` (el rol) — ningún otro archivo depende de
+la decisión final.
+
+**1. "Ejecución" (CA02) = `RubroORM.obligacion_acumulada` (OrdenPagoAcumulado).**
+Ya es un mapeo documentado, no uno nuevo: `docs/DATOS.md` línea 65 registra
+que la columna real del Excel "OrdenPagoAcumulado" corresponde a ese campo.
+Evidencia adicional (Reunión 5): el semáforo que Emilse ya usa con el
+alcalde compara OrdenPagoAcumulado contra ApropiacionDefinitiva — el mismo
+par de campos que esta HU expone como "Ejecución" / "Presupuesto
+definitivo". NO se usa `compromiso_acumulado` ni `pago_acumulado`.
+
+**2. Agregación por meta sin duplicar dinero (CA03/CA08).** Una meta puede
+tener N rubros y cada rubro N contratos (mismo fan-out documentado en
+`trazabilidad/persistence/consultas.py` para HU-07). Sumar fila a fila
+duplicaría presupuesto/ejecución tantas veces como contratos tenga el
+rubro. Regla implementada en `domain.entidades.agregar_por_meta`:
+deduplicar por `codigo_rubro_nivel` (la llave real del rubro, Decisión 3 de
+`RubroORM` — nunca `codigo_rubro_ccpet`, que tiene 142 duplicados) ANTES de
+sumar; `rubros`/`contratos` de la fila agregada son los valores DISTINTOS
+que aportaron a esa meta.
+
+**3. Estado de cruce por meta (CA05)**: se traduce literalmente el texto
+del propio CA05 del Excel — "Completo = la meta relacionó PDT, presupuesto
+y BPIN; Parcial = falta al menos una relación; Sin información = solo
+existe en el PDT" — sin inventar una cuarta categoría ni intentar
+unificarla con el `estado_cruce` de 5 valores de HU-07 (que es por FILA,
+no por meta; decisión #9 sigue abierta sobre si debería existir un único
+vocabulario, no sobre esta definición en sí, que ya es la que el negocio
+escribió).
+
+**4. Restricción de rol (CA10): `administrador` + `visitante`, SIN `gestor`.**
+CA10 solo dice explícitamente que un "Usuario con rol Supervisor" no debe
+tener acceso; la historia nombra como actores únicamente "administradora y
+alcalde". Se interpreta "alcalde" como el rol `visitante` (solo lectura,
+D23) y se excluye `gestor` a propósito: ese rol existe para las
+operaciones de ESCRITURA de `cortes` (D24) y no aparece nombrado en esta
+historia de solo lectura. Es un patrón de autorización DISTINTO al de D24
+(que da acceso igual a `administrador`+`gestor`) — aquí la exclusión de
+`gestor` es intencional, no un descuido. Si el equipo decide que `gestor`
+también debe poder consultar el Plan de Acción, es un cambio de una sola
+línea en `AccesoPlanAccionDep` (`plan_accion/api/router.py`).
+
+**5. No decidido aquí (sigue `[VALIDAR]`, fuera del alcance de esta HU):**
+- `% Avance físico` (una de las 14 columnas de CA02): siempre `None` —
+  depende de E-03 (`avance_fisico/`), que no tiene ningún código todavía.
+- Qué significan exactamente "Meta"/"Indicador"/"Producto" como 3 columnas
+  de CA02 separadas: el modelo de datos solo distingue
+  `cod_indicador_producto` (código) y `nombre_producto` (texto) — no hay
+  evidencia de 3 campos de texto independientes. Se expone
+  `nombre_producto` una sola vez; no se fabrica un dato que no existe en
+  el esquema.
+- CA07 (scroll horizontal + columnas fijas) y CA08 (exactitud contra un
+  "Excel manual del corte de referencia") son, respectivamente, 100%
+  frontend y dependientes de un dataset de referencia que no existe en el
+  repo — ninguno de los dos tiene contraparte de backend en esta tarjeta.
+
+**Sin cambio de esquema:** `codigo_rubro_nivel` y `obligacion_acumulada` ya
+existen en `RubroORM` desde la migración inicial (`e96e8c9fd07d`) — esta
+HU no agrega ninguna migración Alembic.
+
+**Registrado:** 2026-10-13, Juan Esteban (asistido por Claude Code —
+`[E04-HU01] Consultar Plan de Acción Consolidado`, implementación
+backend).
