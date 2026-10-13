@@ -1258,6 +1258,7 @@ también debe poder consultar el Plan de Acción, es un cambio de una sola
 línea en `AccesoPlanAccionDep` (`plan_accion/api/router.py`).
 
 **5. No decidido aquí (sigue `[VALIDAR]`, fuera del alcance de esta HU):**
+
 - `% Avance físico` (una de las 14 columnas de CA02): siempre `None` —
   depende de E-03 (`avance_fisico/`), que no tiene ningún código todavía.
 - Qué significan exactamente "Meta"/"Indicador"/"Producto" como 3 columnas

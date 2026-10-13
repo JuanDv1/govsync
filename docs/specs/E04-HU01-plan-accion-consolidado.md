@@ -33,18 +33,18 @@ seguimiento sin reconstruir cruces manuales.
 
 ## Criterios de aceptación
 
-| ID            | Escenario                                  | Notas |
-| ------------- | ------------------------------------------- | ----- |
-| E04-HU01-CA01 | Corte REGISTRADO más reciente por defecto, con vigencia/fecha en encabezado | |
+| ID            | Escenario                                                                                                                                                                                              | Notas                                                                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| E04-HU01-CA01 | Corte REGISTRADO más reciente por defecto, con vigencia/fecha en encabezado                                                                                                                            |                                                                                                                                           |
 | E04-HU01-CA02 | 14 columnas: Sector, Código meta, Meta, Indicador, Producto, Meta programada (PDT), BPIN, Rubro, Presupuesto definitivo, Ejecución, Contrato(s), % Avance físico, % Avance financiero, Estado de cruce | `[VALIDAR]` lista/orden con la Administradora; "Meta"/"Indicador"/"Producto" se exponen como un único `nombre_producto` — ver D26 punto 5 |
-| E04-HU01-CA03 | Trazabilidad por meta expandible, sin duplicar valores en los totales | Implementado vía `agregar_por_meta` — ver D26 punto 2 |
-| E04-HU01-CA04 | Solo lectura para ambos roles | Sin verbos de escritura en el router |
-| E04-HU01-CA05 | Resumen "Total / Completo / Parcial / Sin información" por meta | Ver D26 punto 3 |
-| E04-HU01-CA06 | Resaltar celdas vacías con leyenda | Backend: campos `None` explícitos; el resaltado visual es frontend |
-| E04-HU01-CA07 | Scroll horizontal + columnas fijas | 100% frontend, sin contraparte de backend |
-| E04-HU01-CA08 | Formato de cifras + exactitud contra un Excel "golden" | No existe ese dataset de referencia en el repo — `[VALIDAR]` |
-| E04-HU01-CA09 | Estado vacío si no hay cortes finalizados | 404 (`recurso_no_encontrado`) — el frontend decide el texto |
-| E04-HU01-CA10 | Rol "Supervisor" denegado | Ver Actores y permisos |
+| E04-HU01-CA03 | Trazabilidad por meta expandible, sin duplicar valores en los totales                                                                                                                                  | Implementado vía `agregar_por_meta` — ver D26 punto 2                                                                                     |
+| E04-HU01-CA04 | Solo lectura para ambos roles                                                                                                                                                                          | Sin verbos de escritura en el router                                                                                                      |
+| E04-HU01-CA05 | Resumen "Total / Completo / Parcial / Sin información" por meta                                                                                                                                        | Ver D26 punto 3                                                                                                                           |
+| E04-HU01-CA06 | Resaltar celdas vacías con leyenda                                                                                                                                                                     | Backend: campos `None` explícitos; el resaltado visual es frontend                                                                        |
+| E04-HU01-CA07 | Scroll horizontal + columnas fijas                                                                                                                                                                     | 100% frontend, sin contraparte de backend                                                                                                 |
+| E04-HU01-CA08 | Formato de cifras + exactitud contra un Excel "golden"                                                                                                                                                 | No existe ese dataset de referencia en el repo — `[VALIDAR]`                                                                              |
+| E04-HU01-CA09 | Estado vacío si no hay cortes finalizados                                                                                                                                                              | 404 (`recurso_no_encontrado`) — el frontend decide el texto                                                                               |
+| E04-HU01-CA10 | Rol "Supervisor" denegado                                                                                                                                                                              | Ver Actores y permisos                                                                                                                    |
 
 ## Reglas de negocio
 
@@ -67,12 +67,12 @@ INVERSIÓN), `RegistroPresupuestalORM` como puente.
 
 ## Estados y errores
 
-| Código HTTP | `codigo` | Cuándo |
-| ----------- | -------- | ------ |
-| 401 | `credenciales_invalidas` | Sin token |
-| 403 | `permiso_insuficiente` | Rol distinto de `administrador`/`visitante` |
-| 404 | `recurso_no_encontrado` | Ningún corte REGISTRADO (CA09) |
-| 409 | `operacion_no_permitida` | Al corte más reciente le falta alguna de las 3 fuentes |
+| Código HTTP | `codigo`                 | Cuándo                                                 |
+| ----------- | ------------------------ | ------------------------------------------------------ |
+| 401         | `credenciales_invalidas` | Sin token                                              |
+| 403         | `permiso_insuficiente`   | Rol distinto de `administrador`/`visitante`            |
+| 404         | `recurso_no_encontrado`  | Ningún corte REGISTRADO (CA09)                         |
+| 409         | `operacion_no_permitida` | Al corte más reciente le falta alguna de las 3 fuentes |
 
 ## Decisiones aplicadas
 
