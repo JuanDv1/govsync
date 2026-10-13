@@ -3,15 +3,18 @@
  *
  * TARJETA: [UX-01] Layout base, enrutamiento y cliente HTTP
  *
- * Adaptado de DESIGN_SPEC.md §4.1. Sin RBAC: ese documento describe un menú
- * filtrado por rol (`NAV_BY_ROLE`), pero la épica de roles/autenticación
- * está deliberadamente fuera de alcance de este sprint (docs/DECISIONES.md
- * D2, [REF-05]) — el menú de abajo es único y fijo, con solo las rutas que
- * ya existen en `App.jsx`. El enlace "Cerrar sesión" navega a `/login` sin
- * lógica de sesión real, mismo criterio que la propia pantalla de Login.
+ * Adaptado de DESIGN_SPEC.md §4.1. RBAC parcial: "Nuevo corte" solo se
+ * muestra si `puedeEscribir` (D24 — administrador/gestor), igual que
+ * `Cortes.jsx` oculta "Crear corte"/"Continuar carga" para `visitante`. Es
+ * solo UI — el backend ya rechaza con 403 de todas formas (`exigir_roles`
+ * en `core/dependencias.py`), esto evita ofrecer una acción que de todos
+ * modos fallaría. "Matriz"/"Cortes" siguen visibles para los 3 roles
+ * (D24: lectura abierta). "Cerrar sesión" llama a
+ * `useAutenticacion().cerrarSesion()` (termina la sesión de Keycloak).
  */
 import { LogOut } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 
 const enlaceClase = ({ isActive }) =>
   `block rounded-sm px-3 py-2 text-sm font-medium transition-colors ${
@@ -21,6 +24,8 @@ const enlaceClase = ({ isActive }) =>
   }`;
 
 export default function Disposicion() {
+  const { cerrarSesion, puedeEscribir } = useAutenticacion();
+
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-52 shrink-0 flex-col bg-navy">
@@ -37,9 +42,11 @@ export default function Disposicion() {
           aria-label="Navegación principal"
           className="flex flex-1 flex-col gap-1 p-3"
         >
-          <NavLink to="/cortes/nuevo" className={enlaceClase}>
-            Nuevo corte
-          </NavLink>
+          {puedeEscribir && (
+            <NavLink to="/cortes/nuevo" className={enlaceClase}>
+              Nuevo corte
+            </NavLink>
+          )}
           {/* `end`: sin esto, NavLink resalta "Cortes" para cualquier ruta
               que empiece con "/cortes" — incluidas "/cortes/nuevo" y
               "/cortes/:id" (reanudar borrador) — y quedaban dos ítems
@@ -53,13 +60,14 @@ export default function Disposicion() {
         </nav>
 
         <div className="border-t border-white/10 p-3">
-          <NavLink
-            to="/login"
-            className="flex items-center gap-2 rounded-sm px-3 py-2 text-xs font-medium text-azul-tenue transition-colors hover:bg-navy-sidebar hover:text-white"
+          <button
+            type="button"
+            onClick={cerrarSesion}
+            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-xs font-medium text-azul-tenue transition-colors hover:bg-navy-sidebar hover:text-white"
           >
             <LogOut size={13} />
             Cerrar sesión
-          </NavLink>
+          </button>
         </div>
       </aside>
 

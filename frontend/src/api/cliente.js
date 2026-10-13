@@ -18,6 +18,16 @@
  */
 const BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
+// [HU-E01-01] / D23/D24: el token vive en ProveedorAutenticacion.jsx, no
+// aquí — este módulo solo necesita una forma de leerlo en cada petición.
+// Por defecto no hay token (p. ej. en pruebas que no montan el provider).
+let obtenerToken = () => null;
+
+/** Llamado una vez por ProveedorAutenticacion.jsx al inicializar Keycloak. */
+export function establecerProveedorToken(fn) {
+  obtenerToken = fn;
+}
+
 export class ErrorApi extends Error {
   constructor(mensaje, { estado, codigo, detalles } = {}) {
     super(mensaje);
@@ -31,6 +41,11 @@ async function solicitar(ruta, { metodo = "GET", cuerpo, archivo } = {}) {
   const headers = {
     Accept: "application/json",
   };
+
+  const token = obtenerToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   const opciones = {
     method: metodo,

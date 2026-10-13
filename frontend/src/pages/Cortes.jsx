@@ -12,11 +12,21 @@
  * `lib/corteActual.js`, compartido con `EditarArchivosCorteActual.jsx` —
  * antes cada pantalla lo calculaba por su cuenta y podían no coincidir
  * sobre el mismo corte.
+ *
+ * D24 (docs/DECISIONES.md): "Crear corte" (estado vacío) y "Continuar
+ * carga" (fila en BORRADOR, corte que no es el actual) solo se muestran si
+ * `puedeEscribir` (administrador/gestor) — son acciones de escritura,
+ * igual que el "Nuevo corte" que `Disposicion.jsx` ya oculta para
+ * `visitante`. Es solo UI: el backend ya las rechaza con 403 de todas
+ * formas. "Editar archivos" (corte actual Registrado) NO tiene todavía
+ * esta restricción -- HU-05/CA-9 (mapeo de roles) sigue [VALIDAR] en su
+ * spec, a propósito: el backend de reemplazo tampoco existe aún.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { api } from "../api/cliente.js";
+import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import Card from "../components/shared/Card.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
@@ -28,6 +38,7 @@ const TONO_ESTADO_CORTE = {
 };
 
 export default function Cortes() {
+  const { puedeEscribir } = useAutenticacion();
   const [intento, setIntento] = useState(0);
   const [resultado, setResultado] = useState({
     clave: null,
@@ -79,14 +90,20 @@ export default function Cortes() {
       {!cargando && !error && (!cortes || cortes.length === 0) && (
         <Vacio
           titulo="No hay cortes todavía"
-          descripcion="Crea un corte de seguimiento para iniciar el histórico."
+          descripcion={
+            puedeEscribir
+              ? "Crea un corte de seguimiento para iniciar el histórico."
+              : "Todavía no se ha creado ningún corte de seguimiento."
+          }
           accion={
-            <Link
-              to="/cortes/nuevo"
-              className="text-xs font-medium text-azul hover:text-navy"
-            >
-              Crear corte
-            </Link>
+            puedeEscribir ? (
+              <Link
+                to="/cortes/nuevo"
+                className="text-xs font-medium text-azul hover:text-navy"
+              >
+                Crear corte
+              </Link>
+            ) : null
           }
         />
       )}
@@ -155,7 +172,9 @@ export default function Cortes() {
                               corte actual (el más reciente, global) lo
                               ofrece — ver `esCorteActual()` arriba para el
                               criterio (campo del backend, PROPUESTA, con
-                              fallback de posición mientras no exista). */}
+                              fallback de posición mientras no exista). Sin
+                              gating por rol a propósito -- ver docstring
+                              del archivo (HU-05/CA-9 sigue [VALIDAR]). */}
                           {actual && (
                             <Link
                               to={`/cortes/${corte.id}/editar`}
@@ -165,13 +184,20 @@ export default function Cortes() {
                             </Link>
                           )}
                         </span>
-                      ) : (
+                      ) : puedeEscribir ? (
+                        // D24: "Continuar carga" es una acción de escritura
+                        // -- mismo criterio que accionDeCorte() usaba antes
+                        // de que esta pantalla ganara esCorteActual()/badge.
                         <Link
                           to={`/cortes/${corte.id}`}
                           className="text-[11px] font-medium text-azul hover:text-navy"
                         >
                           Continuar carga
                         </Link>
+                      ) : (
+                        <span className="text-[11px] text-gray-400">
+                          En borrador
+                        </span>
                       )}
                     </td>
                   </tr>
