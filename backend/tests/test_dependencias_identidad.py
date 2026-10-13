@@ -3,7 +3,9 @@
 TARJETA: [HU-E01-01] · CAPA: API
 CUBRE:
 - obtener_usuario_actual: sin header -> CredencialesInvalidas; token válido
-  (verificador falso) -> devuelve el Usuario
+  (verificador falso) -> devuelve el Usuario; usuario sin ningún rol ->
+  PermisoInsuficiente (HU01-CA05 del Excel E-01: "no le da acceso a ningún
+  módulo")
 - exigir_roles: con el rol requerido deja pasar; sin él -> PermisoInsuficiente
   con roles_requeridos en detalles
 """
@@ -19,6 +21,7 @@ from app.modules.identidad.domain.puertos import VerificadorToken
 from app.shared.errors import CredencialesInvalidas, PermisoInsuficiente
 
 _USUARIO_GESTOR = Usuario(id="u1", correo="gestor@santarosa.gov.co", roles=frozenset({Rol.GESTOR}))
+_USUARIO_SIN_ROLES = Usuario(id="u2", correo="nuevo@santarosa.gov.co", roles=frozenset())
 
 
 class _VerificadorFalso(VerificadorToken):
@@ -46,6 +49,16 @@ class TestObtenerUsuarioActual:
 
         assert usuario is _USUARIO_GESTOR
 
+    def test_usuario_sin_ningun_rol_lanza_permiso_insuficiente(self) -> None:
+        credenciales = HTTPAuthorizationCredentials(scheme="Bearer", credentials="token-valido")
+
+        with pytest.raises(PermisoInsuficiente) as exc_info:
+            obtener_usuario_actual(
+                credenciales=credenciales, verificador=_VerificadorFalso(_USUARIO_SIN_ROLES)
+            )
+
+        assert exc_info.value.detalles["motivo"] == "sin_rol_asignado"
+
 
 class TestExigirRoles:
     def test_con_el_rol_requerido_deja_pasar(self) -> None:
@@ -67,8 +80,7 @@ class TestExigirRoles:
         assert exc_info.value.detalles["roles_requeridos"] == ["administrador"]
 
     def test_usuario_sin_ningun_rol_lanza_permiso_insuficiente(self) -> None:
-        usuario_sin_roles = Usuario(id="u2", correo="nuevo@santarosa.gov.co", roles=frozenset())
         dependencia = exigir_roles(Rol.VISITANTE)
 
         with pytest.raises(PermisoInsuficiente):
-            dependencia(usuario_sin_roles)
+            dependencia(_USUARIO_SIN_ROLES)

@@ -9,6 +9,12 @@
   (name="username"/"password", el hidden credentialId, messagesPerField)
   — eso es lo que hace que el login funcione de verdad, no es parte del
   diseño visual.
+
+  HU01-CA06 (Excel E-01): campo vacío debe mostrar "Campo obligatorio" y
+  NO enviar la petición — por eso `required` en ambos campos, con
+  `oninvalid`/`oninput` fijando el mensaje exacto (el texto nativo del
+  navegador depende de su configuración regional, no siempre sale en
+  español).
 -->
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=!messagesPerField.existsError('username','password'); section>
@@ -22,6 +28,7 @@
                         <#if !realm.loginWithEmailAllowed>${msg("username")}<#elseif !realm.registrationEmailAsUsername>${msg("usernameOrEmail")}<#else>${msg("email")}</#if>
                     </label>
                     <input tabindex="1" id="username" class="govsync-input" name="username" value="${(login.username!'')}" type="text" autofocus autocomplete="username"
+                           required oninvalid="this.setCustomValidity('Campo obligatorio')" oninput="this.setCustomValidity('')"
                            aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>" />
                     <#if messagesPerField.existsError('username','password')>
                         <span id="input-error" class="govsync-input-error" aria-live="polite">
@@ -33,6 +40,7 @@
                 <div class="govsync-field">
                     <label for="password" class="govsync-label">${msg("password")}</label>
                     <input tabindex="2" id="password" class="govsync-input" name="password" type="password" autocomplete="current-password"
+                           required oninvalid="this.setCustomValidity('Campo obligatorio')" oninput="this.setCustomValidity('')"
                            aria-invalid="<#if messagesPerField.existsError('username','password')>true</#if>" />
                 </div>
 

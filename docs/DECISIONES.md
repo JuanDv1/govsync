@@ -1116,6 +1116,56 @@ real de los 4 puntos: (3) solo hay smoke test en CI (`backend-keycloak`:
 confirma que el contenedor arranca, no aprovisiona realm/token real
 todavía) y (4) no empezado. Commit `acf93e0` en la rama `feat/login/be/fe`.
 
+**`[VALIDAR]` abiertos frente al Excel de HU01/E-01, hallazgos de revisión
+del PR #141 (2026-10-13), confirmados leyendo la hoja `HU_E01_01` del
+Excel de requisitos — ninguno bloquea el PR, pero HU-01 no se da por
+cerrada sin resolverlos:**
+
+1. **HU01-CA01 — redirect a la vista inicial según el rol.** El Excel pide
+   Administradora → Gestión de Cortes, Supervisor → Metas de su sector,
+   Alcalde → Plan de Acción, y el propio Excel ya lo marca
+   `[VALIDAR vista inicial por rol]` — no es un hueco que haya introducido
+   este PR. Hoy `iniciarSesion()` (`ProveedorAutenticacion.jsx`) redirige
+   siempre a `/cortes`, sin distinguir rol. Bloqueado en la práctica por
+   que las pantallas de Supervisor/Alcalde no existen todavía (E-03/E-04).
+2. **Mapeo Administradora/Supervisor/Alcalde (Excel) ↔
+   administrador/gestor/visitante (Keycloak, D23) nunca se escribió en
+   ningún documento.** Pista no formalizada todavía: `visitante` ("solo
+   ve el plan de acción y el dashboard", según la aclaración de roles de
+   esta misma conversación) coincide con la descripción textual de
+   Alcalde en CA01 — mapeo razonablemente seguro.
+   `administrador`↔Administradora también, por nombre y alcance. Lo que
+   sigue genuinamente sin definir es Supervisor↔`gestor` ("Metas de su
+   sector" no es obviamente lo mismo que el rol de presupuesto sin
+   definir que ya se dejó anotado como pendiente).
+3. **HU01-CA03/CA04 — bloqueo por intentos fallidos (3/15 min) y
+   expiración por inactividad (30 min) dependen de configuración manual
+   de Keycloak** (Brute Force Detection, SSO Session Idle) que no está
+   versionada en ningún archivo del repo ni verificada por ninguna
+   prueba — `docker-compose.yml` ya dice explícitamente que el realm se
+   configura a mano. Nada garantiza hoy que esos dos parámetros queden
+   puestos así, ni hay como saberlo sin entrar a la consola.
+
+**Resuelto en la misma revisión (2026-10-13), no quedan como
+`[VALIDAR]`:**
+
+- **HU01-CA05** ("usuario sin rol asignado no tiene acceso a ningún
+  módulo"): `obtener_usuario_actual` (`core/dependencias.py`) ahora
+  rechaza con `PermisoInsuficiente` (`motivo: sin_rol_asignado`) cualquier
+  token válido cuyo `Usuario.roles` esté vacío — antes de este arreglo, un
+  usuario autenticado sin rol seguía viendo los endpoints de lectura
+  (D24 solo exigía _algún_ rol para escritura, nunca validaba que
+  existiera alguno).
+- **HU01-CA06** ("campo vacío muestra 'Campo obligatorio', no envía la
+  petición"): `login.ftl` no tenía `required` en `username`/`password` —
+  agregado, con `oninvalid`/`oninput` para fijar el mensaje exacto en
+  español sin depender de la configuración regional del navegador.
+- **HU01-CA02/CA09** (mensaje genérico de credenciales inválidas; hash de
+  contraseña, nunca texto plano): ya satisfechos por el comportamiento
+  por defecto de Keycloak (confirmado: `persona1` quedó con
+  `"algorithm":"argon2"` al crearla) — no necesitaron cambio de código,
+  solo quedan documentados aquí en vez de aparecer como huecos abiertos.
+
 ---
 
 ## D24 · Qué rol exige cada endpoint de `cortes`/`trazabilidad`

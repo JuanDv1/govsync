@@ -72,9 +72,25 @@ def obtener_usuario_actual(
     credenciales: Annotated[HTTPAuthorizationCredentials | None, Depends(_esquema_bearer)],
     verificador: Annotated[VerificadorToken, Depends(obtener_verificador_token)],
 ) -> Usuario:
+    """HU01-CA05 (Excel E-01): una cuenta sin ningún rol asignado no debe
+    tener acceso a ningún módulo — ni siquiera lectura. Se valida aquí, no
+    en VerificadorTokenKeycloak, porque "¿hay al menos un rol?" es una
+    regla de autorización de GovSync, no parte de validar el token en sí.
+    Al estar en la dependencia base, cierra el hueco para TODO endpoint
+    que use UsuarioActualDep o exigir_roles (que depende de esta).
+    """
     if credenciales is None:
         raise CredencialesInvalidas("Falta el encabezado Authorization con el token.")
-    return verificador.verificar(credenciales.credentials)
+
+    usuario = verificador.verificar(credenciales.credentials)
+
+    if not usuario.roles:
+        raise PermisoInsuficiente(
+            "Tu cuenta no tiene ningún rol asignado. Contacta a la administradora.",
+            detalles={"motivo": "sin_rol_asignado"},
+        )
+
+    return usuario
 
 
 UsuarioActualDep = Annotated[Usuario, Depends(obtener_usuario_actual)]
