@@ -39,6 +39,16 @@
  * (docs/SEGURIDAD.md), este componente no reimplementa esas reglas; el
  * `accept=".xlsx"` y `TAMANO_MAXIMO_BYTES` de abajo son solo ayuda de UX,
  * no una validación real.
+ *
+ * `confirmarAntes` (opcional, [E02-HU05/CA-3]): `(archivo: File) =>
+ * Promise<boolean>`. Si se pasa, se espera su resultado justo después de
+ * las validaciones de extensión/tamaño y ANTES de mostrar "Subiendo…" o
+ * tocar cualquier otro estado — si resuelve `false` (la usuaria canceló),
+ * `procesarArchivo` retorna sin cambiar nada visible. Sin esta prop el
+ * comportamiento es exactamente el de antes (sube directo); la usan así
+ * las tres cargas de `NuevoCorte.jsx`. Quien necesite confirmación (hoy
+ * solo `EditarArchivosCorteActual.jsx`) la pasa; este componente no sabe
+ * qué pregunta ni por qué, solo que puede vetar la subida.
  */
 
 import { useId, useState } from "react";
@@ -59,6 +69,7 @@ export default function CargaDeArchivo({
   resultado,
   error,
   onCargar,
+  confirmarAntes,
 }) {
   const [enviando, setEnviando] = useState(false);
   const [progreso, setProgreso] = useState(null);
@@ -88,6 +99,12 @@ export default function CargaDeArchivo({
 
     setAvisoExtension(false);
     setAvisoTamano(false);
+
+    if (confirmarAntes) {
+      const confirmado = await confirmarAntes(archivo);
+      if (!confirmado) return;
+    }
+
     setProgreso(null);
     setEnviando(true);
     setNombreArchivo(archivo.name);
