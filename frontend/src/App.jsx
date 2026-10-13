@@ -7,13 +7,36 @@
  * muestra un marcador de posición: así `npm run dev` arranca y confirma que la
  * cadena de herramientas funciona, sin fingir que la pantalla ya está hecha.
  */
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import NuevoCorte from "./pages/NuevoCorte.jsx";
 import Cortes from "./pages/Cortes.jsx";
 import Login from "./pages/Login.jsx";
 
 import Disposicion from "./components/Disposicion.jsx";
 import MatrizRelacion from "./pages/MatrizRelacion.jsx";
+import { useAutenticacion } from "./auth/ProveedorAutenticacion.jsx";
+
+/** [HU-E01-01] / D23/D24: exige sesión de Keycloak activa antes de montar
+ * las rutas que envuelve. `cargando` cubre la ventana entre que la app
+ * arranca y `keycloak.init()` resuelve — sin esto, un usuario SIN sesión
+ * vería un parpadeo de contenido protegido antes del redirect. */
+function RutaProtegida({ children }) {
+  const { cargando, estaAutenticado } = useAutenticacion();
+
+  if (cargando) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-gray-500">
+        Verificando sesión…
+      </div>
+    );
+  }
+
+  if (!estaAutenticado) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 function Pendiente() {
   return (
@@ -41,7 +64,13 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
 
-      <Route element={<Disposicion />}>
+      <Route
+        element={
+          <RutaProtegida>
+            <Disposicion />
+          </RutaProtegida>
+        }
+      >
         <Route path="/cortes" element={<Cortes />} />
         <Route path="/cortes/nuevo" element={<NuevoCorte />} />
         {/* Reanudar un corte en BORRADOR — ver docstring de NuevoCorte.jsx.

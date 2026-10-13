@@ -1,0 +1,21 @@
+<!doctype html>
+<!--
+  [HU-E01-01] / docs/DECISIONES.md D23/D24.
+
+  Página mínima que recomienda keycloak-js para la verificación silenciosa
+  de sesión (onLoad: "check-sso" en ProveedorAutenticacion.jsx): se carga
+  en un iframe oculto, nunca la ve nadie. Solo le devuelve al iframe padre
+  la URL actual (con el resultado del chequeo, code/state o nada si no hay
+  sesión activa) para que keycloak-js la procese sin recargar la página ni
+  mostrar Login.jsx.
+-->
+<html lang="es">
+  <head>
+    <title>GovSync — verificación de sesión</title>
+  </head>
+  <body>
+    <script>
+      parent.postMessage(location.href, location.origin);
+    </script>
+  </body>
+</html>

@@ -2,7 +2,7 @@
 
 Capa: núcleo transversal. No contiene reglas de negocio.
 Todos los secretos se leen de variables de entorno; ninguno tiene un valor
-por defecto utilizable en producción (ver validación de `secret_key`).
+por defecto utilizable en producción (ver validación de `keycloak_issuer`).
 """
 
 from functools import lru_cache
@@ -22,10 +22,13 @@ class Settings(BaseSettings):
     # en pruebas de `tests/conftest.py` y en Render de sus variables de entorno.
     database_url: str
 
-    # --- Seguridad -------------------------------------------------------
-    secret_key: str = "dev-only-insecure-key-change-me"
-    algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    # --- Seguridad (Keycloak, [HU-E01-01] / D23) --------------------------
+    # El backend no firma tokens: valida los que emite Keycloak contra su
+    # JWKS (RS256). "localhost" es el valor de desarrollo (Keycloak corre
+    # solo local por ahora, D23) — nunca usable en producción, igual que el
+    # resto de defaults de esta sección.
+    keycloak_issuer: str = "http://localhost:8080/realms/govsync"
+    keycloak_audience: str = "govsync-backend"
 
     # --- CORS ------------------------------------------------------------
     cors_origins: str = "http://localhost:5173"
@@ -37,14 +40,15 @@ class Settings(BaseSettings):
     # archivo queda almacenado y puede abrirlo un humano después.
     allowed_upload_suffixes: str = ".xlsx"
 
-    # NOTA: la cuenta administradora semilla pertenece a la épica E-01, diferida
-    # al Sprint 2 por la tarjeta [REF-05]. Si se revoca esa decisión, los campos
-    # `seed_admin_email` y `seed_admin_password` entran aquí.
+    # NOTA: la gestión de usuarios (altas, roles) vive en Keycloak, no aquí
+    # ([HU-E01-01] / D23) — por eso no hay `seed_admin_email` ni
+    # `seed_admin_password`: esa cuenta semilla se crea en el realm de
+    # Keycloak, no en esta configuración.
     #
-    # Cuidado con el dominio del correo: `email-validator`, que Pydantic usa
-    # detrás de EmailStr, rechaza los dominios reservados por RFC 2606
-    # (.local, .test, .example, .invalid). Una cuenta con `@govsync.local` se
-    # crea sin problema pero NUNCA puede iniciar sesión.
+    # Cuidado con el dominio del correo si se crea esa cuenta en Keycloak:
+    # RFC 2606 reserva `.local`/`.test`/`.example`/`.invalid` — cualquier
+    # validación de correo basada en `email-validator` (la usa Pydantic vía
+    # EmailStr) los rechaza.
 
     municipio_codigo_dane: str = Field(default="19701", description="Santa Rosa, Cauca")
 
@@ -56,11 +60,11 @@ class Settings(BaseSettings):
     def allowed_suffixes(self) -> set[str]:
         return {s.strip().lower() for s in self.allowed_upload_suffixes.split(",") if s.strip()}
 
-    @field_validator("secret_key")
+    @field_validator("keycloak_issuer")
     @classmethod
-    def _no_default_secret_in_prod(cls, v: str, info):
-        if info.data.get("environment") == "production" and v.startswith("dev-only"):
-            raise ValueError("SECRET_KEY debe definirse explícitamente en producción")
+    def _no_default_keycloak_en_produccion(cls, v: str, info):
+        if info.data.get("environment") == "production" and "localhost" in v:
+            raise ValueError("KEYCLOAK_ISSUER debe definirse explícitamente en producción")
         return v
 
 

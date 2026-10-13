@@ -107,6 +107,12 @@ entra en la Fase 2 y toca `core/dependencias.py` más un módulo
 `modules/identidad/`. Si la mantienen, escriban la justificación en la Tabla 4,
 no dejen la celda vacía.
 
+**Actualización (2026-10-02):** en Sprint 2 se mantiene la inclusión, con
+Keycloak en vez del JWT propio que esta sección anticipaba — ver
+`docs/DECISIONES.md` D23. Este documento es el plan de Sprint 1 (59
+tarjetas ya repartidas); la tarjeta de E-01 se trackea en el tablero de
+Trello de Sprint 2, no aquí.
+
 ### D3 · ¿Qué es «el archivo del municipio» de HU-01/CA-5?
 
 **Pregunta para Emilse.** CA-5 dice que se reutilizan «el PDT y el archivo del

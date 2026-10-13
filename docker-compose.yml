@@ -18,5 +18,28 @@ services:
       timeout: 5s
       retries: 5
 
+  # [HU-E01-01] / docs/DECISIONES.md D23: Keycloak corre solo local por
+  # ahora, sin decisión de producción. Base de datos propia embebida (la
+  # que trae start-dev), no comparte el Postgres de arriba. El realm
+  # "govsync", el cliente "govsync-backend" y los roles
+  # (administrador/gestor/visitante) se crean a mano en la consola de
+  # administración (http://localhost:8080) — no se automatiza todavía.
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7
+    container_name: govsync-keycloak
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - datos_keycloak:/opt/keycloak/data
+      # Theme de login con la marca de GovSync (D23, punto 4) — una vez
+      # arriba, hay que seleccionarlo a mano en Realm settings > Themes >
+      # Login theme. Montado de solo lectura: Keycloak lo lee, no lo escribe.
+      - ./keycloak/themes/govsync:/opt/keycloak/themes/govsync:ro
+
 volumes:
   datos_postgres:
+  datos_keycloak:
