@@ -60,6 +60,7 @@ OpenPyXL en este archivo. Lo verifica tests/test_arquitectura.py.
 
 from __future__ import annotations
 
+import unicodedata
 from collections import defaultdict
 from dataclasses import dataclass
 from decimal import Decimal
@@ -212,6 +213,97 @@ def _sumar_opcional(valores) -> Decimal | None:
     for v in vistos:
         total += v
     return total
+
+
+@dataclass(frozen=True, slots=True)
+class FiltrosPlanAccion:
+    """[E04-HU02] Filtros del Plan de Acción -- CA01/CA02/CA03/CA04/CA05.
+
+    Se aplican DESPUÉS de `agregar_por_meta`, sobre `list[FilaPlanAccion]`
+    ya agregada, no sobre las filas crudas del cruce: los 3 criterios
+    (sector, estado_cruce, busqueda) son propiedades de LA META ya
+    consolidada (CA01 del Excel: "Panel de filtros... con el mismo
+    comportamiento que los filtros de la matriz E-02 HU-10", pero el
+    "mismo comportamiento" se refiere al resultado para el usuario -- AND
+    entre criterios, OR dentro de uno mismo, CA05 -- no a filtrar al nivel
+    SQL de HU-10). Filtrar aquí, en Python puro, en vez de reconstruir la
+    consulta SQL para aceptar los mismos filtros, evita duplicar la lógica
+    de `agregar_por_meta`/`estado_cruce` (que es Python, no SQL) en dos
+    lugares, y el volumen esperado (~144 metas/corte, CA15 de HU-10) hace
+    que filtrar en memoria sea tan barato como filtrar en la base de
+    datos.
+
+    `sector`/`estado_cruce`: listas -- CA05 "varios valores de un mismo
+    criterio se combinan con OR"; `None` o lista vacía significa "sin
+    filtro en ese criterio", igual que HU-10.
+
+    `busqueda` (CA04): coincide contra `cod_indicador_producto` O
+    `nombre_producto`, insensible a mayúsculas y tildes, desde 3
+    caracteres -- la normalización de 3+ caracteres y "sin distinguir
+    mayúsculas ni tildes" es responsabilidad de quien llama (frontend o
+    el router); esta función SIEMPRE compara si `busqueda` no es None,
+    sin reimponer el mínimo de 3 (eso es UX, no una regla de dominio).
+
+    NO incluye un filtro de "Indicador" separado de "Meta": CA01 nombra
+    "Sector, Indicador, Meta y Estado de cruce" como 4 entradas del panel,
+    pero ningún CA (02-08) define un comportamiento propio para
+    "Indicador" distinto de la búsqueda de "Meta" (CA04), y el modelo de
+    datos no distingue "Indicador" de "Meta" como campos independientes
+    (mismo punto ya señalado en D26 punto 5, docs/DECISIONES.md). SUPUESTO
+    MENOR (no afecta esquema, seguridad ni dinero): se expone un único
+    criterio de búsqueda de texto: si el equipo confirma que "Indicador"
+    debe ser un filtro EXACTO distinto de la búsqueda libre de "Meta", se
+    agrega un campo más aquí sin tocar los demás.
+    """
+
+    sector: tuple[str, ...] | None = None
+    estado_cruce: tuple[EstadoCruceMeta, ...] | None = None
+    busqueda: str | None = None
+
+
+def _normalizar_texto(texto: str) -> str:
+    """CA04: "sin distinguir mayúsculas ni tildes". `NFKD` separa cada
+    letra acentuada en (letra base, marca diacrítica); descartar los
+    caracteres `Mn` (marca, sin espacio) dentro de esa descomposición deja
+    solo la letra base -- mismo truco que usan los lectores de Excel del
+    proyecto para comparar encabezados sin depender de la codificación
+    exacta del archivo de origen."""
+    sin_tildes = "".join(
+        c for c in unicodedata.normalize("NFKD", texto) if unicodedata.category(c) != "Mn"
+    )
+    return sin_tildes.casefold()
+
+
+def filtrar_plan_accion(
+    filas: list[FilaPlanAccion], filtros: FiltrosPlanAccion
+) -> list[FilaPlanAccion]:
+    """CA02, CA03, CA04, CA05: aplica los 3 criterios sobre filas YA
+    agregadas por meta. CA06 (resumen recalculado) y CA07 (estado vacío)
+    son responsabilidad de quien llama: pasar el resultado de esta función
+    a `calcular_resumen` (CA06); una lista vacía ES el caso de CA07, sin
+    necesidad de una rama especial aquí. CA08 (limpiar filtros) no es más
+    que llamar con `FiltrosPlanAccion()` (los 3 campos en su default
+    `None`) -- no se fabrica un modo "sin filtros" aparte."""
+    resultado = filas
+
+    if filtros.sector:
+        sectores = set(filtros.sector)
+        resultado = [f for f in resultado if f.sector in sectores]
+
+    if filtros.estado_cruce:
+        estados = set(filtros.estado_cruce)
+        resultado = [f for f in resultado if f.estado_cruce in estados]
+
+    if filtros.busqueda:
+        patron = _normalizar_texto(filtros.busqueda)
+        resultado = [
+            f
+            for f in resultado
+            if patron in _normalizar_texto(f.cod_indicador_producto)
+            or (f.nombre_producto is not None and patron in _normalizar_texto(f.nombre_producto))
+        ]
+
+    return resultado
 
 
 def calcular_resumen(filas: list[FilaPlanAccion]) -> ResumenPlanAccion:

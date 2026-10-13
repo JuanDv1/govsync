@@ -1279,3 +1279,43 @@ HU no agrega ninguna migración Alembic.
 **Registrado:** 2026-10-13, Juan Esteban (asistido por Claude Code —
 `[E04-HU01] Consultar Plan de Acción Consolidado`, implementación
 backend).
+
+---
+
+## D27 · Plan de Acción (E-04/HU-02): filtro único de "Meta", sin un criterio separado de "Indicador"
+
+**Estado: SUPUESTO MENOR** — no afecta esquema, seguridad ni dinero, así
+que se registra y se avanza (regla del proceso: una ambigüedad menor se
+anota como supuesto, no bloquea la implementación).
+
+CA01 de `HU_E04_02` describe el panel de filtros como "Sector, Indicador,
+Meta y Estado de cruce" — 4 entradas. Pero ningún criterio del CA02 al
+CA08 define un comportamiento propio para "Indicador" distinto del de
+"Meta" (CA04: búsqueda de texto por código o nombre). Es la misma
+ambigüedad ya señalada en D26 punto 5: el modelo de datos no distingue
+"Indicador" de "Meta"/"Producto" como campos independientes —
+`cod_indicador_producto` (código) y `nombre_producto` (texto) son los
+únicos dos campos reales.
+
+**Decisión:** se implementa un único criterio de búsqueda libre
+(`busqueda`, CA04) sobre `cod_indicador_producto`/`nombre_producto`, sin
+agregar un cuarto filtro "Indicador" que sería redundante con el actual
+esquema de datos. Si el equipo confirma que "Indicador" debe ser un
+filtro EXACTO (lista, como el `cod_indicador_producto` de HU-10 en
+`trazabilidad`) y distinto de la búsqueda libre de "Meta", se agrega como
+un campo más de `FiltrosPlanAccion`
+(`app/modules/plan_accion/domain/entidades.py`) sin tocar los demás
+criterios.
+
+**Decisión técnica (no de negocio) acompañante:** los 3 filtros
+(`sector`, `estado_cruce`, `busqueda`) se aplican en Python, sobre la
+lista ya agregada por meta (`list[FilaPlanAccion]`), no en la consulta
+SQL — a diferencia de HU-10, que filtra al nivel de fila cruda. Motivo:
+`estado_cruce` es un valor que solo existe DESPUÉS de `agregar_por_meta`
+(es Python, no SQL); replicar esa lógica en la consulta para poder
+filtrar ahí duplicaría la regla de CA05/HU-01 en dos lugares. El volumen
+esperado (~144 metas/corte, CA15 de HU-10) hace que filtrar en memoria
+sea tan barato como filtrar en la base de datos.
+
+**Registrado:** 2026-10-13, Juan Esteban (asistido por Claude Code —
+`[E04-HU02] Filtrar el Plan de Acción`, implementación backend).

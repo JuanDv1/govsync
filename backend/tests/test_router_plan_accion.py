@@ -195,3 +195,90 @@ class TestPlanAccionActualConDatos:
         cuerpo = respuesta.json()
         assert cuerpo["filas"] == []
         assert cuerpo["resumen"]["total"] == 0
+
+
+class TestFiltrosQueryParamsE04HU02:
+    """[E04-HU02] filtros vía query params, de punta a punta (SQL real +
+    agregación + filtrado), igual patrón que las clases de arriba."""
+
+    def _preparar_corte_con_dos_metas(self, sesion):
+        corte_id = _crear_corte(sesion, estado=EstadoCorte.REGISTRADO)
+        for tipo in TipoArchivoFuente:
+            _marcar_archivo_cargado(sesion, corte_id, tipo)
+        sesion.add(
+            MetaORM(
+                id=uuid.uuid4(),
+                corte_id=corte_id,
+                cod_indicador_producto="040110500",
+                nombre_producto="Vías pavimentadas",
+                sector="Infraestructura",
+                es_principal=True,
+            )
+        )
+        sesion.add(
+            MetaORM(
+                id=uuid.uuid4(),
+                corte_id=corte_id,
+                cod_indicador_producto="170202300",
+                nombre_producto="Escuelas construidas",
+                sector="Educación",
+                es_principal=True,
+            )
+        )
+        sesion.commit()
+        return corte_id
+
+    def test_filtra_por_sector(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_dos_metas(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"sector": "Educación"})
+
+        assert respuesta.status_code == 200
+        filas = respuesta.json()["filas"]
+        assert len(filas) == 1
+        assert filas[0]["cod_indicador_producto"] == "170202300"
+        assert respuesta.json()["resumen"]["total"] == 1
+
+    def test_busqueda_sin_distinguir_tildes(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_dos_metas(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"busqueda": "Vias"})
+
+        assert respuesta.status_code == 200
+        filas = respuesta.json()["filas"]
+        assert len(filas) == 1
+        assert filas[0]["cod_indicador_producto"] == "040110500"
+
+    def test_sin_resultados_devuelve_lista_vacia_y_resumen_en_cero(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_dos_metas(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"sector": "Salud"})
+
+        assert respuesta.status_code == 200
+        cuerpo = respuesta.json()
+        assert cuerpo["filas"] == []
+        assert cuerpo["resumen"]["total"] == 0
+
+    def test_sin_query_params_devuelve_todo_ca08(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_dos_metas(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual")
+
+        assert respuesta.status_code == 200
+        assert len(respuesta.json()["filas"]) == 2
+
+    def test_sector_repetido_combina_con_or(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_dos_metas(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/actual",
+            params=[("sector", "Educación"), ("sector", "Infraestructura")],
+        )
+
+        assert respuesta.status_code == 200
+        assert len(respuesta.json()["filas"]) == 2
