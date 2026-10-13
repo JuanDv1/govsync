@@ -94,6 +94,17 @@ async function solicitar(ruta, { metodo = "GET", cuerpo, archivo } = {}) {
   return datos;
 }
 
+// HU-10: claves de filtro de la matriz, tal como las declara el backend
+// (`trazabilidad/api/router.py::obtener_matriz`). Un criterio por clave.
+const CLAVES_FILTRO_MATRIZ = [
+  "bpin",
+  "cod_indicador_producto",
+  "producto",
+  "numero_contrato",
+  "sector",
+  "programa",
+];
+
 export const api = {
   /**
    * HU-01/CA-1, CA-2. Crea un corte en estado BORRADOR.
@@ -161,6 +172,16 @@ export const api = {
    * ver `trazabilidad/persistence/consultas.py::construir_matriz`.
    * `estadoCruce` es uno de "completo"/"sin_proyecto"/"sin_ejecucion"/
    * "sin_contrato"/"sin_cruce", o `null` para no filtrar.
+   *
+   * `filtros` (HU-10/CA-2, CA-4 a CA-9, CA-16): objeto con arreglos de
+   * valores por criterio, con las claves de `CLAVES_FILTRO_MATRIZ`
+   * (`bpin`, `cod_indicador_producto`, `producto`, `numero_contrato`,
+   * `sector`, `programa`). Cada valor viaja como un query param repetido
+   * (`?bpin=a&bpin=b`): OR dentro de un criterio, AND entre criterios
+   * distintos (lo resuelve el backend). Las claves ausentes o con un
+   * arreglo vacío no se envían. Los valores se mandan tal cual vienen de
+   * `opcionesFiltro` -- el backend compara exacto. OJO: `producto` filtra
+   * por `nombre_producto`, no por un código.
    */
   matriz: (
     corteId,
@@ -168,6 +189,7 @@ export const api = {
     tamanoPagina = 50,
     estadoCruce = null,
     busqueda = null,
+    filtros = {},
   ) => {
     const parametros = new URLSearchParams({
       pagina: String(pagina),
@@ -175,8 +197,41 @@ export const api = {
     });
     if (estadoCruce) parametros.set("estado_cruce", estadoCruce);
     if (busqueda) parametros.set("busqueda", busqueda);
+    for (const clave of CLAVES_FILTRO_MATRIZ) {
+      for (const valor of filtros?.[clave] ?? []) {
+        parametros.append(clave, valor);
+      }
+    }
     return solicitar(`/api/v1/matriz-relacion/${corteId}?${parametros}`);
   },
+
+  /**
+   * HU-10/CA-1, CA-3. Valores disponibles por criterio para el corte.
+   *
+   * `GET /matriz-relacion/{corteId}/opciones-filtro`. Mismos 404
+   * (`recurso_no_encontrado`) y 409 (`operacion_no_permitida`, con
+   * `detalles.archivos_faltantes`) que `matriz`, y 401 sin sesión (exige
+   * autenticación desde el fix E01-HU02, #150; el token lo adjunta
+   * `solicitar`). Responde:
+   *
+   *     {
+   *       bpin: string[],
+   *       indicadores: { codigo: string, nombre: string | null }[],
+   *       productos: string[],
+   *       contratos: string[],
+   *       sectores: string[],
+   *       programas: string[],
+   *     }
+   *
+   * LOS NOMBRES DE ESTAS LISTAS NO COINCIDEN con las claves de filtro de
+   * `matriz`: `indicadores` -> `cod_indicador_producto` (se envía el
+   * `codigo`), `productos` -> `producto`, `contratos` -> `numero_contrato`,
+   * `sectores` -> `sector`, `programas` -> `programa`; `bpin` -> `bpin`.
+   * El autocompletado de BPIN y contrato (CA-3) es del cliente, sobre estas
+   * mismas listas: no existe un endpoint de autocompletado.
+   */
+  opcionesFiltro: (corteId) =>
+    solicitar(`/api/v1/matriz-relacion/${corteId}/opciones-filtro`),
 
   /**
    * [E02-HU05/CA-2] PROPUESTA — este endpoint todavía NO existe en el
