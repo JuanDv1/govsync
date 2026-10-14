@@ -199,12 +199,20 @@ def obtener_opciones_filtro_endpoint(
     corte_id: UUID,
     servicio: ServicioCortesDep,
     sesion: SesionDep,
+    usuario: UsuarioActualDep,
 ) -> OpcionesFiltroRespuesta:
     """HU-10/CA-1, CA-3: valores disponibles para cada criterio de filtro
     del corte -- "las opciones de cada criterio solo incluyen valores que
     existen en el corte mostrado" (CA-1). Mismo 404/409 que
     `obtener_matriz`: sin las tres fuentes cargadas no hay cruce sobre el
     cual calcular opciones.
+
+    `usuario: UsuarioActualDep` (fix [E01-HU02]): era el único endpoint de
+    lectura del módulo sin autenticación -- D24 (docs/DECISIONES.md) exige
+    "autenticado (cualquier rol)" para los cuatro endpoints de lectura de
+    `cortes`/`trazabilidad`, pero esta ruta se agregó después de esa
+    tabla (HU-10, Sprint 2) y quedó fuera por un descuido, no por
+    decisión. Cualquier rol autenticado basta, igual que los otros tres.
 
     CA-3 (autocompletar BPIN/Contrato): no hay un endpoint de autocompletado
     aparte -- ver DECISIÓN TÉCNICA en `consultas.py::obtener_opciones_filtro`.
