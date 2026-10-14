@@ -1305,3 +1305,157 @@ expresa del equipo ("elige y haz lo que creas más conveniente") para
 desbloquear el desarrollo de [E02-HU05] backend.
 
 **Registrado:** 2026-10-13, Juan Esteban (`juanestebanmunoz`).
+
+## D26 · Plan de Acción Consolidado (E-04/HU-01): "Ejecución", agregación por meta y restricción de rol
+
+**Estado: DECISIÓN TÉCNICA PENDIENTE DE RATIFICAR.** El equipo autorizó
+avanzar con una propuesta razonable, documentada aquí, en vez de bloquear
+el desarrollo hasta que el PO/Emilse confirme las decisiones #8 y #9 de
+`03_DECISIONES_SPRINT2.xlsx` (ambas siguen `Abierta` en el tracker del
+equipo a la fecha de este registro). Si el equipo decide algo distinto,
+esto se corrige en `app/modules/plan_accion/domain/entidades.py` (la
+agregación) o en `api/router.py` (el rol) — ningún otro archivo depende de
+la decisión final.
+
+**1. "Ejecución" (CA02) = `RubroORM.obligacion_acumulada` (OrdenPagoAcumulado).**
+Ya es un mapeo documentado, no uno nuevo: `docs/DATOS.md` línea 65 registra
+que la columna real del Excel "OrdenPagoAcumulado" corresponde a ese campo.
+Evidencia adicional (Reunión 5): el semáforo que Emilse ya usa con el
+alcalde compara OrdenPagoAcumulado contra ApropiacionDefinitiva — el mismo
+par de campos que esta HU expone como "Ejecución" / "Presupuesto
+definitivo". NO se usa `compromiso_acumulado` ni `pago_acumulado`.
+
+**2. Agregación por meta sin duplicar dinero (CA03/CA08).** Una meta puede
+tener N rubros y cada rubro N contratos (mismo fan-out documentado en
+`trazabilidad/persistence/consultas.py` para HU-07). Sumar fila a fila
+duplicaría presupuesto/ejecución tantas veces como contratos tenga el
+rubro. Regla implementada en `domain.entidades.agregar_por_meta`:
+deduplicar por `codigo_rubro_nivel` (la llave real del rubro, Decisión 3 de
+`RubroORM` — nunca `codigo_rubro_ccpet`, que tiene 142 duplicados) ANTES de
+sumar; `rubros`/`contratos` de la fila agregada son los valores DISTINTOS
+que aportaron a esa meta.
+
+**3. Estado de cruce por meta (CA05)**: se traduce literalmente el texto
+del propio CA05 del Excel — "Completo = la meta relacionó PDT, presupuesto
+y BPIN; Parcial = falta al menos una relación; Sin información = solo
+existe en el PDT" — sin inventar una cuarta categoría ni intentar
+unificarla con el `estado_cruce` de 5 valores de HU-07 (que es por FILA,
+no por meta; decisión #9 sigue abierta sobre si debería existir un único
+vocabulario, no sobre esta definición en sí, que ya es la que el negocio
+escribió).
+
+**4. Restricción de rol (CA10): `administrador` + `visitante`, SIN `gestor`.**
+CA10 solo dice explícitamente que un "Usuario con rol Supervisor" no debe
+tener acceso; la historia nombra como actores únicamente "administradora y
+alcalde". Se interpreta "alcalde" como el rol `visitante` (solo lectura,
+D23) y se excluye `gestor` a propósito: ese rol existe para las
+operaciones de ESCRITURA de `cortes` (D24) y no aparece nombrado en esta
+historia de solo lectura. Es un patrón de autorización DISTINTO al de D24
+(que da acceso igual a `administrador`+`gestor`) — aquí la exclusión de
+`gestor` es intencional, no un descuido. Si el equipo decide que `gestor`
+también debe poder consultar el Plan de Acción, es un cambio de una sola
+línea en `AccesoPlanAccionDep` (`plan_accion/api/router.py`).
+
+**5. No decidido aquí (sigue `[VALIDAR]`, fuera del alcance de esta HU):**
+
+- `% Avance físico` (una de las 14 columnas de CA02): siempre `None` —
+  depende de E-03 (`avance_fisico/`), que no tiene ningún código todavía.
+- Qué significan exactamente "Meta"/"Indicador"/"Producto" como 3 columnas
+  de CA02 separadas: el modelo de datos solo distingue
+  `cod_indicador_producto` (código) y `nombre_producto` (texto) — no hay
+  evidencia de 3 campos de texto independientes. Se expone
+  `nombre_producto` una sola vez; no se fabrica un dato que no existe en
+  el esquema.
+- CA07 (scroll horizontal + columnas fijas) y CA08 (exactitud contra un
+  "Excel manual del corte de referencia") son, respectivamente, 100%
+  frontend y dependientes de un dataset de referencia que no existe en el
+  repo — ninguno de los dos tiene contraparte de backend en esta tarjeta.
+
+**Sin cambio de esquema:** `codigo_rubro_nivel` y `obligacion_acumulada` ya
+existen en `RubroORM` desde la migración inicial (`e96e8c9fd07d`) — esta
+HU no agrega ninguna migración Alembic.
+
+**Registrado:** 2026-10-13, Juan Esteban (asistido por Claude Code —
+`[E04-HU01] Consultar Plan de Acción Consolidado`, implementación
+backend).
+
+**Actualización 2026-10-13 (respuestas de Cristian):**
+
+- **Punto 1 ratificado.** "Ejecución" = `obligacion_acumulada`
+  (OrdenPagoAcumulado) queda cerrado como decisión definitiva, no
+  propuesta: coincide con el semáforo que Emilse ya usa con el alcalde
+  (OrdenPagoAcumulado / ApropiacionDefinitiva). No se toca código.
+- **BPIN que determina "Completo" (parte de punto 5):** se ratifica la
+  plantilla de Proyectos como fuente — es justo lo que ya implementa
+  `construir_filas_plan_accion` (JOIN vía `ProyectoIndicadorORM`/
+  `ProyectoORM`, columna `ProyectoORM.bpin`). La columna `bpin_relacionados`
+  del PDT (`MetaORM`) queda como diagnóstico, sin usarse en el cruce — ya
+  es así desde la primera versión, no hubo que tocar `persistence/
+consultas.py`.
+- **Unificación de vocabularios de estado: NO se unifican** (se mantienen
+  `estado_cruce` de HU-07/matriz — 5 valores, por fila — y
+  `EstadoCruceMeta` de esta HU — 3 valores, por meta — como conceptos
+  distintos). Ya es así en el código; queda ratificado, no solo
+  implementado por decisión unilateral.
+- **Siguen abiertos (no resueltos por esta actualización):** si el Plan de
+  Acción debe mostrarse solo para metas programadas en la vigencia del
+  corte (pregunta a Emilse); qué va exactamente en "Meta" cuando
+  "Meta"/"Indicador" darían el mismo texto; si "Meta programada" es la del
+  cuatrienio o la del año del corte; inclusión de `gestor` en el punto 4
+  (pendiente de que @Cristhian la ratifique); y la brecha del rol
+  "Supervisor" del Excel sin equivalente en el realm de Keycloak (bloquea
+  toda E-03).
+
+---
+
+## D27 · Plan de Acción (E-04/HU-02): filtros de la HU, incluido "Indicador" como criterio exacto
+
+**Estado: SUPUESTO MENOR** — no afecta esquema, seguridad ni dinero, así
+que se registra y se avanza (regla del proceso: una ambigüedad menor se
+anota como supuesto, no bloquea la implementación).
+
+CA01 de `HU_E04_02` describe el panel de filtros como "Sector, Indicador,
+Meta y Estado de cruce" — 4 entradas. Pero ningún criterio del CA02 al
+CA08 define un comportamiento propio para "Indicador" distinto del de
+"Meta" (CA04: búsqueda de texto por código o nombre). Es la misma
+ambigüedad ya señalada en D26 punto 5: el modelo de datos no distingue
+"Indicador" de "Meta"/"Producto" como campos independientes —
+`cod_indicador_producto` (código) y `nombre_producto` (texto) son los
+únicos dos campos reales.
+
+**Decisión:** se implementa un único criterio de búsqueda libre
+(`busqueda`, CA04) sobre `cod_indicador_producto`/`nombre_producto`, sin
+agregar un cuarto filtro "Indicador" que sería redundante con el actual
+esquema de datos. Si el equipo confirma que "Indicador" debe ser un
+filtro EXACTO (lista, como el `cod_indicador_producto` de HU-10 en
+`trazabilidad`) y distinto de la búsqueda libre de "Meta", se agrega como
+un campo más de `FiltrosPlanAccion`
+(`app/modules/plan_accion/domain/entidades.py`) sin tocar los demás
+criterios.
+
+**Decisión técnica (no de negocio) acompañante:** los 3 filtros
+(`sector`, `estado_cruce`, `busqueda`) se aplican en Python, sobre la
+lista ya agregada por meta (`list[FilaPlanAccion]`), no en la consulta
+SQL — a diferencia de HU-10, que filtra al nivel de fila cruda. Motivo:
+`estado_cruce` es un valor que solo existe DESPUÉS de `agregar_por_meta`
+(es Python, no SQL); replicar esa lógica en la consulta para poder
+filtrar ahí duplicaría la regla de CA05/HU-01 en dos lugares. El volumen
+esperado (~144 metas/corte, CA15 de HU-10) hace que filtrar en memoria
+sea tan barato como filtrar en la base de datos.
+
+**Registrado:** 2026-10-13, Juan Esteban (asistido por Claude Code —
+`[E04-HU02] Filtrar el Plan de Acción`, implementación backend).
+
+**Actualización 2026-10-13 (corrección de Cristian):** el SUPUESTO MENOR
+de arriba queda **reemplazado** — Cristian se corrigió y confirmó que
+"Indicador" SÍ es un cuarto criterio propio, EXACTO (lista "código –
+nombre" con buscador, igual que define E02-HU10-CA04 para la matriz), y
+distinto de la búsqueda libre de "Meta" (CA04). Se implementa como
+`cod_indicador_producto: tuple[str, ...] | None` en `FiltrosPlanAccion`
+(`app/modules/plan_accion/domain/entidades.py`) y el query param
+`cod_indicador_producto` (repetible) en el router — mismo nombre de
+campo/param que usa `trazabilidad/api/router.py` para el filtro
+equivalente de HU-10, por consistencia de la API. Se agrega CA09 al spec
+(`docs/specs/E04-HU02-filtrar-plan-accion.md`). No afecta el resto de
+`FiltrosPlanAccion`/`filtrar_plan_accion` ni la decisión de filtrar en
+Python (sección anterior de este documento).

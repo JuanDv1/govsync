@@ -18,6 +18,7 @@ from starlette.middleware.body_limit import RequestBodyLimitMiddleware
 from app.core.config import get_settings
 from app.core.errores import registrar_manejadores
 from app.modules.cortes.api.router import router as router_cortes
+from app.modules.plan_accion.api.router import router as router_plan_accion
 from app.modules.trazabilidad.api.router import router as router_trazabilidad
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -64,6 +65,7 @@ def crear_app() -> FastAPI:
 
     app.include_router(router_cortes, prefix="/api/v1")
     app.include_router(router_trazabilidad, prefix="/api/v1")
+    app.include_router(router_plan_accion, prefix="/api/v1")
 
     @app.get("/health", tags=["Operación"], summary="Verificación de estado para despliegue")
     def health() -> dict[str, str]:
