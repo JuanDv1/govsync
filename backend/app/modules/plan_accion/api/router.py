@@ -1,11 +1,24 @@
-"""Endpoint del Plan de Acción Consolidado.
+"""Endpoints del Plan de Acción Consolidado.
 
 CAPA: API
-TARJETA: [E04-HU01] Consultar Plan de Acción Consolidado
+TARJETAS: [E04-HU01] Consultar Plan de Acción Consolidado, [E04-HU02]
+Filtrar el Plan de Acción, [E04-HU03] Exportar el Plan de Acción a Excel.
 CUBRE: HU01-CA01 a CA06, CA08 a CA10 (ver docs/DECISIONES.md D26 para CA02,
 CA03, CA05, CA08 -- implementados con defaults propuestos, pendientes de
-ratificar). CA07 es 100% frontend (scroll horizontal + columnas fijas) --
-no tiene contraparte aquí.
+ratificar). CA07 de HU-01 es 100% frontend (scroll horizontal + columnas
+fijas) -- no tiene contraparte aquí.
+
+[E04-HU03] `GET /exportar` reutiliza EXACTAMENTE el mismo pipeline que
+`GET /actual` (mismos filtros, misma agregación) -- la única diferencia es
+el formato de salida. Para no duplicar las ~20 líneas de "obtener corte ->
+validar -> consultar -> agregar -> filtrar" entre los dos endpoints, esa
+secuencia se extrajo a `_obtener_filas_filtradas` (ver más abajo); cada
+endpoint solo decide qué hacer con el resultado (JSON vs .xlsx). CA07 de
+HU-03 (botón "Exportar" deshabilitado sin resultados) es 100% frontend.
+CA08 de HU-03 (mensaje genérico si falla la generación) no tiene código
+propio: ya lo cubre el manejador global de excepciones
+(`app/core/errores.py`), ver docstring de
+`persistence/exportacion_excel.py`.
 
 ALCANCE Y PATRÓN: igual que `trazabilidad/api/router.py` -- sin capa de
 `application/` propia. El único "caso de uso" es "leer y agregar", sin
@@ -46,11 +59,13 @@ archivo.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from decimal import Decimal
+from io import BytesIO
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from pydantic import BaseModel
 
 from app.core.dependencias import ServicioCortesDep, SesionDep, exigir_roles
@@ -61,11 +76,17 @@ from app.modules.plan_accion.domain.entidades import (
     FilaFuenteMeta,
     FilaPlanAccion,
     FiltrosPlanAccion,
+    ResumenPlanAccion,
     agregar_por_meta,
     calcular_resumen,
     filtrar_plan_accion,
 )
 from app.modules.plan_accion.persistence.consultas import construir_filas_plan_accion
+from app.modules.plan_accion.persistence.exportacion_excel import (
+    MetadatosExportacion,
+    construir_libro_excel,
+    construir_nombre_archivo,
+)
 from app.shared.errors import OperacionNoPermitida
 
 router = APIRouter(prefix="/plan-accion", tags=["Plan de Accion"])
@@ -147,6 +168,72 @@ def _verificar_fuentes_completas(corte: Corte) -> None:
         )
 
 
+def _construir_filtros(
+    sector: list[str] | None,
+    estado_cruce: list[EstadoCruceMeta] | None,
+    busqueda: str | None,
+    cod_indicador_producto: list[str] | None,
+) -> FiltrosPlanAccion:
+    """Traduce los 4 query params crudos (listas vacías/None de FastAPI) al
+    value object de dominio -- extraído para que `/actual` y `/exportar`
+    (HU-03) no dupliquen esta conversión."""
+    return FiltrosPlanAccion(
+        sector=tuple(sector) if sector else None,
+        estado_cruce=tuple(estado_cruce) if estado_cruce else None,
+        busqueda=busqueda,
+        cod_indicador_producto=tuple(cod_indicador_producto) if cod_indicador_producto else None,
+    )
+
+
+def _describir_filtros(filtros: FiltrosPlanAccion) -> str:
+    """[E04-HU03] CA04: texto legible de los filtros activos para los
+    metadatos del Excel exportado. "Ninguno" si no hay ningún filtro --
+    mismo caso que CA08 de HU-02 (limpiar filtros)."""
+    partes: list[str] = []
+    if filtros.sector:
+        partes.append(f"Sector: {', '.join(filtros.sector)}")
+    if filtros.estado_cruce:
+        partes.append(f"Estado de cruce: {', '.join(e.value for e in filtros.estado_cruce)}")
+    if filtros.cod_indicador_producto:
+        partes.append(f"Indicador: {', '.join(filtros.cod_indicador_producto)}")
+    if filtros.busqueda:
+        partes.append(f'Búsqueda: "{filtros.busqueda}"')
+    return "; ".join(partes) if partes else "Ninguno"
+
+
+def _obtener_filas_filtradas(
+    servicio: ServicioCortesDep,
+    sesion: SesionDep,
+    filtros: FiltrosPlanAccion,
+) -> tuple[Corte, list[FilaPlanAccion], ResumenPlanAccion]:
+    """Pipeline compartido por `/actual` (HU-01/HU-02) y `/exportar`
+    (HU-03): obtener_corte -> validar -> consultar -> agregar -> filtrar ->
+    calcular_resumen. Extraído para no duplicarlo entre los dos endpoints
+    (ver docstring del módulo)."""
+    corte: Corte = servicio.obtener_corte_actual()
+    _verificar_fuentes_completas(corte)
+
+    filas_crudas = construir_filas_plan_accion(sesion, corte.id)
+    filas_meta = [
+        FilaFuenteMeta(
+            cod_indicador_producto=f.cod_indicador_producto,
+            nombre_producto=f.nombre_producto,
+            sector=f.sector,
+            meta_cuatrienio=f.meta_cuatrienio,
+            cod_bpin=f.cod_bpin,
+            codigo_rubro=f.codigo_rubro,
+            presupuesto_apropiado=f.presupuesto_apropiado,
+            ejecucion=f.ejecucion,
+            numero_contrato=f.numero_contrato,
+        )
+        for f in filas_crudas
+    ]
+    filas_agregadas = agregar_por_meta(filas_meta)
+    filas_filtradas = filtrar_plan_accion(filas_agregadas, filtros)
+    resumen = calcular_resumen(filas_filtradas)
+    return corte, filas_filtradas, resumen
+
+
 @router.get("/actual", response_model=PlanAccionRespuesta)
 def obtener_plan_accion_actual(
     servicio: ServicioCortesDep,
@@ -181,37 +268,8 @@ def obtener_plan_accion_actual(
     CA08 (limpiar filtros): omitir los 4 query params devuelve el Plan de
     Acción completo, sin rama especial.
     """
-    corte: Corte = servicio.obtener_corte_actual()
-    _verificar_fuentes_completas(corte)
-
-    filas_crudas = construir_filas_plan_accion(sesion, corte.id)
-    filas_meta = [
-        FilaFuenteMeta(
-            cod_indicador_producto=f.cod_indicador_producto,
-            nombre_producto=f.nombre_producto,
-            sector=f.sector,
-            meta_cuatrienio=f.meta_cuatrienio,
-            cod_bpin=f.cod_bpin,
-            codigo_rubro=f.codigo_rubro,
-            presupuesto_apropiado=f.presupuesto_apropiado,
-            ejecucion=f.ejecucion,
-            numero_contrato=f.numero_contrato,
-        )
-        for f in filas_crudas
-    ]
-    filas_agregadas = agregar_por_meta(filas_meta)
-    filas_filtradas = filtrar_plan_accion(
-        filas_agregadas,
-        FiltrosPlanAccion(
-            sector=tuple(sector) if sector else None,
-            estado_cruce=tuple(estado_cruce) if estado_cruce else None,
-            busqueda=busqueda,
-            cod_indicador_producto=tuple(cod_indicador_producto)
-            if cod_indicador_producto
-            else None,
-        ),
-    )
-    resumen = calcular_resumen(filas_filtradas)
+    filtros = _construir_filtros(sector, estado_cruce, busqueda, cod_indicador_producto)
+    corte, filas_filtradas, resumen = _obtener_filas_filtradas(servicio, sesion, filtros)
 
     return PlanAccionRespuesta(
         corte_id=corte.id,
@@ -224,4 +282,49 @@ def obtener_plan_accion_actual(
             parcial=resumen.parcial,
             sin_informacion=resumen.sin_informacion,
         ),
+    )
+
+
+_MEDIA_TYPE_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+@router.get("/exportar")
+def exportar_plan_accion(
+    servicio: ServicioCortesDep,
+    sesion: SesionDep,
+    usuario: AccesoPlanAccionDep,
+    sector: list[str] | None = Query(None),
+    estado_cruce: list[EstadoCruceMeta] | None = Query(None),
+    busqueda: str | None = None,
+    cod_indicador_producto: list[str] | None = Query(None),
+) -> Response:
+    """[E04-HU03] CA01/CA02: exporta exactamente el mismo resultado que
+    `GET /actual` (mismos query params, mismo filtro/agregación -- ver
+    `_obtener_filas_filtradas`) como un archivo .xlsx en vez de JSON.
+
+    CA09 (mismo criterio que `/actual`): si no hay corte, `RecursoNoEncontrado`
+    (404) -- no tiene sentido ofrecer "exportar" sin datos; CA07 (botón
+    deshabilitado) es responsabilidad del frontend, que ya sabe que no hay
+    filas por la misma respuesta de `/actual`.
+    """
+    filtros = _construir_filtros(sector, estado_cruce, busqueda, cod_indicador_producto)
+    corte, filas_filtradas, resumen = _obtener_filas_filtradas(servicio, sesion, filtros)
+
+    metadatos = MetadatosExportacion(
+        vigencia=corte.vigencia,
+        fecha_corte=corte.fecha_corte,
+        filtros_aplicados=_describir_filtros(filtros),
+        usuario_correo=usuario.correo,
+        generado_en=datetime.now(UTC),
+    )
+    libro = construir_libro_excel(filas_filtradas, resumen, metadatos)
+
+    buffer = BytesIO()
+    libro.save(buffer)
+    nombre_archivo = construir_nombre_archivo(corte.vigencia, corte.fecha_corte)
+
+    return Response(
+        content=buffer.getvalue(),
+        media_type=_MEDIA_TYPE_XLSX,
+        headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
     )
