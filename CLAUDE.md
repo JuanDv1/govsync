@@ -103,9 +103,12 @@ budget-specific role, not yet defined — currently has the same permissions as 
 since no card has required splitting them), `visitante` (read-only). D24 maps which endpoints
 need which: reads are open to any authenticated role, writes on `cortes`/`trazabilidad` require
 `administrador`/`gestor`. Login theme at `keycloak/themes/govsync/` mirrors `Login.jsx`'s
-two-column layout — select it per-realm in Keycloak (`Realm settings → Themes → Login theme`),
-not automated. CI only has a smoke test (`backend-keycloak` job: confirms the container boots on
-the runner) — no real-token integration test yet.
+two-column layout. The whole realm (clients, roles, theme selection, brute-force/session policy,
+3 throwaway test users) is provisioned automatically on first boot from
+`keycloak/import/govsync-realm.json` (`--import-realm`, see `docker-compose.yml`) — nothing to
+configure by hand; only applies the first time Keycloak starts on a fresh `datos_keycloak` volume,
+never overwrites an existing realm. CI only has a smoke test (`backend-keycloak` job: confirms the
+container boots on the runner) — no real-token integration test yet.
 
 File upload rules (`[SEC-03]`, enforced in `cortes/application/casos_uso.py`, not in the API
 layer): only `.xlsx`, size checked before reading into memory, filename sanitized against path

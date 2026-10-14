@@ -54,25 +54,24 @@ Repite hasta que diga `healthy`. Keycloak no tiene healthcheck propio — confir
 curl -s http://localhost:8080/realms/master > /dev/null && echo "Keycloak listo"
 ```
 
-### 3. Configurar Keycloak (`[HU-E01-01]`, una sola vez)
+### 3. Keycloak ya queda configurado — nada que hacer a mano
 
-`http://localhost:8080` → **Administration Console** → `admin`/`admin`. Luego:
+El paso 2 (`docker compose up -d`) ya deja todo listo: el realm `govsync`, los dos clients
+(`govsync-backend`/`govsync-frontend`, con su audience mapper), los 3 roles, el theme de login, el
+bloqueo por intentos fallidos (3 intentos → 15 min) y 3 usuarios de prueba se importan solos desde
+[`keycloak/import/govsync-realm.json`](./keycloak/import/govsync-realm.json) la primera vez que
+Keycloak arranca sobre un volumen nuevo. Usuarios listos para probar (contraseña `GovSync2026!`
+para los tres — **solo para desarrollo local, nunca producción**):
 
-1. Dropdown de realm ("master") → **Create realm** → `govsync`.
-2. **Realm settings → Themes → Login theme**: `govsync` (el theme en `keycloak/themes/govsync/`,
-   ya montado por `docker-compose.yml`).
-3. **Realm roles → Create role**: `administrador`, `gestor`, `visitante`.
-4. **Clients → Create client** → `govsync-frontend` → Client authentication **Off** (público) →
-   Standard flow **On** → Valid redirect URIs `http://localhost:5173/*` → Web origins
-   `http://localhost:5173`.
-5. En ese mismo client, pestaña **Client scopes → govsync-frontend-dedicated → Add mapper → By
-   configuration → Audience**: Included Client Audience = `govsync-backend`, Add to access token
-   **On**. Sin esto, el backend rechaza cualquier token real con 401 (el `aud` no coincide).
-6. **Clients → Create client** → `govsync-backend` (lo exige `KEYCLOAK_AUDIENCE` en
-   `backend/.env`) → cualquier configuración por defecto sirve, solo necesita existir.
-7. **Users → Add user** (con `firstName`/`lastName`/correo — Keycloak 26 los exige) →
-   **Credentials → Set password** (Temporary off) → **Role mapping → Assign role** (uno de los
-   tres roles).
+| Usuario                | Rol             |
+| ---------------------- | --------------- |
+| `administrador.prueba` | `administrador` |
+| `gestor.prueba`        | `gestor`        |
+| `visitante.prueba`     | `visitante`     |
+
+Si `datos_keycloak` ya tenía un realm `govsync` de una corrida anterior, la importación no se
+repite ni lo sobreescribe — para forzarla de nuevo: `docker compose down && docker volume rm
+govsync_datos_keycloak && docker compose up -d`.
 
 ### 4. Backend
 
@@ -98,8 +97,9 @@ npm run dev
 
 `npm install` en la raíz también activa los hooks de Git (`commit-msg`/`pre-commit` vía husky) — hazlo una sola vez después de clonar.
 
-Abre `http://localhost:5173` → te recibe `Login.jsx`; el botón "Ingresar" redirige a Keycloak con
-el usuario que creaste en el paso 3. Ya autenticado, la app parte en el histórico de cortes
+Abre `http://localhost:5173` → te recibe `Login.jsx`; el botón "Ingresar" redirige a Keycloak —
+entra con cualquiera de los usuarios de prueba de la tabla del paso 3. Ya autenticado, la app parte
+en el histórico de cortes
 (`/cortes`); desde ahí se crea un corte nuevo (`/cortes/nuevo`, solo visible para
 `administrador`/`gestor`), se cargan los tres archivos, se registra, y se navega a su matriz de
 relación (`/matriz/:corteId`).

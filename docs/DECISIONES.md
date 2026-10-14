@@ -1138,13 +1138,6 @@ cerrada sin resolverlos:**
    sigue genuinamente sin definir es Supervisor↔`gestor` ("Metas de su
    sector" no es obviamente lo mismo que el rol de presupuesto sin
    definir que ya se dejó anotado como pendiente).
-3. **HU01-CA03/CA04 — bloqueo por intentos fallidos (3/15 min) y
-   expiración por inactividad (30 min) dependen de configuración manual
-   de Keycloak** (Brute Force Detection, SSO Session Idle) que no está
-   versionada en ningún archivo del repo ni verificada por ninguna
-   prueba — `docker-compose.yml` ya dice explícitamente que el realm se
-   configura a mano. Nada garantiza hoy que esos dos parámetros queden
-   puestos así, ni hay como saberlo sin entrar a la consola.
 
 **Resuelto en la misma revisión (2026-10-13), no quedan como
 `[VALIDAR]`:**
@@ -1165,6 +1158,31 @@ cerrada sin resolverlos:**
   por defecto de Keycloak (confirmado: `persona1` quedó con
   `"algorithm":"argon2"` al crearla) — no necesitaron cambio de código,
   solo quedan documentados aquí en vez de aparecer como huecos abiertos.
+- **HU01-CA03/CA04** (bloqueo 3 intentos/15 min; expiración por
+  inactividad de 30 min): ya no dependen de configuración manual —
+  resuelto junto con el punto siguiente (provisión automática del
+  realm).
+
+**Actualización (2026-10-13) — el realm ya no se configura a mano:**
+`keycloak/import/govsync-realm.json` (exportado del realm que se había
+configurado manualmente, con `partial-export` de la API de
+administración, y editado a mano: solo nuestros 2 clients y 3 roles,
+sin los internos que Keycloak crea solo; `bruteForceProtected`/
+`failureFactor`/`waitIncrementSeconds` agregados para CA03;
+`ssoSessionIdleTimeout` ya venía en 30 min por defecto, CA04 sin
+cambio; 3 usuarios de prueba agregados a mano, uno por rol, contraseña
+`GovSync2026!` — solo desarrollo local) se importa solo al arrancar
+(`docker-compose.yml`, `--import-realm`), solo la primera vez que
+Keycloak arranca sobre un volumen `datos_keycloak` nuevo. Verificado de
+punta a punta: volumen borrado, `docker compose up -d`, realm/clients/
+roles/theme/CA03/CA04 confirmados vía API de administración, y login
+real con los 3 usuarios de prueba contra el backend real (200/200/403
+según el rol). **Hallazgo durante la construcción, no relacionado con
+Keycloak en sí:** el primer intento de montar el JSON como archivo
+suelto (en vez del directorio completo) le llegaba vacío al proceso de
+Java de Keycloak en Docker Desktop para Windows, aunque `cat`/`wc` desde
+una shell en el mismo contenedor lo leían bien — se resolvió montando
+`./keycloak/import` completo, no el archivo solo.
 
 ---
 
