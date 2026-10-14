@@ -17,6 +17,16 @@ aplicación aquí envolvería esas 4 llamadas en una clase sin estado y sin
 ninguna regla propia -- indirección sin beneficio (mismo razonamiento ya
 documentado para `trazabilidad`, que esta HU reutiliza sin reabrirlo).
 
+[E04-HU02] agrega 4 query params de filtro (sector, estado_cruce,
+busqueda, cod_indicador_producto -- este último agregado tras corrección
+de D27, docs/DECISIONES.md: "Indicador" es un filtro EXACTO propio, no
+redundante con `busqueda` -- ver `FiltrosPlanAccion` en
+domain/entidades.py para el porqué de filtrar en Python sobre la lista ya
+agregada, no en la consulta SQL).
+El orden pasa a ser: obtener_corte -> validar -> consultar -> agregar ->
+FILTRAR -> calcular_resumen (CA06: el resumen debe reflejar las filas YA
+filtradas) -> armar DTO.
+
 =============================================================================
 CA10 -- RESTRICCIÓN DE ROL (DECISIÓN TÉCNICA D26, PENDIENTE DE RATIFICAR)
 =============================================================================
@@ -40,17 +50,20 @@ from decimal import Decimal
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from app.core.dependencias import ServicioCortesDep, SesionDep, exigir_roles
 from app.modules.cortes.domain.entidades import Corte, TipoArchivoFuente
 from app.modules.identidad.domain.entidades import Rol, Usuario
 from app.modules.plan_accion.domain.entidades import (
+    EstadoCruceMeta,
     FilaFuenteMeta,
     FilaPlanAccion,
+    FiltrosPlanAccion,
     agregar_por_meta,
     calcular_resumen,
+    filtrar_plan_accion,
 )
 from app.modules.plan_accion.persistence.consultas import construir_filas_plan_accion
 from app.shared.errors import OperacionNoPermitida
@@ -139,6 +152,10 @@ def obtener_plan_accion_actual(
     servicio: ServicioCortesDep,
     sesion: SesionDep,
     usuario: AccesoPlanAccionDep,
+    sector: list[str] | None = Query(None),
+    estado_cruce: list[EstadoCruceMeta] | None = Query(None),
+    busqueda: str | None = None,
+    cod_indicador_producto: list[str] | None = Query(None),
 ) -> PlanAccionRespuesta:
     """HU01-CA01: Plan de Acción consolidado del corte REGISTRADO más
     reciente (mismo criterio que `trazabilidad`/`ServicioCortes.
@@ -152,6 +169,17 @@ def obtener_plan_accion_actual(
 
     CA04 (solo lectura): no existe ningún verbo de escritura en este
     router -- la ausencia es la implementación.
+
+    [E04-HU02] `sector`/`estado_cruce`/`cod_indicador_producto` (listas,
+    repetibles -- `?sector=a&sector=b`, CA05: OR dentro del criterio) y
+    `busqueda` (CA04, texto libre sobre código o nombre de la meta) se
+    combinan con AND entre sí (CA05) -- ver
+    `FiltrosPlanAccion`/`filtrar_plan_accion` en domain/entidades.py.
+    `cod_indicador_producto` es el filtro EXACTO de "Indicador" (D27,
+    corrección), mismo nombre de query param que
+    `trazabilidad/api/router.py` usa para el filtro equivalente de HU-10.
+    CA08 (limpiar filtros): omitir los 4 query params devuelve el Plan de
+    Acción completo, sin rama especial.
     """
     corte: Corte = servicio.obtener_corte_actual()
     _verificar_fuentes_completas(corte)
@@ -172,13 +200,24 @@ def obtener_plan_accion_actual(
         for f in filas_crudas
     ]
     filas_agregadas = agregar_por_meta(filas_meta)
-    resumen = calcular_resumen(filas_agregadas)
+    filas_filtradas = filtrar_plan_accion(
+        filas_agregadas,
+        FiltrosPlanAccion(
+            sector=tuple(sector) if sector else None,
+            estado_cruce=tuple(estado_cruce) if estado_cruce else None,
+            busqueda=busqueda,
+            cod_indicador_producto=tuple(cod_indicador_producto)
+            if cod_indicador_producto
+            else None,
+        ),
+    )
+    resumen = calcular_resumen(filas_filtradas)
 
     return PlanAccionRespuesta(
         corte_id=corte.id,
         vigencia=corte.vigencia,
         fecha_corte=corte.fecha_corte.isoformat(),
-        filas=[_fila_a_respuesta(f) for f in filas_agregadas],
+        filas=[_fila_a_respuesta(f) for f in filas_filtradas],
         resumen=ResumenPlanAccionRespuesta(
             total=resumen.total,
             completo=resumen.completo,
