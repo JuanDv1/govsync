@@ -20,14 +20,20 @@ services:
 
   # [HU-E01-01] / docs/DECISIONES.md D23: Keycloak corre solo local por
   # ahora, sin decisión de producción. Base de datos propia embebida (la
-  # que trae start-dev), no comparte el Postgres de arriba. El realm
-  # "govsync", el cliente "govsync-backend" y los roles
-  # (administrador/gestor/visitante) se crean a mano en la consola de
-  # administración (http://localhost:8080) — no se automatiza todavía.
+  # que trae start-dev), no comparte el Postgres de arriba.
+  #
+  # --import-realm + keycloak/import/govsync-realm.json: el realm
+  # "govsync", los clients (govsync-backend/govsync-frontend, con sus
+  # audience mappers), los 3 roles, el theme de login y los 3 usuarios de
+  # prueba (uno por rol, ver ese archivo) se crean solos al arrancar —
+  # nadie tiene que configurarlo a mano. Solo pasa en la PRIMERA vez que
+  # arranca sobre un volumen nuevo: si `datos_keycloak` ya tiene un realm
+  # "govsync" (de una corrida anterior), Keycloak no lo vuelve a importar
+  # ni lo sobreescribe.
   keycloak:
     image: quay.io/keycloak/keycloak:26.7
     container_name: govsync-keycloak
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
@@ -35,10 +41,15 @@ services:
       - "8080:8080"
     volumes:
       - datos_keycloak:/opt/keycloak/data
-      # Theme de login con la marca de GovSync (D23, punto 4) — una vez
-      # arriba, hay que seleccionarlo a mano en Realm settings > Themes >
-      # Login theme. Montado de solo lectura: Keycloak lo lee, no lo escribe.
+      # Theme de login con la marca de GovSync (D23, punto 4). Montado de
+      # solo lectura: Keycloak lo lee, no lo escribe.
       - ./keycloak/themes/govsync:/opt/keycloak/themes/govsync:ro
+      # Montar el DIRECTORIO, no el archivo suelto: en Docker Desktop para
+      # Windows, el bind mount de un único archivo desde el host puede
+      # llegarle vacío al proceso de Java/Quarkus (aunque `cat`/`wc` desde
+      # una shell en el contenedor lo lean bien) -- problema conocido de su
+      # capa de compartición de archivos, no de este archivo ni de Keycloak.
+      - ./keycloak/import:/opt/keycloak/data/import:ro
 
 volumes:
   datos_postgres:
