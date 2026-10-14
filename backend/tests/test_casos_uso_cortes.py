@@ -17,7 +17,13 @@ from typing import Any
 import pytest
 
 from app.modules.cortes.application.casos_uso import ServicioCortes
-from app.modules.cortes.domain.entidades import ArchivoFuente, Corte, EstadoCorte, TipoArchivoFuente
+from app.modules.cortes.domain.entidades import (
+    ArchivoFuente,
+    Corte,
+    EstadoCorte,
+    HistorialReemplazoArchivo,
+    TipoArchivoFuente,
+)
 from app.modules.cortes.domain.puertos import RepositorioCortes, RepositorioDatosCorte
 from app.modules.ingesta.domain.contratos import ResultadoLectura
 from app.modules.ingesta.domain.contratos import TipoArchivo as TipoArchivoIngesta
@@ -35,6 +41,7 @@ from tests.fabricas import construir_pdt
 class RepositorioCortesEnMemoria(RepositorioCortes):
     def __init__(self) -> None:
         self._cortes: dict[uuid.UUID, Corte] = {}
+        self.historial: list[HistorialReemplazoArchivo] = []
 
     def guardar(self, corte: Corte) -> Corte:
         self._cortes[corte.id] = corte
@@ -72,6 +79,12 @@ class RepositorioCortesEnMemoria(RepositorioCortes):
     def confirmar_correccion(self, corte: Corte) -> None:
         self._cortes[corte.id].vigencia = corte.vigencia
         self._cortes[corte.id].fecha_corte = corte.fecha_corte
+
+    def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
+        self.historial.append(historial)
+
+    def listar_historial_reemplazos(self, corte_id: uuid.UUID) -> list[HistorialReemplazoArchivo]:
+        return [h for h in self.historial if h.corte_id == corte_id]
 
 
 class RepositorioDatosCorteEnMemoria(RepositorioDatosCorte):
@@ -719,3 +732,149 @@ class TestCargarArchivoIntegracionPDT:
         # HU-02/CA-3: rechazo TOTAL, no quedan datos parciales.
         assert servicio._cortes.obtener(corte.id).archivos == {}
         assert servicio._datos.llamadas_reemplazar_metas == []
+
+
+class TestReemplazarArchivoCorteActual:
+    """[E02-HU05] CA01, CA04, CA05, CA06, CA08, CA09 (la restricción de rol es
+    responsabilidad de la capa API -- `EscrituraDep`, ver router.py -- no de
+    `ServicioCortes`, así que no se repite aquí). Mismo doble de lector que
+    `TestCargarArchivo`, misma frontera SEC-03.
+    """
+
+    def _servicio_con_lector(self, servicio: ServicioCortes, lector) -> ServicioCortes:
+        servicio._lectores = {TipoArchivoFuente.PDT: lector}
+        return servicio
+
+    def test_corte_inexistente_lanza_recurso_no_encontrado(self, servicio):
+        self._servicio_con_lector(servicio, _LectorFalso())
+
+        with pytest.raises(RecursoNoEncontrado):
+            servicio.reemplazar_archivo_corte_actual(
+                uuid.uuid4(), TipoArchivoFuente.PDT, _XLSX_VALIDO, "plan.xlsx", "ana@muni.gov.co"
+            )
+
+    def test_corte_en_borrador_lanza_operacion_no_permitida_motivo_corte_no_registrado(
+        self, servicio
+    ):
+        """Lo contrario de HU-06: mientras el corte sigue en BORRADOR, el
+        flujo correcto es `cargar_archivo` (POST), no este (PUT)."""
+        self._servicio_con_lector(servicio, _LectorFalso())
+        corte = servicio.crear_corte(vigencia=2026, fecha_corte=date(2026, 9, 8))
+
+        with pytest.raises(OperacionNoPermitida) as exc:
+            servicio.reemplazar_archivo_corte_actual(
+                corte.id, TipoArchivoFuente.PDT, _XLSX_VALIDO, "plan.xlsx", "ana@muni.gov.co"
+            )
+
+        assert exc.value.detalles["motivo"] == "corte_no_registrado"
+
+    def test_corte_registrado_pero_no_es_el_actual_lanza_operacion_no_permitida(self, servicio):
+        """CA05: un corte REGISTRADO con fecha_corte anterior al más
+        reciente (global) no es el actual y no es editable por esta vía,
+        aunque exista y esté registrado."""
+        self._servicio_con_lector(servicio, _LectorFalso())
+        corte_antiguo = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2025, fecha_corte=date(2025, 12, 31)
+        )
+        _crear_corte_registrado_con_archivos(servicio, vigencia=2026, fecha_corte=date(2026, 9, 8))
+
+        with pytest.raises(OperacionNoPermitida) as exc:
+            servicio.reemplazar_archivo_corte_actual(
+                corte_antiguo.id,
+                TipoArchivoFuente.PDT,
+                _XLSX_VALIDO,
+                "plan.xlsx",
+                "ana@muni.gov.co",
+            )
+
+        assert exc.value.detalles["motivo"] == "corte_no_es_el_actual"
+
+    def test_archivo_invalido_lo_rechaza_sec03_sin_tocar_el_lector(self, servicio):
+        lector = _LectorFalso()
+        self._servicio_con_lector(servicio, lector)
+        corte = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2026, fecha_corte=date(2026, 9, 8)
+        )
+        commits_previos = servicio.llamadas["commit"]
+
+        with pytest.raises(ArchivoInvalido):
+            servicio.reemplazar_archivo_corte_actual(
+                corte.id, TipoArchivoFuente.PDT, b"no es un xlsx", "plan.xlsx", "ana@muni.gov.co"
+            )
+
+        assert lector.llamadas == []
+        assert servicio.llamadas["commit"] == commits_previos
+        assert servicio.llamadas["rollback"] == 0
+
+    def test_reemplazo_exitoso_actualiza_el_archivo_y_registra_el_historial(self, servicio):
+        resultado = ResultadoLectura(tipo=TipoArchivoIngesta.PDT, filas={"metas": [{"a": 1}]})
+        lector = _LectorFalso(resultado=resultado)
+        self._servicio_con_lector(servicio, lector)
+        corte = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2026, fecha_corte=date(2026, 9, 8)
+        )
+        nombre_anterior_esperado = corte.archivos[TipoArchivoFuente.PDT].nombre_archivo
+
+        commits_previos = servicio.llamadas["commit"]
+
+        archivo = servicio.reemplazar_archivo_corte_actual(
+            corte.id, TipoArchivoFuente.PDT, _XLSX_VALIDO, "pdt_nuevo.xlsx", "ana@muni.gov.co"
+        )
+
+        assert archivo.nombre_archivo == "pdt_nuevo.xlsx"
+        assert servicio.llamadas["commit"] == commits_previos + 1
+        assert servicio.llamadas["rollback"] == 0
+
+        historial = servicio._cortes.listar_historial_reemplazos(corte.id)
+        assert len(historial) == 1
+        assert historial[0].tipo == TipoArchivoFuente.PDT
+        assert historial[0].nombre_archivo_anterior == nombre_anterior_esperado
+        assert historial[0].nombre_archivo_nuevo == "pdt_nuevo.xlsx"
+        assert historial[0].usuario == "ana@muni.gov.co"
+
+    def test_si_falla_el_load_se_revierte_todo_incluido_el_historial(self, servicio):
+        resultado = ResultadoLectura(tipo=TipoArchivoIngesta.PDT, filas={"metas": [{"a": 1}]})
+        lector = _LectorFalso(resultado=resultado)
+        self._servicio_con_lector(servicio, lector)
+        corte = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2026, fecha_corte=date(2026, 9, 8)
+        )
+
+        def _commit_que_falla():
+            raise RuntimeError("fallo simulado del Load")
+
+        servicio._commit = _commit_que_falla
+
+        with pytest.raises(RuntimeError):
+            servicio.reemplazar_archivo_corte_actual(
+                corte.id, TipoArchivoFuente.PDT, _XLSX_VALIDO, "pdt_nuevo.xlsx", "ana@muni.gov.co"
+            )
+
+        assert servicio.llamadas["rollback"] == 1
+        # El historial igual queda "agregado" en el repositorio en memoria
+        # (no hay rollback real de lista de Python) -- lo que SÍ prueba este
+        # caso, igual que en TestCargarArchivo, es que se llamó a
+        # revertir_transaccion(); la atomicidad real la verifica
+        # test_repositorios_cortes.py contra la base de datos real.
+
+
+class TestObtenerHistorialReemplazos:
+    def test_corte_inexistente_lanza_recurso_no_encontrado(self, servicio):
+        with pytest.raises(RecursoNoEncontrado):
+            servicio.obtener_historial_reemplazos(uuid.uuid4())
+
+    def test_devuelve_el_historial_del_corte(self, servicio):
+        resultado = ResultadoLectura(tipo=TipoArchivoIngesta.PDT, filas={"metas": [{"a": 1}]})
+        lector = _LectorFalso(resultado=resultado)
+        servicio._lectores = {TipoArchivoFuente.PDT: lector}
+        corte = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2026, fecha_corte=date(2026, 9, 8)
+        )
+        servicio.reemplazar_archivo_corte_actual(
+            corte.id, TipoArchivoFuente.PDT, _XLSX_VALIDO, "pdt_nuevo.xlsx", "ana@muni.gov.co"
+        )
+
+        historial = servicio.obtener_historial_reemplazos(corte.id)
+
+        assert len(historial) == 1
+        assert historial[0].nombre_archivo_nuevo == "pdt_nuevo.xlsx"

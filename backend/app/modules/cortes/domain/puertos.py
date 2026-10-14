@@ -19,7 +19,12 @@ from abc import ABC, abstractmethod
 from datetime import date
 from typing import Any
 
-from app.modules.cortes.domain.entidades import ArchivoFuente, Corte, TipoArchivoFuente
+from app.modules.cortes.domain.entidades import (
+    ArchivoFuente,
+    Corte,
+    HistorialReemplazoArchivo,
+    TipoArchivoFuente,
+)
 
 
 class RepositorioCortes(ABC):
@@ -89,6 +94,20 @@ class RepositorioCortes(ABC):
         dominio (`Corte.corregir()`) antes de llegar aquí — este método solo
         persiste.
         """
+
+    @abstractmethod
+    def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
+        """[E02-HU05][CA06]: persiste un registro de auditoría de reemplazo.
+
+        Se llama DENTRO de la misma transacción que `registrar_archivo` del
+        reemplazo que audita (ver `ServicioCortes.reemplazar_archivo_corte_actual`):
+        si el reemplazo se revierte, el registro de auditoría también.
+        """
+
+    @abstractmethod
+    def listar_historial_reemplazos(self, corte_id: uuid.UUID) -> list[HistorialReemplazoArchivo]:
+        """[E02-HU05][CA06]: historial de reemplazos de un corte, del más
+        reciente al más antiguo."""
 
 
 class RepositorioDatosCorte(ABC):
