@@ -53,7 +53,7 @@ respuesta exitosa de GET/POST /cortes.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -103,6 +103,14 @@ class ArchivoFuenteRespuesta(BaseModel):
     tipo: str
     reutilizado: bool
     corte_origen_id: UUID | None
+    nombre_archivo: str | None = None
+    """[E02-HU05][CA01]: ya exist\u00eda en `ArchivoFuenteORM`, solo faltaba
+    exponerlo -- CA01 pide ver el nombre del archivo de cada fuente al abrir
+    \"Editar archivos\"."""
+    fecha_carga: datetime | None = None
+    """[E02-HU05][CA01]: momento de la \u00faltima carga/reemplazo. `None` solo
+    si el `ArchivoFuente` de dominio se construy\u00f3 sin pasar por el
+    repositorio (no ocurre en producci\u00f3n, GET siempre lee de BD)."""
 
 
 class CorteRespuesta(BaseModel):
@@ -158,6 +166,17 @@ class ArchivoFuenteRespuestaParcial(BaseModel):
     descartes: list[DescarteRespuesta]
 
 
+class HistorialReemplazoRespuesta(BaseModel):
+    """[E02-HU05][CA06]: una fila del historial de auditor\u00eda de reemplazos."""
+
+    id: UUID
+    tipo: str
+    nombre_archivo_anterior: str | None
+    nombre_archivo_nuevo: str
+    usuario: str
+    fecha: datetime
+
+
 def _a_dto(corte: Corte) -> CorteRespuesta:
     """Conversión explícita dominio -> DTO. Nunca se expone `Corte` directo."""
     return CorteRespuesta(
@@ -170,6 +189,8 @@ def _a_dto(corte: Corte) -> CorteRespuesta:
                 tipo=archivo.tipo.value,
                 reutilizado=archivo.reutilizado,
                 corte_origen_id=archivo.corte_origen_id,
+                nombre_archivo=archivo.nombre_archivo,
+                fecha_carga=archivo.fecha_carga,
             )
             for archivo in corte.archivos.values()
         ],
@@ -299,6 +320,20 @@ async def cargar_archivo(
     FastAPI (que ya había disparado el límite roto de 1 MB antes de que
     este código pudiera ejecutarse).
     """
+    contenido, nombre_archivo = await _extraer_archivo_subido(request, configuracion)
+    resultado = servicio.cargar_archivo(corte_id, tipo, contenido, nombre_archivo)
+    return _a_dto_parcial(resultado)
+
+
+async def _extraer_archivo_subido(request: Request, configuracion: Settings) -> tuple[bytes, str]:
+    """SEC-03: extrae `(contenido, nombre_archivo)` del multipart, con el
+    mismo corte de dos capas documentado en el docstring de `cargar_archivo`
+    (Content-Length aquí + `RequestBodyLimitMiddleware` en `main.py` como
+    respaldo ASGI). Factorizado para que `reemplazar_archivo` ([E02-HU05])
+    reutilice EXACTAMENTE la misma extracción -- duplicar este bloque
+    hubiera sido el tipo de código de seguridad que un solo lugar
+    desactualizado deja silenciosamente sin protección en el otro.
+    """
     limite = configuracion.max_upload_bytes
 
     content_length = request.headers.get("content-length")
@@ -327,8 +362,13 @@ async def cargar_archivo(
             detalles={"motivo": "archivo_vacio"},
         )
 
-    contenido = await archivo.read()
-    resultado = servicio.cargar_archivo(corte_id, tipo, contenido, archivo.filename)
+    return await archivo.read(), archivo.filename
+
+
+def _a_dto_parcial(resultado) -> ArchivoFuenteRespuestaParcial:
+    """Conversión compartida dominio -> DTO de respuesta de carga/reemplazo,
+    usada por `cargar_archivo` ([HU-02/03/04]) y `reemplazar_archivo`
+    ([E02-HU05]): ambos devuelven la misma forma, un `ArchivoFuente`."""
     return ArchivoFuenteRespuestaParcial(
         tipo=resultado.tipo.value,
         nombre_archivo=resultado.nombre_archivo,
@@ -345,6 +385,90 @@ async def cargar_archivo(
             for descarte in resultado.descartes
         ],
     )
+
+
+@router.put(
+    "/{corte_id}/archivos/{tipo}",
+    response_model=ArchivoFuenteRespuestaParcial,
+    status_code=status.HTTP_200_OK,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "multipart/form-data": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {"archivo": {"type": "string", "format": "binary"}},
+                        "required": ["archivo"],
+                    }
+                }
+            },
+        }
+    },
+)
+async def reemplazar_archivo(
+    corte_id: UUID,
+    tipo: TipoArchivoFuente,
+    request: Request,
+    servicio: ServicioCortesDep,
+    configuracion: Annotated[Settings, Depends(get_settings)],
+    usuario: EscrituraDep,
+) -> ArchivoFuenteRespuestaParcial:
+    """[E02-HU05] CA01-CA06, CA08, CA09: reemplaza un archivo del corte
+    actual (REGISTRADO, el más reciente GLOBAL).
+
+    DISTINTO de `POST /{corte_id}/archivos/{tipo}` (HU-02/03/04 + HU-06):
+    ese endpoint exige BORRADOR (`Corte.verificar_modificable`); este exige
+    REGISTRADO + ser el corte actual (`Corte.verificar_reemplazable`,
+    `ServicioCortes.reemplazar_archivo_corte_actual`) -- verbo PUT a
+    propósito (reemplaza un recurso existente, no crea uno) sobre la MISMA
+    ruta, para no multiplicar esquemas de URL por el mismo concepto
+    ("el archivo de esta fuente en este corte").
+
+    404 (corte inexistente), 409 (`corte_no_registrado` /
+    `corte_no_es_el_actual`, CA05) y 422 (`archivo_invalido`, CA04) ya los
+    lanza `ServicioCortes.reemplazar_archivo_corte_actual`
+    (dominio + aplicación) y ya están mapeados a HTTP en
+    `app/core/errores.py`. 403 (CA09) ya lo resuelve `EscrituraDep`
+    (`exigir_roles`, D24/PR #141) -- ningún código nuevo de autorización
+    aquí. El rollback ante fallo del Load (CA08) lo hace
+    `reemplazar_archivo_corte_actual` reutilizando el mismo patrón
+    transaccional que HU-06 -- esta función no maneja nada de eso, solo
+    traduce HTTP <-> DTO (misma frontera que el resto de este router).
+    """
+    contenido, nombre_archivo = await _extraer_archivo_subido(request, configuracion)
+    resultado = servicio.reemplazar_archivo_corte_actual(
+        corte_id, tipo, contenido, nombre_archivo, usuario.correo
+    )
+    return _a_dto_parcial(resultado)
+
+
+@router.get(
+    "/{corte_id}/historial-reemplazos",
+    response_model=list[HistorialReemplazoRespuesta],
+)
+def obtener_historial_reemplazos(
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: UsuarioActualDep
+) -> list[HistorialReemplazoRespuesta]:
+    """[E02-HU05][CA06]: historial de auditoría de reemplazos de un corte.
+
+    Lectura -> cualquier rol autenticado (mismo criterio que D24 da a los
+    demás GET de este router); el archivo `.xlsx` reemplazado en sí NO se
+    conserva (decisión cerrada, ver docs/DECISIONES.md D25) -- solo este
+    registro.
+    """
+    historial = servicio.obtener_historial_reemplazos(corte_id)
+    return [
+        HistorialReemplazoRespuesta(
+            id=h.id,
+            tipo=h.tipo.value,
+            nombre_archivo_anterior=h.nombre_archivo_anterior,
+            nombre_archivo_nuevo=h.nombre_archivo_nuevo,
+            usuario=h.usuario,
+            fecha=h.fecha,
+        )
+        for h in historial
+    ]
 
 
 @router.patch("/{corte_id}", response_model=CorteRespuesta)

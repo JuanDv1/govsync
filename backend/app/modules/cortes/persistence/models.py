@@ -150,6 +150,31 @@ class ArchivoFuenteORM(Base):
     )
 
 
+class HistorialReemplazoArchivoORM(Base):
+    """[E02-HU05][CA06]: auditoria de reemplazos de archivos del corte actual.
+
+    Sin relationship/back_populates hacia CorteORM a proposito: es un log de
+    solo insercion/lectura, no parte del agregado `Corte` que
+    `RepositorioCortesSQL._a_dominio` reconstruye -- se consulta aparte
+    (`listar_historial_reemplazos`), igual que `ultimo_registrado`/`listar`
+    son consultas propias y no un campo de `Corte`.
+    """
+
+    __tablename__ = "historial_reemplazo_archivo"
+
+    id: Mapped[uuid.UUID] = mapped_column(sa.Uuid, primary_key=True, default=uuid.uuid4)
+    corte_id: Mapped[uuid.UUID] = mapped_column(
+        sa.ForeignKey("corte.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    tipo: Mapped[TipoArchivoFuente] = mapped_column(_TIPO_ARCHIVO, nullable=False)
+    nombre_archivo_anterior: Mapped[str | None] = mapped_column(sa.String(255), nullable=True)
+    nombre_archivo_nuevo: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    usuario: Mapped[str] = mapped_column(sa.String(255), nullable=False)
+    fecha: Mapped[datetime] = mapped_column(
+        sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+    )
+
+
 class MetaORM(Base):
     """Meta / indicador de producto del Plan Indicativo (una por corte)."""
 

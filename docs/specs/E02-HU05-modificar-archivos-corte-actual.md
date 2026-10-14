@@ -206,6 +206,36 @@ esquemas de request/response:
 
 ---
 
+## Actualización 2026-10-13 (implementación backend, D25 en docs/DECISIONES.md)
+
+- **Opción A vs B (Contrato, Decisiones aplicadas): decidido, Opción B**
+  ("confirmar y revertir con rollback") — ver D25. Endpoint implementado:
+  `PUT /cortes/{id}/archivos/{tipo}` (`Corte.verificar_reemplazable`,
+  `ServicioCortes.reemplazar_archivo_corte_actual`).
+- **"Recalcular el cruce" (CA02/CA08): confirmado que no requiere código
+  adicional** — ver D25. No se implementó ningún paso de "recalculo"
+  explícito.
+- **403 (Estados y errores): ya no es `[VALIDAR]`** — `PermisoInsuficiente`
+  existe desde PR #141/D24; CA09 reutiliza `EscrituraDep`
+  (`exigir_roles(ADMINISTRADOR, GESTOR)`) sin código nuevo.
+- **`fecha_carga` (CA01, Decisiones aplicadas): corregido** —
+  `RepositorioCortesSQL.registrar_archivo` ahora actualiza `fecha_carga` en
+  la rama de reemplazo, no solo en el INSERT original.
+- **Contrato: implementado** — ampliación de `GET /cortes`/`GET /cortes/{id}`
+  (`nombre_archivo`, `fecha_carga` por fuente) y
+  `GET /cortes/{id}/historial-reemplazos` (CA06, tabla
+  `historial_reemplazo_archivo`, migración `5e231b94049b`).
+- **Sigue sin implementar, `[VALIDAR]` vigente** (ver D25 para el detalle):
+  CA07 (avance físico, bloqueado por decisión de negocio abierta); mapeo
+  formal de nombres de rol Excel↔Keycloak (CA09 funciona con el mismo
+  criterio de D24, sin el mapeo nombre a nombre cerrado); actualización del
+  "Plan de Acción" en CA02 (E04-HU01 no existe todavía); refresco de copias
+  de datos reutilizadas por un corte en Borrador.
+- **Estado de la Specification sigue en `Borrador`**: los puntos anteriores
+  siguen abiertos; no se marca `Aprobada` todavía.
+
+---
+
 Esta Specification define **qué** debe hacer el sistema, no **cómo**
 implementarlo. No incluye componentes, archivos, hooks, funciones, Tailwind
 ni detalles internos de implementación, salvo los necesarios para definir el
