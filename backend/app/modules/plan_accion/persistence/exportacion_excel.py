@@ -30,6 +30,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.worksheet.worksheet import Worksheet
 
+from app.modules.plan_accion.domain.comparacion import FilaComparacion, PresenciaMeta
 from app.modules.plan_accion.domain.entidades import FilaPlanAccion, ResumenPlanAccion
 
 #: CA03: "filas alternas" -- relleno de las filas de datos pares (1-indexado
@@ -172,6 +173,131 @@ def construir_libro_excel(
     hoja.auto_filter.ref = f"A{_FILA_ENCABEZADO}:L{ultima_fila}"
 
     for columna in range(1, len(_ENCABEZADOS) + 1):
+        letra = hoja.cell(row=_FILA_ENCABEZADO, column=columna).column_letter
+        hoja.column_dimensions[letra].width = 20
+
+    return libro
+
+
+# =============================================================================
+# [E04-HU04] HU04-CA08: exportar la comparación de dos cortes
+# =============================================================================
+# Reutiliza las constantes de estilo (_RELLENO_FILA_ALTERNA, _FUENTE_ENCABEZADO,
+# _RELLENO_ENCABEZADO, _FORMATO_PESOS, _FORMATO_PORCENTAJE) de la exportación
+# de HU-03 -- es el mismo tipo de archivo (encabezado fijo, filas alternas,
+# mismos formatos numéricos), pero con columnas distintas (A/B/Δ por cada
+# métrica), así que NO reutiliza `construir_libro_excel` -- forzar las 12
+# columnas de `FilaPlanAccion` en una tabla de comparación produciría un
+# layout que no corresponde a HU04-CA04.
+
+_ENCABEZADOS_COMPARACION = (
+    "Sector",
+    "Código Indicador",
+    "Meta",
+    "Presencia",
+    "% Avance Físico A",
+    "% Avance Físico B",
+    "Δ Avance Físico",
+    "Ejecución A",
+    "Ejecución B",
+    "Δ Ejecución",
+    "% Avance Financiero A",
+    "% Avance Financiero B",
+    "Δ Avance Financiero",
+)
+
+_PRESENCIA_LEGIBLE = {
+    PresenciaMeta.AMBOS: "En ambos cortes",
+    PresenciaMeta.SOLO_CORTE_A: "Solo en Corte A",
+    PresenciaMeta.SOLO_CORTE_B: "Solo en Corte B",
+}
+
+
+@dataclass(frozen=True, slots=True)
+class MetadatosComparacion:
+    """HU04-CA04: metadatos de la cabecera, equivalente a
+    `MetadatosExportacion` pero para DOS cortes en vez de uno."""
+
+    vigencia: int
+    fecha_corte_a: date
+    fecha_corte_b: date
+    usuario_correo: str
+    generado_en: datetime
+
+
+def _escribir_metadatos_comparacion(hoja: Worksheet, metadatos: MetadatosComparacion) -> None:
+    filas_metadatos = (
+        "Comparación del Plan de Acción",
+        f"Vigencia: {metadatos.vigencia}",
+        f"Corte A (anterior): {metadatos.fecha_corte_a.isoformat()}    "
+        f"Corte B (posterior): {metadatos.fecha_corte_b.isoformat()}",
+        f"Generado por: {metadatos.usuario_correo}",
+        f"Fecha y hora de generación: {metadatos.generado_en.isoformat(timespec='seconds')}",
+    )
+    for indice, texto in enumerate(filas_metadatos):
+        hoja.cell(row=_FILA_METADATOS_INICIO + indice, column=1, value=texto)
+    hoja.cell(row=_FILA_METADATOS_INICIO, column=1).font = Font(bold=True, size=13)
+
+
+def _escribir_encabezado_comparacion(hoja: Worksheet) -> None:
+    for columna, titulo in enumerate(_ENCABEZADOS_COMPARACION, start=1):
+        celda = hoja.cell(row=_FILA_ENCABEZADO, column=columna, value=titulo)
+        celda.font = _FUENTE_ENCABEZADO
+        celda.fill = _RELLENO_ENCABEZADO
+        celda.alignment = Alignment(horizontal="center", wrap_text=True)
+
+
+def _escribir_fila_comparacion(hoja: Worksheet, fila_excel: int, fila: FilaComparacion) -> None:
+    valores = (
+        fila.sector,
+        fila.cod_indicador_producto,
+        fila.nombre_producto,
+        _PRESENCIA_LEGIBLE[fila.presencia],
+        fila.avance_fisico_pct_a,
+        fila.avance_fisico_pct_b,
+        fila.avance_fisico_delta,
+        fila.ejecucion_a,
+        fila.ejecucion_b,
+        fila.ejecucion_delta,
+        fila.avance_financiero_pct_a,
+        fila.avance_financiero_pct_b,
+        fila.avance_financiero_delta,
+    )
+    for columna, valor in enumerate(valores, start=1):
+        celda = hoja.cell(row=fila_excel, column=columna, value=valor)
+        if columna in (8, 9, 10):  # Ejecución A, B, Δ
+            celda.number_format = _FORMATO_PESOS
+        elif columna in (11, 12, 13):  # % Avance Financiero A, B, Δ
+            celda.number_format = _FORMATO_PORCENTAJE
+
+    if (fila_excel - _FILA_ENCABEZADO) % 2 == 0:
+        for columna in range(1, len(_ENCABEZADOS_COMPARACION) + 1):
+            hoja.cell(row=fila_excel, column=columna).fill = _RELLENO_FILA_ALTERNA
+
+
+def construir_libro_comparacion(
+    filas: list[FilaComparacion],
+    metadatos: MetadatosComparacion,
+) -> Workbook:
+    """HU04-CA08: exporta la tabla de comparación ya calculada por
+    `domain.comparacion.comparar_cortes` (y, si aplica,
+    `filtrar_solo_cambios`) -- no recalcula ningún Δ."""
+    libro = Workbook()
+    hoja = libro.active
+    hoja.title = "Comparación Plan de Acción"
+
+    _escribir_metadatos_comparacion(hoja, metadatos)
+    _escribir_encabezado_comparacion(hoja)
+
+    ultima_fila = _FILA_ENCABEZADO
+    for desplazamiento, fila in enumerate(filas):
+        ultima_fila = _FILA_ENCABEZADO + 1 + desplazamiento
+        _escribir_fila_comparacion(hoja, ultima_fila, fila)
+
+    hoja.freeze_panes = f"A{_FILA_ENCABEZADO + 1}"
+    hoja.auto_filter.ref = f"A{_FILA_ENCABEZADO}:M{ultima_fila}"
+
+    for columna in range(1, len(_ENCABEZADOS_COMPARACION) + 1):
         letra = hoja.cell(row=_FILA_ENCABEZADO, column=columna).column_letter
         hoja.column_dimensions[letra].width = 20
 
