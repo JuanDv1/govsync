@@ -86,3 +86,19 @@ class TestRolVisitante:
         cuerpo = respuesta.json()
         assert cuerpo["codigo"] == "permiso_insuficiente"
         assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador", "gestor"}
+
+    def test_visitante_no_puede_reemplazar_archivo_del_corte_actual(self, cliente) -> None:
+        """[E02-HU05][CA09]: la restricción por rol de la ruta PUT es la
+        MISMA `EscrituraDep` que ya cubre las otras 4 rutas de escritura de
+        este router (D24) -- no hay código de autorización nuevo que
+        probar aparte, solo confirmar que el endpoint nuevo quedó detrás de
+        la misma dependencia. 403 antes de intentar leer ningún archivo: no
+        hace falta enviar un `archivo` real en el cuerpo."""
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _USUARIO_VISITANTE
+
+        respuesta = cliente.put(f"/api/v1/cortes/{uuid.uuid4()}/archivos/PDT")
+
+        assert respuesta.status_code == 403
+        cuerpo = respuesta.json()
+        assert cuerpo["codigo"] == "permiso_insuficiente"
+        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador", "gestor"}

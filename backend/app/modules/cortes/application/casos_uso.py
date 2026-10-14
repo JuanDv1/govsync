@@ -47,7 +47,12 @@ from app.modules.cortes.application.validacion_archivos import (
     TAMANO_MAX_POR_DEFECTO,
     validar_archivo_cargado,
 )
-from app.modules.cortes.domain.entidades import ArchivoFuente, Corte, TipoArchivoFuente
+from app.modules.cortes.domain.entidades import (
+    ArchivoFuente,
+    Corte,
+    HistorialReemplazoArchivo,
+    TipoArchivoFuente,
+)
 from app.modules.cortes.domain.puertos import RepositorioCortes, RepositorioDatosCorte
 from app.shared.errors import OperacionNoPermitida, RecursoNoEncontrado
 
@@ -184,39 +189,144 @@ class ServicioCortes:
             raise RecursoNoEncontrado(f"No existe un corte con id {corte_id}.")
         corte.verificar_modificable()
 
-        lector = self._lectores.get(tipo)
-        if lector is None:
-            raise ValueError(
-                f"No hay un lector registrado para el tipo de archivo {tipo!r}. "
-                "Revisar el mapeo `lectores` con el que se construyó ServicioCortes."
-            )
-
-        # --- EXTRACT + TRANSFORM: fuera de la transacción de escritura -----
-        nombre_saneado = validar_archivo_cargado(
-            contenido, nombre_archivo, tamano_max=self._tamano_max_archivo
+        nombre_saneado, resultado = self._extraer_y_transformar(
+            corte, tipo, contenido, nombre_archivo
         )
-        resultado = lector.leer(contenido, nombre_saneado, corte.vigencia)
 
         # --- LOAD: dentro de la transacción ---------------------------------
         try:
-            filas_cargadas = self._cargar_resultado(corte_id, tipo, resultado)
-            archivo = ArchivoFuente(
-                tipo=tipo,
-                nombre_archivo=nombre_saneado,
-                filas_reconocidas=filas_cargadas,
-                reutilizado=False,
-                corte_origen_id=None,
-                descartes=resultado.descartes,
-                conteos=resultado.conteos,
-                codigos=resultado.codigos,
-            )
-            self._cortes.registrar_archivo(corte_id, archivo)
+            archivo = self._cargar_y_registrar(corte_id, tipo, nombre_saneado, resultado)
             self._commit()
         except Exception:
             self._rollback()
             raise
         corte.archivos[tipo] = archivo
         return archivo
+
+    def _extraer_y_transformar(
+        self,
+        corte: Corte,
+        tipo: TipoArchivoFuente,
+        contenido: bytes,
+        nombre_archivo: str,
+    ) -> tuple[str, ResultadoLectura]:
+        """EXTRACT + TRANSFORM (SEC-03 + lector), SIEMPRE fuera de la
+        transacción de escritura. Factorizado de `cargar_archivo` para que
+        `reemplazar_archivo_corte_actual` ([E02-HU05]) reutilice exactamente
+        la misma validación/lectura sin duplicarla -- ambos flujos deben
+        rechazar un archivo inválido de la misma forma (CA04 de HU-05 pide
+        "las mismas reglas de carga (HU-02/03/04)").
+        """
+        lector = self._lectores.get(tipo)
+        if lector is None:
+            raise ValueError(
+                f"No hay un lector registrado para el tipo de archivo {tipo!r}. "
+                "Revisar el mapeo `lectores` con el que se construyó ServicioCortes."
+            )
+        nombre_saneado = validar_archivo_cargado(
+            contenido, nombre_archivo, tamano_max=self._tamano_max_archivo
+        )
+        resultado = lector.leer(contenido, nombre_saneado, corte.vigencia)
+        return nombre_saneado, resultado
+
+    def _cargar_y_registrar(
+        self,
+        corte_id: uuid.UUID,
+        tipo: TipoArchivoFuente,
+        nombre_saneado: str,
+        resultado: ResultadoLectura,
+    ) -> ArchivoFuente:
+        """LOAD: siempre dentro de la transacción del llamador (éste no hace
+        commit/rollback -- eso es responsabilidad de quien orquesta la
+        transacción completa: `cargar_archivo` o
+        `reemplazar_archivo_corte_actual`)."""
+        filas_cargadas = self._cargar_resultado(corte_id, tipo, resultado)
+        archivo = ArchivoFuente(
+            tipo=tipo,
+            nombre_archivo=nombre_saneado,
+            filas_reconocidas=filas_cargadas,
+            reutilizado=False,
+            corte_origen_id=None,
+            descartes=resultado.descartes,
+            conteos=resultado.conteos,
+            codigos=resultado.codigos,
+        )
+        self._cortes.registrar_archivo(corte_id, archivo)
+        return archivo
+
+    def reemplazar_archivo_corte_actual(
+        self,
+        corte_id: uuid.UUID,
+        tipo: TipoArchivoFuente,
+        contenido: bytes,
+        nombre_archivo: str,
+        usuario: str,
+    ) -> ArchivoFuente:
+        """[E02-HU05] CA01-CA06, CA08: reemplaza un archivo del corte actual
+        (REGISTRADO, el más reciente GLOBAL -- `Corte.verificar_reemplazable`).
+
+        DECISIÓN TÉCNICA (D25, docs/DECISIONES.md): Opción B -- "confirmar y
+        revertir con rollback", NO "validar sin aplicar". No existe un paso
+        de validación separado de la aplicación (igual que en
+        `cargar_archivo`): si el archivo es inválido o el Load falla, se
+        revierte completo (CA04, CA08) reutilizando el mismo patrón
+        transaccional de HU-06 -- el frontend pide confirmación (CA03) ANTES
+        de llamar a este método, no hay una llamada de "preview" distinta en
+        el backend.
+
+        "Recalcular el cruce" (CA02/CA08) no es un paso explícito aquí a
+        propósito (hallazgo documentado en la spec de esta HU): la matriz de
+        HU-07 (`construir_matriz`) se arma con un JOIN en el momento de la
+        consulta sobre las tablas que `_cargar_y_registrar` ya sobrescribe
+        (`reemplazar_metas`/`reemplazar_presupuesto`/`reemplazar_proyectos`) --
+        la siguiente consulta de la matriz queda actualizada sin ningún
+        código adicional de "recalculo".
+
+        Fuera de alcance (ver docs/specs/E02-HU05-...): preservar avances
+        físicos (CA07, bloqueado por decisión de negocio abierta) y
+        actualizar el "Plan de Acción" (E04-HU01 no existe todavía).
+        """
+        corte = self._cortes.obtener(corte_id)
+        if corte is None:
+            raise RecursoNoEncontrado(f"No existe un corte con id {corte_id}.")
+        corte_actual = self._cortes.ultimo_registrado()
+        es_actual = corte_actual is not None and corte_actual.id == corte.id
+        corte.verificar_reemplazable(es_actual)
+
+        archivo_anterior = corte.archivos.get(tipo)
+        nombre_anterior = archivo_anterior.nombre_archivo if archivo_anterior else None
+
+        # --- EXTRACT + TRANSFORM: fuera de la transacción --------------------
+        nombre_saneado, resultado = self._extraer_y_transformar(
+            corte, tipo, contenido, nombre_archivo
+        )
+
+        # --- LOAD + auditoría: misma transacción, mismo patrón de rollback ---
+        try:
+            archivo = self._cargar_y_registrar(corte_id, tipo, nombre_saneado, resultado)
+            self._cortes.registrar_historial_reemplazo(
+                HistorialReemplazoArchivo(
+                    corte_id=corte_id,
+                    tipo=tipo,
+                    nombre_archivo_anterior=nombre_anterior,
+                    nombre_archivo_nuevo=nombre_saneado,
+                    usuario=usuario,
+                )
+            )
+            self._commit()
+        except Exception:
+            self._rollback()
+            raise
+        corte.archivos[tipo] = archivo
+        return archivo
+
+    def obtener_historial_reemplazos(self, corte_id: uuid.UUID) -> list[HistorialReemplazoArchivo]:
+        """[E02-HU05][CA06]: historial de reemplazos de un corte, para el
+        detalle de "Editar archivos". 404 si el corte no existe -- mismo
+        criterio que `obtener_corte`."""
+        if self._cortes.obtener(corte_id) is None:
+            raise RecursoNoEncontrado(f"No existe un corte con id {corte_id}.")
+        return self._cortes.listar_historial_reemplazos(corte_id)
 
     def _cargar_resultado(
         self, corte_id: uuid.UUID, tipo: TipoArchivoFuente, resultado: ResultadoLectura

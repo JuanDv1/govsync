@@ -42,18 +42,25 @@ elimina la trampa de orden. La misma regla aplica a `CorteORM` aquí.
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.modules.cortes.domain.entidades import ArchivoFuente, Corte, EstadoCorte, TipoArchivoFuente
+from app.modules.cortes.domain.entidades import (
+    ArchivoFuente,
+    Corte,
+    EstadoCorte,
+    HistorialReemplazoArchivo,
+    TipoArchivoFuente,
+)
 from app.modules.cortes.domain.puertos import RepositorioCortes, RepositorioDatosCorte
 from app.modules.cortes.persistence.models import (
     ArchivoFuenteORM,
     ContratoORM,
     CorteORM,
+    HistorialReemplazoArchivoORM,
     MetaORM,
     MetaProgramacionFisicaORM,
     ProgramacionFinancieraORM,
@@ -72,6 +79,19 @@ def _archivo_a_dominio(o: ArchivoFuenteORM) -> ArchivoFuente:
         filas_reconocidas=o.filas_reconocidas,
         reutilizado=o.reutilizado,
         corte_origen_id=o.corte_origen_id,
+        fecha_carga=o.fecha_carga,
+    )
+
+
+def _historial_a_dominio(o: HistorialReemplazoArchivoORM) -> HistorialReemplazoArchivo:
+    return HistorialReemplazoArchivo(
+        id=o.id,
+        corte_id=o.corte_id,
+        tipo=o.tipo,
+        nombre_archivo_anterior=o.nombre_archivo_anterior,
+        nombre_archivo_nuevo=o.nombre_archivo_nuevo,
+        usuario=o.usuario,
+        fecha=o.fecha,
     )
 
 
@@ -172,6 +192,11 @@ class RepositorioCortesSQL(RepositorioCortes):
             existente.filas_reconocidas = archivo.filas_reconocidas
             existente.reutilizado = archivo.reutilizado
             existente.corte_origen_id = archivo.corte_origen_id
+            # [E02-HU05][CA01] hallazgo de la spec: `server_default=func.now()`
+            # solo se evalua al INSERTAR -- sin esta linea, "fecha_carga" se
+            # quedaba congelada en la primera carga y no reflejaba ningun
+            # reemplazo posterior (HU-06 ni esta HU).
+            existente.fecha_carga = datetime.now(UTC)
         else:
             self._s.add(
                 ArchivoFuenteORM(
@@ -208,6 +233,27 @@ class RepositorioCortesSQL(RepositorioCortes):
         orm.vigencia = corte.vigencia
         orm.fecha_corte = corte.fecha_corte
         self._s.flush()
+
+    def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
+        self._s.add(
+            HistorialReemplazoArchivoORM(
+                id=historial.id,
+                corte_id=historial.corte_id,
+                tipo=historial.tipo,
+                nombre_archivo_anterior=historial.nombre_archivo_anterior,
+                nombre_archivo_nuevo=historial.nombre_archivo_nuevo,
+                usuario=historial.usuario,
+            )
+        )
+        self._s.flush()
+
+    def listar_historial_reemplazos(self, corte_id: uuid.UUID) -> list[HistorialReemplazoArchivo]:
+        consulta = (
+            select(HistorialReemplazoArchivoORM)
+            .where(HistorialReemplazoArchivoORM.corte_id == corte_id)
+            .order_by(HistorialReemplazoArchivoORM.fecha.desc())
+        )
+        return [_historial_a_dominio(o) for o in self._s.scalars(consulta)]
 
 
 class RepositorioDatosCorteSQL(RepositorioDatosCorte):
