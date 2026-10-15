@@ -17,6 +17,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
+from io import BytesIO
+
+from openpyxl import load_workbook
 
 from app.core.dependencias import obtener_usuario_actual
 from app.modules.cortes.domain.entidades import EstadoCorte, TipoArchivoFuente
@@ -310,3 +313,84 @@ class TestFiltrosQueryParamsE04HU02:
 
         assert respuesta.status_code == 200
         assert respuesta.json()["filas"] == []
+
+
+class TestExportarExcelE04HU03:
+    """[E04-HU03] GET /plan-accion/exportar -- mismo pipeline que /actual
+    (ver _obtener_filas_filtradas en el router), salida .xlsx."""
+
+    def _preparar_corte_con_una_meta(self, sesion):
+        corte_id = _crear_corte(sesion, estado=EstadoCorte.REGISTRADO)
+        for tipo in TipoArchivoFuente:
+            _marcar_archivo_cargado(sesion, corte_id, tipo)
+        sesion.add(
+            MetaORM(
+                id=uuid.uuid4(),
+                corte_id=corte_id,
+                cod_indicador_producto="040110500",
+                nombre_producto="Vías pavimentadas",
+                sector="Infraestructura",
+                es_principal=True,
+            )
+        )
+        sesion.commit()
+        return corte_id
+
+    def test_mismo_control_de_rol_que_actual_ca10(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _GESTOR
+        self._preparar_corte_con_una_meta(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/exportar")
+
+        assert respuesta.status_code == 403
+
+    def test_devuelve_xlsx_descargable_ca01(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_una_meta(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/exportar")
+
+        assert respuesta.status_code == 200
+        assert respuesta.headers["content-type"] == (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        assert "Plan_Accion_2026_Corte_2026-01-01.xlsx" in respuesta.headers["content-disposition"]
+
+    def test_contenido_del_archivo_trae_la_meta_ca01(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_una_meta(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/exportar")
+
+        libro = load_workbook(BytesIO(respuesta.content))
+        hoja = libro["Plan de Acción"]
+        assert hoja.cell(row=7, column=1).value == "Sector"
+        assert hoja.cell(row=8, column=2).value == "040110500"
+
+    def test_respeta_filtros_igual_que_actual_ca02(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_una_meta(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/exportar", params={"sector": "Educación"})
+
+        libro = load_workbook(BytesIO(respuesta.content))
+        hoja = libro["Plan de Acción"]
+        assert hoja.cell(row=8, column=1).value is None  # sin filas tras filtrar
+
+    def test_sin_corte_registrado_devuelve_404_ca09(self, cliente) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+
+        respuesta = cliente.get("/api/v1/plan-accion/exportar")
+
+        assert respuesta.status_code == 404
+
+    def test_metadatos_incluyen_el_usuario_que_exporta_ca04(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_una_meta(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/exportar")
+
+        libro = load_workbook(BytesIO(respuesta.content))
+        hoja = libro["Plan de Acción"]
+        texto_cabecera = "\n".join(str(hoja.cell(row=i, column=1).value) for i in range(1, 7))
+        assert _ADMINISTRADOR.correo in texto_cabecera

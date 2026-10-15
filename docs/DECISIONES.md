@@ -1467,3 +1467,50 @@ equivalente de HU-10, por consistencia de la API. Se agrega CA09 al spec
 (`docs/specs/E04-HU02-filtrar-plan-accion.md`). No afecta el resto de
 `FiltrosPlanAccion`/`filtrar_plan_accion` ni la decisión de filtrar en
 Python (sección anterior de este documento).
+
+---
+
+## D28 · Plan de Acción (E-04/HU-03): columnas del Excel exportado y convención de nombre de archivo
+
+**Estado: SUPUESTO MENOR** — no afecta esquema, dinero ni seguridad.
+
+**1. Columnas exportadas.** El Excel de requisitos describe esta tarjeta
+en términos de "las mismas columnas y orden de la vista" (HU03-CA01), pero
+la vista misma (CA02 de HU-01) tiene la ambigüedad de las "14 columnas" sin
+resolver (D26 punto 5 — "Meta"/"Indicador"/"Producto" no son 3 campos
+reales). Se exportan EXACTAMENTE las 12 columnas que ya expone
+`FilaPlanAccionRespuesta` (la respuesta JSON de `GET /actual`), ni una más
+ni una menos — no se inventa una decimocuarta columna que el modelo de
+datos no sostiene. Si D26 punto 5 se resuelve y cambian las columnas de la
+vista, el único archivo que cambia es
+`plan_accion/persistence/exportacion_excel.py` (`_ENCABEZADOS` y
+`_escribir_fila`).
+
+**2. Nombre de archivo (HU03-CA05).** El Excel marca esta convención con
+`[VALIDAR convención]`. Se implementa tal cual la describe el CA:
+`Plan_Accion_<vigencia>_Corte_<AAAA-MM-DD>.xlsx`, con la fecha del CORTE
+(no la de la descarga) — es la lectura más literal del texto del CA y no
+compromete nada si el equipo pide otro formato después.
+
+**3. Formato de porcentaje (decisión técnica, no de negocio).**
+`avance_financiero_pct` ya está en escala 0-100 (ej. `45.2`), no como
+fracción 0-1. Se escribe el valor TAL CUAL con un formato de celda
+`0.0"%"` (símbolo literal), NO el formato nativo `0.0%` de Excel — ese
+formato nativo multiplica por 100 al mostrar, y como el valor ya está en
+esa escala, el archivo mostraría "4520.0%" en vez de "45.2%", rompiendo
+CA06 ("cifras idénticas a pantalla").
+
+**Sin cambio de esquema ni de dependencias nuevas:** `openpyxl` ya es
+dependencia del backend (lectura de PDT/Ejecución/BPIN) — esta HU es el
+primer uso de ESCRITURA de `openpyxl` en el proyecto, pero no agrega
+ninguna librería nueva a `requirements.txt`.
+
+**Reutilización deliberada:** `GET /exportar` comparte el pipeline
+completo (`_obtener_filas_filtradas`) con `GET /actual` — mismos filtros
+(D27), misma agregación (D26) — para no duplicar esa lógica entre los dos
+endpoints; la única diferencia entre ambos es la serialización final
+(JSON vs. `.xlsx`).
+
+**Registrado:** 2026-10-14, Juan Esteban (asistido por Claude Code —
+`[E04-HU03] Exportar el Plan de Acción Consolidado a Excel`,
+implementación backend).
