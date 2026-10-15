@@ -81,7 +81,7 @@
  *   tarjeta dedicada — no se introduce aquí de forma silenciosa.
  */
 import { ChevronDown } from "lucide-react";
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { api } from "../api/cliente.js";
@@ -254,6 +254,9 @@ export default function MatrizRelacion() {
   const [filtros, setFiltros] = useState(FILTROS_VACIOS);
   const [panelAbierto, setPanelAbierto] = useState(false);
   const idPanel = useId();
+  // Botón "Filtros": destino del foco cuando se quita la última etiqueta o
+  // se pulsa "Limpiar filtros" (ver `FiltrosMatriz` y `limpiarFiltros`).
+  const refBotonFiltros = useRef(null);
 
   // [E02-HU10] Opciones de filtro del corte: mismo patrón `{clave, datos,
   // error}` que `resultado` (la clave identifica de qué corte/intento es lo
@@ -315,6 +318,27 @@ export default function MatrizRelacion() {
   function quitarFiltro(clave, valor) {
     setFiltros((anteriores) => quitarValor(anteriores, clave, valor));
     setPagina(1);
+  }
+
+  // [E02-HU10/CA12] Vuelve a mostrar todos los registros del corte: vacía los
+  // 6 criterios Y también el estado del cruce y la búsqueda, todo en el MISMO
+  // manejador (un solo render, una sola petición). Se vacía `busquedaInput`
+  // además de `busqueda`: así el debounce de arriba, que se reprograma al
+  // cambiar `busquedaInput`, solo reescribe valores que ya son iguales (sin
+  // re-render) en vez de disparar una segunda petición. El foco pasa a
+  // "Filtros" porque este botón desaparece al limpiar; se hace aquí, en el
+  // manejador, no en un efecto.
+  function limpiarFiltros() {
+    // Si ya no hay criterios se conserva el mismo objeto: un objeto vacío
+    // "nuevo" cambiaría la identidad de `filtros` y re-dispararía el efecto.
+    setFiltros((anteriores) =>
+      hayFiltros(anteriores) ? FILTROS_VACIOS : anteriores,
+    );
+    setEstadoCruce("");
+    setBusquedaInput("");
+    setBusqueda("");
+    setPagina(1);
+    refBotonFiltros.current?.focus();
   }
 
   const claveActual = corteId
@@ -390,9 +414,6 @@ export default function MatrizRelacion() {
     [],
   );
 
-  // Sin botón (ni panel) si la matriz ni siquiera pudo cargar la primera
-  // vez: no hay nada que filtrar y el error ya ocupa la pantalla.
-  const puedeFiltrar = !(error && matrizVisible === null);
   const filtrosActivos = contarActivos(filtros);
 
   // Carga inicial: todavía no hay ninguna fila que mostrar, así que la
@@ -401,6 +422,17 @@ export default function MatrizRelacion() {
   // la tabla se mantiene montada y solo se deshabilitan los controles.
   const cargandoInicial = cargando && matrizVisible === null;
   const actualizandoPagina = cargando && matrizVisible !== null;
+
+  // [E02-HU10] El botón "Filtros" (y el panel) solo existen con la matriz ya
+  // cargada o con una página previa visible: ni durante la carga inicial
+  // (evita que aparezca y desaparezca) ni si la primera carga falló (no hay
+  // nada que filtrar y el error ya ocupa la pantalla).
+  const puedeFiltrar = !cargandoInicial && !(error && matrizVisible === null);
+
+  // [E02-HU10/CA12] "Limpiar filtros" solo se ofrece si hay algo que limpiar.
+  // `busqueda` (la ya enviada al backend), no `busquedaInput`.
+  const hayAlgoQueLimpiar =
+    hayFiltros(filtros) || Boolean(estadoCruce) || Boolean(busqueda);
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
   const cambiarPagina = useCallback((nueva) => setPagina(nueva), []);
@@ -475,6 +507,7 @@ export default function MatrizRelacion() {
 
             {puedeFiltrar && (
               <button
+                ref={refBotonFiltros}
                 type="button"
                 aria-expanded={panelAbierto}
                 aria-controls={idPanel}
@@ -487,6 +520,16 @@ export default function MatrizRelacion() {
                   aria-hidden="true"
                   className={panelAbierto ? "rotate-180" : ""}
                 />
+              </button>
+            )}
+
+            {hayAlgoQueLimpiar && (
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="rounded-sm px-2 py-2 text-sm font-medium text-azul transition-colors hover:text-navy"
+              >
+                Limpiar filtros
               </button>
             )}
 
@@ -508,6 +551,7 @@ export default function MatrizRelacion() {
             onReintentar={reintentarOpciones}
             abierto={panelAbierto && puedeFiltrar}
             idPanel={idPanel}
+            refBotonFiltros={refBotonFiltros}
           />
         </Card>
       )}
