@@ -145,6 +145,12 @@ const OPCIONES_ESTADO_CRUCE = [
   { valor: "sin_cruce", etiqueta: "Sin ningún cruce" },
 ];
 
+// [E02-HU10/CA02/CA12] Mismo texto en el contador de la Card y en la
+// paginación: "1 registro" / "N registros". [ASUMIDO, pendiente PO]
+function textoRegistros(total) {
+  return `${total} ${total === 1 ? "registro" : "registros"}`;
+}
+
 function Celda({ clave, valor }) {
   if (valor === null || valor === undefined) {
     return <SinCorrespondencia />;
@@ -199,7 +205,8 @@ function PaginacionMatriz({
       </button>
 
       <span aria-live="polite" className="text-[11px] text-gray-500">
-        Página {pagina} de {totalPaginas} · {totalFilas} filas en total
+        Página {pagina} de {totalPaginas} · {textoRegistros(totalFilas)} en
+        total
         {actualizando ? " · actualizando…" : ""}
       </span>
 
@@ -533,12 +540,17 @@ export default function MatrizRelacion() {
               </button>
             )}
 
-            {matrizVisible && (
-              <span className="ml-auto shrink-0 text-[11px] text-gray-500">
-                {matrizVisible.total_filas} fila
-                {matrizVisible.total_filas === 1 ? "" : "s"}
-              </span>
-            )}
+            {/* [E02-HU10/CA02/CA12] La región live existe SIEMPRE: una región
+                que se monta ya con el texto no se anuncia. Mientras carga,
+                `matrizVisible` conserva el total anterior, así que no hay
+                anuncio hasta que llega el nuevo. */}
+            <div
+              aria-live="polite"
+              aria-atomic="true"
+              className="ml-auto shrink-0 text-[11px] text-gray-500"
+            >
+              {matrizVisible ? textoRegistros(matrizVisible.total_filas) : ""}
+            </div>
           </div>
 
           <FiltrosMatriz
@@ -569,16 +581,33 @@ export default function MatrizRelacion() {
       {corteId &&
         !cargandoInicial &&
         matrizVisible !== null &&
-        matrizVisible.total_filas === 0 && (
+        matrizVisible.total_filas === 0 &&
+        (actualizandoPagina ? (
+          // `hayAlgoQueLimpiar` ya refleja el cambio en curso (p. ej. tras
+          // "Limpiar filtros") pero `matrizVisible` sigue siendo el resultado
+          // vacío anterior: sin esto se vería un instante el mensaje de
+          // "corte sin metas" mientras llega la respuesta.
+          <Cargando mensaje="Actualizando matriz de relación…" />
+        ) : hayAlgoQueLimpiar ? (
+          // [E02-HU10/CA11] Mismo manejador que el botón de la Card.
           <Vacio
-            titulo="Sin datos para mostrar"
-            descripcion={
-              estadoCruce || busqueda || hayFiltros(filtros)
-                ? "Ningún resultado coincide con el filtro o la búsqueda aplicados."
-                : "Este corte no tiene metas registradas en la matriz de relación."
+            titulo="No hay registros que cumplan los filtros seleccionados"
+            accion={
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="rounded-sm px-2 py-2 text-sm font-medium text-azul transition-colors hover:text-navy"
+              >
+                Limpiar filtros
+              </button>
             }
           />
-        )}
+        ) : (
+          <Vacio
+            titulo="Sin datos para mostrar"
+            descripcion="Este corte no tiene metas registradas en la matriz de relación."
+          />
+        ))}
 
       {corteId && matrizVisible && matrizVisible.total_filas > 0 && (
         <>
