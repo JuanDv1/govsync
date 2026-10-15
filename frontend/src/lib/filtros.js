@@ -36,9 +36,11 @@
  * - `claveOpciones`: lista correspondiente en la respuesta de
  *   `opciones-filtro`.
  * - `modo`: "autocompletado" (HU10-CA03: BPIN y Contrato; se sugiere a
- *   partir de `MINIMO_AUTOCOMPLETADO` caracteres, con tope de
- *   `MAXIMO_SUGERENCIAS`) o "lista" (buscador desde 0 caracteres, sin
- *   tope: HU10-CA04 y los demás criterios de lista cerrada).
+ *   partir de `minimoCaracteres`, con tope de `MAXIMO_SUGERENCIAS`) o
+ *   "lista" (buscador desde 0 caracteres, sin tope: HU10-CA04 y los demás
+ *   criterios de lista cerrada).
+ * - `minimoCaracteres`: solo en modo "autocompletado"; caracteres mínimos
+ *   para empezar a sugerir. Distinto por criterio.
  *
  * [ASUMIDO, pendiente PO] Programa es el sexto criterio (HU10-CA16).
  */
@@ -48,6 +50,7 @@ export const CRITERIOS = [
     titulo: "BPIN",
     claveOpciones: "bpin",
     modo: "autocompletado",
+    minimoCaracteres: 3,
   },
   {
     clave: "cod_indicador_producto",
@@ -66,6 +69,9 @@ export const CRITERIOS = [
     titulo: "Contrato",
     claveOpciones: "contratos",
     modo: "autocompletado",
+    // Mínimo 1 por números cortos reales (p. ej. "12"); confirmado por el PO
+    // (2026-10-15).
+    minimoCaracteres: 1,
   },
   {
     clave: "sector",
@@ -80,9 +86,6 @@ export const CRITERIOS = [
     modo: "lista",
   },
 ];
-
-/** HU10-CA03: caracteres mínimos para sugerir en modo "autocompletado". */
-export const MINIMO_AUTOCOMPLETADO = 3;
 
 /** HU10-CA03: tope de sugerencias en modo "autocompletado". */
 export const MAXIMO_SUGERENCIAS = 10;
@@ -118,7 +121,7 @@ export function normalizar(texto) {
  */
 export function limitesDeBusqueda(criterio) {
   if (criterio.modo === "autocompletado") {
-    return { minimo: MINIMO_AUTOCOMPLETADO, maximo: MAXIMO_SUGERENCIAS };
+    return { minimo: criterio.minimoCaracteres, maximo: MAXIMO_SUGERENCIAS };
   }
   return { minimo: 0, maximo: undefined };
 }

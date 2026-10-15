@@ -13,8 +13,9 @@
  * Aquí `seleccionados` solo sirve para no volver a sugerir lo ya elegido.
  *
  * UN SOLO COMPONENTE PARA LOS DOS MODOS de `lib/filtros.js::CRITERIOS`:
- *   - "autocompletado" (BPIN, Contrato): `minCaracteres={3}` y
- *     `maxSugerencias={10}` (ver `limitesDeBusqueda`).
+ *   - "autocompletado" (BPIN, Contrato): `minCaracteres` por criterio
+ *     (BPIN 3, Contrato 1) y `maxSugerencias={10}` (ver
+ *     `limitesDeBusqueda`).
  *   - "lista" (los otros cuatro): los valores por defecto — buscador desde
  *     0 caracteres y sin tope; al enfocar muestra la lista completa.
  * La búsqueda ("contiene", sin distinguir mayúsculas ni guiones) vive en
@@ -87,7 +88,9 @@ export default function SelectorConBusqueda({
   let mensajeAyuda = null;
   if (sinOpciones) mensajeAyuda = mensajeSinOpciones;
   else if (mostrarAyudaMinimo)
-    mensajeAyuda = `Escriba al menos ${minCaracteres} caracteres`;
+    mensajeAyuda = `Escriba al menos ${minCaracteres} ${
+      minCaracteres === 1 ? "carácter" : "caracteres"
+    }`;
   else if (mostrarSinCoincidencias) mensajeAyuda = mensajeSinCoincidencias;
 
   let anuncio = "";
