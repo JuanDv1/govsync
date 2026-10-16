@@ -207,10 +207,17 @@ function PaginacionMatriz({
         Anterior
       </button>
 
-      <span aria-live="polite" className="text-[11px] text-gray-500">
-        Página {pagina} de {totalPaginas} · {textoRegistros(totalFilas)} en
-        total
-        {actualizando ? " · actualizando…" : ""}
+      {/* [E02-HU10] El total ya lo anuncia el contador de la Card (su propia
+          región live): aquí solo se anuncian la página y "actualizando…". El
+          total queda visible, fuera de las regiones live, en el mismo orden
+          de siempre. Las dos regiones están siempre montadas (una región que
+          se monta ya con texto no se anuncia). */}
+      <span className="text-[11px] text-gray-500">
+        <span aria-live="polite">
+          Página {pagina} de {totalPaginas}
+        </span>
+        {` · ${textoRegistros(totalFilas)} en total`}
+        <span aria-live="polite">{actualizando ? " · actualizando…" : ""}</span>
       </span>
 
       <button
@@ -444,6 +451,17 @@ export default function MatrizRelacion() {
   const hayAlgoQueLimpiar =
     hayFiltros(filtros) || Boolean(estadoCruce) || Boolean(busqueda);
 
+  // [E02-HU10/CA11] Se está mostrando el estado "sin resultados" con su
+  // propio botón "Limpiar filtros". Decide ese Vacio y, negada, el botón de
+  // la Card: así nunca hay dos botones con el mismo nombre accesible a la vez.
+  const mostrarSinResultados =
+    !cargandoInicial &&
+    matrizVisible !== null &&
+    matrizVisible.total_filas === 0 &&
+    !error &&
+    !actualizandoPagina &&
+    hayAlgoQueLimpiar;
+
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
   const cambiarPagina = useCallback((nueva) => setPagina(nueva), []);
 
@@ -533,7 +551,7 @@ export default function MatrizRelacion() {
               </button>
             )}
 
-            {hayAlgoQueLimpiar && (
+            {hayAlgoQueLimpiar && !mostrarSinResultados && (
               <button
                 type="button"
                 onClick={limpiarFiltros}
@@ -596,8 +614,9 @@ export default function MatrizRelacion() {
           // vacío anterior: sin esto se vería un instante el mensaje de
           // "corte sin metas" mientras llega la respuesta.
           <Cargando mensaje="Actualizando matriz de relación…" />
-        ) : hayAlgoQueLimpiar ? (
-          // [E02-HU10/CA11] Mismo manejador que el botón de la Card.
+        ) : mostrarSinResultados ? (
+          // [E02-HU10/CA11] Mismo manejador que el botón de la Card, que no
+          // se pinta mientras se ve este.
           <Vacio
             titulo="No hay registros que cumplan los filtros seleccionados"
             accion={
