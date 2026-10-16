@@ -284,6 +284,60 @@ function EstadoSinFilas({
   );
 }
 
+// [E02-HU10] Opciones de filtro del corte: se piden al montar el corte (no
+// al abrir el panel) para que el texto de las etiquetas y el autocompletado
+// ya tengan datos. Mismo patrón `{clave, datos, error}` que `resultado` en
+// `MatrizRelacion`: la clave identifica de qué corte/intento es lo guardado;
+// si no coincide con `claveOpciones`, sigue cargando o son datos de otro
+// corte y se ignoran (por eso no hace falta reiniciarlo al cambiar de corte).
+// `intentoOpciones` es el "Reintentar". Solo hay setState dentro de los
+// callbacks de la promesa.
+function useOpcionesFiltro(corteId) {
+  const [intentoOpciones, setIntentoOpciones] = useState(0);
+  const [resultadoOpciones, setResultadoOpciones] = useState({
+    clave: null,
+    datos: null,
+    error: null,
+  });
+
+  const claveOpciones = corteId ? `${corteId}:${intentoOpciones}` : null;
+
+  useEffect(() => {
+    if (!corteId) return;
+
+    const clave = `${corteId}:${intentoOpciones}`;
+    let vigente = true;
+
+    api
+      .opcionesFiltro(corteId)
+      .then((datos) => {
+        if (!vigente) return;
+        setResultadoOpciones({ clave, datos, error: null });
+      })
+      .catch((errorApi) => {
+        if (!vigente) return;
+        setResultadoOpciones({ clave, datos: null, error: errorApi });
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [corteId, intentoOpciones]);
+
+  const reintentarOpciones = useCallback(
+    () => setIntentoOpciones((n) => n + 1),
+    [],
+  );
+
+  const opcionesVigentes = resultadoOpciones.clave === claveOpciones;
+  return {
+    opcionesFiltro: opcionesVigentes ? resultadoOpciones.datos : null,
+    cargandoOpciones: Boolean(claveOpciones) && !opcionesVigentes,
+    errorOpciones: opcionesVigentes ? resultadoOpciones.error : null,
+    reintentarOpciones,
+  };
+}
+
 export default function MatrizRelacion() {
   const { corteId } = useParams();
   const [pagina, setPagina] = useState(1);
@@ -326,17 +380,6 @@ export default function MatrizRelacion() {
   // Botón "Filtros": destino del foco cuando se quita la última etiqueta o
   // se pulsa "Limpiar filtros" (ver `FiltrosMatriz` y `limpiarFiltros`).
   const refBotonFiltros = useRef(null);
-
-  // [E02-HU10] Opciones de filtro del corte: mismo patrón `{clave, datos,
-  // error}` que `resultado` (la clave identifica de qué corte/intento es lo
-  // guardado; si no coincide con `claveOpciones`, sigue cargando o son datos
-  // de otro corte y se ignoran). `intentoOpciones` es el "Reintentar".
-  const [intentoOpciones, setIntentoOpciones] = useState(0);
-  const [resultadoOpciones, setResultadoOpciones] = useState({
-    clave: null,
-    datos: null,
-    error: null,
-  });
 
   // Cambiar de corte es una pantalla distinta: se reinicia la página, los
   // filtros, y se descartan las filas que se estaban mostrando (pertenecen
@@ -447,41 +490,12 @@ export default function MatrizRelacion() {
   const cargando = Boolean(claveActual) && resultado.clave !== claveActual;
   const error = resultado.clave === claveActual ? resultado.error : null;
 
-  // [E02-HU10] Opciones del corte: se piden al montar el corte (no al abrir
-  // el panel) para que el texto de las etiquetas y el autocompletado ya
-  // tengan datos. Solo hay setState dentro de los callbacks de la promesa.
-  const claveOpciones = corteId ? `${corteId}:${intentoOpciones}` : null;
-
-  useEffect(() => {
-    if (!corteId) return;
-
-    const clave = `${corteId}:${intentoOpciones}`;
-    let vigente = true;
-
-    api
-      .opcionesFiltro(corteId)
-      .then((datos) => {
-        if (!vigente) return;
-        setResultadoOpciones({ clave, datos, error: null });
-      })
-      .catch((errorApi) => {
-        if (!vigente) return;
-        setResultadoOpciones({ clave, datos: null, error: errorApi });
-      });
-
-    return () => {
-      vigente = false;
-    };
-  }, [corteId, intentoOpciones]);
-
-  const opcionesVigentes = resultadoOpciones.clave === claveOpciones;
-  const cargandoOpciones = Boolean(claveOpciones) && !opcionesVigentes;
-  const opcionesFiltro = opcionesVigentes ? resultadoOpciones.datos : null;
-  const errorOpciones = opcionesVigentes ? resultadoOpciones.error : null;
-  const reintentarOpciones = useCallback(
-    () => setIntentoOpciones((n) => n + 1),
-    [],
-  );
+  const {
+    opcionesFiltro,
+    cargandoOpciones,
+    errorOpciones,
+    reintentarOpciones,
+  } = useOpcionesFiltro(corteId);
 
   const filtrosActivos = contarActivos(filtros);
 
