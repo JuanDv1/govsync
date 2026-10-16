@@ -161,7 +161,7 @@ export function opcionesParaCriterio(opcionesFiltro, criterio) {
  *   espacios de los extremos (solo de este texto, no del de las opciones).
  * - `minimo`: si el texto ya recortado y normalizado tiene menos
  *   caracteres, devuelve `[]` (por defecto 0: con texto vacío devuelve
- *   todo).
+ *   todas las opciones).
  * - `maximo`: tope de resultados; `undefined` = sin tope.
  * - `excluir`: valores ya seleccionados, que no se vuelven a sugerir.
  *
