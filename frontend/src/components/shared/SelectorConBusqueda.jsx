@@ -43,6 +43,65 @@ import { useEffect, useId, useState } from "react";
 
 import { normalizar, sugerir } from "../../lib/filtros.js";
 
+function enPlural(cantidad, singular, plural) {
+  return cantidad === 1 ? singular : plural;
+}
+
+// Texto asociado al campo con `aria-describedby`, o `null` si no hay nada
+// que explicar. El orden es el de prioridad.
+function textoAyuda({
+  sinOpciones,
+  mostrarAyudaMinimo,
+  mostrarSinCoincidencias,
+  minCaracteres,
+  mensajeSinOpciones,
+  mensajeSinCoincidencias,
+}) {
+  if (sinOpciones) return mensajeSinOpciones;
+  if (mostrarAyudaMinimo) {
+    return `Escriba al menos ${minCaracteres} ${enPlural(minCaracteres, "carácter", "caracteres")}`;
+  }
+  if (mostrarSinCoincidencias) return mensajeSinCoincidencias;
+  return null;
+}
+
+// Lo que anuncia la región `aria-live`: "N sugerencias" o el mensaje de sin
+// coincidencias.
+function textoAnuncio({
+  hayLista,
+  cantidadSugerencias,
+  mostrarSinCoincidencias,
+  mensajeSinCoincidencias,
+}) {
+  if (hayLista) {
+    return `${cantidadSugerencias} ${enPlural(cantidadSugerencias, "sugerencia", "sugerencias")}`;
+  }
+  if (mostrarSinCoincidencias) return mensajeSinCoincidencias;
+  return "";
+}
+
+// ↑/↓ (circulares) e Inicio/Fin: devuelve el nuevo índice activo, y
+// `abrir: true` si la lista estaba cerrada, o `null` si la tecla no navega
+// (en ese caso no se hace `preventDefault`). ↑/↓ siempre navegan: con la
+// lista cerrada la abren en la primera o la última opción. Inicio/Fin solo
+// navegan con la lista abierta; si no, mueven el cursor del texto.
+function navegarConTeclado(tecla, { activo, total, hayLista }) {
+  switch (tecla) {
+    case "ArrowDown":
+      if (!hayLista) return { indice: 0, abrir: true };
+      return { indice: activo < 0 ? 0 : (activo + 1) % total };
+    case "ArrowUp":
+      if (!hayLista) return { indice: total - 1, abrir: true };
+      return { indice: activo <= 0 ? total - 1 : activo - 1 };
+    case "Home":
+      return hayLista ? { indice: 0 } : null;
+    case "End":
+      return hayLista ? { indice: total - 1 } : null;
+    default:
+      return null;
+  }
+}
+
 export default function SelectorConBusqueda({
   etiqueta,
   opciones,
@@ -85,21 +144,20 @@ export default function SelectorConBusqueda({
   const activo = hayLista ? Math.min(indice, sugerencias.length - 1) : -1;
   const idActivo = activo >= 0 ? idOpcion(activo) : undefined;
 
-  let mensajeAyuda = null;
-  if (sinOpciones) mensajeAyuda = mensajeSinOpciones;
-  else if (mostrarAyudaMinimo)
-    mensajeAyuda = `Escriba al menos ${minCaracteres} ${
-      minCaracteres === 1 ? "carácter" : "caracteres"
-    }`;
-  else if (mostrarSinCoincidencias) mensajeAyuda = mensajeSinCoincidencias;
-
-  let anuncio = "";
-  if (hayLista) {
-    const cantidad = sugerencias.length;
-    anuncio = `${cantidad} ${cantidad === 1 ? "sugerencia" : "sugerencias"}`;
-  } else if (mostrarSinCoincidencias) {
-    anuncio = mensajeSinCoincidencias;
-  }
+  const mensajeAyuda = textoAyuda({
+    sinOpciones,
+    mostrarAyudaMinimo,
+    mostrarSinCoincidencias,
+    minCaracteres,
+    mensajeSinOpciones,
+    mensajeSinCoincidencias,
+  });
+  const anuncio = textoAnuncio({
+    hayLista,
+    cantidadSugerencias: sugerencias.length,
+    mostrarSinCoincidencias,
+    mensajeSinCoincidencias,
+  });
 
   // Mantiene la opción activa dentro del área visible de la lista. Solo
   // toca el DOM: ningún setState aquí.
@@ -134,63 +192,35 @@ export default function SelectorConBusqueda({
   }
 
   function alPresionarTecla(evento) {
-    const total = sugerencias.length;
+    const paso = navegarConTeclado(evento.key, {
+      activo,
+      total: sugerencias.length,
+      hayLista,
+    });
+    if (paso) {
+      evento.preventDefault();
+      if (paso.abrir) setAbierta(true);
+      setIndice(paso.indice);
+      return;
+    }
 
-    switch (evento.key) {
-      case "ArrowDown":
-        evento.preventDefault();
-        if (!hayLista) {
-          setAbierta(true);
-          setIndice(0);
-        } else {
-          setIndice(activo < 0 ? 0 : (activo + 1) % total);
-        }
-        break;
+    if (evento.key === "Enter") {
+      // Siempre preventDefault: dentro de un <form> Enter enviaría el
+      // formulario aunque no haya nada que agregar.
+      evento.preventDefault();
+      if (hayLista && activo >= 0) seleccionar(sugerencias[activo].valor);
+      return;
+    }
 
-      case "ArrowUp":
-        evento.preventDefault();
-        if (!hayLista) {
-          setAbierta(true);
-          setIndice(total - 1);
-        } else {
-          setIndice(activo <= 0 ? total - 1 : activo - 1);
-        }
-        break;
-
-      case "Home":
-        if (hayLista) {
-          evento.preventDefault();
-          setIndice(0);
-        }
-        break;
-
-      case "End":
-        if (hayLista) {
-          evento.preventDefault();
-          setIndice(total - 1);
-        }
-        break;
-
-      case "Enter":
-        // Siempre preventDefault: dentro de un <form> Enter enviaría el
-        // formulario aunque no haya nada que agregar.
-        evento.preventDefault();
-        if (hayLista && activo >= 0) seleccionar(sugerencias[activo].valor);
-        break;
-
-      case "Escape":
-        if (abierta) {
-          evento.preventDefault();
-          setAbierta(false);
-          setIndice(-1);
-        } else if (texto) {
-          evento.preventDefault();
-          setTexto("");
-        }
-        break;
-
-      default:
-        break;
+    if (evento.key !== "Escape") return;
+    // Esc cierra la lista; si ya estaba cerrada, limpia el texto.
+    if (abierta) {
+      evento.preventDefault();
+      setAbierta(false);
+      setIndice(-1);
+    } else if (texto) {
+      evento.preventDefault();
+      setTexto("");
     }
   }
 
