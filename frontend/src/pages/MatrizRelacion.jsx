@@ -149,7 +149,7 @@ const OPCIONES_ESTADO_CRUCE = [
 ];
 
 // [E02-HU10/CA02/CA12] Mismo texto en el contador de la Card y en la
-// paginación: "1 registro" / "N registros". [ASUMIDO, pendiente PO]
+// paginación: "1 registro" / "N registros". Confirmado por el PO (2026-10-16).
 function textoRegistros(total) {
   return `${total} ${total === 1 ? "registro" : "registros"}`;
 }

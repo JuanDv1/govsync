@@ -42,7 +42,7 @@
  * - `minimoCaracteres`: solo en modo "autocompletado"; caracteres mínimos
  *   para empezar a sugerir. Distinto por criterio.
  *
- * [ASUMIDO, pendiente PO] Programa es el sexto criterio (HU10-CA16).
+ * Programa es el sexto criterio (HU10-CA16): confirmado por el PO (2026-10-16).
  */
 export const CRITERIOS = [
   {
