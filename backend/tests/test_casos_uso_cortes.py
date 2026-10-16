@@ -694,6 +694,53 @@ class TestCargarArchivo:
         assert servicio._datos.llamadas_reemplazar_proyectos == [(corte.id, proyectos)]
         assert archivo.filas_reconocidas == 1
 
+    def test_reemplazar_pdt_conserva_proyectos_y_ejecucion(self, servicio):
+        corte = servicio.crear_corte(
+            vigencia=2026,
+            fecha_corte=date(2026, 9, 8),
+        )
+
+        pdt_anterior = ArchivoFuente(
+            tipo=TipoArchivoFuente.PDT,
+            nombre_archivo="pdt_anterior.xlsx",
+            filas_reconocidas=144,
+        )
+        proyectos = ArchivoFuente(
+            tipo=TipoArchivoFuente.PROYECTOS,
+            nombre_archivo="proyectos.xlsx",
+            filas_reconocidas=38,
+        )
+        ejecucion = ArchivoFuente(
+            tipo=TipoArchivoFuente.EJECUCION,
+            nombre_archivo="ejecucion.xlsx",
+            filas_reconocidas=485,
+        )
+
+        servicio._cortes.registrar_archivo(corte.id, pdt_anterior)
+        servicio._cortes.registrar_archivo(corte.id, proyectos)
+        servicio._cortes.registrar_archivo(corte.id, ejecucion)
+
+        resultado = ResultadoLectura(
+            tipo=TipoArchivoIngesta.PDT,
+            filas={"metas": [{"cod_indicador_producto": "040110500"}]},
+            conteos={"metas": 1},
+        )
+        lector = _LectorFalso(resultado=resultado)
+        self._servicio_con_lector(servicio, lector)
+
+        nuevo_pdt = servicio.cargar_archivo(
+            corte.id,
+            TipoArchivoFuente.PDT,
+            _XLSX_VALIDO,
+            "pdt_nuevo.xlsx",
+        )
+
+        archivos = servicio._cortes.obtener(corte.id).archivos
+
+        assert archivos[TipoArchivoFuente.PDT] == nuevo_pdt
+        assert archivos[TipoArchivoFuente.PROYECTOS] == proyectos
+        assert archivos[TipoArchivoFuente.EJECUCION] == ejecucion
+
 
 class TestCargarArchivoIntegracionPDT:
     """Integración real (sin dobles) del lector PDT a través de

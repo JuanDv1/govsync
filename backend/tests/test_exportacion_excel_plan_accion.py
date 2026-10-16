@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from openpyxl import load_workbook
 
@@ -74,9 +76,10 @@ class TestConstruirNombreArchivo:
 
 class TestConstruirLibroExcel:
     def _cargar_hoja(self, libro):
-        buffer_path = "/tmp/_plan_accion_test.xlsx"
-        libro.save(buffer_path)
-        return load_workbook(buffer_path)["Plan de Acción"]
+        with TemporaryDirectory() as tmp_dir:
+            buffer_path = Path(tmp_dir) / "_plan_accion_test.xlsx"
+            libro.save(buffer_path)
+            return load_workbook(buffer_path)["Plan de Acción"]
 
     def test_encabezado_de_columnas_ca03(self):
         libro = construir_libro_excel([_fila()], ResumenPlanAccion(1, 1, 0, 0), _metadatos())
