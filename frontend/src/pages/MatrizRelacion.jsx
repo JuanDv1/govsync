@@ -110,8 +110,11 @@ import { cop } from "../lib/formato.js";
 //: ("algo de presupuesto pero no tan detallado, lo general"), no las cinco
 //: columnas financieras de `Rubro` — para eso está la tabla `rubro` en la
 //: base de datos, no esta pantalla de verificación visual del cruce.
+//: `nombre_proyecto` (E02-HU10/CA17): la fila muestra el nombre del proyecto,
+//: no solo el código BPIN; llega en `FilaMatrizRespuesta` del backend.
 const COLUMNAS = [
   { clave: "cod_bpin", titulo: "Cód. BPIN" },
+  { clave: "nombre_proyecto", titulo: "Nombre del proyecto" },
   { clave: "cod_indicador_producto", titulo: "Cód. indicador (SisPT)" },
   { clave: "nombre_producto", titulo: "Nombre del producto" },
   { clave: "cod_indicador_ejecucion", titulo: "Cód. indicador (ejecución)" },
