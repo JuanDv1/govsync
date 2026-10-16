@@ -232,6 +232,58 @@ function PaginacionMatriz({
   );
 }
 
+// Qué mostrar cuando lo último cargado tiene 0 filas. El orden de los returns
+// es el orden de prioridad: error, actualizando, sin resultados (CA11) y, por
+// último, un corte que realmente no tiene metas.
+function EstadoSinFilas({
+  error,
+  actualizando,
+  sinResultados,
+  onReintentar,
+  onLimpiar,
+}) {
+  // La petición actual falló y lo último mostrado tenía 0 filas: se muestra
+  // el error (no el "Vacio" de ese resultado viejo, que lo escondería).
+  // Mismo componente y "Reintentar" que con filas.
+  if (error) {
+    return <EstadoError error={error} onReintentar={onReintentar} />;
+  }
+
+  // `hayAlgoQueLimpiar` ya refleja el cambio en curso (p. ej. tras "Limpiar
+  // filtros") pero `matrizVisible` sigue siendo el resultado vacío anterior:
+  // sin esto se vería un instante el mensaje de "corte sin metas" mientras
+  // llega la respuesta.
+  if (actualizando) {
+    return <Cargando mensaje="Actualizando matriz de relación…" />;
+  }
+
+  // [E02-HU10/CA11] Mismo manejador que el botón de la Card, que no se pinta
+  // mientras se ve este.
+  if (sinResultados) {
+    return (
+      <Vacio
+        titulo="No hay registros que cumplan los filtros seleccionados"
+        accion={
+          <button
+            type="button"
+            onClick={onLimpiar}
+            className="rounded-sm px-2 py-2 text-sm font-medium text-azul transition-colors hover:text-navy"
+          >
+            Limpiar filtros
+          </button>
+        }
+      />
+    );
+  }
+
+  return (
+    <Vacio
+      titulo="Sin datos para mostrar"
+      descripcion="Este corte no tiene metas registradas en la matriz de relación."
+    />
+  );
+}
+
 export default function MatrizRelacion() {
   const { corteId } = useParams();
   const [pagina, setPagina] = useState(1);
@@ -602,39 +654,15 @@ export default function MatrizRelacion() {
       {corteId &&
         !cargandoInicial &&
         matrizVisible !== null &&
-        matrizVisible.total_filas === 0 &&
-        (error ? (
-          // La petición actual falló y lo último mostrado tenía 0 filas: se
-          // muestra el error (no el "Vacio" de ese resultado viejo, que lo
-          // escondería). Mismo componente y "Reintentar" que con filas.
-          <EstadoError error={error} onReintentar={reintentar} />
-        ) : actualizandoPagina ? (
-          // `hayAlgoQueLimpiar` ya refleja el cambio en curso (p. ej. tras
-          // "Limpiar filtros") pero `matrizVisible` sigue siendo el resultado
-          // vacío anterior: sin esto se vería un instante el mensaje de
-          // "corte sin metas" mientras llega la respuesta.
-          <Cargando mensaje="Actualizando matriz de relación…" />
-        ) : mostrarSinResultados ? (
-          // [E02-HU10/CA11] Mismo manejador que el botón de la Card, que no
-          // se pinta mientras se ve este.
-          <Vacio
-            titulo="No hay registros que cumplan los filtros seleccionados"
-            accion={
-              <button
-                type="button"
-                onClick={limpiarFiltros}
-                className="rounded-sm px-2 py-2 text-sm font-medium text-azul transition-colors hover:text-navy"
-              >
-                Limpiar filtros
-              </button>
-            }
+        matrizVisible.total_filas === 0 && (
+          <EstadoSinFilas
+            error={error}
+            actualizando={actualizandoPagina}
+            sinResultados={mostrarSinResultados}
+            onReintentar={reintentar}
+            onLimpiar={limpiarFiltros}
           />
-        ) : (
-          <Vacio
-            titulo="Sin datos para mostrar"
-            descripcion="Este corte no tiene metas registradas en la matriz de relación."
-          />
-        ))}
+        )}
 
       {corteId && matrizVisible && matrizVisible.total_filas > 0 && (
         <>
