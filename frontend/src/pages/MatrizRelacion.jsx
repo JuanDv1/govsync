@@ -585,7 +585,12 @@ export default function MatrizRelacion() {
         !cargandoInicial &&
         matrizVisible !== null &&
         matrizVisible.total_filas === 0 &&
-        (actualizandoPagina ? (
+        (error ? (
+          // La petición actual falló y lo último mostrado tenía 0 filas: se
+          // muestra el error (no el "Vacio" de ese resultado viejo, que lo
+          // escondería). Mismo componente y "Reintentar" que con filas.
+          <EstadoError error={error} onReintentar={reintentar} />
+        ) : actualizandoPagina ? (
           // `hayAlgoQueLimpiar` ya refleja el cambio en curso (p. ej. tras
           // "Limpiar filtros") pero `matrizVisible` sigue siendo el resultado
           // vacío anterior: sin esto se vería un instante el mensaje de
