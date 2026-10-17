@@ -23,7 +23,12 @@ from openpyxl import load_workbook
 
 from app.core.dependencias import obtener_usuario_actual
 from app.modules.cortes.domain.entidades import EstadoCorte, TipoArchivoFuente
-from app.modules.cortes.persistence.models import ArchivoFuenteORM, CorteORM, MetaORM
+from app.modules.cortes.persistence.models import (
+    ArchivoFuenteORM,
+    CorteORM,
+    MetaORM,
+    RubroORM,
+)
 from app.modules.identidad.domain.entidades import Rol, Usuario
 
 _ADMINISTRADOR = Usuario(
@@ -394,3 +399,284 @@ class TestExportarExcelE04HU03:
         hoja = libro["Plan de Acción"]
         texto_cabecera = "\n".join(str(hoja.cell(row=i, column=1).value) for i in range(1, 7))
         assert _ADMINISTRADOR.correo in texto_cabecera
+
+
+class TestCortesDisponiblesE04HU04:
+    """[E04-HU04] CA01/CA02: GET /plan-accion/cortes-disponibles."""
+
+    def test_mismo_control_de_rol_ca10(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _GESTOR
+
+        respuesta = cliente.get("/api/v1/plan-accion/cortes-disponibles", params={"vigencia": 2026})
+
+        assert respuesta.status_code == 403
+
+    def test_solo_devuelve_cortes_registrado_de_la_vigencia_pedida(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_registrado_2026 = _crear_corte(
+            sesion, vigencia=2026, fecha=date(2026, 3, 1), estado=EstadoCorte.REGISTRADO
+        )
+        _crear_corte(sesion, vigencia=2026, fecha=date(2026, 2, 1), estado=EstadoCorte.BORRADOR)
+        _crear_corte(sesion, vigencia=2025, fecha=date(2025, 12, 1), estado=EstadoCorte.REGISTRADO)
+        sesion.commit()
+
+        respuesta = cliente.get("/api/v1/plan-accion/cortes-disponibles", params={"vigencia": 2026})
+
+        assert respuesta.status_code == 200
+        cuerpo = respuesta.json()
+        assert len(cuerpo) == 1
+        assert cuerpo[0]["id"] == str(corte_registrado_2026)
+        assert cuerpo[0]["fecha_corte"] == "2026-03-01"
+
+    def test_ordena_por_fecha_de_corte_ascendente(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_tardio = _crear_corte(
+            sesion, vigencia=2026, fecha=date(2026, 9, 1), estado=EstadoCorte.REGISTRADO
+        )
+        corte_temprano = _crear_corte(
+            sesion, vigencia=2026, fecha=date(2026, 1, 1), estado=EstadoCorte.REGISTRADO
+        )
+        sesion.commit()
+
+        respuesta = cliente.get("/api/v1/plan-accion/cortes-disponibles", params={"vigencia": 2026})
+
+        cuerpo = respuesta.json()
+        assert [fila["id"] for fila in cuerpo] == [str(corte_temprano), str(corte_tardio)]
+
+    def test_sin_cortes_de_la_vigencia_devuelve_lista_vacia_ca02(self, cliente) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+
+        respuesta = cliente.get("/api/v1/plan-accion/cortes-disponibles", params={"vigencia": 2030})
+
+        assert respuesta.status_code == 200
+        assert respuesta.json() == []
+
+
+class TestCompararE04HU04:
+    """[E04-HU04] CA03 a CA08: GET /plan-accion/comparar y
+    /plan-accion/comparar/exportar."""
+
+    def _crear_corte_registrado_con_meta(
+        self,
+        sesion,
+        *,
+        vigencia: int,
+        fecha: date,
+        cod_indicador_producto: str,
+        obligacion_acumulada,
+        nombre_producto: str = "Vías pavimentadas",
+        sector: str = "Infraestructura",
+    ) -> uuid.UUID:
+        corte_id = _crear_corte(
+            sesion, vigencia=vigencia, fecha=fecha, estado=EstadoCorte.REGISTRADO
+        )
+        for tipo in TipoArchivoFuente:
+            _marcar_archivo_cargado(sesion, corte_id, tipo)
+        sesion.add(
+            MetaORM(
+                id=uuid.uuid4(),
+                corte_id=corte_id,
+                cod_indicador_producto=cod_indicador_producto,
+                nombre_producto=nombre_producto,
+                sector=sector,
+                es_principal=True,
+            )
+        )
+        sesion.add(
+            RubroORM(
+                id=uuid.uuid4(),
+                corte_id=corte_id,
+                codigo_rubro_nivel=f"{cod_indicador_producto}-RUBRO-1",
+                cod_indicador_producto=cod_indicador_producto,
+                ultimo_nivel=True,
+                codigo_sector_ccpet="05",
+                obligacion_acumulada=obligacion_acumulada,
+            )
+        )
+        return corte_id
+
+    def _preparar_dos_cortes(self, sesion):
+        """Corte anterior (enero, ejecución 100) y posterior (marzo, ejecución
+        150) de la misma vigencia -- la meta "170202300" solo existe en el
+        corte posterior (CA06: "solo en Corte B")."""
+        corte_a = self._crear_corte_registrado_con_meta(
+            sesion,
+            vigencia=2026,
+            fecha=date(2026, 1, 1),
+            cod_indicador_producto="040110500",
+            obligacion_acumulada=100,
+        )
+        corte_b = self._crear_corte_registrado_con_meta(
+            sesion,
+            vigencia=2026,
+            fecha=date(2026, 3, 1),
+            cod_indicador_producto="040110500",
+            obligacion_acumulada=150,
+        )
+        sesion.add(
+            MetaORM(
+                id=uuid.uuid4(),
+                corte_id=corte_b,
+                cod_indicador_producto="170202300",
+                nombre_producto="Escuelas construidas",
+                sector="Educación",
+                es_principal=True,
+            )
+        )
+        sesion.commit()
+        return corte_a, corte_b
+
+    def test_mismo_control_de_rol_ca10(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _GESTOR
+        corte_a, corte_b = self._preparar_dos_cortes(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/comparar",
+            params={"corte_id_1": str(corte_a), "corte_id_2": str(corte_b)},
+        )
+
+        assert respuesta.status_code == 403
+
+    def test_compara_y_calcula_delta_ca04_ca05(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_a, corte_b = self._preparar_dos_cortes(sesion)
+
+        # Query params en orden invertido (B, luego A) -- CA03: el resultado
+        # no debe depender del orden de llegada.
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/comparar",
+            params={"corte_id_1": str(corte_b), "corte_id_2": str(corte_a)},
+        )
+
+        assert respuesta.status_code == 200
+        cuerpo = respuesta.json()
+        assert cuerpo["corte_a"]["corte_id"] == str(corte_a)
+        assert cuerpo["corte_b"]["corte_id"] == str(corte_b)
+
+        filas = {fila["cod_indicador_producto"]: fila for fila in cuerpo["filas"]}
+        assert filas["040110500"]["presencia"] == "ambos"
+        assert filas["040110500"]["ejecucion_a"] == "100.00"
+        assert filas["040110500"]["ejecucion_b"] == "150.00"
+        assert filas["040110500"]["ejecucion_delta"] == "50.00"
+        assert filas["170202300"]["presencia"] == "solo_corte_b"
+        assert filas["170202300"]["ejecucion_delta"] is None
+
+    def test_solo_cambios_oculta_metas_sin_delta_ca06_ca07(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_a = self._crear_corte_registrado_con_meta(
+            sesion,
+            vigencia=2026,
+            fecha=date(2026, 1, 1),
+            cod_indicador_producto="040110500",
+            obligacion_acumulada=100,
+        )
+        corte_b = self._crear_corte_registrado_con_meta(
+            sesion,
+            vigencia=2026,
+            fecha=date(2026, 3, 1),
+            cod_indicador_producto="040110500",
+            obligacion_acumulada=100,  # sin cambio
+        )
+        sesion.commit()
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/comparar",
+            params={
+                "corte_id_1": str(corte_a),
+                "corte_id_2": str(corte_b),
+                "solo_cambios": True,
+            },
+        )
+
+        assert respuesta.status_code == 200
+        assert respuesta.json()["filas"] == []
+
+    def test_mismo_corte_dos_veces_devuelve_422_ca03(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_a, _ = self._preparar_dos_cortes(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/comparar",
+            params={"corte_id_1": str(corte_a), "corte_id_2": str(corte_a)},
+        )
+
+        assert respuesta.status_code == 422
+        assert respuesta.json()["codigo"] == "regla_de_negocio_violada"
+
+    def test_vigencias_distintas_devuelve_422_ca03(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_2026 = self._crear_corte_registrado_con_meta(
+            sesion,
+            vigencia=2026,
+            fecha=date(2026, 1, 1),
+            cod_indicador_producto="040110500",
+            obligacion_acumulada=100,
+        )
+        corte_2025 = self._crear_corte_registrado_con_meta(
+            sesion,
+            vigencia=2025,
+            fecha=date(2025, 1, 1),
+            cod_indicador_producto="040110500",
+            obligacion_acumulada=100,
+        )
+        sesion.commit()
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/comparar",
+            params={"corte_id_1": str(corte_2026), "corte_id_2": str(corte_2025)},
+        )
+
+        assert respuesta.status_code == 422
+        assert respuesta.json()["detalles"]["motivo"] == "vigencias_distintas"
+
+    def test_corte_en_borrador_devuelve_409_ca07(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_registrado = self._crear_corte_registrado_con_meta(
+            sesion,
+            vigencia=2026,
+            fecha=date(2026, 1, 1),
+            cod_indicador_producto="040110500",
+            obligacion_acumulada=100,
+        )
+        corte_borrador = _crear_corte(
+            sesion, vigencia=2026, fecha=date(2026, 3, 1), estado=EstadoCorte.BORRADOR
+        )
+        sesion.commit()
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/comparar",
+            params={"corte_id_1": str(corte_registrado), "corte_id_2": str(corte_borrador)},
+        )
+
+        assert respuesta.status_code == 409
+        assert respuesta.json()["detalles"]["motivo"] == "corte_no_registrado"
+
+    def test_corte_inexistente_devuelve_404_ca07(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_a, _ = self._preparar_dos_cortes(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/comparar",
+            params={"corte_id_1": str(corte_a), "corte_id_2": str(uuid.uuid4())},
+        )
+
+        assert respuesta.status_code == 404
+
+    def test_exportar_comparacion_devuelve_xlsx_ca08(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_a, corte_b = self._preparar_dos_cortes(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/comparar/exportar",
+            params={"corte_id_1": str(corte_a), "corte_id_2": str(corte_b)},
+        )
+
+        assert respuesta.status_code == 200
+        assert respuesta.headers["content-type"] == (
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        libro = load_workbook(BytesIO(respuesta.content))
+        hoja = libro["Comparación Plan de Acción"]
+        assert hoja.cell(row=7, column=1).value == "Sector"
+        valores_columna_2 = {hoja.cell(row=i, column=2).value for i in range(8, 10)}
+        assert "040110500" in valores_columna_2

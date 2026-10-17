@@ -1514,3 +1514,77 @@ endpoints; la única diferencia entre ambos es la serialización final
 **Registrado:** 2026-10-14, Juan Esteban (asistido por Claude Code —
 `[E04-HU03] Exportar el Plan de Acción Consolidado a Excel`,
 implementación backend).
+
+---
+
+## D29 · Plan de Acción (E-04/HU-04): comparación entre dos cortes, orden A/B y reutilización de la exportación
+
+**Estado: DECISIÓN TÉCNICA** (implementación), con un **SUPUESTO MENOR**
+documentado en el punto 4.
+
+**1. "Corte A"/"Corte B" se determinan por fecha, no por el orden de los
+query params.** La HU no dice si el usuario elige "cuál va primero" en el
+selector o si el sistema decide. Se implementa que el sistema SIEMPRE
+ordena por `fecha_corte` ascendente — "Corte A" es el más antiguo, "Corte
+B" el más reciente — sin importar en qué orden lleguen
+`corte_id_1`/`corte_id_2`. Esto evita que el mismo par de cortes produzca
+un resultado "al revés" (Δ con signo invertido) según el orden en que el
+usuario los haya clickeado en el selector. Si el equipo decide que el
+usuario SÍ debe poder elegir explícitamente cuál es "antes" y cuál
+"después" (por ejemplo, para comparar un corte contra uno posterior en el
+tiempo pero tratarlo como referencia), este es el único punto que cambia
+(`_validar_y_ordenar_cortes` en `plan_accion/api/router.py`).
+
+**2. Validaciones y códigos HTTP (CA03/CA07).** Mismo corte dos veces y
+vigencias distintas son errores de regla de negocio (`422
+regla_de_negocio_violada` — no tiene sentido "comparar algo consigo
+mismo" ni cruzar vigencias distintas, igual criterio que
+`Corte.validar_vigencia`). Un corte en estado `BORRADOR` es `409
+operacion_no_permitida` — mismo código y mismo razonamiento que
+`_verificar_fuentes_completas` ("el recurso existe pero no está en
+condiciones de usarse para esto"), NO `422`, porque no es un dato de
+entrada inválido sino un estado del recurso. Un `corte_id` que no existe
+ya produce `404` por el `RecursoNoEncontrado` que `ServicioCortes.
+obtener_corte` lanza — no se duplica esa validación en el router.
+
+**3. Emparejamiento de metas por `cod_indicador_producto` (CA04/CA05/CA06).**
+Es la misma llave que usa `agregar_por_meta` (D26) para identificar una
+meta de forma única dentro de UN corte — compararla entre dos cortes
+reutiliza esa misma llave, no se inventa una nueva. Una meta que solo
+aparece en uno de los dos cortes (`SOLO_CORTE_A`/`SOLO_CORTE_B`) tiene
+`None` en los campos del corte donde falta y en su Δ — `None` es
+deliberadamente distinto de `0`: `0` significa "no cambió", `None`
+significa "no es comparable" (apareció o desapareció). CA07 ("ver solo
+cambios") es, por la misma razón, un filtro de BACKEND (no un toggle
+puramente visual), igual criterio que D27/HU-02: la regla de "qué cuenta
+como cambio" vive en un solo lugar (`domain/comparacion.py::
+filtrar_solo_cambios`), y una meta `SOLO_CORTE_A`/`SOLO_CORTE_B` NUNCA se
+oculta con ese filtro (aparecer/desaparecer siempre es, por definición, un
+cambio).
+
+**4. Exportación de la comparación (CA08) — SUPUESTO MENOR.** El Excel de
+requisitos no especifica columnas para esta exportación. Se construye una
+tabla paralela a la de HU-03 (`construir_libro_comparacion` en
+`persistence/exportacion_excel.py`, reutilizando sus constantes de estilo
+pero NO su función `construir_libro_excel`, porque la forma de la fila es
+distinta: A/B/Δ por cada métrica en vez de un solo valor) con las columnas
+mínimas necesarias para mostrar lo que CA04-CA06 ya exponen en pantalla:
+Sector, Código Indicador, Meta, Presencia, y A/B/Δ de avance físico (sin
+implementar, igual que en todas las HU de Plan de Acción), ejecución y
+avance financiero. Si el equipo define un layout distinto para esta
+exportación, es un cambio acotado a ese archivo, sin tocar
+`domain/comparacion.py`.
+
+**5. Endpoints nuevos, no una variante de `/actual`.** `GET
+/cortes-disponibles` (CA01/CA02) y `GET /comparar` (CA03-CA07) son
+endpoints propios — no se reutiliza `/actual` con parámetros adicionales,
+porque esta HU necesita las filas agregadas de DOS cortes específicos por
+`id` (no "el corte actual"). Se extrajo `_construir_filas_agregadas`
+(consulta + `FilaFuenteMeta` + `agregar_por_meta`, SIN filtrar) de la
+función que antes hacía todo el trabajo de `/actual`/`/exportar`
+(`_obtener_filas_filtradas`), para que `/comparar` pueda llamarla dos
+veces (una por cada corte) sin duplicar el armado de `FilaFuenteMeta`.
+
+**Registrado:** 2026-10-14, Juan Esteban (asistido por Claude Code —
+`[E04-HU04] Comparar dos cortes de una misma vigencia`, implementación
+backend).
