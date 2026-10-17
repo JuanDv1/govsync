@@ -67,7 +67,7 @@ from app.core.dependencias import ServicioCortesDep, UsuarioActualDep, exigir_ro
 from app.modules.cortes.domain.entidades import Corte, TipoArchivoFuente
 from app.modules.identidad.domain.entidades import Rol, Usuario
 from app.shared.codigos import CategoriaDescarte
-from app.shared.errors import ArchivoInvalido
+from app.shared.errors import ArchivoInvalido, RecursoNoEncontrado
 
 #: D24 (docs/DECISIONES.md): los cuatro endpoints de escritura de este
 #: router exigen administrador o gestor — visitante es de solo lectura.
@@ -119,6 +119,20 @@ class CorteRespuesta(BaseModel):
     fecha_corte: date
     estado: str
     archivos: list[ArchivoFuenteRespuesta]
+    es_corte_actual: bool
+    """[E02-HU05] Contrato PROPUESTO por la spec original (Juan David,
+    docs/specs/E02-HU05-modificar-archivos-corte-actual.md, sección
+    Contrato): "un indicador 'es editable/es el actual' calculado por el
+    backend (el frontend no debe recalcular el orden)". La implementación
+    de D25 (2026-10-13) lo había omitido -- el frontend ya construido
+    (`EditarArchivosCorteActual.jsx`) compensaba con un fallback: una
+    segunda petición a GET /cortes completo + comparación manual del id
+    contra el primer REGISTRADO de esa lista (`lib/corteActual.js`). Este
+    campo cierra ese punto: mismo criterio que
+    `ServicioCortes.obtener_corte_actual` (REGISTRADO más reciente,
+    GLOBAL, sin filtro de vigencia) -- ver `_id_corte_actual` más abajo.
+    Un corte en BORRADOR es SIEMPRE `False` (nunca puede ser "el actual"
+    por definición, sin necesidad de consultar nada)."""
 
 
 class DescarteRespuesta(BaseModel):
@@ -174,16 +188,33 @@ class HistorialReemplazoRespuesta(BaseModel):
     nombre_archivo_anterior: str | None
     nombre_archivo_nuevo: str
     usuario: str
-    fecha: datetime
+    fecha_hora: datetime
+    """[E02-HU05] Nombrado `fecha_hora`, no `fecha` -- el cliente ya
+    construido (`frontend/src/pages/EditarArchivosCorteActual.jsx`) lee
+    `entrada.fecha_hora`; decisión del equipo (2026-10-15): alinear el
+    backend al contrato ya consumido por el frontend, sin tocar el
+    frontend."""
 
 
-def _a_dto(corte: Corte) -> CorteRespuesta:
+def _id_corte_actual(servicio: ServicioCortesDep) -> UUID | None:
+    """[E02-HU05] `None` si no existe ningún corte REGISTRADO todavía --
+    mismo caso que `GET /matriz-relacion/actual` trata como 404, pero aquí
+    NO es un error: simplemente significa que ningún corte de la lista es
+    "el actual" (`es_corte_actual=False` para todos)."""
+    try:
+        return servicio.obtener_corte_actual().id
+    except RecursoNoEncontrado:
+        return None
+
+
+def _a_dto(corte: Corte, *, es_corte_actual: bool) -> CorteRespuesta:
     """Conversión explícita dominio -> DTO. Nunca se expone `Corte` directo."""
     return CorteRespuesta(
         id=corte.id,
         vigencia=corte.vigencia,
         fecha_corte=corte.fecha_corte,
         estado=corte.estado.value,
+        es_corte_actual=es_corte_actual,
         archivos=[
             ArchivoFuenteRespuesta(
                 tipo=archivo.tipo.value,
@@ -208,15 +239,26 @@ def crear_corte(
 
     El 422 de fecha futura ya lo lanza `Corte.validar_fecha` (dominio) y ya
     está mapeado a HTTP en app/core/errores.py — no se maneja aquí.
+
+    [E02-HU05] `es_corte_actual=False` sin consultar nada: un corte recién
+    creado siempre está en BORRADOR, nunca puede ser "el actual" por
+    definición (ver docstring de `CorteRespuesta.es_corte_actual`).
     """
     corte = servicio.crear_corte(entrada.vigencia, entrada.fecha_corte)
-    return _a_dto(corte)
+    return _a_dto(corte, es_corte_actual=False)
 
 
 @router.get("", response_model=list[CorteRespuesta])
 def listar_cortes(servicio: ServicioCortesDep, usuario: UsuarioActualDep) -> list[CorteRespuesta]:
-    """HU-01 / CA-8 (junto con GET /cortes/{id}): histórico de cortes."""
-    return [_a_dto(corte) for corte in servicio.listar_cortes()]
+    """HU-01 / CA-8 (junto con GET /cortes/{id}): histórico de cortes.
+
+    [E02-HU05] `id_actual` se calcula UNA sola vez para toda la lista
+    (no un `obtener_corte_actual()` por fila) -- ver `_id_corte_actual`.
+    """
+    id_actual = _id_corte_actual(servicio)
+    return [
+        _a_dto(corte, es_corte_actual=(corte.id == id_actual)) for corte in servicio.listar_cortes()
+    ]
 
 
 @router.get("/{corte_id}", response_model=CorteRespuesta)
@@ -228,7 +270,8 @@ def obtener_corte(
     El 404 ya lo lanza `ServicioCortes.obtener_corte` y ya está mapeado a
     HTTP en app/core/errores.py — no se maneja aquí.
     """
-    return _a_dto(servicio.obtener_corte(corte_id))
+    corte = servicio.obtener_corte(corte_id)
+    return _a_dto(corte, es_corte_actual=(corte.id == _id_corte_actual(servicio)))
 
 
 @router.post(
@@ -387,8 +430,16 @@ def _a_dto_parcial(resultado) -> ArchivoFuenteRespuestaParcial:
     )
 
 
-@router.put(
-    "/{corte_id}/archivos/{tipo}",
+@router.post(
+    # [E02-HU05] Ruta `/archivos/{tipo}/reemplazo` con POST, no PUT sobre
+    # la misma ruta de carga -- decisión del equipo (2026-10-15): el
+    # cliente ya construido (`frontend/src/api/cliente.js::
+    # reemplazarArchivoCorteActual`) ya llama POST a esa ruta; se alinea
+    # el backend, no el frontend (ver docs/DECISIONES.md D25, adenda).
+    # El razonamiento REST original de usar PUT (reemplaza un recurso
+    # existente) seguía siendo válido, pero no justifica reescribir una
+    # pantalla ya construida y probada por otro desarrollo del equipo.
+    "/{corte_id}/archivos/{tipo}/reemplazo",
     response_model=ArchivoFuenteRespuestaParcial,
     status_code=status.HTTP_200_OK,
     openapi_extra={
@@ -420,10 +471,10 @@ async def reemplazar_archivo(
     DISTINTO de `POST /{corte_id}/archivos/{tipo}` (HU-02/03/04 + HU-06):
     ese endpoint exige BORRADOR (`Corte.verificar_modificable`); este exige
     REGISTRADO + ser el corte actual (`Corte.verificar_reemplazable`,
-    `ServicioCortes.reemplazar_archivo_corte_actual`) -- verbo PUT a
-    propósito (reemplaza un recurso existente, no crea uno) sobre la MISMA
-    ruta, para no multiplicar esquemas de URL por el mismo concepto
-    ("el archivo de esta fuente en este corte").
+    `ServicioCortes.reemplazar_archivo_corte_actual`) sobre una ruta
+    propia (`/reemplazo`), no la misma de la carga -- ver el comentario
+    del decorador para el porqué de POST en vez de PUT (alineación con el
+    frontend ya construido, no una preferencia nueva de este endpoint).
 
     404 (corte inexistente), 409 (`corte_no_registrado` /
     `corte_no_es_el_actual`, CA05) y 422 (`archivo_invalido`, CA04) ya los
@@ -444,7 +495,11 @@ async def reemplazar_archivo(
 
 
 @router.get(
-    "/{corte_id}/historial-reemplazos",
+    # [E02-HU05] Ruta `/historial`, no `/historial-reemplazos` -- decisión
+    # del equipo (2026-10-15): el cliente ya construido
+    # (`frontend/src/api/cliente.js::historialCorte`) ya llama
+    # `GET /cortes/{id}/historial`; se alinea el backend, no el frontend.
+    "/{corte_id}/historial",
     response_model=list[HistorialReemplazoRespuesta],
 )
 def obtener_historial_reemplazos(
@@ -465,7 +520,7 @@ def obtener_historial_reemplazos(
             nombre_archivo_anterior=h.nombre_archivo_anterior,
             nombre_archivo_nuevo=h.nombre_archivo_nuevo,
             usuario=h.usuario,
-            fecha=h.fecha,
+            fecha_hora=h.fecha,
         )
         for h in historial
     ]
@@ -485,9 +540,12 @@ def corregir_corte(
     fecha duplicada contra OTRO corte) y 422 (fecha futura) ya los lanza
     `ServicioCortes.corregir_corte` (dominio + aplicación) y ya están
     mapeados a HTTP en app/core/errores.py — no se manejan aquí.
+
+    [E02-HU05] `es_corte_actual=False`: `corregir_corte` exige BORRADOR
+    (mismo motivo que `crear_corte`).
     """
     corte = servicio.corregir_corte(corte_id, entrada.vigencia, entrada.fecha_corte)
-    return _a_dto(corte)
+    return _a_dto(corte, es_corte_actual=False)
 
 
 @router.post("/{corte_id}/registrar", response_model=CorteRespuesta)
@@ -501,6 +559,10 @@ def registrar_corte(
     (dominio + aplicación, `Corte.registrar()`) y ya están mapeados a HTTP en
     app/core/errores.py — no se manejan aquí, mismo patrón que
     `corregir_corte`.
+
+    [E02-HU05] a diferencia de `crear_corte`/`corregir_corte`, este corte
+    SÍ puede volverse "el actual" al registrarse -- se calcula de verdad,
+    no se asume `False`.
     """
     corte = servicio.registrar_corte(corte_id)
-    return _a_dto(corte)
+    return _a_dto(corte, es_corte_actual=(corte.id == _id_corte_actual(servicio)))

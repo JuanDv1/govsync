@@ -1514,3 +1514,67 @@ endpoints; la única diferencia entre ambos es la serialización final
 **Registrado:** 2026-10-14, Juan Esteban (asistido por Claude Code —
 `[E04-HU03] Exportar el Plan de Acción Consolidado a Excel`,
 implementación backend).
+
+---
+
+## Adenda a D25 (2026-10-15) · [E02-HU05]: alinear el backend al contrato que ya consumía el frontend
+
+**Contexto:** D25 (2026-10-13) implementó el reemplazo de archivos del
+corte actual directamente desde los CA del Excel/spec, sin revisar la
+sección **Contrato** (marcada `PROPUESTA`) que Juan David ya había dejado
+en `docs/specs/E02-HU05-modificar-archivos-corte-actual.md` el 2026-10-07,
+ni el frontend que YA estaba construido contra esa propuesta
+(`EditarArchivosCorteActual.jsx`, `api/cliente.js`). Resultado: 3 puntos de
+contrato divergentes entre un backend y un frontend escritos por separado,
+cada uno correcto en su propia lógica, descubiertos en una auditoría
+cruzada el 2026-10-15.
+
+**Decisión del equipo (Juan Esteban + Juan David, 2026-10-15): alinear el
+backend al contrato que el frontend ya consume, sin modificar el
+frontend** (ya construido y probado) — menos riesgo que reabrir una
+pantalla funcionando por una preferencia de nomenclatura del backend.
+
+**Cambios aplicados** (`backend/app/modules/cortes/api/router.py`):
+
+1. **Ruta y verbo del reemplazo:** `PUT /cortes/{id}/archivos/{tipo}` →
+   `POST /cortes/{id}/archivos/{tipo}/reemplazo`. El razonamiento REST
+   original de D25 (PUT reemplaza un recurso existente) seguía siendo
+   válido en abstracto, pero no justifica reescribir un cliente ya
+   construido — `api/cliente.js::reemplazarArchivoCorteActual` ya hacía
+   `POST` a esa ruta exacta.
+2. **Ruta del historial:** `GET /cortes/{id}/historial-reemplazos` →
+   `GET /cortes/{id}/historial` — mismo criterio, `api/cliente.js::
+historialCorte` ya apuntaba ahí.
+3. **Campo de fecha del historial:** `HistorialReemplazoRespuesta.fecha` →
+   `fecha_hora` — `EditarArchivosCorteActual.jsx` ya leía
+   `entrada.fecha_hora`; con el nombre antiguo, la fecha del historial se
+   habría mostrado siempre como "—" sin ningún error visible (el más
+   peligroso de los tres: no rompía nada, solo mostraba datos
+   incompletos).
+4. **`es_corte_actual` (nuevo campo en `CorteRespuesta`):** la spec
+   original de Juan David, en su sección Contrato, ya pedía explícitamente
+   "un indicador 'es editable/es el actual' calculado por el backend (el
+   frontend no debe recalcular el orden)". D25 lo había omitido —
+   `EditarArchivosCorteActual.jsx` compensaba con un fallback: una segunda
+   petición a `GET /cortes` completo más comparación manual en
+   `lib/corteActual.js`. Se agrega el campo (mismo criterio que
+   `ServicioCortes.obtener_corte_actual`: REGISTRADO más reciente, GLOBAL)
+   calculado en `GET /cortes`, `GET /cortes/{id}`, `POST /cortes`,
+   `PATCH /cortes/{id}` y `POST /cortes/{id}/registrar`. Se eligió esta
+   opción (agregar el campo) sobre ratificar el fallback existente porque
+   el costo es bajo y cierra el `[VALIDAR]` que la propia spec señalaba
+   como abierto, en vez de dejarlo tácitamente resuelto por omisión.
+
+**Nada de la lógica de negocio de D25 cambia** (Opción B con rollback,
+`fecha_carga` corregida al reemplazar, tabla de auditoría, restricción de
+rol CA09) — es exclusivamente una alineación de nombres de ruta/campo
+entre dos partes del sistema construidas por separado.
+
+**Lección de proceso, no solo de código:** cuando una HU tiene una spec
+previa con una sección "Contrato" marcada `PROPUESTA` por otro miembro del
+equipo, revisarla (y el código que ya consume esa propuesta) es un paso
+obligatorio antes de implementar el backend, no opcional — el Excel/CA por
+sí solos no bastan cuando ya existe trabajo de otra capa construido sobre
+una interpretación previa.
+
+**Registrado:** 2026-10-15, Juan Esteban (asistido por Claude Code).
