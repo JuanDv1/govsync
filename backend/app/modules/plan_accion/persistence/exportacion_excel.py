@@ -33,6 +33,30 @@ from openpyxl.worksheet.worksheet import Worksheet
 from app.modules.plan_accion.domain.comparacion import FilaComparacion, PresenciaMeta
 from app.modules.plan_accion.domain.entidades import FilaPlanAccion, ResumenPlanAccion
 
+#: [SEGURIDAD] Hallazgo preexistente señalado en la revisión de Juan David
+#: sobre el PR #154 (2026-10-18), no introducido por HU-04: `sector`,
+#: `nombre_producto` y los textos unidos de `rubros`/`contratos` vienen tal
+#: cual del Excel que sube la administradora (HU-02/HU-03/HU-04, ver
+#: `ingesta/persistence/lectores`) y se escriben directo a la celda. Un
+#: texto que empiece por "=", "+", "-" o "@" (o tab/CR) puede interpretarse
+#: como fórmula al abrir el archivo en algunas hojas de cálculo ("inyección
+#: de fórmulas"/CSV injection, OWASP). El origen es un archivo que sube la
+#: propia administradora autenticada (no un tercero no confiable), así que
+#: el riesgo es bajo -- pero el mismo mensaje de riesgo bajo no justifica
+#: dejarlo sin mitigar cuando la mitigación es gratis. Se antepone una
+#: comilla simple: Excel la trata como texto literal (nunca como fórmula),
+#: al costo de que la comilla quede visible en la celda -- mismo criterio
+#: que recomienda OWASP, documentado aquí para que no se lea como un bug
+#: nuevo si alguien lo nota al abrir el archivo.
+_PREFIJOS_DE_FORMULA = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _sanear_texto_celda(valor: str | None) -> str | None:
+    if valor and valor.startswith(_PREFIJOS_DE_FORMULA):
+        return f"'{valor}"
+    return valor
+
+
 #: CA03: "filas alternas" -- relleno de las filas de datos pares (1-indexado
 #: desde la primera fila de datos, no desde la hoja completa).
 _RELLENO_FILA_ALTERNA = PatternFill(start_color="F2F2F2", end_color="F2F2F2", fill_type="solid")
@@ -122,15 +146,15 @@ def _escribir_encabezado(hoja: Worksheet) -> None:
 
 def _escribir_fila(hoja: Worksheet, fila_excel: int, fila: FilaPlanAccion) -> None:
     valores = (
-        fila.sector,
+        _sanear_texto_celda(fila.sector),
         fila.cod_indicador_producto,
-        fila.nombre_producto,
+        _sanear_texto_celda(fila.nombre_producto),
         fila.meta_programada,
         fila.cod_bpin,
-        ", ".join(fila.rubros) if fila.rubros else None,
+        _sanear_texto_celda(", ".join(fila.rubros)) if fila.rubros else None,
         fila.presupuesto_definitivo,
         fila.ejecucion,
-        ", ".join(fila.contratos) if fila.contratos else None,
+        _sanear_texto_celda(", ".join(fila.contratos)) if fila.contratos else None,
         fila.avance_fisico_pct,  # CA: siempre None hasta que exista E-03
         fila.avance_financiero_pct,
         fila.estado_cruce.value,
@@ -249,9 +273,9 @@ def _escribir_encabezado_comparacion(hoja: Worksheet) -> None:
 
 def _escribir_fila_comparacion(hoja: Worksheet, fila_excel: int, fila: FilaComparacion) -> None:
     valores = (
-        fila.sector,
+        _sanear_texto_celda(fila.sector),
         fila.cod_indicador_producto,
-        fila.nombre_producto,
+        _sanear_texto_celda(fila.nombre_producto),
         _PRESENCIA_LEGIBLE[fila.presencia],
         fila.avance_fisico_pct_a,
         fila.avance_fisico_pct_b,

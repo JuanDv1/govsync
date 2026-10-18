@@ -72,13 +72,13 @@ archivo.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from io import BytesIO
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Response, status
 from pydantic import BaseModel
 
 from app.core.dependencias import ServicioCortesDep, SesionDep, exigir_roles
@@ -158,19 +158,32 @@ class CorteDisponibleRespuesta(BaseModel):
     """[E04-HU04] CA01/CA02: una opción del selector de "Corte A"/"Corte B"
     en el frontend. Solo se exponen cortes REGISTRADO (ver
     `obtener_cortes_disponibles`) -- comparar contra un BORRADOR no tiene
-    sentido (puede seguir cambiando)."""
+    sentido (puede seguir cambiando).
+
+    `fecha_corte` es `date` (no `str`): mismo tipo que `CorteRespuesta.
+    fecha_corte` en `cortes/api/router.py` -- corrección de la revisión de
+    Juan David sobre el PR #154 (2026-10-18), que encontró que estos dos DTO
+    nuevos de HU-04 declaraban `str` con `.isoformat()` manual mientras el
+    resto del backend deja que Pydantic serialice `date` directamente. El
+    valor que viaja por HTTP es idéntico (misma cadena ISO); lo que cambia
+    es que el OpenAPI generado ahora describe el campo igual en todo el
+    backend. `PlanAccionRespuesta.fecha_corte` (HU-01/03) queda señalado
+    para un cambio aparte y no se toca aquí: corregirlo también cambiaría el
+    contrato de endpoints que este PR no modifica."""
 
     id: UUID
-    fecha_corte: str
+    fecha_corte: date
 
 
 class CorteComparadoRespuesta(BaseModel):
     """[E04-HU04] CA04: metadatos de cada uno de los dos cortes comparados,
-    para que el frontend rotule las columnas "A"/"B" con la fecha real."""
+    para que el frontend rotule las columnas "A"/"B" con la fecha real.
+
+    `fecha_corte` es `date` -- ver la nota en `CorteDisponibleRespuesta`."""
 
     corte_id: UUID
     vigencia: int
-    fecha_corte: str
+    fecha_corte: date
 
 
 class FilaComparacionRespuesta(BaseModel):
@@ -422,8 +435,8 @@ def _validar_y_ordenar_cortes(
     corte_id_1: UUID,
     corte_id_2: UUID,
 ) -> tuple[Corte, Corte]:
-    """[E04-HU04] CA03/CA04/CA07: valida el par de cortes y decide cuál es
-    "Corte A" (el más antiguo, `fecha_corte` menor) y cuál "Corte B" (el más
+    """[E04-HU04] CA03: valida el par de cortes y decide cuál es "Corte A"
+    (el más antiguo, `fecha_corte` menor) y cuál "Corte B" (el más
     reciente) -- INDEPENDIENTE del orden en que llegaron los query params
     (DECISIÓN TÉCNICA: ordenar en vez de exigir que el frontend siempre
     mande el más antiguo primero, para que un usuario pueda elegir los dos
@@ -431,8 +444,19 @@ def _validar_y_ordenar_cortes(
     sentido).
 
     `servicio.obtener_corte(id)` ya lanza `RecursoNoEncontrado` (404) si
-    algún id no existe -- CA07 ("ambos cortes deben existir") no necesita
-    código propio aquí.
+    algún id no existe -- "ambos cortes deben existir" es parte de CA03
+    ("elegir dos cortes de la misma vigencia") y no necesita código propio
+    aquí.
+
+    CORRECCIÓN (revisión de Juan David sobre el PR #154, 2026-10-18): este
+    docstring y el comentario de más abajo citaban "CA07" tanto para esta
+    validación de existencia como para el rechazo de un corte en BORRADOR.
+    Según `docs/specs/E04-HU04-comparar-cortes.md`, CA07 es "ver solo
+    cambios" (`solo_cambios`) -- un criterio distinto, que esta función ni
+    siquiera implementa (vive en `filtrar_solo_cambios`,
+    `domain/comparacion.py`). Las reglas de existencia/vigencia/BORRADOR
+    están bajo "Reglas de negocio" del mismo CA03, no bajo CA07. No cambia
+    ningún comportamiento, solo la referencia en los comentarios.
     """
     if corte_id_1 == corte_id_2:
         raise ReglaDeNegocioViolada(
@@ -458,7 +482,7 @@ def _validar_y_ordenar_cortes(
             },
         )
 
-    # CA07: un corte en BORRADOR puede seguir cambiando -- comparar contra
+    # CA03: un corte en BORRADOR puede seguir cambiando -- comparar contra
     # él produciría un resultado que deja de ser válido apenas se registre
     # o se reemplace un archivo. Mismo código HTTP (409) que
     # `_verificar_fuentes_completas` usa para el mismo tipo de situación
@@ -496,7 +520,28 @@ def _comparar_y_filtrar(
     return filas
 
 
-@router.get("/cortes-disponibles", response_model=list[CorteDisponibleRespuesta])
+#: [E04-HU04] `summary`/`responses` en los 3 endpoints de esta HU: primera
+#: vez que se aplica en todo el backend lo que CLAUDE.md pide para "todo
+#: endpoint nuevo" (hallazgo de la revisión de Juan David sobre el PR #154,
+#: 2026-10-18 -- "ningún router del repo los usa"). Se limita a estos 3
+#: endpoints porque son los que trae este PR; extenderlo al resto de
+#: `plan_accion`/`cortes`/`trazabilidad`/`ingesta` es una limpieza más
+#: grande que el equipo debe decidir aparte, no algo para hacer de paso
+#: aquí. No se declara un `model` de error compartido (no existe todavía
+#: ninguno en el backend): el cuerpo real de un error lo define
+#: `app/core/errores.py` (`{codigo, mensaje, detalles}`), así que estas
+#: `responses` documentan el código HTTP y cuándo ocurre, sin inventar un
+#: esquema Pydantic de error que nadie más usa.
+@router.get(
+    "/cortes-disponibles",
+    response_model=list[CorteDisponibleRespuesta],
+    summary="Listar los cortes REGISTRADO de una vigencia, para el selector de comparación",
+    responses={
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El rol autenticado no tiene acceso al Plan de Acción (CA10)."
+        },
+    },
+)
 def obtener_cortes_disponibles(
     servicio: ServicioCortesDep,
     usuario: AccesoPlanAccionDep,
@@ -519,12 +564,31 @@ def obtener_cortes_disponibles(
     ]
     cortes.sort(key=lambda corte: corte.fecha_corte)
     return [
-        CorteDisponibleRespuesta(id=corte.id, fecha_corte=corte.fecha_corte.isoformat())
-        for corte in cortes
+        CorteDisponibleRespuesta(id=corte.id, fecha_corte=corte.fecha_corte) for corte in cortes
     ]
 
 
-@router.get("/comparar", response_model=ComparacionRespuesta)
+@router.get(
+    "/comparar",
+    response_model=ComparacionRespuesta,
+    summary="Comparar el Plan de Acción de dos cortes de la misma vigencia",
+    responses={
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El rol autenticado no tiene acceso al Plan de Acción (CA10)."
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "`corte_id_1` o `corte_id_2` no corresponde a ningún corte existente."
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Alguno de los dos cortes está en BORRADOR (CA03) -- "
+            "solo se comparan cortes REGISTRADO."
+        },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Los dos ids son el mismo corte, o los cortes son de "
+            "vigencias distintas (CA03)."
+        },
+    },
+)
 def comparar_plan_accion(
     servicio: ServicioCortesDep,
     sesion: SesionDep,
@@ -538,12 +602,15 @@ def comparar_plan_accion(
     orden -- `_validar_y_ordenar_cortes` decide cuál es "A" (más antiguo) y
     cuál "B" (más reciente).
 
-    `solo_cambios` (CA06: "ver solo las metas con cambios"): filtro de
-    backend, no un toggle puramente visual en frontend -- mismo criterio
-    que D27/HU-02 (filtrar donde ya existe la regla, no duplicarla en dos
-    capas). Las metas que solo existen en un corte (`SOLO_CORTE_A`/
-    `SOLO_CORTE_B`) siempre se consideran "con cambios" y nunca se ocultan
-    con este filtro -- ver `domain/comparacion.py::filtrar_solo_cambios`.
+    `solo_cambios` (CA07: "ver solo las metas con cambios" -- corregido de
+    "CA06" en la revisión de Juan David sobre el PR #154, 2026-10-18: CA06
+    es "metas presentes en un solo corte", un criterio distinto; ver
+    `docs/specs/E04-HU04-comparar-cortes.md`): filtro de backend, no un
+    toggle puramente visual en frontend -- mismo criterio que D27/HU-02
+    (filtrar donde ya existe la regla, no duplicarla en dos capas). Las
+    metas que solo existen en un corte (`SOLO_CORTE_A`/`SOLO_CORTE_B`,
+    CA06) siempre se consideran "con cambios" y nunca se ocultan con este
+    filtro -- ver `domain/comparacion.py::filtrar_solo_cambios`.
     """
     corte_a, corte_b = _validar_y_ordenar_cortes(servicio, corte_id_1, corte_id_2)
     filas = _comparar_y_filtrar(sesion, corte_a, corte_b, solo_cambios)
@@ -552,18 +619,41 @@ def comparar_plan_accion(
         corte_a=CorteComparadoRespuesta(
             corte_id=corte_a.id,
             vigencia=corte_a.vigencia,
-            fecha_corte=corte_a.fecha_corte.isoformat(),
+            fecha_corte=corte_a.fecha_corte,
         ),
         corte_b=CorteComparadoRespuesta(
             corte_id=corte_b.id,
             vigencia=corte_b.vigencia,
-            fecha_corte=corte_b.fecha_corte.isoformat(),
+            fecha_corte=corte_b.fecha_corte,
         ),
         filas=[_fila_comparacion_a_respuesta(f) for f in filas],
     )
 
 
-@router.get("/comparar/exportar")
+@router.get(
+    "/comparar/exportar",
+    summary="Exportar la comparación de dos cortes de la misma vigencia a Excel (.xlsx)",
+    responses={
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El rol autenticado no tiene acceso al Plan de Acción (CA10)."
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "`corte_id_1` o `corte_id_2` no corresponde a ningún corte existente."
+        },
+        status.HTTP_409_CONFLICT: {
+            "description": "Alguno de los dos cortes está en BORRADOR (CA03) -- "
+            "solo se comparan cortes REGISTRADO."
+        },
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+            "description": "Los dos ids son el mismo corte, o los cortes son de "
+            "vigencias distintas (CA03)."
+        },
+        status.HTTP_200_OK: {
+            "description": "Archivo .xlsx de la comparación.",
+            "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}},
+        },
+    },
+)
 def exportar_comparacion_plan_accion(
     servicio: ServicioCortesDep,
     sesion: SesionDep,
