@@ -500,6 +500,14 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
         self._s.flush()
         return len(proyectos) + indicadores_insertados
 
+    # Usada por `_copiar_metas` (ver su docstring): todas las columnas de
+    # datos de `meta`, excepto `id`/`corte_id` (identidad propia de la fila
+    # destino, nunca se copian). Derivada de `MetaORM.__table__` en vez de
+    # enumerada a mano, para que un campo nuevo no vuelva a quedar afuera.
+    _COLUMNAS_COPIABLES_META = tuple(
+        c.name for c in MetaORM.__table__.columns if c.name not in {"id", "corte_id"}
+    )
+
     def copiar_datos(
         self, origen_id: uuid.UUID, destino_id: uuid.UUID, tipo: TipoArchivoFuente
     ) -> int:
@@ -524,6 +532,25 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
         Sin relationship declarada entre MetaORM y sus hijas en models.py:
         se resuelven con un mapa id_origen -> id_nuevo, igual a la trampa de
         UUID documentada arriba (se genera el id ANTES de usarlo como FK).
+
+        CORRECCIÓN (hallazgo de Juan David, 2026-10-19): esta función
+        enumeraba a mano 8 de las 19 columnas de datos de `MetaORM` --
+        quedaban en NULL las 11 agregadas el 2026-09-23 (migración
+        `122e94509b80`: `entidad_territorial`, `nombre_plan`,
+        `fecha_creacion_plan`, `linea_estrategica`, `codigo_sector`,
+        `sector`, `codigo_programa`, `programa`, `codigo_ods`, `ods`,
+        `tipo_acumulacion`), porque se escribió ANTES de que esas columnas
+        existieran y nadie la actualizó al agregarlas (a diferencia de
+        `reemplazar_metas`, que sí las tiene todas). Efecto: un corte con
+        PDT reutilizado perdía el sector/programa de cada meta -- sin
+        opciones en los filtros de la matriz (`trazabilidad`) y sin
+        columna/filtro de Sector en el Plan de Acción (`plan_accion`, que sí
+        lee `MetaORM.sector` pero no `programa`).
+
+        Se copian ahora TODAS las columnas de `meta` salvo `id`/`corte_id`
+        (que deben cambiar), iterando sobre `MetaORM.__table__.columns` en
+        vez de enumerarlas: un campo agregado a `MetaORM` en el futuro se
+        copia automáticamente, sin volver a tocar este método.
         """
         metas_origen = self._s.scalars(select(MetaORM).where(MetaORM.corte_id == origen_id)).all()
         if not metas_origen:
@@ -537,14 +564,9 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
                 MetaORM(
                     id=nueva_id,
                     corte_id=destino_id,
-                    cod_indicador_producto=meta.cod_indicador_producto,
-                    cod_indicador_sistp=meta.cod_indicador_sistp,
-                    codigo_producto_mga=meta.codigo_producto_mga,
-                    nombre_producto=meta.nombre_producto,
-                    unidad_medida=meta.unidad_medida,
-                    meta_cuatrienio=meta.meta_cuatrienio,
-                    es_principal=meta.es_principal,
-                    bpin_relacionados=meta.bpin_relacionados,
+                    **{
+                        columna: getattr(meta, columna) for columna in self._COLUMNAS_COPIABLES_META
+                    },
                 )
             )
 
