@@ -236,6 +236,31 @@ esquemas de request/response:
 
 ---
 
+## Actualización 2026-10-15 (alineación de contrato con el frontend ya construido)
+
+La implementación de D25 (2026-10-13) se hizo directamente desde los CA,
+sin revisar esta misma sección de Contrato (marcada `PROPUESTA` desde el
+2026-10-07) ni el frontend que Juan David ya había construido contra ella
+(`EditarArchivosCorteActual.jsx`, `api/cliente.js`). Una auditoría cruzada
+del 2026-10-15 encontró 3 puntos divergentes; el equipo decidió alinear el
+backend al frontend ya construido, sin tocarlo — ver la Adenda a D25
+(`docs/DECISIONES.md`) para el detalle completo. Resumen de lo que cambia
+respecto a lo que decía D25 originalmente:
+
+- **Contrato del reemplazo: cerrado.** `POST /cortes/{id}/archivos/{tipo}/reemplazo`
+  (no `PUT /cortes/{id}/archivos/{tipo}` como implementó D25 originalmente).
+- **Contrato del historial: cerrado.** `GET /cortes/{id}/historial` (no
+  `/historial-reemplazos`); cada fila expone `fecha_hora` (no `fecha`).
+- **`[VALIDAR]` del indicador "es editable/es el actual" (sección Contrato,
+  arriba): CERRADO.** Se agrega `es_corte_actual: bool` a `CorteRespuesta`,
+  calculado por el backend con el mismo criterio de
+  `ServicioCortes.obtener_corte_actual` — el frontend ya no necesita su
+  fallback de una segunda petición a `GET /cortes` completo, aunque ese
+  fallback no se retiró en este cambio (es responsabilidad del frontend,
+  fuera de esta tarjeta de backend).
+
+---
+
 Esta Specification define **qué** debe hacer el sistema, no **cómo**
 implementarlo. No incluye componentes, archivos, hooks, funciones, Tailwind
 ni detalles internos de implementación, salvo los necesarios para definir el

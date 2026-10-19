@@ -256,6 +256,91 @@ def test_get_cortes_id_inexistente_devuelve_404(cliente):
     assert respuesta.json()["codigo"] == "recurso_no_encontrado"
 
 
+# --- es_corte_actual — [E02-HU05], Contrato de la spec original ------------
+# Indicador calculado por el backend para que el frontend
+# (`EditarArchivosCorteActual.jsx`) no tenga que recalcular el orden con
+# una segunda petición a GET /cortes completo (ver docstring de
+# `CorteRespuesta.es_corte_actual` en el router).
+
+
+def test_corte_en_borrador_nunca_es_el_actual(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+
+    respuesta = cliente.get(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.json()["es_corte_actual"] is False
+
+
+def test_unico_corte_registrado_es_el_actual(cliente_con_lectores):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+
+    respuesta = cliente_con_lectores.get(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.json()["es_corte_actual"] is True
+
+
+def test_corte_registrado_desplazado_por_uno_mas_reciente_deja_de_ser_el_actual(
+    cliente_con_lectores,
+):
+    """CA05: mismo escenario que ya prueba el reemplazo (corte global, no
+    por vigencia) -- aquí se confirma el valor del indicador en sí."""
+    corte_antiguo_id = _crear_corte_actual_registrado(
+        cliente_con_lectores, vigencia=2025, fecha_corte="2025-12-31"
+    )
+    corte_reciente_id = _crear_corte_actual_registrado(
+        cliente_con_lectores, vigencia=2026, fecha_corte="2026-09-08"
+    )
+
+    respuesta_antiguo = cliente_con_lectores.get(f"/api/v1/cortes/{corte_antiguo_id}")
+    respuesta_reciente = cliente_con_lectores.get(f"/api/v1/cortes/{corte_reciente_id}")
+
+    assert respuesta_antiguo.json()["es_corte_actual"] is False
+    assert respuesta_reciente.json()["es_corte_actual"] is True
+
+
+def test_listar_cortes_marca_es_corte_actual_sin_consultar_por_cada_fila(cliente_con_lectores):
+    corte_antiguo_id = _crear_corte_actual_registrado(
+        cliente_con_lectores, vigencia=2025, fecha_corte="2025-12-31"
+    )
+    corte_reciente_id = _crear_corte_actual_registrado(
+        cliente_con_lectores, vigencia=2026, fecha_corte="2026-09-08"
+    )
+
+    respuesta = cliente_con_lectores.get("/api/v1/cortes")
+
+    por_id = {fila["id"]: fila["es_corte_actual"] for fila in respuesta.json()}
+    assert por_id[corte_antiguo_id] is False
+    assert por_id[corte_reciente_id] is True
+
+
+def test_sin_ningun_corte_registrado_ninguno_es_el_actual(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+
+    respuesta = cliente.get("/api/v1/cortes")
+
+    assert all(fila["es_corte_actual"] is False for fila in respuesta.json())
+    assert any(fila["id"] == corte_id for fila in respuesta.json())
+
+
+def test_al_registrar_un_corte_pasa_a_ser_el_actual(cliente_con_lectores):
+    corte_id = _crear_corte_borrador(cliente_con_lectores)
+    _cargar_los_tres_archivos(cliente_con_lectores, corte_id)
+
+    respuesta = cliente_con_lectores.post(f"/api/v1/cortes/{corte_id}/registrar")
+
+    assert respuesta.json()["es_corte_actual"] is True
+
+
+def test_corregir_un_corte_en_borrador_mantiene_es_corte_actual_en_falso(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+
+    respuesta = cliente.patch(
+        f"/api/v1/cortes/{corte_id}", json={"vigencia": 2026, "fecha_corte": "2026-01-01"}
+    )
+
+    assert respuesta.json()["es_corte_actual"] is False
+
+
 # --- PATCH /cortes/{id} — D11 (docs/DECISIONES.md, aclaración 2026-09-19) --
 
 
@@ -699,8 +784,8 @@ def test_put_archivos_del_corte_actual_devuelve_200_y_registra_el_historial(
 ):
     corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
 
-    respuesta = cliente_con_lectores.put(
-        f"/api/v1/cortes/{corte_id}/archivos/PDT",
+    respuesta = cliente_con_lectores.post(
+        f"/api/v1/cortes/{corte_id}/archivos/PDT/reemplazo",
         files={
             "archivo": (
                 "pdt_corregido.xlsx",
@@ -715,7 +800,7 @@ def test_put_archivos_del_corte_actual_devuelve_200_y_registra_el_historial(
     assert cuerpo["tipo"] == "PDT"
     assert cuerpo["nombre_archivo"] == "pdt_corregido.xlsx"
 
-    historial = cliente_con_lectores.get(f"/api/v1/cortes/{corte_id}/historial-reemplazos")
+    historial = cliente_con_lectores.get(f"/api/v1/cortes/{corte_id}/historial")
     assert historial.status_code == 200
     filas = historial.json()
     assert len(filas) == 1
@@ -728,8 +813,8 @@ def test_put_archivos_corte_en_borrador_devuelve_409_motivo_corte_no_registrado(
 ):
     corte_id = _crear_corte_borrador(cliente_con_lectores)
 
-    respuesta = cliente_con_lectores.put(
-        f"/api/v1/cortes/{corte_id}/archivos/PDT",
+    respuesta = cliente_con_lectores.post(
+        f"/api/v1/cortes/{corte_id}/archivos/PDT/reemplazo",
         files={
             "archivo": (
                 "plan.xlsx",
@@ -751,8 +836,8 @@ def test_put_archivos_corte_registrado_pero_no_es_el_actual_devuelve_409(cliente
     )
     _crear_corte_actual_registrado(cliente_con_lectores, vigencia=2026, fecha_corte="2026-09-08")
 
-    respuesta = cliente_con_lectores.put(
-        f"/api/v1/cortes/{corte_antiguo_id}/archivos/PDT",
+    respuesta = cliente_con_lectores.post(
+        f"/api/v1/cortes/{corte_antiguo_id}/archivos/PDT/reemplazo",
         files={
             "archivo": (
                 "plan.xlsx",
@@ -767,8 +852,8 @@ def test_put_archivos_corte_registrado_pero_no_es_el_actual_devuelve_409(cliente
 
 
 def test_put_archivos_corte_inexistente_devuelve_404(cliente):
-    respuesta = cliente.put(
-        f"/api/v1/cortes/{uuid.uuid4()}/archivos/PDT",
+    respuesta = cliente.post(
+        f"/api/v1/cortes/{uuid.uuid4()}/archivos/PDT/reemplazo",
         files={
             "archivo": (
                 "plan.xlsx",
@@ -782,20 +867,20 @@ def test_put_archivos_corte_inexistente_devuelve_404(cliente):
     assert respuesta.json()["codigo"] == "recurso_no_encontrado"
 
 
-# --- GET /cortes/{id}/historial-reemplazos — [E02-HU05][CA06] ---------------
+# --- GET /cortes/{id}/historial — [E02-HU05][CA06] -------------------------
 
 
 def test_get_historial_reemplazos_vacio_si_nunca_se_reemplazo_nada(cliente_con_lectores):
     corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
 
-    respuesta = cliente_con_lectores.get(f"/api/v1/cortes/{corte_id}/historial-reemplazos")
+    respuesta = cliente_con_lectores.get(f"/api/v1/cortes/{corte_id}/historial")
 
     assert respuesta.status_code == 200
     assert respuesta.json() == []
 
 
 def test_get_historial_reemplazos_corte_inexistente_devuelve_404(cliente):
-    respuesta = cliente.get(f"/api/v1/cortes/{uuid.uuid4()}/historial-reemplazos")
+    respuesta = cliente.get(f"/api/v1/cortes/{uuid.uuid4()}/historial")
 
     assert respuesta.status_code == 404
     assert respuesta.json()["codigo"] == "recurso_no_encontrado"
