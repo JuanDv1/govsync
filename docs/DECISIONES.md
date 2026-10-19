@@ -1517,6 +1517,133 @@ implementación backend).
 
 ---
 
+## D29 · Plan de Acción (E-04/HU-04): comparación entre dos cortes, orden A/B y reutilización de la exportación
+
+**Estado: DECISIÓN TÉCNICA** (implementación), con un **SUPUESTO MENOR**
+documentado en el punto 4.
+
+**1. "Corte A"/"Corte B" se determinan por fecha, no por el orden de los
+query params.** La HU no dice si el usuario elige "cuál va primero" en el
+selector o si el sistema decide. Se implementa que el sistema SIEMPRE
+ordena por `fecha_corte` ascendente — "Corte A" es el más antiguo, "Corte
+B" el más reciente — sin importar en qué orden lleguen
+`corte_id_1`/`corte_id_2`. Esto evita que el mismo par de cortes produzca
+un resultado "al revés" (Δ con signo invertido) según el orden en que el
+usuario los haya clickeado en el selector. Si el equipo decide que el
+usuario SÍ debe poder elegir explícitamente cuál es "antes" y cuál
+"después" (por ejemplo, para comparar un corte contra uno posterior en el
+tiempo pero tratarlo como referencia), este es el único punto que cambia
+(`_validar_y_ordenar_cortes` en `plan_accion/api/router.py`).
+
+**2. Validaciones y códigos HTTP (CA03).** Mismo corte dos veces y
+vigencias distintas son errores de regla de negocio (`422
+regla_de_negocio_violada` — no tiene sentido "comparar algo consigo
+mismo" ni cruzar vigencias distintas, igual criterio que
+`Corte.validar_vigencia`). Un corte en estado `BORRADOR` es `409
+operacion_no_permitida` — mismo código y mismo razonamiento que
+`_verificar_fuentes_completas` ("el recurso existe pero no está en
+condiciones de usarse para esto"), NO `422`, porque no es un dato de
+entrada inválido sino un estado del recurso. Un `corte_id` que no existe
+ya produce `404` por el `RecursoNoEncontrado` que `ServicioCortes.
+obtener_corte` lanza — no se duplica esa validación en el router.
+
+**3. Emparejamiento de metas por `cod_indicador_producto` (CA04/CA05/CA06).**
+Es la misma llave que usa `agregar_por_meta` (D26) para identificar una
+meta de forma única dentro de UN corte — compararla entre dos cortes
+reutiliza esa misma llave, no se inventa una nueva. Una meta que solo
+aparece en uno de los dos cortes (`SOLO_CORTE_A`/`SOLO_CORTE_B`) tiene
+`None` en los campos del corte donde falta y en su Δ — `None` es
+deliberadamente distinto de `0`: `0` significa "no cambió", `None`
+significa "no es comparable" (apareció o desapareció). CA07 ("ver solo
+cambios") es, por la misma razón, un filtro de BACKEND (no un toggle
+puramente visual), igual criterio que D27/HU-02: la regla de "qué cuenta
+como cambio" vive en un solo lugar (`domain/comparacion.py::
+filtrar_solo_cambios`), y una meta `SOLO_CORTE_A`/`SOLO_CORTE_B` NUNCA se
+oculta con ese filtro (aparecer/desaparecer siempre es, por definición, un
+cambio).
+
+**4. Exportación de la comparación (CA08) — SUPUESTO MENOR.** El Excel de
+requisitos no especifica columnas para esta exportación. Se construye una
+tabla paralela a la de HU-03 (`construir_libro_comparacion` en
+`persistence/exportacion_excel.py`, reutilizando sus constantes de estilo
+pero NO su función `construir_libro_excel`, porque la forma de la fila es
+distinta: A/B/Δ por cada métrica en vez de un solo valor) con las columnas
+mínimas necesarias para mostrar lo que CA04-CA06 ya exponen en pantalla:
+Sector, Código Indicador, Meta, Presencia, y A/B/Δ de avance físico (sin
+implementar, igual que en todas las HU de Plan de Acción), ejecución y
+avance financiero. Si el equipo define un layout distinto para esta
+exportación, es un cambio acotado a ese archivo, sin tocar
+`domain/comparacion.py`.
+
+**5. Endpoints nuevos, no una variante de `/actual`.** `GET
+/cortes-disponibles` (CA01/CA02) y `GET /comparar` (CA03-CA07) son
+endpoints propios — no se reutiliza `/actual` con parámetros adicionales,
+porque esta HU necesita las filas agregadas de DOS cortes específicos por
+`id` (no "el corte actual"). Se extrajo `_construir_filas_agregadas`
+(consulta + `FilaFuenteMeta` + `agregar_por_meta`, SIN filtrar) de la
+función que antes hacía todo el trabajo de `/actual`/`/exportar`
+(`_obtener_filas_filtradas`), para que `/comparar` pueda llamarla dos
+veces (una por cada corte) sin duplicar el armado de `FilaFuenteMeta`.
+
+**Registrado:** 2026-10-14, Juan Esteban (asistido por Claude Code —
+`[E04-HU04] Comparar dos cortes de una misma vigencia`, implementación
+backend).
+
+**Actualización 2026-10-18 (correcciones de la revisión de Juan David
+sobre el PR #154, ya mergeado a `develop`):** revisó el PR después de
+fusionado y encontró 6 puntos, los 6 corregidos en un solo PR de
+seguimiento (decisión expresa del equipo: priorizar cerrar todo de una vez
+sobre dividir en varios PRs pequeños, aunque lo segundo sea lo usual):
+
+1. **Bug real de datos (CA07 — `solo_cambios`).** `filtrar_solo_cambios`/
+   `_tiene_cambio` (`domain/comparacion.py`) solo preguntaba si el delta
+   era distinto de `0`, así que una meta que GANA o PIERDE el cruce
+   presupuestal de un lado a otro (`ejecucion_a=100 -> ejecucion_b=None`,
+   o al revés) tiene `delta=None` — y `None` nunca contaba como cambio, por
+   lo que esa meta se ocultaba con `solo_cambios=true`. Exactamente lo que
+   este mismo punto 3 de arriba dice que CA06/CA07 deben evitar. Corregido:
+   `_tiene_cambio` ahora también cuenta como cambio cuando un lado es
+   `None` y el otro no, para ejecución y para avance financiero por
+   separado. Se agregaron las pruebas que faltaban.
+2. **CI nunca corrió sobre el código del PR antes de fusionarlo.** El PR
+   abrió contra `feature/e04-hu03/...` y se reapuntó a `develop` sin un
+   push nuevo — `pull_request` sin `types:` explícito no dispara en un
+   simple cambio de base. El commit de merge sí corrió CI completo (y
+   pasó), pero fue buena suerte, no control. Corregido: se agregó
+   `types: [opened, synchronize, reopened, edited]` en `ci.yml`.
+3. La descripción del PR #154 en GitHub seguía diciendo que su base era
+   `feature/e04-hu03/...` — corregida directamente en GitHub, no es algo
+   que viva en este repositorio.
+4. **Numeración de CA cruzada entre CA06 y CA07** en varios docstrings de
+   `plan_accion/api/router.py` y en el punto 2 de esta misma decisión (ya
+   corregido arriba): `solo_cambios` es CA07 ("ver solo cambios"), no CA06
+   ("metas presentes en un solo corte"). No cambia ningún comportamiento,
+   solo las referencias.
+5. **Tipos de fecha inconsistentes en el contrato.** `CorteDisponibleRespuesta.
+fecha_corte` y `CorteComparadoRespuesta.fecha_corte` eran `str` (con
+   `.isoformat()` manual); el resto del backend (`cortes/api/router.py`)
+   usa `date` y deja que Pydantic serialice. Mismo valor en el HTTP, pero
+   el OpenAPI generado los describía distinto. Corregidos esos dos DTO a
+   `date`. `PlanAccionRespuesta.fecha_corte` (HU-01/03, preexistente) queda
+   señalado para un cambio aparte — no se tocó aquí.
+6. **Preexistente, no introducido por HU-04:** `exportacion_excel.py`
+   escribía `sector`/`nombre_producto` (y los textos unidos de
+   `rubros`/`contratos`) sin sanear — un valor que empiece por `=`, `+`,
+   `-` o `@` puede interpretarse como fórmula al abrir el archivo
+   ("inyección de fórmulas"/CSV injection). El origen es un archivo que
+   sube la propia administradora autenticada, así que el riesgo es bajo,
+   pero la mitigación (anteponer una comilla simple, mismo criterio que
+   recomienda OWASP) es gratis y ya se aplicó en ambas funciones de
+   escritura (`_escribir_fila` de HU-03 y `_escribir_fila_comparacion` de
+   HU-04). De paso se agregó `summary`/`responses` a los 3 endpoints de
+   HU-04 (primera vez que se usa en todo el backend lo que `CLAUDE.md`
+   pide para endpoints nuevos) — extenderlo al resto de los routers queda
+   como limpieza aparte, no se hizo de paso aquí.
+
+**Registrado:** 2026-10-18, Juan Esteban (asistido por Claude Code).
+
+---
+
 ## Adenda a D25 (2026-10-15) · [E02-HU05]: alinear el backend al contrato que ya consumía el frontend
 
 **Contexto:** D25 (2026-10-13) implementó el reemplazo de archivos del
