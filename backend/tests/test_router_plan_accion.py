@@ -19,6 +19,7 @@ import uuid
 from datetime import date
 from io import BytesIO
 
+from fastapi.testclient import TestClient
 from openpyxl import load_workbook
 
 from app.core.dependencias import obtener_usuario_actual
@@ -374,13 +375,100 @@ class TestExportarExcelE04HU03:
 
     def test_respeta_filtros_igual_que_actual_ca02(self, cliente, sesion) -> None:
         cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
-        self._preparar_corte_con_una_meta(sesion)
+        corte_id = _crear_corte(sesion, estado=EstadoCorte.REGISTRADO)
 
-        respuesta = cliente.get("/api/v1/plan-accion/exportar", params={"sector": "Educación"})
+        for tipo in TipoArchivoFuente:
+            _marcar_archivo_cargado(sesion, corte_id, tipo)
+
+        sesion.add_all(
+            [
+                MetaORM(
+                    id=uuid.uuid4(),
+                    corte_id=corte_id,
+                    cod_indicador_producto="040110500",
+                    nombre_producto="Meta Educación",
+                    sector="Educación",
+                    es_principal=True,
+                ),
+                MetaORM(
+                    id=uuid.uuid4(),
+                    corte_id=corte_id,
+                    cod_indicador_producto="170202300",
+                    nombre_producto="Meta Infraestructura",
+                    sector="Infraestructura",
+                    es_principal=True,
+                ),
+            ]
+        )
+        sesion.commit()
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/exportar",
+            params={"sector": "Educación"},
+        )
+
+        assert respuesta.status_code == 200
 
         libro = load_workbook(BytesIO(respuesta.content))
         hoja = libro["Plan de Acción"]
-        assert hoja.cell(row=8, column=1).value is None  # sin filas tras filtrar
+
+        assert hoja.cell(row=8, column=1).value == "Educación"
+        assert hoja.cell(row=8, column=2).value == "040110500"
+
+        # El segundo registro no debe aparecer después de aplicar el filtro.
+        assert hoja.cell(row=9, column=2).value is None
+
+    def test_valores_exportados_coinciden_con_json_ca06(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_id = _crear_corte(sesion, estado=EstadoCorte.REGISTRADO)
+
+        for tipo in TipoArchivoFuente:
+            _marcar_archivo_cargado(sesion, corte_id, tipo)
+
+        sesion.add(
+            MetaORM(
+                id=uuid.uuid4(),
+                corte_id=corte_id,
+                cod_indicador_producto="040110500",
+                nombre_producto="Vías pavimentadas",
+                sector="Educación",
+                es_principal=True,
+            )
+        )
+        sesion.commit()
+
+        respuesta_json = cliente.get("/api/v1/plan-accion/actual")
+        respuesta_xlsx = cliente.get("/api/v1/plan-accion/exportar")
+
+        assert respuesta_json.status_code == 200
+        assert respuesta_xlsx.status_code == 200
+
+        cuerpo = respuesta_json.json()
+        fila_json = cuerpo["filas"][0]
+
+        libro = load_workbook(BytesIO(respuesta_xlsx.content), data_only=True)
+        hoja = libro["Plan de Acción"]
+
+        fila_xlsx = [hoja.cell(row=8, column=columna).value for columna in range(1, 13)]
+
+        valores_json = [
+            fila_json["sector"],
+            fila_json["cod_indicador_producto"],
+            fila_json["nombre_producto"],
+            fila_json["meta_programada"],
+            fila_json["cod_bpin"],
+            ", ".join(fila_json["rubros"]) if fila_json["rubros"] else None,
+            fila_json["presupuesto_definitivo"],
+            fila_json["ejecucion"],
+            ", ".join(fila_json["contratos"]) if fila_json["contratos"] else None,
+            fila_json["avance_fisico_pct"],
+            fila_json["avance_financiero_pct"],
+            fila_json["estado_cruce"],
+        ]
+
+        assert fila_xlsx == valores_json
+
+        assert cuerpo["resumen"]["total"] == 1
 
     def test_sin_corte_registrado_devuelve_404_ca09(self, cliente) -> None:
         cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
@@ -399,6 +487,36 @@ class TestExportarExcelE04HU03:
         hoja = libro["Plan de Acción"]
         texto_cabecera = "\n".join(str(hoja.cell(row=i, column=1).value) for i in range(1, 7))
         assert _ADMINISTRADOR.correo in texto_cabecera
+
+    def test_error_al_generar_excel_devuelve_500_generico_ca08(
+        self, cliente, sesion, monkeypatch
+    ) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_una_meta(sesion)
+
+        def _fallar_al_generar_excel(*args, **kwargs):
+            raise RuntimeError("detalle interno que no debe exponerse")
+
+        monkeypatch.setattr(
+            "app.modules.plan_accion.api.router.construir_libro_excel",
+            _fallar_al_generar_excel,
+        )
+
+        cliente_sin_raise = TestClient(
+            cliente.app,
+            raise_server_exceptions=False,
+        )
+
+        respuesta = cliente_sin_raise.get("/api/v1/plan-accion/exportar")
+
+        assert respuesta.status_code == 500
+
+        cuerpo = respuesta.json()
+        assert cuerpo["codigo"] == "error_interno"
+        assert cuerpo["mensaje"] == "Ocurrió un error inesperado procesando la solicitud."
+        assert cuerpo["detalles"] == {}
+        assert "detalle interno que no debe exponerse" not in respuesta.text
+        assert "Traceback" not in respuesta.text
 
 
 class TestCortesDisponiblesE04HU04:

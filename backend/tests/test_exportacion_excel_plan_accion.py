@@ -91,6 +91,31 @@ class TestConstruirLibroExcel:
         assert encabezados[1] == "Código Indicador"
         assert encabezados[-1] == "Estado de Cruce"
 
+    def test_propiedades_de_formato_ca03(self):
+        libro = construir_libro_excel(
+            [
+                _fila(cod="040110500", presupuesto=Decimal("1000000")),
+                _fila(cod="170202300", presupuesto=Decimal("2000000")),
+            ],
+            ResumenPlanAccion(2, 2, 0, 0),
+            _metadatos(),
+        )
+        hoja = self._cargar_hoja(libro)
+
+        # Encabezado fijo: la fila de datos permanece visible al desplazarse.
+        assert hoja.freeze_panes == "A8"
+
+        # Autofiltro aplicado al encabezado y a las filas de datos.
+        assert hoja.auto_filter.ref == "A7:L9"
+
+        # Los valores numéricos permanecen como números, no como texto.
+        assert isinstance(hoja.cell(row=8, column=4).value, (int, float, Decimal))
+        assert isinstance(hoja.cell(row=8, column=7).value, (int, float, Decimal))
+
+        # CA03: las filas de datos alternan el relleno.
+        assert hoja.cell(row=8, column=1).fill.fill_type is None
+        assert hoja.cell(row=9, column=1).fill.fill_type == "solid"
+
     def test_fila_de_datos_tiene_los_valores_de_la_meta_ca01(self):
         libro = construir_libro_excel(
             [_fila(cod="040110500")], ResumenPlanAccion(1, 1, 0, 0), _metadatos()
