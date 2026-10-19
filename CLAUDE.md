@@ -57,6 +57,15 @@ platform markers (`--universal` produces a single file valid for both Windows an
 Commits are validated by commitlint (Conventional Commits, see below) via a husky `commit-msg`
 hook — `npm install` at the root activates it.
 
+### After pulling `develop`
+
+Run `npm ci` (root) and `pip install -r requirements.txt -r requirements-dev.txt` (from `backend/`),
+then copy any new variables from `backend/.env.example` and `frontend/.env.example` into your own
+`.env` files — in particular the Keycloak ones (`VITE_KEYCLOAK_*` in the frontend, `KEYCLOAK_ISSUER`
+and `KEYCLOAK_AUDIENCE` in the backend). If the `cryptography` package is missing from the backend
+venv, PyJWT cannot verify RS256 and a valid token surfaces as `401 credenciales_invalidas`; reinstall
+and restart uvicorn (the verifier is cached).
+
 ## Architecture
 
 Backend is a **modular monolith with 5 layers**, and the dependency direction is enforced by an
@@ -136,9 +145,13 @@ carga"), `pages/` holds route-level screens (`NuevoCorte.jsx`, `Cortes.jsx`, `Ma
 
 ## Where things live
 
-- Card status, priority, owner, estimate: **Trello only** — no Markdown file replicates it. List
-  flow: `Sprint2` → `Tareas en proceso` → `Código (PR abierto)` → `Testing` (in `develop`) →
-  `Tareas hechas` (in `main`).
+- Card status, priority, owner, estimate: **Trello only** — no Markdown file replicates it. Board
+  lists, in order: `PRODUCT BACKLOG`, `Documentos`, `SPRINT 2: Goal Plan de Acción`,
+  `Tareas en proceso`, `CÓDIGO - Develop` (already merged into `develop`), `TESTING` (cards are
+  moved here when testing starts), `Tareas hechas Sprint 2`, `Tareas hechas Sprint 1`,
+  `DOCUMENTACIÓN`. A card moves to `Tareas hechas` only with its Definition of Done fully met. The
+  DoD on the Trello card and the one in [docs/PROCESO.md](docs/PROCESO.md) §2 currently differ;
+  reconciling them is a pending team decision — do not unify or rewrite either.
 - Process rules (definition of done, AI-assisted code convention): [docs/PROCESO.md](docs/PROCESO.md).
 - Architecture/scope decisions that cut across more than one HU:
   [docs/DECISIONES.md](docs/DECISIONES.md). A decision specific to a single HU goes in that HU's
@@ -173,6 +186,21 @@ commitlint). Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`,
 use: `cortes`, `ingesta`, `trazabilidad`, `dominio`, `bd`, `frontend`, `seguridad`.
 
 Full guidance on branch/commit workflow and sprint mechanics: [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Working with AI assistance
+
+- Never `git push`, open a PR or merge without an explicit order from the user; an order covers
+  only the actions it names.
+- AI-assisted PRs carry the `[IA-ASISTIDO]` mark (tool + validation, see
+  `.github/pull_request_template.md`). Co-authorship credit (Claude Sonnet 5.5) goes only in the PR
+  description, never as a commit trailer. Commit messages and PR text are in Spanish.
+- Do not touch `.claude/`.
+- Do not move or edit Trello cards without an explicit order.
+- In reports, separate "lo leí" (verified in code or output) from "lo supongo" (inferred).
+- If sources contradict each other, stop and ask; do not pick one.
+- Source of truth, highest first: approved spec (`Estado de la Specification: Aprobada`) >
+  requirements Excel (`docs/requisitos/`) while the spec is `Borrador` > the backend's OpenAPI >
+  Trello (status only).
 
 ## graphify
 
