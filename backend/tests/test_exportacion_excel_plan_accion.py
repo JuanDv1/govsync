@@ -23,6 +23,7 @@ from app.modules.plan_accion.domain.entidades import (
 )
 from app.modules.plan_accion.persistence.exportacion_excel import (
     MetadatosExportacion,
+    _sanear_texto_celda,
     construir_libro_excel,
     construir_nombre_archivo,
 )
@@ -175,3 +176,39 @@ class TestConstruirLibroExcel:
         celda = hoja.cell(row=8, column=11)
         assert celda.value == Decimal("50.0")
         assert "%" in celda.number_format
+
+
+class TestSaneoDeFormulasEnCeldas:
+    """[SEGURIDAD] Revisión de Juan David sobre el PR #154 (2026-10-18):
+    `sector`/`nombre_producto` vienen del Excel que sube la administradora y
+    se escribían sin sanear -- un texto que empiece por "=" se guarda como
+    fórmula ("inyección de fórmulas"/CSV injection, OWASP)."""
+
+    def test_sanear_antepone_comilla_a_texto_que_empieza_con_igual(self):
+        assert _sanear_texto_celda("=SUM(A1:A9)") == "'=SUM(A1:A9)"
+
+    def test_sanear_antepone_comilla_a_cada_prefijo_de_formula(self):
+        for prefijo in ("=", "+", "-", "@", "\t", "\r"):
+            texto = f"{prefijo}cmd|' /C calc'!A1"
+            assert _sanear_texto_celda(texto) == f"'{texto}"
+
+    def test_sanear_no_altera_texto_normal(self):
+        assert _sanear_texto_celda("Infraestructura") == "Infraestructura"
+
+    def test_sanear_no_falla_con_none(self):
+        assert _sanear_texto_celda(None) is None
+
+    def test_construir_libro_excel_sanea_sector_y_nombre_producto(self):
+        libro = construir_libro_excel(
+            [_fila(sector="=1+1", nombre='+HYPERLINK("http://x")')],
+            ResumenPlanAccion(1, 1, 0, 0),
+            _metadatos(),
+        )
+        with TemporaryDirectory() as tmp_dir:
+            buffer_path = Path(tmp_dir) / "_plan_accion_test_saneo.xlsx"
+            libro.save(buffer_path)
+            hoja = load_workbook(buffer_path)["Plan de Acción"]
+
+        fila = [c.value for c in hoja[8]]
+        assert fila[0] == "'=1+1"
+        assert fila[2] == '\'+HYPERLINK("http://x")'

@@ -134,7 +134,22 @@ def filtrar_solo_cambios(filas: list[FilaComparacion]) -> list[FilaComparacion]:
     Una meta "Solo en Corte A/B" (CA06) SIEMPRE cuenta como cambio (su Δ es
     `None`, no `0` -- aparecer o desaparecer de un corte a otro es, por
     definición, un cambio) y nunca se oculta aquí.
+
+    CORRECCIÓN (revisión de Juan David sobre el PR #154, 2026-10-18): una
+    meta presente en AMBOS cortes, pero que gana o pierde el cruce
+    presupuestal de un lado (p.ej. `ejecucion_a=100, ejecucion_b=None`),
+    también tiene `ejecucion_delta=None` -- igual que una meta que no tiene
+    cambios comparables. La versión original de `_tiene_cambio` solo
+    preguntaba `delta != 0`, así que un `delta=None` nunca contaba como
+    cambio y esa meta se ocultaba con `solo_cambios=true`, exactamente lo
+    que D29/CA06 quiere evitar (perder visibilidad de una meta que entra o
+    sale del cruce). Ahora se compara explícitamente si un lado es `None` y
+    el otro no (`(a is None) != (b is None)`): eso SIEMPRE es un cambio,
+    independiente del valor numérico.
     """
+
+    def _un_lado_perdio_o_gano_el_cruce(valor_a: Decimal | None, valor_b: Decimal | None) -> bool:
+        return (valor_a is None) != (valor_b is None)
 
     def _tiene_cambio(fila: FilaComparacion) -> bool:
         if fila.presencia is not PresenciaMeta.AMBOS:
@@ -142,6 +157,10 @@ def filtrar_solo_cambios(filas: list[FilaComparacion]) -> list[FilaComparacion]:
         return bool(
             (fila.ejecucion_delta is not None and fila.ejecucion_delta != 0)
             or (fila.avance_financiero_delta is not None and fila.avance_financiero_delta != 0)
+            or _un_lado_perdio_o_gano_el_cruce(fila.ejecucion_a, fila.ejecucion_b)
+            or _un_lado_perdio_o_gano_el_cruce(
+                fila.avance_financiero_pct_a, fila.avance_financiero_pct_b
+            )
         )
 
     return [fila for fila in filas if _tiene_cambio(fila)]

@@ -1535,7 +1535,7 @@ usuario SÍ debe poder elegir explícitamente cuál es "antes" y cuál
 tiempo pero tratarlo como referencia), este es el único punto que cambia
 (`_validar_y_ordenar_cortes` en `plan_accion/api/router.py`).
 
-**2. Validaciones y códigos HTTP (CA03/CA07).** Mismo corte dos veces y
+**2. Validaciones y códigos HTTP (CA03).** Mismo corte dos veces y
 vigencias distintas son errores de regla de negocio (`422
 regla_de_negocio_violada` — no tiene sentido "comparar algo consigo
 mismo" ni cruzar vigencias distintas, igual criterio que
@@ -1588,3 +1588,56 @@ veces (una por cada corte) sin duplicar el armado de `FilaFuenteMeta`.
 **Registrado:** 2026-10-14, Juan Esteban (asistido por Claude Code —
 `[E04-HU04] Comparar dos cortes de una misma vigencia`, implementación
 backend).
+
+**Actualización 2026-10-18 (correcciones de la revisión de Juan David
+sobre el PR #154, ya mergeado a `develop`):** revisó el PR después de
+fusionado y encontró 6 puntos, los 6 corregidos en un solo PR de
+seguimiento (decisión expresa del equipo: priorizar cerrar todo de una vez
+sobre dividir en varios PRs pequeños, aunque lo segundo sea lo usual):
+
+1. **Bug real de datos (CA07 — `solo_cambios`).** `filtrar_solo_cambios`/
+   `_tiene_cambio` (`domain/comparacion.py`) solo preguntaba si el delta
+   era distinto de `0`, así que una meta que GANA o PIERDE el cruce
+   presupuestal de un lado a otro (`ejecucion_a=100 -> ejecucion_b=None`,
+   o al revés) tiene `delta=None` — y `None` nunca contaba como cambio, por
+   lo que esa meta se ocultaba con `solo_cambios=true`. Exactamente lo que
+   este mismo punto 3 de arriba dice que CA06/CA07 deben evitar. Corregido:
+   `_tiene_cambio` ahora también cuenta como cambio cuando un lado es
+   `None` y el otro no, para ejecución y para avance financiero por
+   separado. Se agregaron las pruebas que faltaban.
+2. **CI nunca corrió sobre el código del PR antes de fusionarlo.** El PR
+   abrió contra `feature/e04-hu03/...` y se reapuntó a `develop` sin un
+   push nuevo — `pull_request` sin `types:` explícito no dispara en un
+   simple cambio de base. El commit de merge sí corrió CI completo (y
+   pasó), pero fue buena suerte, no control. Corregido: se agregó
+   `types: [opened, synchronize, reopened, edited]` en `ci.yml`.
+3. La descripción del PR #154 en GitHub seguía diciendo que su base era
+   `feature/e04-hu03/...` — corregida directamente en GitHub, no es algo
+   que viva en este repositorio.
+4. **Numeración de CA cruzada entre CA06 y CA07** en varios docstrings de
+   `plan_accion/api/router.py` y en el punto 2 de esta misma decisión (ya
+   corregido arriba): `solo_cambios` es CA07 ("ver solo cambios"), no CA06
+   ("metas presentes en un solo corte"). No cambia ningún comportamiento,
+   solo las referencias.
+5. **Tipos de fecha inconsistentes en el contrato.** `CorteDisponibleRespuesta.
+fecha_corte` y `CorteComparadoRespuesta.fecha_corte` eran `str` (con
+   `.isoformat()` manual); el resto del backend (`cortes/api/router.py`)
+   usa `date` y deja que Pydantic serialice. Mismo valor en el HTTP, pero
+   el OpenAPI generado los describía distinto. Corregidos esos dos DTO a
+   `date`. `PlanAccionRespuesta.fecha_corte` (HU-01/03, preexistente) queda
+   señalado para un cambio aparte — no se tocó aquí.
+6. **Preexistente, no introducido por HU-04:** `exportacion_excel.py`
+   escribía `sector`/`nombre_producto` (y los textos unidos de
+   `rubros`/`contratos`) sin sanear — un valor que empiece por `=`, `+`,
+   `-` o `@` puede interpretarse como fórmula al abrir el archivo
+   ("inyección de fórmulas"/CSV injection). El origen es un archivo que
+   sube la propia administradora autenticada, así que el riesgo es bajo,
+   pero la mitigación (anteponer una comilla simple, mismo criterio que
+   recomienda OWASP) es gratis y ya se aplicó en ambas funciones de
+   escritura (`_escribir_fila` de HU-03 y `_escribir_fila_comparacion` de
+   HU-04). De paso se agregó `summary`/`responses` a los 3 endpoints de
+   HU-04 (primera vez que se usa en todo el backend lo que `CLAUDE.md`
+   pide para endpoints nuevos) — extenderlo al resto de los routers queda
+   como limpieza aparte, no se hizo de paso aquí.
+
+**Registrado:** 2026-10-18, Juan Esteban (asistido por Claude Code).

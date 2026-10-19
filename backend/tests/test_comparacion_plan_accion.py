@@ -161,6 +161,43 @@ class TestFiltrarSoloCambiosCA07:
 
         assert filtrar_solo_cambios(comparadas) == comparadas
 
+    def test_meta_que_gana_el_cruce_de_ejecucion_no_se_oculta(self) -> None:
+        """Bug encontrado en la revisión de Juan David sobre el PR #154
+        (2026-10-18): `ejecucion_a=None -> ejecucion_b=100` es un cambio real
+        (la meta gana el cruce presupuestal), aunque `ejecucion_delta` sea
+        `None` por no ser comparable numéricamente."""
+        filas_a = [_fila(ejecucion=None)]
+        filas_b = [_fila(ejecucion=Decimal("100"))]
+        comparadas = comparar_cortes(filas_a, filas_b)
+
+        resultado = filtrar_solo_cambios(comparadas)
+
+        assert len(resultado) == 1
+        assert resultado[0].ejecucion_delta is None
+
+    def test_meta_que_pierde_el_cruce_de_ejecucion_no_se_oculta(self) -> None:
+        """Caso simétrico: `ejecucion_a=100 -> ejecucion_b=None` (la meta
+        pierde el cruce presupuestal) tampoco debe ocultarse."""
+        filas_a = [_fila(ejecucion=Decimal("100"))]
+        filas_b = [_fila(ejecucion=None)]
+        comparadas = comparar_cortes(filas_a, filas_b)
+
+        resultado = filtrar_solo_cambios(comparadas)
+
+        assert len(resultado) == 1
+        assert resultado[0].ejecucion_delta is None
+
+    def test_meta_que_gana_o_pierde_el_avance_financiero_no_se_oculta(self) -> None:
+        """Mismo bug, columna de avance financiero en vez de ejecución."""
+        filas_a = [_fila(avance_financiero_pct=Decimal("40"))]
+        filas_b = [_fila(avance_financiero_pct=None)]
+        comparadas = comparar_cortes(filas_a, filas_b)
+
+        resultado = filtrar_solo_cambios(comparadas)
+
+        assert len(resultado) == 1
+        assert resultado[0].avance_financiero_delta is None
+
     def test_meta_solo_en_un_corte_nunca_se_oculta_aunque_no_tenga_delta(self) -> None:
         filas_a = [_fila(cod="040110500")]
         filas_b: list[FilaPlanAccion] = []
