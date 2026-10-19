@@ -1705,3 +1705,128 @@ sí solos no bastan cuando ya existe trabajo de otra capa construido sobre
 una interpretación previa.
 
 **Registrado:** 2026-10-15, Juan Esteban (asistido por Claude Code).
+
+---
+
+## D30 · [E02-HU10] Programa es el sexto filtro de la matriz
+
+**Clasificación:** Decisión de arquitectura/alcance.
+
+**Decisión:** la historia y el panel de filtros (HU10-CA01) listan **seis**
+criterios: BPIN, Indicador, Producto, Contrato, Sector y Programa.
+HU10-CA16 (Programa) queda dentro del alcance de la HU.
+
+**Motivo/Evidencia:** la historia y HU10-CA01 del Excel (v2.2) listaban cinco
+criterios, mientras que HU10-CA16 de la misma hoja agregaba Programa; la spec
+lo dejó como `[VALIDAR]`. Ya está implementado: parámetro `programa` en
+`GET /matriz-relacion/...` (backend, #131), lista `programas` en
+`opciones-filtro` y selector en el panel (frontend, #156). Programa y Sector
+filtran sobre `MetaORM` (ver D22 y "Decisiones aplicadas" de la spec).
+
+**Alternativas consideradas:** dejar Programa fuera del panel y de la
+historia, como criterio aparte o diferido. Descartada: el pedido salió de las
+reuniones 3 y 5 con la clienta (ver la spec) y el dato ya existía en BD.
+
+**Estado:** RATIFICADA por el PO.
+
+**Registrado:** 2026-10-16, PO.
+
+---
+
+## D31 · [E02-HU10] El contador de la matriz es "N registros" (total filtrado)
+
+**Clasificación:** Registro de tarjeta.
+
+**Decisión:** el contador muestra "N registros" ("1 registro" en singular),
+donde N es el total de la consulta con los filtros aplicados. HU10-CA02 deja
+de decir "Mostrando X de Y registros". Al limpiar los filtros (HU10-CA12), N es
+el total del corte.
+
+**Motivo/Evidencia:** la spec tenía un `[VALIDAR]` sobre qué era Y (¿el total
+del corte sin filtros o el total filtrado?). La API solo devuelve el total
+filtrado (`total_filas`); mostrar Y habría exigido un cambio de backend. En el
+frontend, `textoRegistros` en `MatrizRelacion.jsx` da el mismo texto en el
+contador de la tarjeta de filtros y en la paginación.
+
+**Alternativas consideradas:** "Mostrando X de Y" con Y = total del corte sin
+filtros; requiere que el backend devuelva ese segundo total. Descartada por
+ahora.
+
+**Estado:** RATIFICADA por el PO.
+
+**Registrado:** 2026-10-16, PO.
+
+---
+
+## D32 · [E02-HU10] HU10-CA13 no incluye ordenamiento
+
+**Clasificación:** Registro de tarjeta.
+
+**Decisión:** HU10-CA13 se limita a la persistencia de los filtros: se
+mantienen al paginar y se limpian al cambiar de corte. Se elimina "u ordena".
+
+**Motivo/Evidencia:** ningún CA de la HU define ordenamiento de la matriz y
+hoy el orden es fijo (`order_by(MetaORM.cod_indicador_producto)` en
+`trazabilidad/persistence/consultas.py`); el frontend no ofrece ordenar. La
+spec lo había dejado como `[VALIDAR]`.
+
+**Alternativas consideradas:** agregar ordenamiento por columna a la matriz.
+Descartada: no está pedida por ningún CA y sería alcance nuevo.
+
+**Estado:** RATIFICADA por el PO.
+
+**Registrado:** 2026-10-16, PO.
+
+---
+
+## D33 · [E02-HU10] HU10-CA15 (tiempo de respuesta) sale de la HU
+
+**Clasificación:** Decisión de arquitectura/alcance.
+
+**Decisión:** el tiempo de respuesta con filtros deja de ser parte de HU10 y
+pasa a una tarjeta de rendimiento aparte, junto con los demás umbrales de la
+D4. Para esa tarjeta, el PO propone **4 segundos** (el umbral de carga de
+vistas de la D4) en lugar de los 3 s del Excel.
+
+**Pendiente:** confirmar con la clienta o el docente el umbral y si el volumen
+de Santa Rosa (D4: 144 metas por corte) es representativo de otros municipios
+de categoría 6. Hasta entonces
+ni 3 s ni 4 s son definitivos. La fila CA15 se conserva en la spec y el Excel,
+marcada como fuera de HU10, para no renumerar los demás CA.
+
+**Motivo/Evidencia:** no se midió ni se optimizó el rendimiento en esta
+entrega; el `[VALIDAR]` sobre el umbral (3 s del Excel frente a 4 s de la D4)
+sigue abierto.
+
+**Alternativas consideradas:** mantener CA15 dentro de HU10 con 3 s. Descartada
+por el PO.
+
+**Estado:** PROPUESTA — pendiente de confirmar con la clienta o el docente.
+
+**Registrado:** 2026-10-16, PO.
+
+---
+
+## D34 · [E02-HU10] Mínimos del autocompletado por criterio: BPIN 3, Contrato 1
+
+**Clasificación:** Registro de tarjeta.
+
+**Decisión:** el autocompletado de HU10-CA03 sugiere desde **3 caracteres**
+para BPIN y desde **1 carácter** para Contrato, con un máximo de 10
+sugerencias, buscando por "contiene", sin distinguir mayúsculas ni guiones, y
+con el mensaje "Sin coincidencias" cuando no hay resultados. Sigue resolviéndose
+en el cliente sobre las listas de `opciones-filtro` (sin endpoint propio).
+
+**Motivo/Evidencia:** en la prueba manual se vio que existen números de
+contrato de 1 o 2 caracteres (por ejemplo "12") que no se podían elegir con el
+mínimo de 3. El mínimo vive en la configuración de cada criterio
+(`minimoCaracteres` en `frontend/src/lib/filtros.js`). Reemplaza, para
+Contrato, la decisión #5 de `03_DECISIONES_SPRINT2` del Excel ("Contiene, desde
+3 caracteres").
+
+**Alternativas consideradas:** mínimo único de 3 para ambos criterios.
+Descartada porque dejaba contratos cortos sin poder elegirse.
+
+**Estado:** RATIFICADA por el PO.
+
+**Registrado:** 2026-10-15, PO.
