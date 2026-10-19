@@ -388,7 +388,24 @@ def obtener_plan_accion_actual(
 _MEDIA_TYPE_XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
-@router.get("/exportar")
+@router.get(
+    "/exportar",
+    summary="Exportar el Plan de Acción consolidado (con filtros opcionales) a Excel (.xlsx)",
+    responses={
+        status.HTTP_401_UNAUTHORIZED: {"description": "Sin token válido."},
+        status.HTTP_403_FORBIDDEN: {
+            "description": "El rol autenticado no tiene acceso al Plan de Acción (CA10)."
+        },
+        status.HTTP_404_NOT_FOUND: {"description": "Aún no hay ningún corte REGISTRADO (CA09)."},
+        status.HTTP_409_CONFLICT: {
+            "description": "El corte actual no tiene las tres fuentes cargadas."
+        },
+        status.HTTP_200_OK: {
+            "description": "Archivo .xlsx del Plan de Acción.",
+            "content": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}},
+        },
+    },
+)
 def exportar_plan_accion(
     servicio: ServicioCortesDep,
     sesion: SesionDep,
