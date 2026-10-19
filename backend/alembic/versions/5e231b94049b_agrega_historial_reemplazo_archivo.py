@@ -8,6 +8,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 revision: str = '5e231b94049b'
@@ -23,7 +24,11 @@ def upgrade() -> None:
         sa.Column('corte_id', sa.Uuid(), nullable=False),
         sa.Column(
             'tipo',
-            sa.Enum('PDT', 'EJECUCION', 'PROYECTOS', name='tipo_archivo_fuente', create_type=False),
+            # El tipo ya lo creó la migración inicial; `create_type=False` solo
+            # lo respeta el ENUM de PostgreSQL, el `sa.Enum` genérico lo ignora.
+            postgresql.ENUM(
+                'PDT', 'EJECUCION', 'PROYECTOS', name='tipo_archivo_fuente', create_type=False
+            ),
             nullable=False,
         ),
         sa.Column('nombre_archivo_anterior', sa.String(length=255), nullable=True),
