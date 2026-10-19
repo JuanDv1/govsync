@@ -89,7 +89,10 @@ toward the domain; persistence implements the domain's ports.
 Modules: `cortes` (the tracking "corte" — the aggregate everything else hangs off), `ingesta`
 (Excel readers/parsers for the three source files), `trazabilidad` (cross-reference queries/matrix
 between indicators, budget execution, and BPIN projects), `identidad` (Keycloak token
-verification and the `Rol`/`Usuario` domain types — see Architecture above). `alertas/` and
+verification and the `Rol`/`Usuario` domain types — see Architecture above), `plan_accion` (E04
+Plan de Acción: consolidated view, filters, Excel export and comparison between two cortes, served
+under `/plan-accion`; `api/`, `domain/` and `persistence/` only — no `application/` layer and no
+frontend yet). `alertas/` and
 `avance_fisico/` exist as empty module directories (`.gitkeep` only, no code) — placeholders for
 future épicas, not stubs to fill in without a card. Shared kernel: `app/shared/codigos.py`
 (the `CodigoIndicadorProducto` value object — the 9-digit key that joins all four data sources;
@@ -126,7 +129,8 @@ An invalid file is rejected **in full** — never partial data.
 
 Frontend (`frontend/src/`): `api/cliente.js` is the shared HTTP client (`[UX-01]`), implemented —
 `solicitar()` and the `api` methods (`crearCorte`, `listarCortes`, `obtenerCorte`, `registrarCorte`,
-`cargarArchivo`, `matriz`) are wired to the backend, and it attaches `Authorization: Bearer` from
+`cargarArchivo`, `matriz`, `opcionesFiltro`, `reemplazarArchivoCorteActual`, `historialCorte`) are
+wired to the backend, and it attaches `Authorization: Bearer` from
 whatever `establecerProveedorToken()` last set (called once by `ProveedorAutenticacion.jsx`). It
 preserves `error.detalles` from failed requests (carries `columnas_faltantes`, `pestanas_faltantes`,
 `archivos_faltantes` from the backend so the UI can show actionable messages, not just "failed") —
@@ -138,10 +142,16 @@ instance) and `ProveedorAutenticacion.jsx` (initializes it once — with silent-
 `EstadoError` implemented; `CargaDeArchivo.jsx`, implemented drag-and-drop upload control shared by
 the three source-file uploads, `[UX-02]`; `Disposicion.jsx`, the sidebar shell — hides "Nuevo
 corte" unless `puedeEscribir`, same role gate `Cortes.jsx` applies to "Crear corte"/"Continuar
-carga"), `pages/` holds route-level screens (`NuevoCorte.jsx`, `Cortes.jsx`, `MatrizRelacion.jsx`,
-`Login.jsx` — redirects to Keycloak on click, no longer a form) wired into `App.jsx`'s router
-(`/login`, `/cortes`, `/cortes/nuevo`, `/cortes/:corteId`, `/matriz/:corteId?`); every route except
-`/login` is wrapped in `RutaProtegida`, which redirects to `/login` without an active session.
+carga"; `FiltrosMatriz.jsx` and `shared/SelectorConBusqueda.jsx`, the matrix filter panel with its
+active tags and the accessible combobox it uses, `[E02-HU10]`; `shared/ModalConfirmacion.jsx`, a
+generic confirmation dialog, `[E02-HU05]`), `pages/` holds route-level screens (`NuevoCorte.jsx`,
+`Cortes.jsx`, `MatrizRelacion.jsx`, `EditarArchivosCorteActual.jsx`, `Login.jsx` — redirects to
+Keycloak on click, no longer a form) wired into `App.jsx`'s router (`/login`, `/cortes`,
+`/cortes/nuevo`, `/cortes/:corteId`, `/cortes/:corteId/editar`, `/matriz/:corteId?`); every route
+except `/login` is wrapped in `RutaProtegida`, which redirects to `/login` without an active session.
+`lib/` holds pure helpers without React: `filtros.js` (matrix filter logic, `[E02-HU10]`),
+`corteActual.js` (the single "is this the current corte?" criterion) and `formato.js` (amounts and
+dates).
 
 ## Where things live
 
@@ -183,7 +193,8 @@ commit directly to `develop` or `main`.
 Commits: [Conventional Commits](https://www.conventionalcommits.org/) —
 `<tipo>(<alcance>): <descripción en presente, minúscula>`, header ≤72 chars (enforced by
 commitlint). Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`. Scopes in
-use: `cortes`, `ingesta`, `trazabilidad`, `dominio`, `bd`, `frontend`, `seguridad`.
+use: `cortes`, `ingesta`, `trazabilidad`, `dominio`, `bd`, `frontend`, `seguridad`, `plan-accion`,
+`specs`, `deps`, `deps-dev`, `ci`, `despliegue`.
 
 Full guidance on branch/commit workflow and sprint mechanics: [CONTRIBUTING.md](CONTRIBUTING.md).
 
