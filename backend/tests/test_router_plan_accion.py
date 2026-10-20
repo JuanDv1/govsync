@@ -20,6 +20,7 @@ from datetime import date
 from decimal import Decimal
 from io import BytesIO
 
+import pytest
 from fastapi.testclient import TestClient
 from openpyxl import load_workbook
 
@@ -324,6 +325,356 @@ class TestFiltrosQueryParamsE04HU02:
 
         assert respuesta.status_code == 200
         assert respuesta.json()["filas"] == []
+
+
+class TestCriteriosDeFiltroE04HU02:
+    """[E04-HU02] Cobertura de punta a punta (query param -> respuesta HTTP)
+    de los criterios que las pruebas de dominio ya fijan pero que NO estaban
+    verificados a nivel HTTP.
+
+    Lo que faltaba y se cubre aquí:
+    - CA03: `estado_cruce` como query param (los tres estados de HU01-CA05).
+    - CA04: búsqueda por código, por nombre, insensibilidad a mayúsculas y a
+      tildes, y el mínimo de 3 caracteres.
+    - CA05: AND entre criterios distintos y OR dentro de un mismo criterio,
+      los dos a nivel HTTP.
+    - CA06: el resumen recalculado sobre las filas filtradas (no el del
+      conjunto original).
+    - CA08: el ciclo "filtrar -> limpiar" devolviendo el conjunto inicial.
+
+    El corte de prueba tiene TRES metas que se distinguen a propósito en las
+    tres dimensiones que los CA miran:
+
+    ===========  ========================  ==========  =================
+    código       nombre                   sector      estado de cruce
+    ===========  ========================  ==========  =================
+    170202300    Vías terciarias mant.     Educación   completo
+    040110500    Escuelas construidas      Educación   parcial
+    330105300    Acueductos construidos    Salud       sin_informacion
+    ===========  ========================  ==========  =================
+
+    - "completo" necesita BPIN + rubro + contrato (D26 / HU01-CA05);
+    - "parcial" tiene rubro, pero ni BPIN ni contrato;
+    - "sin_informacion" no tiene ninguna de las tres relaciones.
+    """
+
+    def _preparar_corte_con_tres_estados(self, sesion):
+        corte_id = _crear_corte(sesion, estado=EstadoCorte.REGISTRADO)
+        for tipo in TipoArchivoFuente:
+            _marcar_archivo_cargado(sesion, corte_id, tipo)
+
+        sesion.add_all(
+            [
+                MetaORM(
+                    id=uuid.uuid4(),
+                    corte_id=corte_id,
+                    cod_indicador_producto="170202300",
+                    nombre_producto="Vías terciarias mantenidas",
+                    sector="Educación",
+                    es_principal=True,
+                ),
+                MetaORM(
+                    id=uuid.uuid4(),
+                    corte_id=corte_id,
+                    cod_indicador_producto="040110500",
+                    nombre_producto="Escuelas construidas",
+                    sector="Educación",
+                    es_principal=True,
+                ),
+                MetaORM(
+                    id=uuid.uuid4(),
+                    corte_id=corte_id,
+                    cod_indicador_producto="330105300",
+                    nombre_producto="Acueductos construidos",
+                    sector="Salud",
+                    es_principal=True,
+                ),
+            ]
+        )
+        sesion.flush()
+
+        # --- Meta 170202300: COMPLETO (BPIN + rubro + contrato) --------------
+        proyecto = ProyectoORM(
+            id=uuid.uuid4(),
+            corte_id=corte_id,
+            bpin="202500000050132",
+            nombre_proyecto="Mejoramiento de vías terciarias del municipio",
+        )
+        sesion.add(proyecto)
+        sesion.flush()
+        sesion.add(
+            ProyectoIndicadorORM(
+                id=uuid.uuid4(),
+                proyecto_id=proyecto.id,
+                cod_indicador_producto="170202300",
+            )
+        )
+        rubro_completo = RubroORM(
+            id=uuid.uuid4(),
+            corte_id=corte_id,
+            codigo_rubro_nivel="2.3.2.1",
+            codigo_sector_ccpet="13",
+            cod_indicador_producto="170202300",
+            ultimo_nivel=True,
+            apropiacion_definitiva=Decimal("1000000.00"),
+            obligacion_acumulada=Decimal("400000.00"),
+        )
+        sesion.add(rubro_completo)
+        sesion.flush()
+        contrato = ContratoORM(
+            id=uuid.uuid4(),
+            corte_id=corte_id,
+            numero_contrato="C-2026-001",
+            tipo_gasto="INVERSIÓN",
+            cod_indicador_producto="170202300",
+        )
+        sesion.add(contrato)
+        sesion.flush()
+        sesion.add(
+            RegistroPresupuestalORM(
+                id=uuid.uuid4(),
+                contrato_id=contrato.id,
+                rubro_id=rubro_completo.id,
+            )
+        )
+
+        # --- Meta 040110500: PARCIAL (rubro, pero sin BPIN ni contrato) -----
+        sesion.add(
+            RubroORM(
+                id=uuid.uuid4(),
+                corte_id=corte_id,
+                codigo_rubro_nivel="2.3.2.2",
+                codigo_sector_ccpet="13",
+                cod_indicador_producto="040110500",
+                ultimo_nivel=True,
+                apropiacion_definitiva=Decimal("500000.00"),
+                obligacion_acumulada=Decimal("100000.00"),
+            )
+        )
+        sesion.commit()
+        return corte_id
+
+    @staticmethod
+    def _codigos(respuesta) -> set[str]:
+        return {fila["cod_indicador_producto"] for fila in respuesta.json()["filas"]}
+
+    # --- CA02: sector -----------------------------------------------------
+
+    def test_filtra_por_sector_y_excluye_las_de_otros_sectores_ca02(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"sector": "Educación"})
+
+        assert respuesta.status_code == 200
+        assert self._codigos(respuesta) == {"170202300", "040110500"}
+        assert {f["sector"] for f in respuesta.json()["filas"]} == {"Educación"}
+
+    def test_un_sector_sin_coincidencias_devuelve_200_y_cero_filas_ca02(
+        self, cliente, sesion
+    ) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"sector": "Sector Inventado"})
+
+        assert respuesta.status_code == 200
+        assert respuesta.json()["filas"] == []
+        assert respuesta.json()["resumen"]["total"] == 0
+
+    def test_el_sector_se_compara_exacto_sin_normalizar_ca02(self, cliente, sesion) -> None:
+        """CA02 define `sector` como lista EXACTA (docs/specs/E04-HU02...): a
+        diferencia de `busqueda` (CA04), NO normaliza mayúsculas ni tildes.
+        Se deja fijado a propósito -- el frontend debe enviar el nombre del
+        sector tal como lo entrega el backend, y un cambio futuro que lo
+        normalice tiene que ser una decisión explícita, no un efecto colateral.
+        """
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"sector": "educación"})
+
+        assert respuesta.status_code == 200
+        assert respuesta.json()["filas"] == []
+        assert respuesta.json()["resumen"]["total"] == 0
+
+    # --- CA03: estado de cruce --------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("estado", "codigo_esperado"),
+        [
+            ("completo", "170202300"),
+            ("parcial", "040110500"),
+            ("sin_informacion", "330105300"),
+        ],
+    )
+    def test_filtra_por_estado_de_cruce_ca03(
+        self, cliente, sesion, estado: str, codigo_esperado: str
+    ) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"estado_cruce": estado})
+
+        assert respuesta.status_code == 200
+        assert self._codigos(respuesta) == {codigo_esperado}
+        assert {f["estado_cruce"] for f in respuesta.json()["filas"]} == {estado}
+
+    # --- CA04: búsqueda por texto -----------------------------------------
+
+    def test_busca_por_codigo_de_la_meta_ca04(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"busqueda": "170"})
+
+        assert respuesta.status_code == 200
+        assert self._codigos(respuesta) == {"170202300"}
+
+    @pytest.mark.parametrize("termino", ["vias", "VÍAS", "Vías", "Vias"])
+    def test_busca_por_nombre_sin_distinguir_mayusculas_ni_tildes_ca04(
+        self, cliente, sesion, termino: str
+    ) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"busqueda": termino})
+
+        assert respuesta.status_code == 200
+        assert self._codigos(respuesta) == {"170202300"}
+
+    def test_una_busqueda_de_exactamente_tres_caracteres_devuelve_resultados_ca04(
+        self, cliente, sesion
+    ) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"busqueda": "esc"})
+
+        assert respuesta.status_code == 200
+        assert self._codigos(respuesta) == {"040110500"}
+
+    def test_una_busqueda_sin_coincidencias_devuelve_200_y_cero_filas_ca04(
+        self, cliente, sesion
+    ) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"busqueda": "zzz9"})
+
+        assert respuesta.status_code == 200
+        assert respuesta.json()["filas"] == []
+        assert respuesta.json()["resumen"] == {
+            "total": 0,
+            "completo": 0,
+            "parcial": 0,
+            "sin_informacion": 0,
+        }
+
+    # --- CA05: AND entre criterios, OR dentro de uno mismo ----------------
+
+    def test_varios_valores_del_mismo_criterio_se_combinan_con_or_ca05(
+        self, cliente, sesion
+    ) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/actual",
+            params=[("estado_cruce", "completo"), ("estado_cruce", "parcial")],
+        )
+
+        assert respuesta.status_code == 200
+        assert self._codigos(respuesta) == {"170202300", "040110500"}
+
+    def test_varios_sectores_se_combinan_con_or_ca05(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/actual",
+            params=[("sector", "Educación"), ("sector", "Salud")],
+        )
+
+        assert respuesta.status_code == 200
+        assert self._codigos(respuesta) == {"170202300", "040110500", "330105300"}
+
+    def test_criterios_distintos_se_combinan_con_and_ca05(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/actual",
+            params=[("sector", "Educación"), ("estado_cruce", "completo")],
+        )
+
+        assert respuesta.status_code == 200
+        assert self._codigos(respuesta) == {"170202300"}
+
+    def test_and_entre_criterios_distintos_sin_coincidencia_devuelve_cero_filas_ca05(
+        self, cliente, sesion
+    ) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/actual",
+            params=[("sector", "Salud"), ("estado_cruce", "completo")],
+        )
+
+        assert respuesta.status_code == 200
+        assert respuesta.json()["filas"] == []
+        assert respuesta.json()["resumen"]["total"] == 0
+
+    # --- CA06: el resumen se recalcula sobre las filas filtradas -----------
+
+    def test_el_resumen_se_recalcula_sobre_las_filas_filtradas_ca06(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        sin_filtro = cliente.get("/api/v1/plan-accion/actual")
+        filtrado = cliente.get("/api/v1/plan-accion/actual", params={"sector": "Educación"})
+
+        assert sin_filtro.status_code == 200
+        assert filtrado.status_code == 200
+        # El resumen del corte completo: 3 metas repartidas en los 3 estados.
+        assert sin_filtro.json()["resumen"] == {
+            "total": 3,
+            "completo": 1,
+            "parcial": 1,
+            "sin_informacion": 1,
+        }
+        # Filtrando por sector, el reparto cambia: si el resumen se calculara
+        # sobre el conjunto anterior, seguiría diciendo 3/1/1/1.
+        assert filtrado.json()["resumen"] == {
+            "total": 2,
+            "completo": 1,
+            "parcial": 1,
+            "sin_informacion": 0,
+        }
+
+    # --- CA08: limpiar filtros --------------------------------------------
+
+    def test_limpiar_filtros_devuelve_el_conjunto_inicial_ca08(self, cliente, sesion) -> None:
+        """Ciclo completo: conjunto inicial -> filtro que lo reduce -> filtros
+        limpiados. Probar solo "petición sin filtros" no demuestra que
+        limpiar devuelva el conjunto inicial."""
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        inicial = cliente.get("/api/v1/plan-accion/actual")
+        filtrado = cliente.get("/api/v1/plan-accion/actual", params={"sector": "Salud"})
+        limpiado = cliente.get("/api/v1/plan-accion/actual")
+
+        assert inicial.status_code == 200
+        assert filtrado.status_code == 200
+        assert limpiado.status_code == 200
+        # El filtro reduce...
+        assert self._codigos(filtrado) == {"330105300"}
+        assert filtrado.json()["resumen"]["total"] < inicial.json()["resumen"]["total"]
+        # ...y limpiar devuelve exactamente el conjunto inicial.
+        assert self._codigos(limpiado) == self._codigos(inicial)
+        assert limpiado.json()["resumen"] == inicial.json()["resumen"]
 
 
 class TestExportarExcelE04HU03:
