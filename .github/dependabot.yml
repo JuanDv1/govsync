@@ -8,6 +8,10 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
     ignore:
+      # ESLint 10 rompe eslint-plugin-react (su peer llega hasta ^9.7 y la
+      # última versión, 7.37.5, no lo soporta): el lint falla con
+      # "getFilename is not a function". Subir a 10 solo cuando
+      # eslint-plugin-react publique soporte.
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@eslint/js"
