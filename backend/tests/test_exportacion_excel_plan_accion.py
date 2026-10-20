@@ -182,13 +182,17 @@ class TestConstruirLibroExcel:
 
         assert hoja.cell(row=7, column=1).value == "Sector"
         assert hoja.cell(row=8, column=1).value is None
+        # Sin filas de datos el autofiltro cubre solo el encabezado.
+        assert hoja.auto_filter.ref == "A7:L7"
 
     def test_formato_pesos_en_presupuesto_y_ejecucion(self):
         libro = construir_libro_excel([_fila()], ResumenPlanAccion(1, 1, 0, 0), _metadatos())
         hoja = self._cargar_hoja(libro)
 
-        assert "COP" in hoja.cell(row=8, column=7).number_format
-        assert "COP" in hoja.cell(row=8, column=8).number_format
+        assert hoja.cell(row=8, column=7).number_format == '#,##0 "COP"'
+        assert hoja.cell(row=8, column=8).number_format == '#,##0 "COP"'
+        assert hoja.cell(row=8, column=7).value == 1000000
+        assert hoja.cell(row=8, column=8).value == 500000
 
     def test_formato_porcentaje_no_duplica_escala_ca06(self):
         """El valor numérico debe seguir siendo 50.0 (no 0.5): CA06 exige
@@ -200,7 +204,7 @@ class TestConstruirLibroExcel:
 
         celda = hoja.cell(row=8, column=11)
         assert celda.value == Decimal("50.0")
-        assert "%" in celda.number_format
+        assert celda.number_format == '0.0"%"'
 
 
 class TestSaneoDeFormulasEnCeldas:
@@ -237,3 +241,18 @@ class TestSaneoDeFormulasEnCeldas:
         fila = [c.value for c in hoja[8]]
         assert fila[0] == "'=1+1"
         assert fila[2] == '\'+HYPERLINK("http://x")'
+
+    def test_construir_libro_excel_sanea_rubros_y_contratos(self):
+        libro = construir_libro_excel(
+            [_fila(rubros=("=1+1", "ok"), contratos=("@SUM(A1)",))],
+            ResumenPlanAccion(1, 1, 0, 0),
+            _metadatos(),
+        )
+        with TemporaryDirectory() as tmp_dir:
+            buffer_path = Path(tmp_dir) / "_plan_accion_test_saneo_2.xlsx"
+            libro.save(buffer_path)
+            hoja = load_workbook(buffer_path)["Plan de Acción"]
+
+        fila = [c.value for c in hoja[8]]
+        assert fila[5] == "'=1+1, ok"
+        assert fila[8] == "'@SUM(A1)"

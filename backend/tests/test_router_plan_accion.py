@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import date
+from decimal import Decimal
 from io import BytesIO
 
 from fastapi.testclient import TestClient
@@ -26,8 +27,12 @@ from app.core.dependencias import obtener_usuario_actual
 from app.modules.cortes.domain.entidades import EstadoCorte, TipoArchivoFuente
 from app.modules.cortes.persistence.models import (
     ArchivoFuenteORM,
+    ContratoORM,
     CorteORM,
     MetaORM,
+    ProyectoIndicadorORM,
+    ProyectoORM,
+    RegistroPresupuestalORM,
     RubroORM,
 )
 from app.modules.identidad.domain.entidades import Rol, Usuario
@@ -469,6 +474,210 @@ class TestExportarExcelE04HU03:
         assert fila_xlsx == valores_json
 
         assert cuerpo["resumen"]["total"] == 1
+
+    def _preparar_corte_con_datos_completos(self, sesion):
+        """Meta 1 con BPIN, 2 rubros, contrato y montos (estado completo);
+        meta 2 sin ningún cruce (sin_informacion)."""
+        corte_id = _crear_corte(sesion, estado=EstadoCorte.REGISTRADO)
+        for tipo in TipoArchivoFuente:
+            _marcar_archivo_cargado(sesion, corte_id, tipo)
+
+        cod = "040110500"
+        proyecto_id = uuid.uuid4()
+        rubro_1, rubro_2, contrato_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        sesion.add_all(
+            [
+                MetaORM(
+                    id=uuid.uuid4(),
+                    corte_id=corte_id,
+                    cod_indicador_producto=cod,
+                    nombre_producto="Vías pavimentadas",
+                    sector="Infraestructura",
+                    meta_cuatrienio=Decimal("120"),
+                    es_principal=True,
+                ),
+                MetaORM(
+                    id=uuid.uuid4(),
+                    corte_id=corte_id,
+                    cod_indicador_producto="170202300",
+                    nombre_producto="Escuelas construidas",
+                    sector="Educación",
+                    es_principal=True,
+                ),
+                ProyectoORM(id=proyecto_id, corte_id=corte_id, bpin="2024000010001"),
+            ]
+        )
+        sesion.flush()
+        sesion.add(
+            ProyectoIndicadorORM(
+                id=uuid.uuid4(), proyecto_id=proyecto_id, cod_indicador_producto=cod
+            )
+        )
+        for rubro_id, nivel, apropiado, obligado in (
+            (rubro_1, "R-A", Decimal("1000000"), Decimal("250000")),
+            (rubro_2, "R-B", Decimal("3000000"), Decimal("500000")),
+        ):
+            sesion.add(
+                RubroORM(
+                    id=rubro_id,
+                    corte_id=corte_id,
+                    codigo_rubro_nivel=nivel,
+                    codigo_sector_ccpet="22",
+                    cod_indicador_producto=cod,
+                    ultimo_nivel=True,
+                    apropiacion_definitiva=apropiado,
+                    obligacion_acumulada=obligado,
+                )
+            )
+        sesion.add(
+            ContratoORM(
+                id=contrato_id,
+                corte_id=corte_id,
+                numero_contrato="C-001",
+                tipo_gasto="INVERSION",
+            )
+        )
+        sesion.flush()
+        sesion.add_all(
+            [
+                RegistroPresupuestalORM(id=uuid.uuid4(), contrato_id=contrato_id, rubro_id=r)
+                for r in (rubro_1, rubro_2)
+            ]
+        )
+        sesion.commit()
+        return corte_id
+
+    @staticmethod
+    def _normalizar(valor):
+        """JSON serializa Decimal como texto/float; el XLSX, como número."""
+        if isinstance(valor, str):
+            try:
+                return float(valor)
+            except ValueError:
+                return valor
+        return float(valor) if isinstance(valor, int | float | Decimal) else valor
+
+    def test_cifras_con_datos_completos_coinciden_con_json_ca06(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_datos_completos(sesion)
+
+        filas_json = cliente.get("/api/v1/plan-accion/actual").json()["filas"]
+        respuesta = cliente.get("/api/v1/plan-accion/exportar")
+        hoja = load_workbook(BytesIO(respuesta.content))["Plan de Acción"]
+
+        assert len(filas_json) == 2
+        campos = (
+            "sector",
+            "cod_indicador_producto",
+            "nombre_producto",
+            "meta_programada",
+            "cod_bpin",
+            "rubros",
+            "presupuesto_definitivo",
+            "ejecucion",
+            "contratos",
+            "avance_fisico_pct",
+            "avance_financiero_pct",
+            "estado_cruce",
+        )
+        for desplazamiento, fila_json in enumerate(filas_json):
+            for columna, campo in enumerate(campos, start=1):
+                esperado = fila_json[campo]
+                if isinstance(esperado, list):
+                    esperado = ", ".join(esperado) if esperado else None
+                obtenido = hoja.cell(row=8 + desplazamiento, column=columna).value
+                assert self._normalizar(obtenido) == self._normalizar(esperado), (
+                    f"fila {desplazamiento + 1}, columna {campo}: {obtenido!r} != {esperado!r}"
+                )
+
+        # Guardia: la meta completa de verdad trae cifras (no None == None).
+        completa = next(f for f in filas_json if f["cod_indicador_producto"] == "040110500")
+        assert completa["estado_cruce"] == "completo"
+        assert self._normalizar(completa["presupuesto_definitivo"]) == 4000000.0
+        assert self._normalizar(completa["ejecucion"]) == 750000.0
+        assert self._normalizar(completa["avance_financiero_pct"]) == 18.75
+        assert len(completa["rubros"]) == 2
+
+    def test_formatos_numericos_en_archivo_exportado_ca03(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_datos_completos(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/exportar")
+        hoja = load_workbook(BytesIO(respuesta.content))["Plan de Acción"]
+
+        fila = next(r for r in hoja.iter_rows(min_row=8) if r[1].value == "040110500")
+        assert fila[6].value == 4000000 and fila[6].number_format == '#,##0 "COP"'
+        assert fila[7].value == 750000 and fila[7].number_format == '#,##0 "COP"'
+        assert fila[10].value == 18.75 and fila[10].number_format == '0.0"%"'
+
+    def test_visitante_puede_exportar(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _VISITANTE
+        self._preparar_corte_con_una_meta(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/exportar")
+
+        assert respuesta.status_code == 200
+        assert load_workbook(BytesIO(respuesta.content))["Plan de Acción"]["A7"].value == "Sector"
+
+    def test_openapi_documenta_summary_y_respuestas_de_error(self, cliente) -> None:
+        operacion = cliente.app.openapi()["paths"]["/api/v1/plan-accion/exportar"]["get"]
+
+        assert operacion["summary"]
+        assert {"200", "401", "403", "404", "409"} <= set(operacion["responses"])
+
+    def test_sin_token_devuelve_401(self, sesion) -> None:
+        from app.core.database import get_session
+        from app.main import crear_app
+
+        def _sesion_de_prueba():
+            yield sesion
+
+        app = crear_app()
+        app.dependency_overrides[get_session] = _sesion_de_prueba
+
+        respuesta = TestClient(app).get("/api/v1/plan-accion/exportar")
+
+        assert respuesta.status_code == 401
+
+    def test_fuentes_incompletas_devuelve_409(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        corte_id = _crear_corte(sesion, estado=EstadoCorte.REGISTRADO)
+        _marcar_archivo_cargado(sesion, corte_id, TipoArchivoFuente.PDT)
+        _marcar_archivo_cargado(sesion, corte_id, TipoArchivoFuente.EJECUCION)
+        sesion.commit()
+
+        respuesta = cliente.get("/api/v1/plan-accion/exportar")
+
+        assert respuesta.status_code == 409
+        assert respuesta.json()["detalles"]["archivos_faltantes"] == ["PROYECTOS"]
+
+    def test_filtros_combinados_y_cabecera_los_describen_ca02_ca04(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_datos_completos(sesion)
+
+        respuesta = cliente.get(
+            "/api/v1/plan-accion/exportar",
+            params={
+                "sector": ["Infraestructura", "Educación"],
+                "estado_cruce": "completo",
+                "cod_indicador_producto": "040110500",
+                "busqueda": "Vías",
+            },
+        )
+
+        assert respuesta.status_code == 200
+        hoja = load_workbook(BytesIO(respuesta.content))["Plan de Acción"]
+        # AND entre criterios: solo sobrevive la meta completa.
+        assert hoja.cell(row=8, column=2).value == "040110500"
+        assert hoja.cell(row=9, column=2).value is None
+        cabecera = "\n".join(str(hoja.cell(row=i, column=1).value) for i in range(1, 7))
+        assert "Sector: Infraestructura, Educación" in cabecera
+        assert "Estado de cruce: completo" in cabecera
+        assert "Indicador: 040110500" in cabecera
+        assert 'Búsqueda: "Vías"' in cabecera
+        assert "1 metas" in cabecera
+        # El nombre del archivo depende del corte, no de los filtros.
+        assert "Plan_Accion_2026_Corte_2026-01-01.xlsx" in respuesta.headers["content-disposition"]
 
     def test_sin_corte_registrado_devuelve_404_ca09(self, cliente) -> None:
         cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
