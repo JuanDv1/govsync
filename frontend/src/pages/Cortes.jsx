@@ -20,7 +20,8 @@
  * `visitante`. Es solo UI: el backend ya las rechaza con 403 de todas
  * formas. "Editar archivos" (corte actual Registrado) NO tiene todavía
  * esta restricción -- HU-05/CA-9 (mapeo de roles) sigue [VALIDAR] en su
- * spec, a propósito: el backend de reemplazo tampoco existe aún.
+ * spec, a propósito: el backend ya rechaza el reemplazo con 403 a quien no
+ * es administrador/gestor, pero la UI no oculta la acción todavía.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -171,8 +172,8 @@ export default function Cortes() {
                               literal del criterio de aceptación. Solo el
                               corte actual (el más reciente, global) lo
                               ofrece — ver `esCorteActual()` arriba para el
-                              criterio (campo del backend, PROPUESTA, con
-                              fallback de posición mientras no exista). Sin
+                              criterio (campo `es_corte_actual` del backend,
+                              con respaldo por posición solo si falta). Sin
                               gating por rol a propósito -- ver docstring
                               del archivo (HU-05/CA-9 sigue [VALIDAR]). */}
                           {actual && (
