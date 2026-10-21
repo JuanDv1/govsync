@@ -408,16 +408,16 @@ export default function EditarArchivosCorteActual() {
 
         {!cargandoHistorial && !errorHistorial && historial?.length > 0 && (
           <ul className="flex flex-col gap-2">
-            {historial.map((entrada, indice) => (
+            {historial.map((entrada) => (
               <li
-                key={`${entrada.tipo}-${entrada.fecha_hora}-${indice}`}
+                key={entrada.id}
                 className="flex items-center justify-between border-b border-gray-100 pb-2 text-xs last:border-0 last:pb-0"
               >
                 <span className="font-medium text-gray-700">
                   {etiquetaPorTipo(entrada.tipo)}
                 </span>
                 <span className="font-mono text-gray-500">
-                  {entrada.nombre_archivo_anterior}
+                  {entrada.nombre_archivo_anterior ?? "—"}
                 </span>
                 <span className="text-gray-400">
                   {entrada.usuario ?? "—"} ·{" "}
