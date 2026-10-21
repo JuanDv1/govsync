@@ -396,9 +396,11 @@ function DetalleMeta({ fila, id }) {
               aria-hidden="true"
               className="mt-0.5 shrink-0 text-azul"
             />
-            Por ahora se muestran los números de contrato y los códigos de
-            rubro. El detalle de cada contrato (objeto, valor y estado) se
-            agregará más adelante.
+            <span>
+              Por ahora se muestran los números de contrato y los códigos de
+              rubro. El detalle de cada contrato (objeto, valor y estado) se
+              agregará más adelante.
+            </span>
           </p>
         </div>
       </td>
@@ -414,13 +416,15 @@ function Leyenda() {
           aria-hidden="true"
           className="inline-block h-3.5 w-6 rounded-sm border border-amber-200 bg-amber-50"
         />
-        Celda resaltada: dato sin información en las fuentes del corte.
+        <span>
+          Celda resaltada: dato sin información en las fuentes del corte.
+        </span>
       </li>
       <li className="flex items-center gap-2">
         <span aria-hidden="true" className="font-mono text-gray-500">
           —
         </span>
-        % Avance físico: pendiente de E-03, todavía no hay datos.
+        <span>% Avance físico: pendiente de E-03, todavía no hay datos.</span>
       </li>
       <li>
         Pulse «Ver detalle» para ver la lista completa de rubros y contratos.
