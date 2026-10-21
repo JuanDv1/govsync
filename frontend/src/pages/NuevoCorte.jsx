@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Check } from "lucide-react";
 import { api } from "../api/cliente.js";
+import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
-import { Cargando, EstadoError } from "../components/Estados.jsx";
+import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
 import Card from "../components/shared/Card.jsx";
 import SectionHeader from "../components/shared/SectionHeader.jsx";
@@ -46,6 +47,11 @@ const TONO_ESTADO_FUENTE = {
  * directo al paso 2 con el corte ya existente. `Cortes.jsx` enlaza aquí para
  * cualquier corte en BORRADOR.
  *
+ * ROL: solo `administrador` y `gestor` (`puedeEscribir`, D24) usan esta
+ * pantalla, en las dos rutas. Cualquier otro rol (el `visitante`, de solo
+ * lectura) ve un aviso de permiso y no dispara ninguna petición. Es solo UI:
+ * el backend ya responde 403 de todas formas.
+ *
  * FLUJO
  *   Paso 1  vigencia y fecha — el calendario NO permite fechas futuras (CA-2),
  *           pero el rechazo también debe venir del backend: ocultar la opción
@@ -79,6 +85,7 @@ const TONO_ESTADO_FUENTE = {
 
 export default function NuevoCorte() {
   const { corteId } = useParams();
+  const { puedeEscribir } = useAutenticacion();
   const [vigencia, setVigencia] = useState("");
   const [fechaCorte, setFechaCorte] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -132,7 +139,9 @@ export default function NuevoCorte() {
   // (cambio de `corteId` o reintento) antes de que la petición anterior
   // resuelva — mismo patrón que ya usan Cortes.jsx y MatrizRelacion.jsx.
   useEffect(() => {
-    if (!corteId) return;
+    // Sin permiso de escritura no se pide nada: la pantalla muestra solo el
+    // aviso de permiso (ver el `return` de más abajo).
+    if (!corteId || !puedeEscribir) return;
 
     const clave = `${corteId}:${intentoCarga}`;
     let vigente = true;
@@ -156,7 +165,7 @@ export default function NuevoCorte() {
     return () => {
       vigente = false;
     };
-  }, [corteId, intentoCarga]);
+  }, [corteId, intentoCarga, puedeEscribir]);
 
   const claveActualCarga = corteId ? `${corteId}:${intentoCarga}` : null;
   const cargandoCorte =
@@ -211,6 +220,28 @@ export default function NuevoCorte() {
     } finally {
       setRegistrando(false);
     }
+  }
+
+  // Va antes que cualquier otro estado. Con el efecto de arriba saltado,
+  // `claveCorteCargado` nunca se llena y `cargandoCorte` quedaría en `true`:
+  // de ir después, `/cortes/:corteId` se quedaría en "Cargando corte…".
+  if (!puedeEscribir) {
+    return (
+      <section className="mx-auto max-w-4xl">
+        <Vacio
+          titulo="No tiene permiso para crear ni continuar cortes"
+          descripcion="Su rol es de solo lectura: puede consultar los cortes, pero no crearlos ni cargar sus archivos."
+          accion={
+            <Link
+              to="/cortes"
+              className="text-xs font-medium text-azul hover:text-navy"
+            >
+              ← Volver al histórico
+            </Link>
+          }
+        />
+      </section>
+    );
   }
 
   if (corteId && cargandoCorte) {
