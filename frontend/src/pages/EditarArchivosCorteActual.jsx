@@ -46,10 +46,11 @@
  *   CA-7  (avance físico): NO tiene contraparte en esta pantalla — es
  *         `[VALIDAR]` en la spec, bloqueado por una decisión de negocio
  *         abierta y sin módulo de avance físico.
- *   CA-9  (restricción por rol): el backend ya rechaza el reemplazo con 403
- *         a quien no es administrador/gestor (D24); esta pantalla no oculta
- *         la acción por rol, y el mapeo de nombres de rol del Excel sigue
- *         `[VALIDAR]` en la spec.
+ *   CA-9  (restricción por rol): solo `administrador` y `gestor`
+ *         (`puedeEscribir`, D24) ven "Editar archivos" en `Cortes.jsx` y esta
+ *         pantalla. Cualquier otro rol (el `visitante`, de solo lectura) ve un
+ *         aviso de permiso y no dispara ninguna petición. Es solo UI: el
+ *         backend ya responde 403 de todas formas.
  *   CA-8  si el reemplazo falla, no se optimiza nada en el cliente: el
  *         estado local solo cambia en el `.then` de éxito, así que un error
  *         deja la pantalla exactamente como estaba (mismo efecto que el
@@ -58,6 +59,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/cliente.js";
+import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import Card from "../components/shared/Card.jsx";
@@ -82,6 +84,7 @@ function etiquetaPorTipo(tipo) {
 
 export default function EditarArchivosCorteActual() {
   const { corteId } = useParams();
+  const { puedeEscribir } = useAutenticacion();
 
   const [intentoCorte, setIntentoCorte] = useState(0);
   const [claveCorteCargado, setClaveCorteCargado] = useState(null);
@@ -110,6 +113,10 @@ export default function EditarArchivosCorteActual() {
   // estado si el efecto vuelve a correr (cambio de corteId o reintento)
   // antes de que la petición anterior resuelva.
   useEffect(() => {
+    // Sin permiso de escritura no se pide nada: esta pantalla muestra solo
+    // el aviso de permiso (ver el `return` de más abajo).
+    if (!puedeEscribir) return;
+
     const clave = `${corteId}:${intentoCorte}`;
     let vigente = true;
 
@@ -132,9 +139,11 @@ export default function EditarArchivosCorteActual() {
     return () => {
       vigente = false;
     };
-  }, [corteId, intentoCorte]);
+  }, [corteId, intentoCorte, puedeEscribir]);
 
   useEffect(() => {
+    if (!puedeEscribir) return;
+
     const clave = `${corteId}:${intentoHistorial}`;
     let vigente = true;
 
@@ -157,9 +166,11 @@ export default function EditarArchivosCorteActual() {
     return () => {
       vigente = false;
     };
-  }, [corteId, intentoHistorial]);
+  }, [corteId, intentoHistorial, puedeEscribir]);
 
   useEffect(() => {
+    if (!puedeEscribir) return;
+
     let vigente = true;
 
     api
@@ -177,7 +188,7 @@ export default function EditarArchivosCorteActual() {
     return () => {
       vigente = false;
     };
-  }, []);
+  }, [puedeEscribir]);
 
   const claveActualCorte = `${corteId}:${intentoCorte}`;
   const cargandoCorte = claveCorteCargado !== claveActualCorte;
@@ -245,6 +256,29 @@ export default function EditarArchivosCorteActual() {
       // eso tampoco se refresca el historial aquí: nada cambió de verdad.
       setErrores((anteriores) => ({ ...anteriores, [tipo]: error_ }));
     }
+  }
+
+  // CA-9: va antes que cualquier otro estado. Con los efectos de arriba
+  // saltados, `claveCorteCargado` nunca se llena y, de ir después, la pantalla
+  // quedaría en "Cargando corte…". Tampoco debe ofrecerse a un visitante el
+  // enlace "Ir al flujo de creación" del aviso de corte en borrador.
+  if (!puedeEscribir) {
+    return (
+      <section className="mx-auto max-w-4xl">
+        <Vacio
+          titulo="No tiene permiso para editar los archivos del corte"
+          descripcion="Su rol es de solo lectura: puede consultar el corte, pero no modificar sus archivos."
+          accion={
+            <Link
+              to="/cortes"
+              className="text-xs font-medium text-azul hover:text-navy"
+            >
+              ← Volver al histórico
+            </Link>
+          }
+        />
+      </section>
+    );
   }
 
   if (cargandoCorte || !listaCargada) {
