@@ -24,14 +24,24 @@
  * (el backend lo manda siempre `null` hasta que exista E-03): muestra "—" en
  * gris y la leyenda lo aclara. Un "0.00" es un dato ($ 0), no un vacío.
  *
+ * CA03 (versión plana): cada fila tiene un botón en la celda de "Código meta"
+ * que abre una subfila con la cadena Meta → BPIN → Rubros → Contratos y los
+ * totales de la meta. Solo muestra lo que la respuesta ya trae: las listas
+ * completas de rubros y contratos y UN BPIN. No puede mostrar el monto de
+ * cada rubro ni a qué rubro pertenece cada contrato: eso requiere ampliar el
+ * backend, y la pantalla lo dice. Varias filas pueden estar abiertas a la vez.
+ *
  * CA07: el scroll es del propio contenedor de la tabla (único `overflow-auto`,
  * en x e y). El encabezado queda fijo arriba y "Código meta" y "Meta" fijos a
  * la izquierda con `position: sticky`: por eso la tabla usa `border-separate`
  * (con `border-collapse` los bordes de las celdas fijas se pierden al
  * desplazar), las dos columnas fijas tienen ancho fijo (el `left` de "Meta" es
- * el ancho de "Código meta") y sus celdas llevan fondo opaco.
+ * el ancho de "Código meta") y sus celdas llevan fondo opaco. "Código meta"
+ * mide 140 px y no 120 porque, además del código de 9 dígitos, aloja el botón
+ * del detalle (CA03); si ese ancho cambia, cambia también `LEFT_META`.
  */
-import { useEffect, useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { Fragment, useEffect, useState } from "react";
 import { api } from "../api/cliente.js";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import Card from "../components/shared/Card.jsx";
@@ -53,9 +63,18 @@ const TD = "border-b border-gray-100 px-4 py-2.5 text-xs align-top";
 
 //: Anchos de las dos columnas fijas (CA07). El `left` de la segunda es el
 //: ancho de la primera; si uno cambia, cambia el otro.
-const ANCHO_CODIGO = "w-[120px] min-w-[120px] max-w-[120px]";
+const ANCHO_CODIGO = "w-[140px] min-w-[140px] max-w-[140px]";
 const ANCHO_META = "w-[260px] min-w-[260px] max-w-[260px]";
-const LEFT_META = "left-[120px]";
+const LEFT_META = "left-[140px]";
+
+//: Cantidad de columnas de la tabla: debe coincidir con los `<th>` de
+//: `TablaPlan` (es el `colSpan` de la subfila de detalle).
+const NUM_COLUMNAS = 12;
+
+//: Ancho del panel de detalle. Va en un contenedor `sticky left-0` para que
+//: no se desplace con el scroll horizontal; se limita al ancho visible
+//: (viewport menos barra lateral y márgenes) para que no quede cortado.
+const ANCHO_DETALLE = "w-[min(720px,calc(100vw_-_320px))]";
 
 function fechaCorte(iso) {
   // "YYYY-MM-DD" → "DD/MM/AAAA" partiendo el texto: pasar por `new Date()`
@@ -106,54 +125,189 @@ function CeldaLista({ valores, singular }) {
   );
 }
 
-function FilaPlan({ fila }) {
+function FilaPlan({ fila, abierta, onAlternar }) {
   // Respaldo por si el backend manda un estado que esta pantalla no conoce.
   const estado = ESTADOS_CRUCE[fila.estado_cruce] ?? {
     texto: fila.estado_cruce,
     tono: "gris",
   };
+  const codigo = fila.cod_indicador_producto;
+  const idDetalle = `detalle-${codigo}`;
+  const Chevron = abierta ? ChevronDown : ChevronRight;
 
   return (
-    <tr>
-      <Celda vacia={fila.sector == null}>{fila.sector}</Celda>
-      <Celda fija className={`sticky left-0 z-10 ${ANCHO_CODIGO}`}>
-        <span className="font-mono">{fila.cod_indicador_producto}</span>
-      </Celda>
-      <Celda
-        fija
-        vacia={fila.nombre_producto == null}
-        className={`sticky z-10 ${LEFT_META} ${ANCHO_META} border-r border-r-gray-200`}
+    <Fragment>
+      <tr>
+        <Celda vacia={fila.sector == null}>{fila.sector}</Celda>
+        <Celda fija className={`sticky left-0 z-10 ${ANCHO_CODIGO}`}>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onAlternar(codigo)}
+              aria-expanded={abierta}
+              aria-controls={idDetalle}
+              aria-label={`${abierta ? "Ocultar" : "Ver"} el detalle de la meta ${codigo}`}
+              className="shrink-0 rounded-sm p-0.5 text-gray-400 hover:bg-gray-100 hover:text-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
+            >
+              <Chevron size={14} aria-hidden="true" />
+            </button>
+            <span className="font-mono">{codigo}</span>
+          </div>
+        </Celda>
+        <Celda
+          fija
+          vacia={fila.nombre_producto == null}
+          className={`sticky z-10 ${LEFT_META} ${ANCHO_META} border-r border-r-gray-200`}
+        >
+          <div className="line-clamp-2" title={fila.nombre_producto}>
+            {fila.nombre_producto}
+          </div>
+        </Celda>
+        <Celda vacia={fila.meta_programada == null} className="text-right">
+          <span className="font-mono">{numero(fila.meta_programada)}</span>
+        </Celda>
+        <Celda vacia={fila.cod_bpin == null}>
+          <span className="font-mono">{fila.cod_bpin}</span>
+        </Celda>
+        <CeldaLista valores={fila.rubros} singular="rubro" />
+        <Celda
+          vacia={fila.presupuesto_definitivo == null}
+          className="text-right"
+        >
+          <span className="font-mono">
+            {cop(Number(fila.presupuesto_definitivo))}
+          </span>
+        </Celda>
+        <Celda vacia={fila.ejecucion == null} className="text-right">
+          <span className="font-mono">{cop(Number(fila.ejecucion))}</span>
+        </Celda>
+        <CeldaLista valores={fila.contratos} singular="contrato" />
+        <td className={`${TD} text-right`}>
+          <span className="font-mono text-gray-400">
+            {fila.avance_fisico_pct == null ? "—" : pct(fila.avance_fisico_pct)}
+          </span>
+        </td>
+        <Celda
+          vacia={fila.avance_financiero_pct == null}
+          className="text-right"
+        >
+          <span className="font-mono">{pct(fila.avance_financiero_pct)}</span>
+        </Celda>
+        <td className={TD}>
+          <StateBadge texto={estado.texto} tono={estado.tono} />
+        </td>
+      </tr>
+      {abierta && <DetalleMeta fila={fila} id={idDetalle} />}
+    </Fragment>
+  );
+}
+
+/** Lista completa, una por línea, en monoespaciada y con salto de línea. */
+function ListaCompleta({ valores, vacio }) {
+  if (valores.length === 0) {
+    return <p className="text-gray-400">{vacio}</p>;
+  }
+  return (
+    <ul className="max-h-48 overflow-y-auto font-mono text-[11px] leading-relaxed">
+      {valores.map((valor) => (
+        <li key={valor} className="break-all">
+          {valor}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Total de la meta; `null` es "—" (sin dato), un "0.00" es un dato. */
+function Total({ etiqueta, valor, formato }) {
+  return (
+    <div>
+      <dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+        {etiqueta}
+      </dt>
+      <dd className="mt-0.5 font-mono text-xs text-gray-700">
+        {valor == null ? "—" : formato(valor)}
+      </dd>
+    </div>
+  );
+}
+
+/**
+ * Subfila de detalle (CA03, versión plana): la cadena Meta → BPIN → Rubros →
+ * Contratos con las listas completas, y los totales de la meta. El contenido
+ * va en un contenedor `sticky left-0` de ancho acotado: la subfila ocupa todo
+ * el ancho de la tabla, y sin eso el panel se iría con el scroll horizontal.
+ */
+function DetalleMeta({ fila, id }) {
+  return (
+    <tr id={id}>
+      <td
+        colSpan={NUM_COLUMNAS}
+        className="border-b border-gray-100 bg-gray-50 p-0"
       >
-        <div className="line-clamp-2" title={fila.nombre_producto}>
-          {fila.nombre_producto}
+        <div className={`sticky left-0 ${ANCHO_DETALLE} px-4 py-3`}>
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+            Meta → BPIN → Rubros → Contratos
+          </p>
+
+          <dl className="grid gap-x-6 gap-y-3 text-xs text-gray-700 md:grid-cols-2">
+            <div>
+              <dt className="mb-0.5 font-semibold text-gray-500">Meta</dt>
+              <dd>
+                <span className="font-mono">{fila.cod_indicador_producto}</span>
+                {fila.nombre_producto && ` — ${fila.nombre_producto}`}
+              </dd>
+            </div>
+            <div>
+              <dt className="mb-0.5 font-semibold text-gray-500">BPIN</dt>
+              <dd>
+                {fila.cod_bpin == null ? (
+                  <span className="text-gray-400">Sin BPIN</span>
+                ) : (
+                  <span className="font-mono">{fila.cod_bpin}</span>
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="mb-0.5 font-semibold text-gray-500">
+                Rubros ({fila.rubros.length})
+              </dt>
+              <dd>
+                <ListaCompleta valores={fila.rubros} vacio="Sin rubros" />
+              </dd>
+            </div>
+            <div>
+              <dt className="mb-0.5 font-semibold text-gray-500">
+                Contratos ({fila.contratos.length})
+              </dt>
+              <dd>
+                <ListaCompleta valores={fila.contratos} vacio="Sin contratos" />
+              </dd>
+            </div>
+          </dl>
+
+          <dl className="mt-3 grid grid-cols-3 gap-x-6 border-t border-gray-200 pt-3">
+            <Total
+              etiqueta="Presupuesto definitivo"
+              valor={fila.presupuesto_definitivo}
+              formato={(v) => cop(Number(v))}
+            />
+            <Total
+              etiqueta="Ejecución"
+              valor={fila.ejecucion}
+              formato={(v) => cop(Number(v))}
+            />
+            <Total
+              etiqueta="% Avance financiero"
+              valor={fila.avance_financiero_pct}
+              formato={pct}
+            />
+          </dl>
+
+          <p className="mt-3 text-[11px] text-gray-500">
+            El desglose por rubro y contrato requiere ampliar el backend.
+          </p>
         </div>
-      </Celda>
-      <Celda vacia={fila.meta_programada == null} className="text-right">
-        <span className="font-mono">{numero(fila.meta_programada)}</span>
-      </Celda>
-      <Celda vacia={fila.cod_bpin == null}>
-        <span className="font-mono">{fila.cod_bpin}</span>
-      </Celda>
-      <CeldaLista valores={fila.rubros} singular="rubro" />
-      <Celda vacia={fila.presupuesto_definitivo == null} className="text-right">
-        <span className="font-mono">
-          {cop(Number(fila.presupuesto_definitivo))}
-        </span>
-      </Celda>
-      <Celda vacia={fila.ejecucion == null} className="text-right">
-        <span className="font-mono">{cop(Number(fila.ejecucion))}</span>
-      </Celda>
-      <CeldaLista valores={fila.contratos} singular="contrato" />
-      <td className={`${TD} text-right`}>
-        <span className="font-mono text-gray-400">
-          {fila.avance_fisico_pct == null ? "—" : pct(fila.avance_fisico_pct)}
-        </span>
-      </td>
-      <Celda vacia={fila.avance_financiero_pct == null} className="text-right">
-        <span className="font-mono">{pct(fila.avance_financiero_pct)}</span>
-      </Celda>
-      <td className={TD}>
-        <StateBadge texto={estado.texto} tono={estado.tono} />
       </td>
     </tr>
   );
@@ -184,6 +338,18 @@ function Leyenda() {
 }
 
 function TablaPlan({ filas }) {
+  // Filas abiertas, por código de meta: pueden estar abiertas varias a la vez.
+  const [abiertas, setAbiertas] = useState(() => new Set());
+
+  function alternar(codigo) {
+    setAbiertas((anteriores) => {
+      const siguientes = new Set(anteriores);
+      if (siguientes.has(codigo)) siguientes.delete(codigo);
+      else siguientes.add(codigo);
+      return siguientes;
+    });
+  }
+
   return (
     <table className="w-full border-separate border-spacing-0">
       <caption className="sr-only">
@@ -245,7 +411,12 @@ function TablaPlan({ filas }) {
       </thead>
       <tbody>
         {filas.map((fila) => (
-          <FilaPlan key={fila.cod_indicador_producto} fila={fila} />
+          <FilaPlan
+            key={fila.cod_indicador_producto}
+            fila={fila}
+            abierta={abiertas.has(fila.cod_indicador_producto)}
+            onAlternar={alternar}
+          />
         ))}
       </tbody>
     </table>
