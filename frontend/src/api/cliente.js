@@ -278,4 +278,39 @@ export const api = {
    * registro.
    */
   historialCorte: (corteId) => solicitar(`/api/v1/cortes/${corteId}/historial`),
+
+  /**
+   * [E04-HU01] Plan de Acción consolidado del corte REGISTRADO más reciente.
+   *
+   * `GET /plan-accion/actual`, solo para `administrador` y `visitante`
+   * (D26): un `gestor` recibe 403. Responde
+   *
+   *     {
+   *       corte_id, vigencia, fecha_corte: "YYYY-MM-DD",
+   *       filas: [{
+   *         sector, cod_indicador_producto, nombre_producto, meta_programada,
+   *         cod_bpin, rubros: string[], presupuesto_definitivo, ejecucion,
+   *         contratos: string[], avance_fisico_pct, avance_financiero_pct,
+   *         estado_cruce: "completo" | "parcial" | "sin_informacion",
+   *       }],
+   *       resumen: { total, completo, parcial, sin_informacion },
+   *     }
+   *
+   * Una fila por meta, ordenada por `cod_indicador_producto`. Los montos, la
+   * meta programada y los porcentajes llegan como TEXTO (Decimal del
+   * backend): convertir con `Number()` antes de formatear. Cualquier campo
+   * salvo `cod_indicador_producto` y `estado_cruce` puede ser `null`, y
+   * `rubros`/`contratos` pueden ser `[]`. `avance_fisico_pct` es siempre
+   * `null` hasta que exista E-03.
+   *
+   * Errores, todos con `{ codigo, mensaje, detalles }`: 401
+   * `credenciales_invalidas`; 403 `permiso_insuficiente`; 404
+   * `recurso_no_encontrado` (ningún corte REGISTRADO); 409
+   * `operacion_no_permitida` con `detalles.archivos_faltantes` (al corte
+   * actual le falta alguna fuente).
+   *
+   * Todavía sin filtros: el endpoint acepta `sector`, `estado_cruce`,
+   * `busqueda` y `cod_indicador_producto` (E04-HU02), que esta función no usa.
+   */
+  planAccionActual: () => solicitar("/api/v1/plan-accion/actual"),
 };

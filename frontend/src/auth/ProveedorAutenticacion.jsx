@@ -42,6 +42,13 @@ const ContextoAutenticacion = createContext(null);
 //: centralizado aquí para no repetir la lista de roles en cada pantalla.
 const ROLES_ESCRITURA = new Set(["administrador", "gestor"]);
 
+//: D26 punto 4 (docs/DECISIONES.md): el Plan de Acción lo consultan
+//: `administrador` y `visitante`; `gestor` queda fuera a propósito, hasta que
+//: se ratifique esa decisión. Espeja `AccesoPlanAccionDep` en
+//: `plan_accion/api/router.py`: si allá cambia, cambia aquí. Solo oculta la
+//: UI — el backend ya rechaza con 403 de todas formas.
+const ROLES_PLAN_ACCION = new Set(["administrador", "visitante"]);
+
 export function ProveedorAutenticacion({ children }) {
   const [cargando, setCargando] = useState(true);
   const [estaAutenticado, setEstaAutenticado] = useState(false);
@@ -93,6 +100,8 @@ export function ProveedorAutenticacion({ children }) {
       usuario,
       puedeEscribir:
         usuario?.roles?.some((rol) => ROLES_ESCRITURA.has(rol)) ?? false,
+      puedeVerPlanAccion:
+        usuario?.roles?.some((rol) => ROLES_PLAN_ACCION.has(rol)) ?? false,
       iniciarSesion: () =>
         keycloak.login({ redirectUri: `${window.location.origin}/cortes` }),
       cerrarSesion: () =>

@@ -15,6 +15,8 @@ import Login from "./pages/Login.jsx";
 
 import Disposicion from "./components/Disposicion.jsx";
 import MatrizRelacion from "./pages/MatrizRelacion.jsx";
+import PlanAccion from "./pages/PlanAccion.jsx";
+import { Vacio } from "./components/Estados.jsx";
 import { useAutenticacion } from "./auth/ProveedorAutenticacion.jsx";
 
 /** [HU-E01-01] / D23/D24: exige sesión de Keycloak activa antes de montar
@@ -34,6 +36,28 @@ function RutaProtegida({ children }) {
 
   if (!estaAutenticado) {
     return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+/** [E04-HU01/CA10] / D26: el Plan de Acción solo lo ven `administrador` y
+ * `visitante`. Sin ese rol, el acceso por URL directa muestra el aviso de
+ * permiso y NO monta la pantalla, así que tampoco se dispara la petición.
+ * Es solo UI: el backend ya responde 403 a los demás roles. Va dentro de
+ * `RutaProtegida`, que ya garantiza que hay sesión. */
+function RutaConPlanAccion({ children }) {
+  const { puedeVerPlanAccion } = useAutenticacion();
+
+  if (!puedeVerPlanAccion) {
+    return (
+      <section className="mx-auto max-w-4xl">
+        <Vacio
+          titulo="No tiene permiso para ver el Plan de Acción"
+          descripcion="Su rol no tiene acceso a este módulo."
+        />
+      </section>
+    );
   }
 
   return children;
@@ -86,6 +110,15 @@ export default function App() {
           element={<EditarArchivosCorteActual />}
         />
         <Route path="/matriz/:corteId?" element={<MatrizRelacion />} />
+        {/* [E04-HU01] Plan de Acción consolidado del corte actual. */}
+        <Route
+          path="/plan-accion"
+          element={
+            <RutaConPlanAccion>
+              <PlanAccion />
+            </RutaConPlanAccion>
+          }
+        />
         <Route path="*" element={<Pendiente />} />
       </Route>
     </Routes>

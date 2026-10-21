@@ -9,8 +9,10 @@
  * solo UI — el backend ya rechaza con 403 de todas formas (`exigir_roles`
  * en `core/dependencias.py`), esto evita ofrecer una acción que de todos
  * modos fallaría. "Matriz"/"Cortes" siguen visibles para los 3 roles
- * (D24: lectura abierta). "Cerrar sesión" llama a
- * `useAutenticacion().cerrarSesion()` (termina la sesión de Keycloak).
+ * (D24: lectura abierta). "Plan de Acción" solo se muestra si
+ * `puedeVerPlanAccion` (administrador/visitante, D26 — `gestor` no).
+ * "Cerrar sesión" llama a `useAutenticacion().cerrarSesion()` (termina la
+ * sesión de Keycloak).
  */
 import { LogOut } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
@@ -24,7 +26,8 @@ const enlaceClase = ({ isActive }) =>
   }`;
 
 export default function Disposicion() {
-  const { cerrarSesion, puedeEscribir } = useAutenticacion();
+  const { cerrarSesion, puedeEscribir, puedeVerPlanAccion } =
+    useAutenticacion();
 
   return (
     <div className="flex min-h-screen">
@@ -57,6 +60,11 @@ export default function Disposicion() {
           <NavLink to="/matriz" className={enlaceClase}>
             Matriz
           </NavLink>
+          {puedeVerPlanAccion && (
+            <NavLink to="/plan-accion" className={enlaceClase}>
+              Plan de Acción
+            </NavLink>
+          )}
         </nav>
 
         <div className="border-t border-white/10 p-3">
