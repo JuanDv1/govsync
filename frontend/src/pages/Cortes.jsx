@@ -13,15 +13,13 @@
  * antes cada pantalla lo calculaba por su cuenta y podían no coincidir
  * sobre el mismo corte.
  *
- * D24 (docs/DECISIONES.md): "Crear corte" (estado vacío) y "Continuar
- * carga" (fila en BORRADOR, corte que no es el actual) solo se muestran si
- * `puedeEscribir` (administrador/gestor) — son acciones de escritura,
- * igual que el "Nuevo corte" que `Disposicion.jsx` ya oculta para
- * `visitante`. Es solo UI: el backend ya las rechaza con 403 de todas
- * formas. "Editar archivos" (corte actual Registrado) NO tiene todavía
- * esta restricción -- HU-05/CA-9 (mapeo de roles) sigue [VALIDAR] en su
- * spec, a propósito: el backend ya rechaza el reemplazo con 403 a quien no
- * es administrador/gestor, pero la UI no oculta la acción todavía.
+ * D24 (docs/DECISIONES.md): "Crear corte" (estado vacío), "Continuar
+ * carga" (fila en BORRADOR, corte que no es el actual) y "Editar archivos"
+ * (corte actual REGISTRADO) solo se muestran si `puedeEscribir`
+ * (administrador/gestor) — son acciones de escritura, igual que el "Nuevo
+ * corte" que `Disposicion.jsx` ya oculta para `visitante`. "Ver matriz" y la
+ * etiqueta "Actual" los ven los tres roles. Es solo UI: el backend ya
+ * rechaza las escrituras con 403 de todas formas.
  */
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -173,10 +171,10 @@ export default function Cortes() {
                               corte actual (el más reciente, global) lo
                               ofrece — ver `esCorteActual()` arriba para el
                               criterio (campo `es_corte_actual` del backend,
-                              con respaldo por posición solo si falta). Sin
-                              gating por rol a propósito -- ver docstring
-                              del archivo (HU-05/CA-9 sigue [VALIDAR]). */}
-                          {actual && (
+                              con respaldo por posición solo si falta). Solo
+                              con `puedeEscribir` (D24): el visitante sigue
+                              viendo "Ver matriz". */}
+                          {actual && puedeEscribir && (
                             <Link
                               to={`/cortes/${corte.id}/editar`}
                               className="text-[11px] font-medium text-azul hover:text-navy"
