@@ -79,7 +79,11 @@ export default function Disposicion() {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
+      {/* `min-w-0`: sin él, un hijo flex no puede quedar más angosto que su
+          contenido, y una tabla ancha (p. ej. el Plan de Acción con zoom)
+          ensanchaba todo el panel y la página mostraba una segunda barra de
+          scroll horizontal. Con él, cada tabla usa solo su propio scroll. */}
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="h-11 shrink-0 border-b border-gray-200 bg-white" />
 
         <main className="flex-1 overflow-auto bg-fondo-pagina p-5">

@@ -40,9 +40,13 @@
  * 12px en `gray-600`, con más espacio entre filas y botones de al menos 32px.
  * La escala del resto de pantallas no cambia.
  *
- * CA07: el scroll es del propio contenedor de la tabla (único `overflow-auto`,
- * en x e y). El encabezado queda fijo arriba y "Código meta" y "Meta" fijos a
- * la izquierda con `position: sticky`: por eso la tabla usa `border-separate`
+ * CA07: el scroll horizontal es SOLO el del contenedor de la tabla (único
+ * `overflow-auto`, en x e y); la página no se ensancha gracias al `min-w-0`
+ * del panel de `Disposicion.jsx`. Montos, porcentajes y meta programada
+ * llevan `whitespace-nowrap`: sin él, al angostarse la tabla (p. ej. con
+ * zoom) "$ 3.868.543.056" se partía en "$" y la cifra. El encabezado queda
+ * fijo arriba y "Código meta" y "Meta" fijos a la izquierda con
+ * `position: sticky`: por eso la tabla usa `border-separate`
  * (con `border-collapse` los bordes de las celdas fijas se pierden al
  * desplazar), las dos columnas fijas tienen ancho fijo (el `left` de "Meta" es
  * el ancho de "Código meta") y sus celdas llevan fondo opaco. "Código meta"
@@ -188,7 +192,10 @@ function FilaPlan({ fila, abierta, onAlternar }) {
             {fila.nombre_producto}
           </div>
         </Celda>
-        <Celda vacia={fila.meta_programada == null} className="text-right">
+        <Celda
+          vacia={fila.meta_programada == null}
+          className="whitespace-nowrap text-right"
+        >
           <span className="font-mono">{numero(fila.meta_programada)}</span>
         </Celda>
         <Celda vacia={fila.cod_bpin == null}>
@@ -197,24 +204,27 @@ function FilaPlan({ fila, abierta, onAlternar }) {
         <CeldaLista valores={fila.rubros} singular="rubro" />
         <Celda
           vacia={fila.presupuesto_definitivo == null}
-          className="text-right"
+          className="whitespace-nowrap text-right"
         >
           <span className="font-mono">
             {cop(Number(fila.presupuesto_definitivo))}
           </span>
         </Celda>
-        <Celda vacia={fila.ejecucion == null} className="text-right">
+        <Celda
+          vacia={fila.ejecucion == null}
+          className="whitespace-nowrap text-right"
+        >
           <span className="font-mono">{cop(Number(fila.ejecucion))}</span>
         </Celda>
         <CeldaLista valores={fila.contratos} singular="contrato" />
-        <td className={`${TD} text-right`}>
+        <td className={`${TD} whitespace-nowrap text-right`}>
           <span className="font-mono text-gray-500">
             {fila.avance_fisico_pct == null ? "—" : pct(fila.avance_fisico_pct)}
           </span>
         </td>
         <Celda
           vacia={fila.avance_financiero_pct == null}
-          className="text-right"
+          className="whitespace-nowrap text-right"
         >
           <span className="font-mono">{pct(fila.avance_financiero_pct)}</span>
         </Celda>
