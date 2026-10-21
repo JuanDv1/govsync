@@ -17,19 +17,28 @@
  * muestra el conteo ("24 rubros"). Los datos reales traen códigos de rubro de
  * ~70 caracteres y metas con decenas de rubros o contratos; en una celda
  * serían ilegibles. Con un solo valor se muestra el valor (recortado). La
- * lista completa está en el `title` de la celda.
+ * lista completa está en el detalle de la meta; el `title` de la celda queda
+ * como apoyo.
  *
  * CA06: la celda sin dato (`null` o lista vacía) se resalta SOLO ella, con un
  * fondo ámbar tenue, y la leyenda lo explica. "% Avance físico" no se resalta
  * (el backend lo manda siempre `null` hasta que exista E-03): muestra "—" en
  * gris y la leyenda lo aclara. Un "0.00" es un dato ($ 0), no un vacío.
  *
- * CA03 (versión plana): cada fila tiene un botón en la celda de "Código meta"
- * que abre una subfila con la cadena Meta → BPIN → Rubros → Contratos y los
- * totales de la meta. Solo muestra lo que la respuesta ya trae: las listas
- * completas de rubros y contratos y UN BPIN. No puede mostrar el monto de
- * cada rubro ni a qué rubro pertenece cada contrato: eso requiere ampliar el
- * backend, y la pantalla lo dice. Varias filas pueden estar abiertas a la vez.
+ * CA03 (versión plana): cada fila tiene un botón "Ver detalle" en la celda de
+ * "Código meta" que abre una subfila con la meta, su estado y su BPIN, las
+ * tres cifras de la meta y las listas de rubros y contratos. Solo muestra lo
+ * que la respuesta ya trae: las listas completas y UN BPIN. No puede mostrar
+ * el monto de cada rubro ni el objeto, valor o estado de cada contrato (eso
+ * requiere ampliar el backend, y la pantalla lo avisa en lenguaje llano).
+ * Varias filas pueden estar abiertas a la vez.
+ *
+ * LEGIBILIDAD: esta pantalla se aparta a propósito de la escala compacta de
+ * docs/DESIGN_SPEC.md §3 (encabezados de 10px en `gray-400`, celdas de 12px).
+ * La usuaria final necesita leer cómodamente, y `gray-400` sobre `gray-50` no
+ * alcanza el contraste AA (4,5:1). Aquí el cuerpo va a 14px, los encabezados a
+ * 12px en `gray-600`, con más espacio entre filas y botones de al menos 32px.
+ * La escala del resto de pantallas no cambia.
  *
  * CA07: el scroll es del propio contenedor de la tabla (único `overflow-auto`,
  * en x e y). El encabezado queda fijo arriba y "Código meta" y "Meta" fijos a
@@ -37,10 +46,11 @@
  * (con `border-collapse` los bordes de las celdas fijas se pierden al
  * desplazar), las dos columnas fijas tienen ancho fijo (el `left` de "Meta" es
  * el ancho de "Código meta") y sus celdas llevan fondo opaco. "Código meta"
- * mide 140 px y no 120 porque, además del código de 9 dígitos, aloja el botón
- * del detalle (CA03); si ese ancho cambia, cambia también `LEFT_META`.
+ * mide 150 px porque aloja, debajo del código, el botón "Ver detalle" a 14px;
+ * "Meta" mide 280 px para que los nombres se lean en hasta tres líneas. Si
+ * cambia el ancho de "Código meta", cambia también `LEFT_META`.
  */
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { Info } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
 import { api } from "../api/cliente.js";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
@@ -58,14 +68,19 @@ const ESTADOS_CRUCE = {
 //: Clases comunes de encabezado y celda. Los bordes van en cada celda (no en
 //: la fila) porque la tabla es `border-separate`.
 const TH =
-  "whitespace-nowrap border-b border-gray-200 bg-gray-50 px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400";
-const TD = "border-b border-gray-100 px-4 py-2.5 text-xs align-top";
+  "whitespace-nowrap border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600";
+const TD = "border-b border-gray-100 px-4 py-3 text-sm align-top";
+
+//: Botón secundario de la pantalla ("Ver detalle", "Ver los N rubros"):
+//: al menos 32px de alto y foco visible.
+const BOTON =
+  "inline-flex min-h-8 items-center rounded-sm border border-gray-300 bg-white px-2.5 text-sm font-medium text-azul hover:bg-secundario focus:outline-none focus-visible:ring-2 focus-visible:ring-azul focus-visible:ring-offset-1";
 
 //: Anchos de las dos columnas fijas (CA07). El `left` de la segunda es el
 //: ancho de la primera; si uno cambia, cambia el otro.
-const ANCHO_CODIGO = "w-[140px] min-w-[140px] max-w-[140px]";
-const ANCHO_META = "w-[260px] min-w-[260px] max-w-[260px]";
-const LEFT_META = "left-[140px]";
+const ANCHO_CODIGO = "w-[150px] min-w-[150px] max-w-[150px]";
+const ANCHO_META = "w-[280px] min-w-[280px] max-w-[280px]";
+const LEFT_META = "left-[150px]";
 
 //: Cantidad de columnas de la tabla: debe coincidir con los `<th>` de
 //: `TablaPlan` (es el `colSpan` de la subfila de detalle).
@@ -74,7 +89,10 @@ const NUM_COLUMNAS = 12;
 //: Ancho del panel de detalle. Va en un contenedor `sticky left-0` para que
 //: no se desplace con el scroll horizontal; se limita al ancho visible
 //: (viewport menos barra lateral y márgenes) para que no quede cortado.
-const ANCHO_DETALLE = "w-[min(720px,calc(100vw_-_320px))]";
+const ANCHO_DETALLE = "w-[min(960px,calc(100vw_-_320px))]";
+
+//: Rubros y contratos que el detalle muestra antes de "Ver los N …".
+const VISIBLES = 5;
 
 function fechaCorte(iso) {
   // "YYYY-MM-DD" → "DD/MM/AAAA" partiendo el texto: pasar por `new Date()`
@@ -102,7 +120,7 @@ function Celda({ vacia, fija = false, className = "", children, ...resto }) {
 
   return (
     <td className={`${TD} ${fondo} ${className}`} {...resto}>
-      {vacia ? <span className="text-gray-400">—</span> : children}
+      {vacia ? <span className="text-gray-500">—</span> : children}
     </td>
   );
 }
@@ -115,7 +133,7 @@ function CeldaLista({ valores, singular }) {
   return (
     <Celda title={completa}>
       {valores.length === 1 ? (
-        <span className="block max-w-[180px] truncate font-mono">
+        <span className="block max-w-[200px] truncate font-mono">
           {valores[0]}
         </span>
       ) : (
@@ -125,33 +143,40 @@ function CeldaLista({ valores, singular }) {
   );
 }
 
-function FilaPlan({ fila, abierta, onAlternar }) {
+function estadoDeCruce(fila) {
   // Respaldo por si el backend manda un estado que esta pantalla no conoce.
-  const estado = ESTADOS_CRUCE[fila.estado_cruce] ?? {
-    texto: fila.estado_cruce,
-    tono: "gris",
-  };
+  return (
+    ESTADOS_CRUCE[fila.estado_cruce] ?? {
+      texto: fila.estado_cruce,
+      tono: "gris",
+    }
+  );
+}
+
+function FilaPlan({ fila, abierta, onAlternar }) {
+  const estado = estadoDeCruce(fila);
   const codigo = fila.cod_indicador_producto;
   const idDetalle = `detalle-${codigo}`;
-  const Chevron = abierta ? ChevronDown : ChevronRight;
 
   return (
     <Fragment>
       <tr>
         <Celda vacia={fila.sector == null}>{fila.sector}</Celda>
         <Celda fija className={`sticky left-0 z-10 ${ANCHO_CODIGO}`}>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-col items-start gap-1.5">
+            <span className="font-mono">{codigo}</span>
+            {/* El `aria-label` contiene el texto visible (WCAG 2.5.3) y el
+                código, para distinguir las filas en un lector de pantalla. */}
             <button
               type="button"
               onClick={() => onAlternar(codigo)}
               aria-expanded={abierta}
               aria-controls={idDetalle}
-              aria-label={`${abierta ? "Ocultar" : "Ver"} el detalle de la meta ${codigo}`}
-              className="shrink-0 rounded-sm p-0.5 text-gray-400 hover:bg-gray-100 hover:text-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
+              aria-label={`${abierta ? "Ocultar" : "Ver"} detalle de la meta ${codigo}`}
+              className={BOTON}
             >
-              <Chevron size={14} aria-hidden="true" />
+              {abierta ? "Ocultar" : "Ver detalle"}
             </button>
-            <span className="font-mono">{codigo}</span>
           </div>
         </Celda>
         <Celda
@@ -159,7 +184,7 @@ function FilaPlan({ fila, abierta, onAlternar }) {
           vacia={fila.nombre_producto == null}
           className={`sticky z-10 ${LEFT_META} ${ANCHO_META} border-r border-r-gray-200`}
         >
-          <div className="line-clamp-2" title={fila.nombre_producto}>
+          <div className="line-clamp-3" title={fila.nombre_producto}>
             {fila.nombre_producto}
           </div>
         </Celda>
@@ -183,7 +208,7 @@ function FilaPlan({ fila, abierta, onAlternar }) {
         </Celda>
         <CeldaLista valores={fila.contratos} singular="contrato" />
         <td className={`${TD} text-right`}>
-          <span className="font-mono text-gray-400">
+          <span className="font-mono text-gray-500">
             {fila.avance_fisico_pct == null ? "—" : pct(fila.avance_fisico_pct)}
           </span>
         </td>
@@ -194,7 +219,7 @@ function FilaPlan({ fila, abierta, onAlternar }) {
           <span className="font-mono">{pct(fila.avance_financiero_pct)}</span>
         </Celda>
         <td className={TD}>
-          <StateBadge texto={estado.texto} tono={estado.tono} />
+          <StateBadge texto={estado.texto} tono={estado.tono} tamano="grande" />
         </td>
       </tr>
       {abierta && <DetalleMeta fila={fila} id={idDetalle} />}
@@ -202,110 +227,168 @@ function FilaPlan({ fila, abierta, onAlternar }) {
   );
 }
 
-/** Lista completa, una por línea, en monoespaciada y con salto de línea. */
-function ListaCompleta({ valores, vacio }) {
-  if (valores.length === 0) {
-    return <p className="text-gray-400">{vacio}</p>;
-  }
-  return (
-    <ul className="max-h-48 overflow-y-auto font-mono text-[11px] leading-relaxed">
-      {valores.map((valor) => (
-        <li key={valor} className="break-all">
-          {valor}
-        </li>
-      ))}
-    </ul>
-  );
-}
+/**
+ * Lista de rubros o contratos del detalle: una por línea, completa. Muestra
+ * los primeros `VISIBLES` y un botón "Ver los N …" que despliega el resto en
+ * la misma página, sin caja con scroll interno.
+ */
+function ListaDetalle({ id, valores, plural, vacio }) {
+  const [todos, setTodos] = useState(false);
 
-/** Total de la meta; `null` es "—" (sin dato), un "0.00" es un dato. */
-function Total({ etiqueta, valor, formato }) {
+  if (valores.length === 0) {
+    return <p className="text-sm text-gray-500">{vacio}</p>;
+  }
+
+  const mostrados = todos ? valores : valores.slice(0, VISIBLES);
+
   return (
-    <div>
-      <dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-        {etiqueta}
-      </dt>
-      <dd className="mt-0.5 font-mono text-xs text-gray-700">
-        {valor == null ? "—" : formato(valor)}
-      </dd>
-    </div>
+    <>
+      <ul id={id} className="divide-y divide-gray-100 font-mono text-sm">
+        {mostrados.map((valor) => (
+          <li key={valor} className="break-all py-1.5">
+            {valor}
+          </li>
+        ))}
+      </ul>
+      {valores.length > VISIBLES && (
+        <button
+          type="button"
+          onClick={() => setTodos((actual) => !actual)}
+          aria-expanded={todos}
+          aria-controls={id}
+          className={`${BOTON} mt-2`}
+        >
+          {todos ? "Ver menos" : `Ver los ${valores.length} ${plural}`}
+        </button>
+      )}
+    </>
   );
 }
 
 /**
- * Subfila de detalle (CA03, versión plana): la cadena Meta → BPIN → Rubros →
- * Contratos con las listas completas, y los totales de la meta. El contenido
- * va en un contenedor `sticky left-0` de ancho acotado: la subfila ocupa todo
- * el ancho de la tabla, y sin eso el panel se iría con el scroll horizontal.
+ * Cifra grande del detalle. `null` es "—" (sin dato); un "0.00" es un dato.
+ * `barra` dibuja el % como barra de un solo color, sin umbrales (los define
+ * el PO); es decorativa porque la cifra ya está en texto.
+ */
+function Cifra({ etiqueta, valor, formato, barra = false }) {
+  const ancho = Math.min(100, Math.max(0, Number(valor)));
+
+  return (
+    <Card padding="p-4">
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+        {etiqueta}
+      </p>
+      <p className="mt-1 font-mono text-xl font-semibold text-navy">
+        {valor == null ? "—" : formato(valor)}
+      </p>
+      {barra && valor != null && (
+        <div
+          aria-hidden="true"
+          className="mt-3 h-2 w-full rounded-sm bg-gray-200"
+        >
+          <div
+            className="h-full rounded-sm bg-azul"
+            style={{ width: `${ancho}%` }}
+          />
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * Subfila de detalle (CA03, versión plana). El contenido va en un contenedor
+ * `sticky left-0` de ancho acotado: la subfila ocupa todo el ancho de la
+ * tabla, y sin eso el panel se iría con el scroll horizontal. El orden visual
+ * (meta y BPIN, luego rubros y contratos) sigue la cadena de CA03.
  */
 function DetalleMeta({ fila, id }) {
+  const estado = estadoDeCruce(fila);
+  const codigo = fila.cod_indicador_producto;
+
   return (
     <tr id={id}>
       <td
         colSpan={NUM_COLUMNAS}
-        className="border-b border-gray-100 bg-gray-50 p-0"
+        className="border-b border-gray-200 bg-fondo-pagina p-0"
       >
-        <div className={`sticky left-0 ${ANCHO_DETALLE} px-4 py-3`}>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-            Meta → BPIN → Rubros → Contratos
-          </p>
+        <div className={`sticky left-0 ${ANCHO_DETALLE} px-4 py-4`}>
+          <div className="mb-4">
+            <p className="text-sm text-gray-600">
+              Meta <span className="font-mono">{codigo}</span>
+            </p>
+            <p className="mt-0.5 text-base font-semibold text-gray-800">
+              {fila.nombre_producto ?? "—"}
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+              <StateBadge
+                texto={estado.texto}
+                tono={estado.tono}
+                tamano="grande"
+              />
+              {fila.cod_bpin == null ? (
+                <span className="text-gray-500">Sin BPIN</span>
+              ) : (
+                <span className="text-gray-700">
+                  BPIN <span className="font-mono">{fila.cod_bpin}</span>
+                </span>
+              )}
+            </div>
+          </div>
 
-          <dl className="grid gap-x-6 gap-y-3 text-xs text-gray-700 md:grid-cols-2">
-            <div>
-              <dt className="mb-0.5 font-semibold text-gray-500">Meta</dt>
-              <dd>
-                <span className="font-mono">{fila.cod_indicador_producto}</span>
-                {fila.nombre_producto && ` — ${fila.nombre_producto}`}
-              </dd>
-            </div>
-            <div>
-              <dt className="mb-0.5 font-semibold text-gray-500">BPIN</dt>
-              <dd>
-                {fila.cod_bpin == null ? (
-                  <span className="text-gray-400">Sin BPIN</span>
-                ) : (
-                  <span className="font-mono">{fila.cod_bpin}</span>
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt className="mb-0.5 font-semibold text-gray-500">
-                Rubros ({fila.rubros.length})
-              </dt>
-              <dd>
-                <ListaCompleta valores={fila.rubros} vacio="Sin rubros" />
-              </dd>
-            </div>
-            <div>
-              <dt className="mb-0.5 font-semibold text-gray-500">
-                Contratos ({fila.contratos.length})
-              </dt>
-              <dd>
-                <ListaCompleta valores={fila.contratos} vacio="Sin contratos" />
-              </dd>
-            </div>
-          </dl>
-
-          <dl className="mt-3 grid grid-cols-3 gap-x-6 border-t border-gray-200 pt-3">
-            <Total
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Cifra
               etiqueta="Presupuesto definitivo"
               valor={fila.presupuesto_definitivo}
               formato={(v) => cop(Number(v))}
             />
-            <Total
+            <Cifra
               etiqueta="Ejecución"
               valor={fila.ejecucion}
               formato={(v) => cop(Number(v))}
             />
-            <Total
+            <Cifra
               etiqueta="% Avance financiero"
               valor={fila.avance_financiero_pct}
               formato={pct}
+              barra
             />
-          </dl>
+          </div>
 
-          <p className="mt-3 text-[11px] text-gray-500">
-            El desglose por rubro y contrato requiere ampliar el backend.
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <Card padding="p-4">
+              <h3 className="mb-2 text-sm font-semibold text-gray-800">
+                Rubros ({fila.rubros.length})
+              </h3>
+              <ListaDetalle
+                id={`rubros-${codigo}`}
+                valores={fila.rubros}
+                plural="rubros"
+                vacio="Sin rubros"
+              />
+            </Card>
+            <Card padding="p-4">
+              <h3 className="mb-2 text-sm font-semibold text-gray-800">
+                Contratos ({fila.contratos.length})
+              </h3>
+              <ListaDetalle
+                id={`contratos-${codigo}`}
+                valores={fila.contratos}
+                plural="contratos"
+                vacio="Sin contratos"
+              />
+            </Card>
+          </div>
+
+          <p className="mt-4 flex items-start gap-2 text-sm text-gray-600">
+            <Info
+              size={16}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-azul"
+            />
+            Por ahora se muestran los números de contrato y los códigos de
+            rubro. El detalle de cada contrato (objeto, valor y estado) se
+            agregará más adelante.
           </p>
         </div>
       </td>
@@ -315,23 +398,22 @@ function DetalleMeta({ fila, id }) {
 
 function Leyenda() {
   return (
-    <ul className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-1 text-[11px] text-gray-500">
-      <li className="flex items-center gap-1.5">
+    <ul className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-sm text-gray-600">
+      <li className="flex items-center gap-2">
         <span
           aria-hidden="true"
-          className="inline-block h-3 w-5 rounded-sm border border-amber-200 bg-amber-50"
+          className="inline-block h-3.5 w-6 rounded-sm border border-amber-200 bg-amber-50"
         />
         Celda resaltada: dato sin información en las fuentes del corte.
       </li>
-      <li className="flex items-center gap-1.5">
-        <span aria-hidden="true" className="font-mono text-gray-400">
+      <li className="flex items-center gap-2">
+        <span aria-hidden="true" className="font-mono text-gray-500">
           —
         </span>
         % Avance físico: pendiente de E-03, todavía no hay datos.
       </li>
       <li>
-        Rubro y Contrato(s) muestran el conteo; pase el cursor para ver la
-        lista.
+        Pulse «Ver detalle» para ver la lista completa de rubros y contratos.
       </li>
     </ul>
   );
@@ -501,10 +583,8 @@ export default function PlanAccion() {
   return (
     <section className="mx-auto max-w-[1400px]">
       <header className="mb-4">
-        <h1 className="text-base font-semibold text-gray-800">
-          Plan de Acción
-        </h1>
-        <p className="mt-0.5 text-[11px] text-gray-500">
+        <h1 className="text-lg font-semibold text-gray-800">Plan de Acción</h1>
+        <p className="mt-0.5 text-sm text-gray-600">
           Corte de vigencia {datos.vigencia}, fecha{" "}
           <span className="font-mono">{fechaCorte(datos.fecha_corte)}</span>.
         </p>
@@ -522,7 +602,7 @@ export default function PlanAccion() {
             <div className="max-h-[70vh] overflow-auto">
               <TablaPlan filas={datos.filas} />
             </div>
-            <p className="border-t border-gray-200 px-4 py-2.5 text-xs font-medium text-gray-700">
+            <p className="border-t border-gray-200 px-4 py-3 text-sm font-medium text-gray-700">
               Total: {resumen.total} | Completo: {resumen.completo} | Parcial:{" "}
               {resumen.parcial} | Sin información: {resumen.sin_informacion}
             </p>
