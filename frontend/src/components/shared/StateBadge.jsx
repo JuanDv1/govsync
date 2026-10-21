@@ -12,12 +12,24 @@ const TONOS = {
   gris: "border-gray-200 bg-gray-50 text-gray-500",
 };
 
-export default function StateBadge({ texto, tono = "gris", icono: Icono }) {
+//: `normal` es el tamaño de siempre (y el valor por defecto). `grande` lo usa
+//: el Plan de Acción (E04-HU01), que necesita un texto más legible.
+const TAMANOS = {
+  normal: "px-2 py-0.5 text-[11px]",
+  grande: "px-2.5 py-1 text-xs",
+};
+
+export default function StateBadge({
+  texto,
+  tono = "gris",
+  tamano = "normal",
+  icono: Icono,
+}) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-[11px] font-medium ${
-        TONOS[tono] ?? TONOS.gris
-      }`}
+      className={`inline-flex items-center gap-1.5 rounded-sm border font-medium ${
+        TAMANOS[tamano] ?? TAMANOS.normal
+      } ${TONOS[tono] ?? TONOS.gris}`}
     >
       {Icono && <Icono size={12} />}
       {texto}
