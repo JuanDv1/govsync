@@ -466,7 +466,7 @@ function TablaPlan({ filas }) {
           </th>
           <th
             scope="col"
-            title="Meta del cuatrienio"
+            title="Meta programada para la vigencia"
             className={`${TH} sticky top-0 z-10 text-right`}
           >
             Meta programada
