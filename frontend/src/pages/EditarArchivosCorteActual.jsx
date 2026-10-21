@@ -4,58 +4,52 @@
  * TARJETA: [E02-HU05] Modificar archivos del corte actual
  * ESPECIFICACIÓN: docs/specs/E02-HU05-modificar-archivos-corte-actual.md
  *
- * ESTADO DEL BACKEND (importante para quien revise esta pantalla): el
- * contrato que consume esta página (`api.reemplazarArchivoCorteActual`,
- * `api.historialCorte`, el campo `es_corte_actual` en la respuesta de
- * `GET /cortes/{id}`, y `nombre_archivo`/`fecha_carga` en cada fuente) es
- * **PROPUESTA** — no existe todavía en el backend (ver la spec, sección
- * Contrato). Esta pantalla ya está construida contra ese contrato para que
- * el backend tenga un consumidor real al implementarlo; hasta entonces:
- *   - `GET /cortes/{id}` no envía `es_corte_actual` → el bloqueo de CA-5
- *     ("Solo se puede editar el corte más reciente") usa el fallback de
- *     `lib/corteActual.js` (mismo criterio que `Cortes.jsx`): se trae la
- *     lista completa (`GET /cortes`) solo para resolver esta pregunta, y se
- *     compara el `id` de este corte contra el primer `REGISTRADO` de esa
- *     lista. Si esa segunda petición falla, se asume que NO es el actual
- *     (falla cerrado) en vez de mostrar un segundo error.
- *   - Reemplazar un archivo y consultar el historial fallan con el error
- *     genérico de la API (404 de ruta inexistente) — se muestran con
- *     `EstadoError` como cualquier otro error, sin tratamiento especial.
+ * CONTRATO DEL BACKEND (ya implementado, D25 en docs/DECISIONES.md): esta
+ * página consume `api.reemplazarArchivoCorteActual`
+ * (`POST /cortes/{id}/archivos/{tipo}/reemplazo`), `api.historialCorte`
+ * (`GET /cortes/{id}/historial`) y `api.obtenerCorte`, cuya respuesta trae
+ * `es_corte_actual` y, por fuente, `nombre_archivo` y `fecha_carga` (el
+ * detalle de cada uno está en los comentarios de `api/cliente.js`).
+ *   - El bloqueo de CA-5 ("Solo se puede editar el corte más reciente") lee
+ *     `es_corte_actual` a través de `lib/corteActual.js` (mismo criterio que
+ *     `Cortes.jsx`). Ese módulo conserva un respaldo por si la respuesta no
+ *     trae el campo: por eso esta pantalla también trae la lista completa
+ *     (`GET /cortes`) y compara el `id` de este corte contra el primer
+ *     `REGISTRADO`. Si esa segunda petición falla, se asume que NO es el
+ *     actual (falla cerrado) en vez de mostrar un segundo error.
+ *   - Reemplazar un archivo y consultar el historial muestran sus errores
+ *     (403, 404, 409, 422) con `EstadoError`, como cualquier otro error de
+ *     la API, sin tratamiento especial por código.
  *
  * QUÉ CUBRE ESTA PANTALLA (ver la spec para el detalle de cada CA):
  *   CA-1  metadatos de cada fuente (nombre de archivo, fecha de carga). El
  *         Excel también pide "usuario que cargó" aquí, pero a pedido del
- *         producto esta pantalla no lo muestra — depende de E-01 (sin
- *         implementar, [VALIDAR] en la spec) y no se consideró necesario
- *         exponerlo en este bloque. CA-6 sí sigue mostrando el usuario, en
- *         el historial de auditoría más abajo.
+ *         producto esta pantalla no lo muestra (y `GET /cortes/{id}` no lo
+ *         expone). CA-6 sí sigue mostrando el usuario, en el historial de
+ *         auditoría más abajo.
  *   CA-2  reemplazo de una fuente con las mismas reglas de carga que
  *         HU-02/03/04 (reutiliza `CargaDeArchivo`, igual que NuevoCorte.jsx).
- *         "Actualiza el Plan de Acción" es `[VALIDAR]` en la spec (ese
- *         módulo no existe) — no se implementa aquí. "Recalcula el cruce"
- *         tampoco dispara nada propio aquí: es otro `[VALIDAR]` de la spec
- *         (podría ocurrir solo por cómo se calcula la matriz en HU-07, pero
- *         el equipo no lo ha confirmado) — esta pantalla no asume ninguna
- *         de las dos posibilidades.
- *   CA-3  confirmación antes de reemplazar (`ModalConfirmacion`). La spec
- *         deja `[VALIDAR]` si "validar sin aplicar" debería existir como
- *         paso separado (Opción A) o si confirmar-y-revertir (Opción B)
- *         basta — el equipo no ha elegido. Esta pantalla ya tuvo que
- *         construirse sobre una de las dos para tener algo que mostrar:
- *         asume la Opción B (confirmar primero, `reemplazar` revierte sin
- *         tocar el estado si la API rechaza el archivo). Si el equipo
- *         decide la Opción A, esta pantalla necesita un paso de validación
- *         previo antes de pedir la confirmación — cambio pendiente, no
- *         implementado.
+ *         "Recalcula el cruce" no dispara nada propio aquí: el backend no
+ *         tiene un paso explícito de recálculo, la matriz de HU-07 se arma
+ *         con un JOIN al consultarla (D25). "Actualiza el Plan de Acción"
+ *         sigue `[VALIDAR]` en la spec — no se implementa en esta pantalla.
+ *   CA-3  confirmación antes de reemplazar (`ModalConfirmacion`). El backend
+ *         implementa la Opción B (D25): un solo endpoint valida y aplica, y
+ *         revierte si la API rechaza el archivo. Por eso la confirmación se
+ *         pide antes de llamarlo y no hay un paso de "validar sin aplicar".
  *   CA-4  archivo inválido: lo maneja `CargaDeArchivo`/`EstadoError`, mismo
  *         patrón que las demás cargas.
  *   CA-5  cortes que no son el actual: bloqueo explícito, sin acción de
  *         edición.
  *   CA-6  historial de auditoría (sección separada, con su propio estado de
  *         carga/error para no bloquear el resto de la pantalla si falla).
- *   CA-7  (avance físico) y CA-9 (restricción por rol): NO tienen
- *         contraparte en esta pantalla — son `[VALIDAR]`/dependientes de
- *         E-01 en la spec, sin backend que implementar todavía.
+ *   CA-7  (avance físico): NO tiene contraparte en esta pantalla — es
+ *         `[VALIDAR]` en la spec, bloqueado por una decisión de negocio
+ *         abierta y sin módulo de avance físico.
+ *   CA-9  (restricción por rol): el backend ya rechaza el reemplazo con 403
+ *         a quien no es administrador/gestor (D24); esta pantalla no oculta
+ *         la acción por rol, y el mapeo de nombres de rol del Excel sigue
+ *         `[VALIDAR]` en la spec.
  *   CA-8  si el reemplazo falla, no se optimiza nada en el cliente: el
  *         estado local solo cambia en el `.then` de éxito, así que un error
  *         deja la pantalla exactamente como estaba (mismo efecto que el
@@ -103,11 +97,12 @@ export default function EditarArchivosCorteActual() {
   const [historial, setHistorial] = useState(null);
   const [errorHistorial, setErrorHistorial] = useState(null);
 
-  // Solo para resolver `esCorteActual()` mientras `GET /cortes/{id}` no
-  // envíe `es_corte_actual` (ver docstring del módulo). Sin reintento ni
-  // estado de error propio a propósito: si esta petición falla,
-  // `esCorteActual()` no encuentra coincidencia y CA-5 bloquea la edición
-  // — falla cerrado, igual que si el corte de verdad no fuera el actual.
+  // Respaldo de `esCorteActual()` por si la respuesta de `GET /cortes/{id}`
+  // no trae `es_corte_actual` (ver docstring del módulo). Sin reintento ni
+  // estado de error propio a propósito: si esta petición falla y el corte
+  // tampoco trae el campo, `esCorteActual()` no encuentra coincidencia y
+  // CA-5 bloquea la edición — falla cerrado, igual que si el corte de
+  // verdad no fuera el actual.
   const [listaCortes, setListaCortes] = useState(null);
   const [listaCargada, setListaCargada] = useState(false);
 
@@ -413,16 +408,16 @@ export default function EditarArchivosCorteActual() {
 
         {!cargandoHistorial && !errorHistorial && historial?.length > 0 && (
           <ul className="flex flex-col gap-2">
-            {historial.map((entrada, indice) => (
+            {historial.map((entrada) => (
               <li
-                key={`${entrada.tipo}-${entrada.fecha_hora}-${indice}`}
+                key={entrada.id}
                 className="flex items-center justify-between border-b border-gray-100 pb-2 text-xs last:border-0 last:pb-0"
               >
                 <span className="font-medium text-gray-700">
                   {etiquetaPorTipo(entrada.tipo)}
                 </span>
                 <span className="font-mono text-gray-500">
-                  {entrada.nombre_archivo_anterior}
+                  {entrada.nombre_archivo_anterior ?? "—"}
                 </span>
                 <span className="text-gray-400">
                   {entrada.usuario ?? "—"} ·{" "}

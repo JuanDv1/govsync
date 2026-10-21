@@ -126,6 +126,11 @@ export const api = {
   /**
    * HU-01/CA-8. Detalle de un corte. Un id inexistente devuelve 404 con
    * `codigo: "recurso_no_encontrado"`.
+   *
+   * [E02-HU05] Además de `id`, `vigencia`, `fecha_corte` y `estado`, trae
+   * `es_corte_actual` (calculado por el backend) y, en cada elemento de
+   * `archivos`, `nombre_archivo` y `fecha_carga`. No trae el usuario que
+   * cargó cada fuente.
    */
   obtenerCorte: (id) => solicitar(`/api/v1/cortes/${id}`),
 
@@ -234,24 +239,26 @@ export const api = {
     solicitar(`/api/v1/matriz-relacion/${corteId}/opciones-filtro`),
 
   /**
-   * [E02-HU05/CA-2] PROPUESTA — este endpoint todavía NO existe en el
-   * backend (ver docs/specs/E02-HU05-modificar-archivos-corte-actual.md,
-   * sección Contrato). Reemplaza el archivo de `tipo` en el corte actual ya
-   * Registrado — a propósito una ruta distinta de `cargarArchivo`
+   * [E02-HU05/CA-2] Reemplaza el archivo de `tipo` en el corte actual ya
+   * Registrado.
+   *
+   * `POST /cortes/{corteId}/archivos/{tipo}/reemplazo` (multipart, campo
+   * `archivo`) — a propósito una ruta distinta de `cargarArchivo`
    * (`POST /cortes/{id}/archivos/{tipo}`), que [E02-HU06] bloquea con 409
-   * para cualquier corte Registrado (`Corte.verificar_modificable`).
+   * para cualquier corte Registrado (`Corte.verificar_modificable`). Exige
+   * administrador o gestor.
    *
-   * `[VALIDAR]` en la spec (CA-3/Contrato): no está decidido si validar el
-   * archivo debe ser un paso previo separado de aplicarlo (Opción A) o si
-   * basta con confirmar primero y revertir si resulta inválido (Opción B).
-   * Esta función asume la Opción B — un solo endpoint que valida y aplica —
-   * porque es la única forma de tener algo invocable hoy; si el equipo
-   * decide la Opción A, esta función pasa a ser la de "aplicar" y hace
-   * falta otra para "validar sin aplicar".
+   * Un solo endpoint valida y aplica, y revierte todo si algo falla
+   * (Opción B, D25 en docs/DECISIONES.md): no existe un paso de "validar sin
+   * aplicar", así que la confirmación (CA-3) se pide ANTES de llamarlo.
    *
-   * Hasta que el backend lo implemente, toda llamada falla con
-   * `ErrorApi({ codigo: "error_red" })` o un 404 genérico — `EditarArchivosCorteActual.jsx`
-   * ya maneja ese error como cualquier otro de la API, no lo distingue.
+   * 200 con `{ tipo, nombre_archivo, filas_reconocidas, codigos, descartes }`
+   * (`ArchivoFuenteRespuestaParcial`; no trae `fecha_carga`). Errores, todos
+   * con `{ codigo, mensaje, detalles }`: 403 `permiso_insuficiente`
+   * (visitante); 404 `recurso_no_encontrado`; 409 `operacion_no_permitida`
+   * con `detalles.motivo` en `"corte_no_registrado"` (sigue en BORRADOR) o
+   * `"corte_no_es_el_actual"` (CA-5); 422 `archivo_invalido` con
+   * `detalles.motivo`, igual que `cargarArchivo` (CA-4).
    */
   reemplazarArchivoCorteActual: (corteId, tipo, archivo) =>
     solicitar(`/api/v1/cortes/${corteId}/archivos/${tipo}/reemplazo`, {
@@ -260,11 +267,15 @@ export const api = {
     }),
 
   /**
-   * [E02-HU05/CA-6] PROPUESTA — este endpoint todavía NO existe. Historial
-   * de reemplazos de archivos del corte: se espera una lista de entradas
-   * `{ tipo, nombre_archivo_anterior, usuario, fecha_hora }`. El archivo
-   * `.xlsx` anterior no se conserva (decisión cerrada, ver la spec) — solo
-   * este registro.
+   * [E02-HU05/CA-6] Historial de reemplazos de archivos del corte.
+   *
+   * `GET /cortes/{corteId}/historial`, abierto a cualquier rol autenticado.
+   * Responde una lista de entradas
+   * `{ id, tipo, nombre_archivo_anterior, nombre_archivo_nuevo, usuario, fecha_hora }`;
+   * `nombre_archivo_anterior` es `null` si el corte no tenía archivo de esa
+   * fuente. 404 `recurso_no_encontrado` si el corte no existe. El archivo
+   * `.xlsx` anterior no se conserva (decisión cerrada, D25) — solo este
+   * registro.
    */
   historialCorte: (corteId) => solicitar(`/api/v1/cortes/${corteId}/historial`),
 };
