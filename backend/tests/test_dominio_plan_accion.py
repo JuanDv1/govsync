@@ -300,6 +300,30 @@ class TestFiltrarPlanAccion:
 
         assert resultado == []
 
+    def test_una_busqueda_de_menos_de_tres_caracteres_se_aplica_ca04(self):
+        """El dominio NO reimponer el mínimo de 3 caracteres de CA04: lo
+        hace explícito el docstring de `FiltrosPlanAccion` ("esta función
+        SIEMPRE compara si `busqueda` no es None, sin reimponer el mínimo de
+        3 (eso es UX, no una regla de dominio)"). El mínimo de 3 caracteres
+        es la precondición de la acción del usuario en el panel (Excel de
+        requisitos, hoja `HU_E04_02`, HU02-CA04: "escribe 3 o más
+        caracteres"), no una regla de dominio ni un error del endpoint.
+
+        Esta prueba fija ese comportamiento a propósito: si el equipo decide
+        (DEC-015) que el backend debe rechazar por debajo de 3 caracteres,
+        esta es la prueba que hay que cambiar.
+        """
+        filas = [
+            self._fila_agregada(cod="1", nombre="Vías pavimentadas"),
+            self._fila_agregada(cod="2", nombre="Escuelas construidas"),
+        ]
+
+        # "ví" son 2 caracteres (normalizados a "vi"): por debajo del mínimo
+        # de 3 de CA04.
+        resultado = filtrar_plan_accion(filas, FiltrosPlanAccion(busqueda="ví"))
+
+        assert [f.cod_indicador_producto for f in resultado] == ["1"]
+
     def test_combinacion_sector_y_estado_cruce_es_and_ca05(self):
         filas = [
             self._fila_agregada(cod="1", sector="Educación", estado=EstadoCruceMeta.PARCIAL),

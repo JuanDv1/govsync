@@ -335,12 +335,40 @@ class TestCriteriosDeFiltroE04HU02:
     Lo que faltaba y se cubre aquí:
     - CA03: `estado_cruce` como query param (los tres estados de HU01-CA05).
     - CA04: búsqueda por código, por nombre, insensibilidad a mayúsculas y a
-      tildes, y el mínimo de 3 caracteres.
+      tildes, el mínimo de 3 caracteres y el comportamiento por debajo de ese
+      mínimo.
     - CA05: AND entre criterios distintos y OR dentro de un mismo criterio,
       los dos a nivel HTTP.
     - CA06: el resumen recalculado sobre las filas filtradas (no el del
       conjunto original).
-    - CA08: el ciclo "filtrar -> limpiar" devolviendo el conjunto inicial.
+    - CA08: el efecto en el BACKEND de "limpiar filtros", que es omitir los
+      query params.
+
+    =============================================================================
+    ALCANCE: QUÉ NO SE CUBRE AQUÍ Y POR QUÉ
+    =============================================================================
+    - **CA01 (panel de filtros) y CA07 (estado vacío con el mensaje "No hay
+      metas que cumplan los filtros seleccionados" y la opción "Limpiar
+      filtros"): son de FRONTEND.** El Excel de requisitos (hoja `HU_E04_02`)
+      los describe como acciones del usuario sobre el panel: HU02-CA01
+      "selecciona 'Filtros' -> se despliega el panel con Sector, Indicador,
+      Meta y Estado de cruce"; HU02-CA07 "ninguna meta cumple la combinación
+      -> se muestra 'No hay metas que cumplan los filtros seleccionados' con
+      opción 'Limpiar filtros'". La tarjeta también los marca "(Frontend)".
+      En esta rama `develop` el frontend no tiene pantalla de Plan de Acción
+      (`frontend/src/App.jsx` no registra ninguna ruta de Plan de Acción), y
+      no existe ninguna prueba de backend que pueda cubrir un panel o un
+      mensaje: no hay backend que los renderice. Lo que sí corresponde al
+      backend -- que el endpoint exponga los 4 query params y devuelva HTTP
+      200 con `filas: []` y resumen en cero cuando no hay coincidencias --
+      está verificado en las pruebas de "sin coincidencias" de esta misma
+      clase y en las corridas manuales M4, M10 y M15. La validación de CA01 y
+      CA07 corresponde a la tarjeta `[E-04/HU-02] FE - Filtrar Plan de
+      Acción`.
+    - **CA09 (filtro exacto por indicador): no está en el checklist de la
+      tarjeta** sino en el spec (docs/specs/E04-HU02-filtrar-plan-accion.md),
+      agregado por la corrección de D27. Ya tenía cobertura automatizada en
+      `TestFiltrosQueryParamsE04HU02::test_filtra_por_indicador_exacto_d27`.
 
     El corte de prueba tiene TRES metas que se distinguen a propósito en las
     tres dimensiones que los CA miran:
@@ -571,6 +599,46 @@ class TestCriteriosDeFiltroE04HU02:
             "sin_informacion": 0,
         }
 
+    @pytest.mark.parametrize("termino", ["v", "vi"])
+    def test_una_busqueda_de_menos_de_tres_caracteres_se_aplica_sin_rechazar_ca04(
+        self, cliente, sesion, termino: str
+    ) -> None:
+        """CA04 por debajo del mínimo de 3 caracteres: comportamiento FIJADO
+        a propósito, para que quede explícito y no dependa de que nadie lo
+        note.
+
+        Qué dice la fuente: el Excel de requisitos (hoja `HU_E04_02`,
+        HU02-CA04) define el escenario como "escribe 3 o más caracteres en
+        Meta (código o parte del nombre)" -> "se muestran las metas cuyo
+        código o nombre contiene el texto, sin distinguir mayúsculas ni
+        tildes". El "3 o más" es la PRECONDICIÓN de la acción del usuario en
+        el panel, no un contrato de error del endpoint. El docstring de
+        `FiltrosPlanAccion` dice lo mismo desde el dominio: "esta función
+        SIEMPRE compara si `busqueda` no es None, sin reimponer el mínimo de
+        3 (eso es UX, no una regla de dominio)".
+
+        Qué hace el backend entonces: aplica la MISMA regla de "contiene",
+        sin 422 y sin devolver un conjunto vacío artificial. Con 1 y con 2
+        caracteres devuelve las metas que contienen ese fragmento.
+
+        Por qué se fija así y no como "debe fallar": el equipo tiene abierta
+        la decisión DEC-015 (¿el mínimo lo aplica el frontend o lo valida el
+        backend con 422?). Fijar el comportamiento actual deja el cambio a
+        la vista: si se decide que el backend debe rechazar, esta es
+        justamente la prueba que hay que cambiar, y el cambio queda
+        documentado en el diff.
+        """
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
+        self._preparar_corte_con_tres_estados(sesion)
+
+        respuesta = cliente.get("/api/v1/plan-accion/actual", params={"busqueda": termino})
+
+        assert respuesta.status_code == 200
+        # Solo "Vías terciarias mantenidas" contiene "v" o "vi"; ni los
+        # códigos ni los otros nombres los contienen.
+        assert self._codigos(respuesta) == {"170202300"}
+        assert respuesta.json()["resumen"]["total"] == 1
+
     # --- CA05: AND entre criterios, OR dentro de uno mismo ----------------
 
     def test_varios_valores_del_mismo_criterio_se_combinan_con_or_ca05(
@@ -653,12 +721,30 @@ class TestCriteriosDeFiltroE04HU02:
             "sin_informacion": 0,
         }
 
-    # --- CA08: limpiar filtros --------------------------------------------
+    # --- CA08: limpiar filtros (efecto en el BACKEND) ---------------------
 
-    def test_limpiar_filtros_devuelve_el_conjunto_inicial_ca08(self, cliente, sesion) -> None:
-        """Ciclo completo: conjunto inicial -> filtro que lo reduce -> filtros
-        limpiados. Probar solo "petición sin filtros" no demuestra que
-        limpiar devuelva el conjunto inicial."""
+    def test_omitir_los_query_params_devuelve_el_conjunto_inicial_ca08(
+        self, cliente, sesion
+    ) -> None:
+        """CA08 en el BACKEND: el efecto de "limpiar filtros" es que la
+        petición llegue al endpoint SIN los query params de filtro; entonces
+        el backend devuelve todas las metas del corte y el resumen
+        recalculado sobre ellas.
+
+        Alcance exacto de esta prueba: verifica que QUITAR los parámetros de
+        la consulta restituye el conjunto completo. NO verifica el botón
+        "Limpiar filtros" del frontend: ese control es de otra capa (CA01 y
+        CA07 de esta misma HU, tarjeta `[E-04/HU-02] FE - Filtrar Plan de
+        Acción`). El Excel de requisitos (hoja `HU_E04_02`, HU02-CA08)
+        describe la acción del usuario --"selecciona 'Limpiar filtros' -> se
+        muestran todas las metas del corte"--; el "entonces" es lo que se
+        comprueba aquí, y el "cuando" es del frontend.
+
+        Se prueba el ciclo completo (conjunto inicial -> filtro que lo reduce
+        -> parámetros omitidos) y no solo una petición suelta sin filtros,
+        porque lo que hay que demostrar es que quitar los parámetros
+        devuelve el conjunto inicial, no que exista una forma de pedirlo.
+        """
         cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _ADMINISTRADOR
         self._preparar_corte_con_tres_estados(sesion)
 
