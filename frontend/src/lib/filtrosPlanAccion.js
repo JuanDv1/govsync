@@ -154,6 +154,23 @@ export function opcionesIndicador(filas) {
     .sort((a, b) => a.valor.localeCompare(b.valor, "es"));
 }
 
+/**
+ * Query string de `GET /plan-accion/exportar` (E04-HU03) para estos filtros:
+ * los mismos query params que `/actual`. Repite la clave por cada valor de
+ * una lista (`sector=a&sector=b`, OR dentro del criterio) y omite las listas
+ * vacías y la búsqueda vacía. Los textos van codificados en UTF-8 y el
+ * espacio como «+», que el backend decodifica igual. Devuelve `""` si no hay
+ * ningún criterio (exporta todo).
+ */
+export function consultaDeFiltros(filtros) {
+  const parametros = new URLSearchParams();
+  for (const clave of ["sector", "estado_cruce", "cod_indicador_producto"]) {
+    for (const valor of filtros[clave] ?? []) parametros.append(clave, valor);
+  }
+  if (filtros.busqueda) parametros.append("busqueda", filtros.busqueda);
+  return parametros.toString();
+}
+
 /** Total de criterios activos: un valor por cada elemento de las listas, más
  * uno si hay texto de "Meta". */
 export function contarActivosPlan(filtros) {
