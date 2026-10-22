@@ -53,13 +53,40 @@
  * mide 150 px porque aloja, debajo del código, el botón "Ver detalle" a 14px;
  * "Meta" mide 280 px para que los nombres se lean en hasta tres líneas. Si
  * cambia el ancho de "Código meta", cambia también `LEFT_META`.
+ *
+ * TARJETA: [E04-HU02] Filtrar el Plan de Acción
+ * ESPECIFICACIÓN: docs/specs/E04-HU02-filtrar-plan-accion.md
+ * FILTROS (CA01 a CA09): el panel está cerrado al entrar; el botón "Filtros
+ * (n)" lo abre y las etiquetas activas se ven siempre (ver
+ * `components/FiltrosPlanAccion.jsx`). Se filtra EN MEMORIA sobre las filas que
+ * ya trajo `GET /plan-accion/actual`, con `lib/filtrosPlanAccion.js`, que
+ * replica la regla del backend; el resumen del pie (CA06) se recalcula sobre
+ * lo filtrado. El estado de filtros es UN objeto con los nombres de los
+ * query params del backend, para que [E04-HU03] lo mande tal cual al exportar.
+ * Sin resultados (CA07) se muestra el aviso con "Limpiar filtros".
+ *
+ * La tabla (`TablaPlan`) sigue montada aunque no haya resultados (solo se
+ * oculta): así conserva su conjunto de filas abiertas y una fila abierta que
+ * sale del filtro y vuelve sigue abierta. Al cambiar un filtro, el scroll de
+ * la tabla vuelve arriba.
  */
-import { Info } from "lucide-react";
-import { Fragment, useEffect, useState } from "react";
+import { ChevronDown, Info } from "lucide-react";
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { api } from "../api/cliente.js";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
+import FiltrosPlanAccion from "../components/FiltrosPlanAccion.jsx";
 import Card from "../components/shared/Card.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
+import { agregarValor, quitarValor } from "../lib/filtros.js";
+import {
+  busquedaAplicable,
+  calcularResumen,
+  contarActivosPlan,
+  FILTROS_PLAN_VACIOS,
+  filtrarPlanAccion,
+  opcionesIndicador,
+  opcionesSector,
+} from "../lib/filtrosPlanAccion.js";
 import { cop, numero, pct } from "../lib/formato.js";
 
 //: Estado de cruce por meta (D26 punto 3) → texto y tono del `StateBadge`.
@@ -68,6 +95,12 @@ const ESTADOS_CRUCE = {
   parcial: { texto: "Parcial", tono: "ambar" },
   sin_informacion: { texto: "Sin información", tono: "gris" },
 };
+
+//: Las casillas de "Estado de cruce" del panel: `valor` es el que entiende
+//: el backend (`estado_cruce`).
+const ESTADOS_PARA_FILTRO = Object.entries(ESTADOS_CRUCE).map(
+  ([valor, { texto }]) => ({ valor, texto }),
+);
 
 //: Clases comunes de encabezado y celda. Los bordes van en cada celda (no en
 //: la fila) porque la tabla es `border-separate`.
@@ -79,6 +112,12 @@ const TD = "border-b border-gray-100 px-4 py-3 text-sm align-top";
 //: al menos 32px de alto y foco visible.
 const BOTON =
   "inline-flex min-h-8 items-center rounded-sm border border-gray-300 bg-white px-2.5 text-sm font-medium text-azul hover:bg-secundario focus:outline-none focus-visible:ring-2 focus-visible:ring-azul focus-visible:ring-offset-1";
+
+//: Botón de la barra de filtros ("Filtros", "Limpiar filtros"): al menos 40px
+//: de alto, 14px y foco visible. Aparte de `BOTON` porque dos `min-h-*` en la
+//: misma clase no se pueden pisar entre sí.
+const BOTON_FILTROS =
+  "inline-flex min-h-10 items-center gap-1.5 rounded-sm border border-gray-300 bg-white px-3 text-sm font-medium text-azul hover:bg-secundario focus:outline-none focus-visible:ring-2 focus-visible:ring-azul focus-visible:ring-offset-1";
 
 //: Anchos de las dos columnas fijas (CA07). El `left` de la segunda es el
 //: ancho de la primera; si uno cambia, cambia el otro.
@@ -542,6 +581,179 @@ function ErrorPlan({ error, onReintentar }) {
   return <EstadoError error={error} onReintentar={onReintentar} />;
 }
 
+/**
+ * Barra y panel de filtros, leyenda, tabla y pie (E04-HU02). Es un componente
+ * aparte para que sus hooks queden antes de cualquier `return` temprano de
+ * `PlanAccion` (carga y error) y para que los filtros se reinicien al
+ * recargar el plan (se desmonta mientras carga).
+ */
+function ContenidoPlan({ datos }) {
+  const [filtros, setFiltros] = useState(FILTROS_PLAN_VACIOS);
+  // Lo que la persona escribe en "Meta". `filtros.busqueda` guarda solo el
+  // texto ya aplicable (3 o más caracteres, recortado).
+  const [textoMeta, setTextoMeta] = useState("");
+  const [panelAbierto, setPanelAbierto] = useState(false);
+  const idPanel = useId();
+  // Botón "Filtros": destino del foco cuando desaparece el control pulsado
+  // (quitar la última etiqueta o "Limpiar filtros").
+  const refBotonFiltros = useRef(null);
+  // Contenedor con scroll de la tabla: vuelve arriba al cambiar un filtro.
+  const refScroll = useRef(null);
+
+  // Las opciones salen de TODAS las filas, no de las filtradas: no se
+  // reducen al filtrar.
+  const sectores = useMemo(() => opcionesSector(datos.filas), [datos.filas]);
+  const indicadores = useMemo(
+    () => opcionesIndicador(datos.filas),
+    [datos.filas],
+  );
+
+  const filasVisibles = filtrarPlanAccion(datos.filas, filtros);
+  // CA06: el resumen se calcula DESPUÉS de filtrar.
+  const resumen = calcularResumen(filasVisibles);
+  const activos = contarActivosPlan(filtros);
+  const sinResultados = filasVisibles.length === 0;
+
+  function volverArriba() {
+    if (refScroll.current) refScroll.current.scrollTop = 0;
+  }
+
+  // Funcional (`anteriores`) para no leer un `filtros` viejo si llegan dos
+  // cambios seguidos.
+  function agregarFiltro(clave, valor) {
+    setFiltros((anteriores) => agregarValor(anteriores, clave, valor));
+    volverArriba();
+  }
+
+  function quitarFiltro(clave, valor) {
+    if (clave === "busqueda") {
+      setTextoMeta("");
+      setFiltros((anteriores) => ({ ...anteriores, busqueda: "" }));
+    } else {
+      setFiltros((anteriores) => quitarValor(anteriores, clave, valor));
+    }
+    volverArriba();
+  }
+
+  function alternarEstado(valor) {
+    setFiltros((anteriores) =>
+      anteriores.estado_cruce.includes(valor)
+        ? quitarValor(anteriores, "estado_cruce", valor)
+        : agregarValor(anteriores, "estado_cruce", valor),
+    );
+    volverArriba();
+  }
+
+  function cambiarTextoMeta(texto) {
+    setTextoMeta(texto);
+    setFiltros((anteriores) => ({
+      ...anteriores,
+      busqueda: busquedaAplicable(texto),
+    }));
+    volverArriba();
+  }
+
+  // CA08: vuelve a mostrar todas las metas. El foco pasa a "Filtros" porque
+  // el botón pulsado desaparece; se hace aquí, en el manejador, no en un
+  // efecto.
+  function limpiarFiltros() {
+    setFiltros(FILTROS_PLAN_VACIOS);
+    setTextoMeta("");
+    volverArriba();
+    refBotonFiltros.current?.focus();
+  }
+
+  return (
+    <>
+      <Card className="mb-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            ref={refBotonFiltros}
+            type="button"
+            aria-expanded={panelAbierto}
+            aria-controls={idPanel}
+            onClick={() => setPanelAbierto((abierto) => !abierto)}
+            className={BOTON_FILTROS}
+          >
+            Filtros{activos > 0 ? ` (${activos})` : ""}
+            <ChevronDown
+              size={16}
+              aria-hidden="true"
+              className={panelAbierto ? "rotate-180" : ""}
+            />
+          </button>
+
+          {/* Con el aviso de "sin resultados" el botón ya está allí: no hay
+              dos botones con el mismo nombre a la vez. */}
+          {activos > 0 && !sinResultados && (
+            <button
+              type="button"
+              onClick={limpiarFiltros}
+              className={BOTON_FILTROS}
+            >
+              Limpiar filtros
+            </button>
+          )}
+
+          {/* La región live existe SIEMPRE: una región que se monta ya con
+              el texto no se anuncia. */}
+          <p
+            aria-live="polite"
+            aria-atomic="true"
+            className="ml-auto text-sm font-medium text-gray-700"
+          >
+            Mostrando {filasVisibles.length} de {datos.filas.length} metas
+          </p>
+        </div>
+
+        <FiltrosPlanAccion
+          filtros={filtros}
+          textoMeta={textoMeta}
+          opcionesSector={sectores}
+          opcionesIndicador={indicadores}
+          estadosCruce={ESTADOS_PARA_FILTRO}
+          abierto={panelAbierto}
+          idPanel={idPanel}
+          refBotonFiltros={refBotonFiltros}
+          onAgregar={agregarFiltro}
+          onQuitar={quitarFiltro}
+          onCambiarTextoMeta={cambiarTextoMeta}
+          onAlternarEstado={alternarEstado}
+        />
+      </Card>
+
+      {sinResultados ? (
+        <Vacio
+          titulo="No hay metas que cumplan los filtros seleccionados"
+          accion={
+            <button
+              type="button"
+              onClick={limpiarFiltros}
+              className={BOTON_FILTROS}
+            >
+              Limpiar filtros
+            </button>
+          }
+        />
+      ) : (
+        <Leyenda />
+      )}
+
+      {/* La tabla no se desmonta sin resultados, solo se oculta: conserva
+          sus filas abiertas. */}
+      <Card padding="p-0" className="overflow-hidden" hidden={sinResultados}>
+        <div ref={refScroll} className="max-h-[70vh] overflow-auto">
+          <TablaPlan filas={filasVisibles} />
+        </div>
+        <p className="border-t border-gray-200 px-4 py-3 text-sm font-medium text-gray-700">
+          Total: {resumen.total} | Completo: {resumen.completo} | Parcial:{" "}
+          {resumen.parcial} | Sin información: {resumen.sin_informacion}
+        </p>
+      </Card>
+    </>
+  );
+}
+
 export default function PlanAccion() {
   const [intento, setIntento] = useState(0);
   // `clave` identifica a qué intento pertenece lo guardado: mientras no
@@ -592,8 +804,6 @@ export default function PlanAccion() {
     );
   }
 
-  const { resumen } = datos;
-
   return (
     <section className="mx-auto max-w-[1400px]">
       <header className="mb-4">
@@ -610,18 +820,7 @@ export default function PlanAccion() {
           descripcion="El corte actual no registra ninguna meta en el Plan de Acción."
         />
       ) : (
-        <>
-          <Leyenda />
-          <Card padding="p-0" className="overflow-hidden">
-            <div className="max-h-[70vh] overflow-auto">
-              <TablaPlan filas={datos.filas} />
-            </div>
-            <p className="border-t border-gray-200 px-4 py-3 text-sm font-medium text-gray-700">
-              Total: {resumen.total} | Completo: {resumen.completo} | Parcial:{" "}
-              {resumen.parcial} | Sin información: {resumen.sin_informacion}
-            </p>
-          </Card>
-        </>
+        <ContenidoPlan datos={datos} />
       )}
     </section>
   );

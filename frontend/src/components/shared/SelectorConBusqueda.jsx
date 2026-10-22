@@ -38,10 +38,41 @@
  * efecto. Las sugerencias se derivan durante el render, el índice activo se
  * reinicia en los manejadores (onChange/onFocus/onBlur) y se acota al
  * leerlo. El único efecto toca solo el DOM (`scrollIntoView`).
+ *
+ * TAMAÑO (`tamano`): "normal" es la escala compacta de docs/DESIGN_SPEC.md §3
+ * y la que usa el panel de la matriz; NO se toca. "grande" es para el Plan de
+ * Acción [E04-HU02], que se aparta a propósito de esa escala por legibilidad:
+ * etiqueta y textos a 14px en `gray-700`/`gray-600`, campo de al menos 40px de
+ * alto, foco visible, y la lista con `z-30` para quedar por encima del
+ * encabezado fijo de la tabla (`z-20`). Solo cambian las clases (`TAMANOS`):
+ * el comportamiento es el mismo.
  */
 import { useEffect, useId, useState } from "react";
 
 import { normalizar, sugerir } from "../../lib/filtros.js";
+
+//: Clases por tamaño. "normal" conserva exactamente las de la matriz.
+const TAMANOS = {
+  normal: {
+    etiqueta:
+      "mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500",
+    campo:
+      "w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul disabled:cursor-not-allowed disabled:opacity-40",
+    lista:
+      "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-sm border border-gray-200 bg-white py-1 shadow-sm",
+    opcion: "cursor-pointer whitespace-normal break-words px-3 py-1.5 text-xs",
+    ayuda: "mt-1 text-[11px] text-gray-500",
+  },
+  grande: {
+    etiqueta: "mb-1.5 block text-sm font-medium text-gray-700",
+    campo:
+      "min-h-10 w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul disabled:cursor-not-allowed disabled:opacity-40",
+    lista:
+      "absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-sm border border-gray-200 bg-white py-1 shadow-sm",
+    opcion: "cursor-pointer whitespace-normal break-words px-3 py-2 text-sm",
+    ayuda: "mt-1 text-sm text-gray-600",
+  },
+};
 
 function enPlural(cantidad, singular, plural) {
   return cantidad === 1 ? singular : plural;
@@ -110,9 +141,11 @@ export default function SelectorConBusqueda({
   minCaracteres = 0,
   maxSugerencias,
   placeholder,
+  tamano = "normal",
   mensajeSinCoincidencias = "Sin coincidencias",
   mensajeSinOpciones = "Sin opciones en este corte",
 }) {
+  const clases = TAMANOS[tamano] ?? TAMANOS.normal;
   const id = useId();
   const idEntrada = `${id}-entrada`;
   const idLista = `${id}-lista`;
@@ -226,10 +259,7 @@ export default function SelectorConBusqueda({
 
   return (
     <div className="relative">
-      <label
-        htmlFor={idEntrada}
-        className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
-      >
+      <label htmlFor={idEntrada} className={clases.etiqueta}>
         {etiqueta}
       </label>
 
@@ -250,7 +280,7 @@ export default function SelectorConBusqueda({
         onFocus={alEnfocar}
         onBlur={alPerderFoco}
         onKeyDown={alPresionarTecla}
-        className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul disabled:cursor-not-allowed disabled:opacity-40"
+        className={clases.campo}
       />
 
       {hayLista && (
@@ -263,7 +293,7 @@ export default function SelectorConBusqueda({
           // pulsar una opción o la barra de scroll, antes de que llegue el
           // clic.
           onMouseDown={(evento) => evento.preventDefault()}
-          className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-sm border border-gray-200 bg-white py-1 shadow-sm"
+          className={clases.lista}
         >
           {sugerencias.map((opcion, posicion) => {
             const esActiva = posicion === activo;
@@ -274,7 +304,7 @@ export default function SelectorConBusqueda({
                 role="option"
                 aria-selected={esActiva}
                 onClick={() => seleccionar(opcion.valor)}
-                className={`cursor-pointer whitespace-normal break-words px-3 py-1.5 text-xs ${
+                className={`${clases.opcion} ${
                   esActiva
                     ? "bg-secundario text-navy"
                     : "text-gray-700 hover:bg-gray-50"
@@ -288,7 +318,7 @@ export default function SelectorConBusqueda({
       )}
 
       {mensajeAyuda && (
-        <p id={idAyuda} className="mt-1 text-[11px] text-gray-500">
+        <p id={idAyuda} className={clases.ayuda}>
           {mensajeAyuda}
         </p>
       )}
