@@ -252,8 +252,11 @@ export const api = {
    * (Opción B, D25 en docs/DECISIONES.md): no existe un paso de "validar sin
    * aplicar", así que la confirmación (CA-3) se pide ANTES de llamarlo.
    *
-   * 200 con `{ tipo, nombre_archivo, filas_reconocidas, codigos, descartes }`
-   * (`ArchivoFuenteRespuestaParcial`; no trae `fecha_carga`). Errores, todos
+   * 200 con `{ tipo, nombre_archivo, filas_reconocidas, codigos, descartes,
+   * metas_eliminadas }` (`ArchivoFuenteRespuestaParcial`; no trae
+   * `fecha_carga`). `metas_eliminadas` ([E02-HU05/CA-7]) es la lista de
+   * códigos de meta que el corte tenía y el PDT nuevo ya no trae; `[]` para
+   * las otras fuentes. Errores, todos
    * con `{ codigo, mensaje, detalles }`: 403 `permiso_insuficiente`
    * (visitante); 404 `recurso_no_encontrado`; 409 `operacion_no_permitida`
    * con `detalles.motivo` en `"corte_no_registrado"` (sigue en BORRADOR) o

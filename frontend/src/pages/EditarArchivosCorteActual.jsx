@@ -43,9 +43,11 @@
  *         edición.
  *   CA-6  historial de auditoría (sección separada, con su propio estado de
  *         carga/error para no bloquear el resto de la pantalla si falla).
- *   CA-7  (avance físico): NO tiene contraparte en esta pantalla — es
- *         `[VALIDAR]` en la spec, bloqueado por una decisión de negocio
- *         abierta y sin módulo de avance físico.
+ *   CA-7  solo la mitad "informar": si el PDT de reemplazo ya no trae alguna
+ *         meta, `AvisoMetasEliminadas` la lista bajo el resultado. La mitad
+ *         "conservar avances físicos" sigue `[VALIDAR]` en la spec,
+ *         bloqueada por una decisión de negocio abierta y sin módulo de
+ *         avance físico.
  *   CA-9  (restricción por rol): solo `administrador` y `gestor`
  *         (`puedeEscribir`, D24) ven "Editar archivos" en `Cortes.jsx` y esta
  *         pantalla. Cualquier otro rol (el `visitante`, de solo lectura) ve un
@@ -60,6 +62,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/cliente.js";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
+import AvisoMetasEliminadas from "../components/AvisoMetasEliminadas.jsx";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import Card from "../components/shared/Card.jsx";
@@ -405,10 +408,15 @@ export default function EditarArchivosCorteActual() {
                 cargado
                 resultado={
                   resultado && (
-                    <p className="text-xs text-gray-600">
-                      Archivo reemplazado y cruce recalculado.{" "}
-                      {resultado.filas_reconocidas ?? 0} filas reconocidas.
-                    </p>
+                    <>
+                      <p className="text-xs text-gray-600">
+                        Archivo reemplazado y cruce recalculado.{" "}
+                        {resultado.filas_reconocidas ?? 0} filas reconocidas.
+                      </p>
+                      <AvisoMetasEliminadas
+                        metas={resultado.metas_eliminadas}
+                      />
+                    </>
                   )
                 }
                 error={errores[tipo]}

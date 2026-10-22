@@ -119,6 +119,11 @@ class ArchivoFuente:
     deduplicar. `[]` para archivos reutilizados y para PDT/EJECUCION
     (mismo criterio que `descartes`).
     """
+    metas_eliminadas: list[str] = field(default_factory=list)
+    """[E02-HU05][CA07]: códigos de las metas que tenía el corte y que el
+    archivo de reemplazo ya no trae, ordenados. Solo se calcula al
+    reemplazar el PDT del corte actual; `[]` en cualquier otro caso.
+    """
 
 
 @dataclass(slots=True)

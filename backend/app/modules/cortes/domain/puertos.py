@@ -134,6 +134,11 @@ class RepositorioDatosCorte(ABC):
     def reemplazar_proyectos(self, corte_id: uuid.UUID, proyectos: list[dict[str, Any]]) -> int: ...
 
     @abstractmethod
+    def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
+        """[E02-HU05][CA07]: códigos de indicador de producto de las metas
+        que el corte tiene hoy cargadas (`set()` si no tiene ninguna)."""
+
+    @abstractmethod
     def copiar_datos(
         self, origen_id: uuid.UUID, destino_id: uuid.UUID, tipo: TipoArchivoFuente
     ) -> int:
