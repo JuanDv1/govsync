@@ -104,7 +104,14 @@ class RepositorioDatosCorteEnMemoria(RepositorioDatosCorte):
     uno) — ya no quedan NotImplementedError aquí, mismo estado que el real
     en `develop` desde que [HU-03][BE-06]/[HU-04][BE-01] cerraron."""
 
+    def __init__(self) -> None:
+        self.codigos_metas: dict[uuid.UUID, set[str]] = {}
+
+    def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
+        return self.codigos_metas.get(corte_id, set())
+
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
+        self.codigos_metas[corte_id] = {m["cod_indicador_producto"] for m in metas}
         return len(metas)
 
     def reemplazar_presupuesto(self, corte_id, rubros, contratos, registros) -> int:
@@ -129,6 +136,18 @@ class LectorPDTFalso(LectorArchivoFuente):
         return ResultadoLectura(
             tipo=TipoArchivo.PDT,
             filas={"metas": [{"cod_indicador_producto": "040110500", "principal": True}]},
+            conteos={"metas": 1},
+        )
+
+
+class LectorPDTOtraMetaFalso(LectorPDTFalso):
+    """Como `LectorPDTFalso`, pero con una meta distinta: simula el archivo de
+    reemplazo que ya no trae la meta `040110500` ([E02-HU05][CA07])."""
+
+    def leer(self, contenido: bytes, nombre_archivo: str, vigencia: int) -> ResultadoLectura:
+        return ResultadoLectura(
+            tipo=TipoArchivo.PDT,
+            filas={"metas": [{"cod_indicador_producto": "330105300", "principal": True}]},
             conteos={"metas": 1},
         )
 
@@ -449,6 +468,7 @@ def cliente_con_lectores():
     app.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
     with TestClient(app) as c:
         c.repo_cortes = repo_cortes
+        c.servicio = servicio
         yield c
     app.dependency_overrides.clear()
 
@@ -884,3 +904,67 @@ def test_get_historial_reemplazos_corte_inexistente_devuelve_404(cliente):
 
     assert respuesta.status_code == 404
     assert respuesta.json()["codigo"] == "recurso_no_encontrado"
+
+
+# --- POST /cortes/{id}/archivos/{tipo}/reemplazo — metas_eliminadas [E02-HU05][CA07] ---
+
+
+def _reemplazar(cliente, corte_id: str, tipo: str):
+    return cliente.post(
+        f"/api/v1/cortes/{corte_id}/archivos/{tipo}/reemplazo",
+        files={
+            "archivo": (
+                "archivo_corregido.xlsx",
+                _xlsx_minimo(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+
+
+def test_reemplazo_pdt_informa_las_metas_que_ya_no_vienen_ca07(cliente_con_lectores):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+    cliente_con_lectores.servicio._lectores[TipoArchivoFuente.PDT] = LectorPDTOtraMetaFalso()
+
+    respuesta = _reemplazar(cliente_con_lectores, corte_id, "PDT")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["metas_eliminadas"] == ["040110500"]
+
+
+def test_reemplazo_pdt_con_las_mismas_metas_devuelve_lista_vacia_ca07(cliente_con_lectores):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+
+    respuesta = _reemplazar(cliente_con_lectores, corte_id, "PDT")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["metas_eliminadas"] == []
+
+
+def test_reemplazo_de_proyectos_devuelve_metas_eliminadas_vacio_ca07(cliente_con_lectores):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+
+    respuesta = _reemplazar(cliente_con_lectores, corte_id, "PROYECTOS")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["metas_eliminadas"] == []
+
+
+def test_carga_normal_de_pdt_devuelve_metas_eliminadas_vacio_ca07(cliente_con_lectores):
+    """La carga inicial (POST /archivos/{tipo}, HU-02) no calcula metas
+    eliminadas: el campo existe en el contrato pero siempre va vacío."""
+    corte_id = _crear_corte_borrador(cliente_con_lectores)
+
+    respuesta = cliente_con_lectores.post(
+        f"/api/v1/cortes/{corte_id}/archivos/PDT",
+        files={
+            "archivo": (
+                "pdt.xlsx",
+                _xlsx_minimo(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+
+    assert respuesta.status_code == 201
+    assert respuesta.json()["metas_eliminadas"] == []

@@ -635,3 +635,46 @@ def test_reemplazar_proyectos_no_hace_commit(sesion, repo) -> None:
     sesion.rollback()
 
     assert sesion.scalars(select(ProyectoORM)).all() == []
+
+
+def _agregar_meta(sesion, corte_id: uuid.UUID, codigo: str) -> None:
+    sesion.add(
+        MetaORM(
+            id=uuid.uuid4(), corte_id=corte_id, cod_indicador_producto=codigo, es_principal=True
+        )
+    )
+    sesion.flush()
+
+
+def test_listar_codigos_metas_devuelve_solo_los_del_corte_pedido(sesion, repo) -> None:
+    """[E02-HU05][CA07]: cada corte es una fotografía independiente, las
+    metas de otro corte no cuentan."""
+    corte_id = _crear_corte(sesion, vigencia=2025, estado=EstadoCorte.REGISTRADO)
+    otro_id = _crear_corte(sesion, vigencia=2026)
+    _agregar_meta(sesion, corte_id, "040110500")
+    _agregar_meta(sesion, corte_id, "040110600")
+    _agregar_meta(sesion, otro_id, "330105300")
+
+    assert repo.listar_codigos_metas(corte_id) == {"040110500", "040110600"}
+
+
+def test_listar_codigos_metas_de_corte_sin_metas_devuelve_conjunto_vacio(sesion, repo) -> None:
+    corte_id = _crear_corte(sesion)
+
+    assert repo.listar_codigos_metas(corte_id) == set()
+
+
+def test_listar_codigos_metas_conserva_el_codigo_con_cero_inicial_como_texto(sesion, repo) -> None:
+    """CLAUDE.md: el código se guarda como texto, `040110500` no puede volverse 40110500."""
+    corte_id = _crear_corte(sesion)
+    _agregar_meta(sesion, corte_id, "040110500")
+
+    assert repo.listar_codigos_metas(corte_id) == {"040110500"}
+
+
+def test_listar_codigos_metas_colapsa_codigos_repetidos(sesion, repo) -> None:
+    corte_id = _crear_corte(sesion)
+    _agregar_meta(sesion, corte_id, "040110500")
+    _agregar_meta(sesion, corte_id, "040110500")
+
+    assert repo.listar_codigos_metas(corte_id) == {"040110500"}

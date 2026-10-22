@@ -102,6 +102,10 @@ class RepositorioDatosCorteEnMemoria(RepositorioDatosCorte):
             tuple[uuid.UUID, list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]
         ] = []
         self.llamadas_reemplazar_proyectos: list[tuple[uuid.UUID, list[dict[str, Any]]]] = []
+        self.codigos_metas: set[str] = set()
+
+    def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
+        return self.codigos_metas
 
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
         self.llamadas_reemplazar_metas.append((corte_id, metas))
@@ -781,6 +785,10 @@ class TestCargarArchivoIntegracionPDT:
         assert servicio._datos.llamadas_reemplazar_metas == []
 
 
+def _meta(codigo: str) -> dict[str, Any]:
+    return {"cod_indicador_producto": codigo}
+
+
 class TestReemplazarArchivoCorteActual:
     """[E02-HU05] CA01, CA04, CA05, CA06, CA08, CA09 (la restricción de rol es
     responsabilidad de la capa API -- `EscrituraDep`, ver router.py -- no de
@@ -854,7 +862,9 @@ class TestReemplazarArchivoCorteActual:
         assert servicio.llamadas["rollback"] == 0
 
     def test_reemplazo_exitoso_actualiza_el_archivo_y_registra_el_historial(self, servicio):
-        resultado = ResultadoLectura(tipo=TipoArchivoIngesta.PDT, filas={"metas": [{"a": 1}]})
+        resultado = ResultadoLectura(
+            tipo=TipoArchivoIngesta.PDT, filas={"metas": [_meta("040110500")]}
+        )
         lector = _LectorFalso(resultado=resultado)
         self._servicio_con_lector(servicio, lector)
         corte = _crear_corte_registrado_con_archivos(
@@ -879,8 +889,86 @@ class TestReemplazarArchivoCorteActual:
         assert historial[0].nombre_archivo_nuevo == "pdt_nuevo.xlsx"
         assert historial[0].usuario == "ana@muni.gov.co"
 
+    def _reemplazar_pdt_con_metas(self, servicio, previas: set[str], nuevas: list[str]):
+        """Reemplaza el PDT de un corte que tenía las metas `previas` por un
+        archivo cuyas metas son `nuevas`; devuelve el `ArchivoFuente`."""
+        resultado = ResultadoLectura(
+            tipo=TipoArchivoIngesta.PDT, filas={"metas": [_meta(c) for c in nuevas]}
+        )
+        self._servicio_con_lector(servicio, _LectorFalso(resultado=resultado))
+        servicio._datos.codigos_metas = previas
+        corte = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2026, fecha_corte=date(2026, 9, 8)
+        )
+        return servicio.reemplazar_archivo_corte_actual(
+            corte.id, TipoArchivoFuente.PDT, _XLSX_VALIDO, "pdt_nuevo.xlsx", "ana@muni.gov.co"
+        )
+
+    def test_informa_las_metas_que_el_pdt_nuevo_ya_no_trae_ca07(self, servicio):
+        archivo = self._reemplazar_pdt_con_metas(
+            servicio, previas={"040110500", "040110600", "040110700"}, nuevas=["040110500"]
+        )
+
+        assert archivo.metas_eliminadas == ["040110600", "040110700"]
+
+    def test_no_informa_nada_si_el_pdt_nuevo_conserva_todas_las_metas_ca07(self, servicio):
+        archivo = self._reemplazar_pdt_con_metas(
+            servicio,
+            previas={"040110500"},
+            nuevas=["040110500", "040110600"],
+        )
+
+        assert archivo.metas_eliminadas == []
+
+    def test_si_el_pdt_nuevo_viene_sin_metas_todas_se_informan_como_eliminadas_ca07(self, servicio):
+        archivo = self._reemplazar_pdt_con_metas(
+            servicio, previas={"040110600", "040110500"}, nuevas=[]
+        )
+
+        assert archivo.metas_eliminadas == ["040110500", "040110600"]
+
+    def test_si_el_corte_no_tenia_metas_no_hay_nada_que_informar_ca07(self, servicio):
+        archivo = self._reemplazar_pdt_con_metas(servicio, previas=set(), nuevas=["040110500"])
+
+        assert archivo.metas_eliminadas == []
+
+    def test_un_codigo_repetido_en_el_pdt_nuevo_no_altera_el_resultado_ca07(self, servicio):
+        archivo = self._reemplazar_pdt_con_metas(
+            servicio,
+            previas={"040110500", "040110600"},
+            nuevas=["040110500", "040110500"],
+        )
+
+        assert archivo.metas_eliminadas == ["040110600"]
+
+    def test_el_reemplazo_con_metas_eliminadas_igual_se_aplica_y_audita_ca07(self, servicio):
+        """CA07 solo informa: no bloquea el reemplazo ni cambia su auditoría."""
+        archivo = self._reemplazar_pdt_con_metas(
+            servicio, previas={"040110500", "040110600"}, nuevas=["040110500"]
+        )
+
+        assert archivo.nombre_archivo == "pdt_nuevo.xlsx"
+        assert servicio.llamadas["rollback"] == 0
+        assert len(servicio._cortes.historial) == 1
+
+    def test_reemplazar_otra_fuente_no_calcula_metas_eliminadas_ca07(self, servicio):
+        resultado = ResultadoLectura(tipo=TipoArchivoIngesta.PROYECTOS, filas={"proyectos": []})
+        servicio._lectores = {TipoArchivoFuente.PROYECTOS: _LectorFalso(resultado=resultado)}
+        servicio._datos.codigos_metas = {"040110500"}
+        corte = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2026, fecha_corte=date(2026, 9, 8)
+        )
+
+        archivo = servicio.reemplazar_archivo_corte_actual(
+            corte.id, TipoArchivoFuente.PROYECTOS, _XLSX_VALIDO, "bpin.xlsx", "ana@muni.gov.co"
+        )
+
+        assert archivo.metas_eliminadas == []
+
     def test_si_falla_el_load_se_revierte_todo_incluido_el_historial(self, servicio):
-        resultado = ResultadoLectura(tipo=TipoArchivoIngesta.PDT, filas={"metas": [{"a": 1}]})
+        resultado = ResultadoLectura(
+            tipo=TipoArchivoIngesta.PDT, filas={"metas": [_meta("040110500")]}
+        )
         lector = _LectorFalso(resultado=resultado)
         self._servicio_con_lector(servicio, lector)
         corte = _crear_corte_registrado_con_archivos(
@@ -911,7 +999,9 @@ class TestObtenerHistorialReemplazos:
             servicio.obtener_historial_reemplazos(uuid.uuid4())
 
     def test_devuelve_el_historial_del_corte(self, servicio):
-        resultado = ResultadoLectura(tipo=TipoArchivoIngesta.PDT, filas={"metas": [{"a": 1}]})
+        resultado = ResultadoLectura(
+            tipo=TipoArchivoIngesta.PDT, filas={"metas": [_meta("040110500")]}
+        )
         lector = _LectorFalso(resultado=resultado)
         servicio._lectores = {TipoArchivoFuente.PDT: lector}
         corte = _crear_corte_registrado_con_archivos(

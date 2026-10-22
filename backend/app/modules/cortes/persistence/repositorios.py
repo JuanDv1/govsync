@@ -267,6 +267,10 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
     def __init__(self, sesion: Session) -> None:
         self._s = sesion
 
+    def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
+        consulta = select(MetaORM.cod_indicador_producto).where(MetaORM.corte_id == corte_id)
+        return set(self._s.scalars(consulta))
+
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
         """[HU-02][BE-04]: reemplazo total de las metas del corte.
 

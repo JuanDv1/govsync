@@ -123,6 +123,59 @@ def test_reemplazo_pdt_actualiza_matriz_e_historial(sesion, escenario):
     assert historial[0].usuario == "gestor@santarosa.gov.co"
 
 
+def test_reemplazo_pdt_informa_la_meta_que_desaparecio(escenario):
+    corte_id, _, servicio = escenario
+
+    archivo = servicio.reemplazar_archivo_corte_actual(
+        corte_id,
+        TipoArchivoFuente.PDT,
+        XLSX_VALIDO,
+        "pdt_nuevo.xlsx",
+        "gestor@santarosa.gov.co",
+    )
+
+    assert archivo.metas_eliminadas == [CODIGO_ANTERIOR]
+
+
+def test_segundo_reemplazo_ya_no_informa_la_meta_que_ya_se_habia_ido(escenario):
+    """Lo que se compara es lo persistido: tras el primer reemplazo el corte
+    ya solo tiene CODIGO_NUEVO, así que repetir el mismo archivo no elimina nada."""
+    corte_id, _, servicio = escenario
+    argumentos = (
+        corte_id,
+        TipoArchivoFuente.PDT,
+        XLSX_VALIDO,
+        "pdt.xlsx",
+        "gestor@santarosa.gov.co",
+    )
+
+    primero = servicio.reemplazar_archivo_corte_actual(*argumentos)
+    segundo = servicio.reemplazar_archivo_corte_actual(*argumentos)
+
+    assert primero.metas_eliminadas == [CODIGO_ANTERIOR]
+    assert segundo.metas_eliminadas == []
+
+
+def test_fallo_en_auditoria_no_pierde_las_metas_que_se_iban_a_eliminar(
+    sesion, escenario, monkeypatch
+):
+    """Si el reemplazo se revierte, la meta "eliminada" sigue en la base: el
+    aviso nunca debe describir un cambio que no se aplicó."""
+    corte_id, repositorio_cortes, servicio = escenario
+
+    def auditoria_que_falla(_historial):
+        raise RuntimeError("Fallo simulado al registrar historial")
+
+    monkeypatch.setattr(repositorio_cortes, "registrar_historial_reemplazo", auditoria_que_falla)
+
+    with pytest.raises(RuntimeError):
+        servicio.reemplazar_archivo_corte_actual(
+            corte_id, TipoArchivoFuente.PDT, XLSX_VALIDO, "pdt_nuevo.xlsx", "g@santarosa.gov.co"
+        )
+
+    assert RepositorioDatosCorteSQL(sesion).listar_codigos_metas(corte_id) == {CODIGO_ANTERIOR}
+
+
 def test_fallo_en_auditoria_revierte_metas_y_archivo(sesion, escenario, monkeypatch):
     corte_id, repositorio_cortes, servicio = escenario
 

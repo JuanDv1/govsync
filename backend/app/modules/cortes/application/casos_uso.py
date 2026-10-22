@@ -301,9 +301,12 @@ class ServicioCortes:
             corte, tipo, contenido, nombre_archivo
         )
 
+        metas_eliminadas = self._metas_eliminadas(corte_id, tipo, resultado)
+
         # --- LOAD + auditoría: misma transacción, mismo patrón de rollback ---
         try:
             archivo = self._cargar_y_registrar(corte_id, tipo, nombre_saneado, resultado)
+            archivo.metas_eliminadas = metas_eliminadas
             self._cortes.registrar_historial_reemplazo(
                 HistorialReemplazoArchivo(
                     corte_id=corte_id,
@@ -319,6 +322,20 @@ class ServicioCortes:
             raise
         corte.archivos[tipo] = archivo
         return archivo
+
+    def _metas_eliminadas(
+        self, corte_id: uuid.UUID, tipo: TipoArchivoFuente, resultado: ResultadoLectura
+    ) -> list[str]:
+        """[E02-HU05][CA07]: códigos de las metas del corte que el PDT de
+        reemplazo ya no trae. Se calcula ANTES del Load, que borra las metas
+        anteriores. Para EJECUCION/PROYECTOS devuelve `[]`: no hay metas en
+        esas fuentes. Solo informa: no borra ni conserva avance físico (E-03
+        no existe todavía, ver D25)."""
+        if tipo is not TipoArchivoFuente.PDT:
+            return []
+        antes = self._datos.listar_codigos_metas(corte_id)
+        despues = {meta["cod_indicador_producto"] for meta in resultado.filas["metas"]}
+        return sorted(antes - despues)
 
     def obtener_historial_reemplazos(self, corte_id: uuid.UUID) -> list[HistorialReemplazoArchivo]:
         """[E02-HU05][CA06]: historial de reemplazos de un corte, para el

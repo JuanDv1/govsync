@@ -178,6 +178,9 @@ class ArchivoFuenteRespuestaParcial(BaseModel):
     filas_contratacion_reconocidas: int | None = None
     codigos: list[str]
     descartes: list[DescarteRespuesta]
+    metas_eliminadas: list[str] = []
+    """[E02-HU05][CA07]: metas que tenía el corte y el PDT de reemplazo ya
+    no trae. `[]` en la carga normal y al reemplazar EJECUCION/PROYECTOS."""
 
 
 class HistorialReemplazoRespuesta(BaseModel):
@@ -427,6 +430,7 @@ def _a_dto_parcial(resultado) -> ArchivoFuenteRespuestaParcial:
             )
             for descarte in resultado.descartes
         ],
+        metas_eliminadas=resultado.metas_eliminadas,
     )
 
 
