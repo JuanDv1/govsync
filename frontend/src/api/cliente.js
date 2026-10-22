@@ -16,6 +16,8 @@
  * `pestanas_faltantes` o `archivos_faltantes` según el caso. [UX-03] depende
  * de que este cliente NO los descarte.
  */
+import { nombreDeContentDisposition } from "../lib/descarga.js";
+
 const BASE = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
 // [HU-E01-01] / D23/D24: el token vive en ProveedorAutenticacion.jsx, no
@@ -104,6 +106,92 @@ const CLAVES_FILTRO_MATRIZ = [
   "sector",
   "programa",
 ];
+
+const TIPO_XLSX =
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+/**
+ * [E04-HU03] Descarga un `.xlsx` autenticado.
+ *
+ * Es una función aparte, y repite a propósito las cabeceras y la construcción
+ * del `ErrorApi` de `solicitar`, porque `solicitar` lee SIEMPRE la respuesta
+ * con `.text()` y la parsea como JSON: con un archivo binario corrompería los
+ * bytes. No se extrajo código común para no tocar `solicitar`, que usan todas
+ * las pantallas y no tiene pruebas automáticas.
+ *
+ * Devuelve `{ blob, nombre }`. `nombre` sale de `Content-Disposition`; es
+ * `null` si el navegador no deja leerlo (el CORS del backend no lo expone en
+ * peticiones entre orígenes), y quien llama arma el nombre de respaldo.
+ *
+ * Lanza `ErrorApi` en cada fallo: con `estado`, `codigo` y `detalles` si el
+ * backend respondió con su JSON de error; `error_red` si no hubo conexión; y
+ * `respuesta_invalida` si responde 200 pero no es un Excel (otro tipo de
+ * contenido o cuerpo vacío), para no guardar un archivo corrupto.
+ */
+async function descargarExcel(ruta) {
+  const headers = { Accept: `${TIPO_XLSX}, application/json;q=0.9` };
+
+  const token = obtenerToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  let respuesta;
+
+  try {
+    respuesta = await fetch(`${BASE}${ruta}`, { method: "GET", headers });
+  } catch {
+    throw new ErrorApi("No se pudo conectar con el servidor.", {
+      codigo: "error_red",
+      detalles: {},
+    });
+  }
+
+  if (!respuesta.ok) {
+    let datos = null;
+    try {
+      datos = JSON.parse(await respuesta.text());
+    } catch {
+      datos = null;
+    }
+    throw new ErrorApi(datos?.mensaje ?? "No se pudo completar la solicitud.", {
+      estado: respuesta.status,
+      codigo: datos?.codigo,
+      detalles: datos?.detalles,
+    });
+  }
+
+  const tipo = respuesta.headers.get("Content-Type") ?? "";
+  if (!tipo.toLowerCase().includes("spreadsheetml")) {
+    throw new ErrorApi("La respuesta del servidor no es un archivo de Excel.", {
+      estado: respuesta.status,
+      codigo: "respuesta_invalida",
+    });
+  }
+
+  let blob;
+  try {
+    blob = await respuesta.blob();
+  } catch {
+    throw new ErrorApi("No se pudo conectar con el servidor.", {
+      codigo: "error_red",
+      detalles: {},
+    });
+  }
+  if (blob.size === 0) {
+    throw new ErrorApi("El archivo recibido está vacío.", {
+      estado: respuesta.status,
+      codigo: "respuesta_invalida",
+    });
+  }
+
+  return {
+    blob,
+    nombre: nombreDeContentDisposition(
+      respuesta.headers.get("Content-Disposition"),
+    ),
+  };
+}
 
 export const api = {
   /**
@@ -316,4 +404,23 @@ export const api = {
    * `busqueda` y `cod_indicador_producto` (E04-HU02), que esta función no usa.
    */
   planAccionActual: () => solicitar("/api/v1/plan-accion/actual"),
+
+  /**
+   * [E04-HU03] `GET /api/v1/plan-accion/exportar`: el Plan de Acción como
+   * `.xlsx`. `consulta` es el query string de los filtros
+   * (`consultaDeFiltros`, lib/filtrosPlanAccion.js; `""` exporta todo): los
+   * mismos query params que `/actual`. Devuelve `{ blob, nombre }`; `nombre`
+   * es `null` si el navegador no expone `Content-Disposition` (ver
+   * `descargarExcel`).
+   *
+   * Errores (`ErrorApi`): 401 `credenciales_invalidas`; 403
+   * `permiso_insuficiente`; 404 `recurso_no_encontrado` (ningún corte
+   * REGISTRADO); 409 `operacion_no_permitida` con
+   * `detalles.archivos_faltantes`; `error_red`; y `respuesta_invalida` si
+   * la respuesta no es un Excel.
+   */
+  exportarPlanAccion: (consulta = "") =>
+    descargarExcel(
+      `/api/v1/plan-accion/exportar${consulta ? `?${consulta}` : ""}`,
+    ),
 };
