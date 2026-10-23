@@ -20,9 +20,11 @@
  * Dos cortes de una vigencia nunca tienen la misma fecha (índice único
  * `ux_corte_vigencia_fecha`, D9): las opciones no se pueden confundir.
  *
- * DELTA (CA05): Δ = Corte B − Corte A, calculado por el backend. Verde con
- * flecha arriba si sube, rojo con flecha abajo si baja, gris si no cambia: el
- * sentido sale del valor real (`sentidoDelta`), nunca solo del color. "—"
+ * DELTA (CA05): Δ = Corte B − Corte A, calculado por el backend. En pantalla
+ * la columna se llama "Cambio" (el símbolo Δ no se entendía), y bajo "A" y
+ * "B" va la fecha corta de cada corte (DD/MM). Verde con flecha arriba si
+ * sube, rojo con flecha abajo si baja, gris si no cambia: el sentido sale del
+ * valor real (`sentidoDelta`), nunca solo del color. "—"
  * cuando no es comparable: meta en un solo corte (CA06, insignia "Solo en
  * Corte A/B") o sin dato en uno de los dos. "% Avance físico" es siempre "—"
  * (E-03 sin implementar).
@@ -66,9 +68,45 @@ import {
 
 //: Clases de encabezado y celda (copia de `PlanAccion.jsx`). Los bordes van
 //: en cada celda porque la tabla es `border-separate` (columnas fijas).
-const TH =
-  "whitespace-nowrap border-b border-gray-200 bg-gray-50 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-600";
+//: `TH_BASE` no lleva fondo: la columna "Cambio" pone el suyo sin que dos
+//: clases `bg-*` dependan del orden del CSS.
+const TH_BASE =
+  "whitespace-nowrap border-b border-gray-200 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-600";
+const TH = `${TH_BASE} bg-gray-50`;
 const TD = "border-b border-gray-100 px-3 py-3 text-sm align-top";
+
+//: Separadores de la comparación. La tabla es `border-separate`, así que los
+//: bordes van en cada celda (encabezado y filas). Línea marcada al inicio de
+//: cada grupo de métricas y suave entre A | B | Cambio. El inicio del primer
+//: grupo lo aporta el `border-r` de la columna fija "Meta" (mismo color), así
+//: no hay línea doble y el separador sigue a la vista al desplazar.
+const INICIO_GRUPO = "border-l border-l-gray-300";
+const ENTRE_SUBCOLUMNAS = "border-l border-l-gray-100";
+const BORDE_META = "border-r border-r-gray-300";
+//: Fondo muy leve de la columna "Cambio". El del encabezado es opaco porque
+//: es `sticky`: lo que se desplaza por debajo no debe verse a través.
+const FONDO_CAMBIO_CELDA = "bg-gray-50";
+const FONDO_CAMBIO_ENCABEZADO = "bg-gray-100";
+
+/**
+ * Bordes de una subcolumna (`posicion`: 0 = A, 1 = B, 2 = Cambio) del grupo
+ * `grupo` (0 = % Avance físico, 1 = Ejecución, 2 = % Avance financiero).
+ */
+function bordesSubcolumna(grupo, posicion) {
+  if (posicion === 0) return grupo === 0 ? "" : INICIO_GRUPO;
+  return ENTRE_SUBCOLUMNAS;
+}
+
+/** Bordes y fondo de una celda de fila en esa subcolumna. */
+function clasesCelda(grupo, posicion) {
+  const fondo = posicion === 2 ? FONDO_CAMBIO_CELDA : "";
+  return `${bordesSubcolumna(grupo, posicion)} ${fondo}`;
+}
+
+/** "AAAA-MM-DD" → "DD/MM", partiendo el texto (nunca `new Date`). */
+function fechaCorta(iso) {
+  return fechaCorte(iso)?.slice(0, 5) ?? null;
+}
 
 //: Columnas fijas "Código" y "Meta": el `left` de "Meta" es el ancho de
 //: "Código"; si uno cambia, cambia el otro.
@@ -120,15 +158,17 @@ function Guion({ title }) {
 }
 
 /**
- * Celda de Δ (CA05). `formato` es `copConSigno` o `ppConSigno`. Sin Δ, "—"
- * con un `title` que explica por qué no es comparable.
+ * Celda de la columna "Cambio" (Δ = B − A, CA05). `formato` es `copConSigno`
+ * o `ppConSigno`. Sin cambio calculable, "—" con un `title` que explica por
+ * qué no es comparable. `className` lleva los bordes y el fondo de la columna.
  */
-function CeldaDelta({ valor, formato, sinDato }) {
+function CeldaDelta({ valor, formato, sinDato, className = "" }) {
   const sentido = sentidoDelta(valor);
+  const clases = `${TD} whitespace-nowrap text-right ${className}`;
 
   if (sentido === null) {
     return (
-      <td className={`${TD} whitespace-nowrap text-right`}>
+      <td className={clases}>
         <Guion title={sinDato} />
       </td>
     );
@@ -136,7 +176,7 @@ function CeldaDelta({ valor, formato, sinDato }) {
 
   if (sentido === "igual") {
     return (
-      <td className={`${TD} whitespace-nowrap text-right`}>
+      <td className={clases}>
         <span className="font-mono text-gray-500">{formato(valor)}</span>
         <span className="sr-only">, sin cambio</span>
       </td>
@@ -146,7 +186,7 @@ function CeldaDelta({ valor, formato, sinDato }) {
   const sube = sentido === "sube";
   const Flecha = sube ? ArrowUp : ArrowDown;
   return (
-    <td className={`${TD} whitespace-nowrap text-right`}>
+    <td className={clases}>
       <span
         className={`inline-flex items-center gap-1 font-mono font-semibold ${
           sube ? "text-green-700" : "text-red-700"
@@ -160,9 +200,9 @@ function CeldaDelta({ valor, formato, sinDato }) {
   );
 }
 
-function CeldaValor({ valor, formato }) {
+function CeldaValor({ valor, formato, className = "" }) {
   return (
-    <td className={`${TD} whitespace-nowrap text-right`}>
+    <td className={`${TD} whitespace-nowrap text-right ${className}`}>
       {valor == null ? (
         <Guion />
       ) : (
@@ -187,7 +227,7 @@ function FilaComparacion({ fila }) {
         {fila.cod_indicador_producto}
       </td>
       <td
-        className={`${TD} sticky z-10 bg-white ${LEFT_META} ${ANCHO_META} border-r border-r-gray-200`}
+        className={`${TD} sticky z-10 bg-white ${LEFT_META} ${ANCHO_META} ${BORDE_META}`}
       >
         <div className="line-clamp-3" title={fila.nombre_producto ?? ""}>
           {fila.nombre_producto ?? <Guion />}
@@ -203,51 +243,95 @@ function FilaComparacion({ fila }) {
         )}
       </td>
       {/* % Avance físico: siempre sin dato hasta E-03. */}
-      <td className={`${TD} text-right`}>
-        <Guion />
-      </td>
-      <td className={`${TD} text-right`}>
-        <Guion />
-      </td>
-      <td className={`${TD} text-right`}>
-        <Guion />
-      </td>
-      <CeldaValor valor={fila.ejecucion_a} formato={(v) => cop(Number(v))} />
-      <CeldaValor valor={fila.ejecucion_b} formato={(v) => cop(Number(v))} />
+      {[0, 1, 2].map((posicion) => (
+        <td
+          key={posicion}
+          className={`${TD} text-right ${clasesCelda(0, posicion)}`}
+        >
+          <Guion />
+        </td>
+      ))}
+      <CeldaValor
+        valor={fila.ejecucion_a}
+        formato={(v) => cop(Number(v))}
+        className={clasesCelda(1, 0)}
+      />
+      <CeldaValor
+        valor={fila.ejecucion_b}
+        formato={(v) => cop(Number(v))}
+        className={clasesCelda(1, 1)}
+      />
       <CeldaDelta
         valor={fila.ejecucion_delta}
         formato={copConSigno}
         sinDato={sinDato}
+        className={clasesCelda(1, 2)}
       />
-      <CeldaValor valor={fila.avance_financiero_pct_a} formato={pct} />
-      <CeldaValor valor={fila.avance_financiero_pct_b} formato={pct} />
+      <CeldaValor
+        valor={fila.avance_financiero_pct_a}
+        formato={pct}
+        className={clasesCelda(2, 0)}
+      />
+      <CeldaValor
+        valor={fila.avance_financiero_pct_b}
+        formato={pct}
+        className={clasesCelda(2, 1)}
+      />
       <CeldaDelta
         valor={fila.avance_financiero_delta}
         formato={ppConSigno}
         sinDato={sinDato}
+        className={clasesCelda(2, 2)}
       />
     </tr>
   );
 }
 
-/** Subencabezados A | B | Δ de un grupo, con la fecha para el lector. */
-function SubencabezadosGrupo({ fechaA, fechaB }) {
+/**
+ * Subencabezados A | B | Cambio del grupo `grupo`. Bajo A y B se ve la fecha
+ * corta del corte (DD/MM); el `title` y el texto para el lector dicen el
+ * significado completo.
+ */
+function SubencabezadosGrupo({ grupo, fechaA, fechaB }) {
   const subcolumnas = [
-    { texto: "A", detalle: `Corte A, ${fechaA}` },
-    { texto: "B", detalle: `Corte B, ${fechaB}` },
-    { texto: "Δ", detalle: "Diferencia B menos A" },
+    {
+      texto: "A",
+      fecha: fechaCorta(fechaA),
+      detalle: `Corte A, ${fechaCorte(fechaA)}`,
+    },
+    {
+      texto: "B",
+      fecha: fechaCorta(fechaB),
+      detalle: `Corte B, ${fechaCorte(fechaB)}`,
+    },
+    { texto: "Cambio", fecha: null, detalle: "Cambio: Corte B menos Corte A" },
   ];
-  return subcolumnas.map((sub) => (
-    <th
-      key={sub.texto}
-      scope="col"
-      title={sub.detalle}
-      className={`${TH} sticky top-10 z-10 text-right`}
-    >
-      <span aria-hidden="true">{sub.texto}</span>
-      <span className="sr-only">{sub.detalle}</span>
-    </th>
-  ));
+  return subcolumnas.map((sub, posicion) => {
+    const esCambio = posicion === 2;
+    return (
+      <th
+        key={sub.texto}
+        scope="col"
+        title={sub.detalle}
+        className={`${TH_BASE} sticky top-10 z-10 text-right ${bordesSubcolumna(grupo, posicion)} ${
+          esCambio ? `min-w-[72px] ${FONDO_CAMBIO_ENCABEZADO}` : "bg-gray-50"
+        }`}
+      >
+        <span aria-hidden="true" className="block">
+          {sub.texto}
+        </span>
+        {sub.fecha && (
+          <span
+            aria-hidden="true"
+            className="block font-mono font-normal normal-case tracking-normal text-gray-600"
+          >
+            {sub.fecha}
+          </span>
+        )}
+        <span className="sr-only">{sub.detalle}</span>
+      </th>
+    );
+  });
 }
 
 function TablaComparacion({ datos }) {
@@ -280,25 +364,29 @@ function TablaComparacion({ datos }) {
           <th
             scope="col"
             rowSpan={2}
-            className={`${TH} sticky top-0 z-20 align-bottom ${LEFT_META} ${ANCHO_META} border-r border-r-gray-200`}
+            className={`${TH} sticky top-0 z-20 align-bottom ${LEFT_META} ${ANCHO_META} ${BORDE_META}`}
           >
             Meta
           </th>
-          {grupos.map((grupo) => (
+          {grupos.map((grupo, indice) => (
             <th
               key={grupo}
               scope="colgroup"
               colSpan={3}
-              className={`${TH} sticky top-0 z-10 ${ALTO_FILA_GRUPOS} border-l border-l-gray-200 text-center`}
+              className={`${TH} sticky top-0 z-10 ${ALTO_FILA_GRUPOS} ${indice === 0 ? "" : INICIO_GRUPO} text-center`}
             >
               {grupo}
             </th>
           ))}
         </tr>
         <tr>
-          {grupos.map((grupo) => (
+          {grupos.map((grupo, indice) => (
             <Fragment key={grupo}>
-              <SubencabezadosGrupo fechaA={fechaA} fechaB={fechaB} />
+              <SubencabezadosGrupo
+                grupo={indice}
+                fechaA={datos.corte_a.fecha_corte}
+                fechaB={datos.corte_b.fecha_corte}
+              />
             </Fragment>
           ))}
         </tr>
@@ -315,7 +403,7 @@ function TablaComparacion({ datos }) {
 function Leyenda() {
   return (
     <ul className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-sm text-gray-600">
-      <li>Δ = Corte B − Corte A.</li>
+      <li>Cambio = Corte B − Corte A.</li>
       <li className="flex items-center gap-1.5">
         <ArrowUp size={14} aria-hidden="true" className="text-green-700" />
         <span>sube</span>
@@ -521,9 +609,14 @@ function Resultado({
         <>
           <Leyenda />
           <Card padding="p-0" className="overflow-hidden">
+            {/* `relative` es imprescindible: los textos `sr-only` de las
+                celdas son `position: absolute`. Sin un ancestro posicionado
+                su bloque contenedor era el documento, escapaban del scroll de
+                la tabla y estiraban la página miles de píxeles por debajo de
+                la tabla (medido: 7 719 px de alto frente a 902 px). */}
             <div
               aria-busy={actualizando}
-              className="max-h-[70vh] overflow-auto"
+              className="relative max-h-[70vh] overflow-auto"
             >
               <TablaComparacion datos={datos} />
             </div>
