@@ -16,6 +16,7 @@ import Login from "./pages/Login.jsx";
 import Disposicion from "./components/Disposicion.jsx";
 import MatrizRelacion from "./pages/MatrizRelacion.jsx";
 import PlanAccion from "./pages/PlanAccion.jsx";
+import CompararCortes from "./pages/CompararCortes.jsx";
 import { Vacio } from "./components/Estados.jsx";
 import { useAutenticacion } from "./auth/ProveedorAutenticacion.jsx";
 
@@ -116,6 +117,16 @@ export default function App() {
           element={
             <RutaConPlanAccion>
               <PlanAccion />
+            </RutaConPlanAccion>
+          }
+        />
+        {/* [E04-HU04] Comparación entre dos cortes de una vigencia
+            (`?vigencia=N`); mismo permiso que el Plan de Acción. */}
+        <Route
+          path="/plan-accion/comparar"
+          element={
+            <RutaConPlanAccion>
+              <CompararCortes />
             </RutaConPlanAccion>
           }
         />
