@@ -69,18 +69,46 @@
  * oculta): así conserva su conjunto de filas abiertas y una fila abierta que
  * sale del filtro y vuelve sigue abierta. Al cambiar un filtro, el scroll de
  * la tabla vuelve arriba.
+ *
+ * TARJETA: [E04-HU03] Exportar el Plan de Acción a Excel
+ * ESPECIFICACIÓN: docs/specs/E04-HU03-exportar-plan-accion-excel.md
+ * EXPORTAR (CA01, CA02, CA05, CA07, CA08): el botón "Exportar a Excel" baja lo
+ * que se ve con los filtros activos (o todo, sin filtros) de `GET
+ * /plan-accion/exportar`, que acepta los mismos query params que `/actual`.
+ * La consulta se arma al hacer clic con `consultaDeFiltros(filtros)`. Sin
+ * filas visibles el botón está deshabilitado (CA07). Mientras exporta NO se
+ * usa `disabled` (algunos navegadores sacan el foco del botón): se usa
+ * `aria-disabled`, `aria-busy`, el texto "Generando archivo…" y un ref que
+ * ignora un segundo clic. El nombre del archivo es el del servidor; si el
+ * navegador no deja leerlo, el de D28 (ver `lib/descarga.js`). Cualquier
+ * fallo, incluso al guardar, cae en el mensaje de error (CA08), y un mismo
+ * intento publica un solo mensaje: el éxito por una región `aria-live` y el
+ * error solo con `role="alert"`.
  */
-import { ChevronDown, Info } from "lucide-react";
+import {
+  ChevronDown,
+  CircleAlert,
+  CircleCheck,
+  Download,
+  Info,
+  LoaderCircle,
+} from "lucide-react";
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
 import { api } from "../api/cliente.js";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import FiltrosPlanAccion from "../components/FiltrosPlanAccion.jsx";
 import Card from "../components/shared/Card.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
+import {
+  guardarArchivo,
+  mensajeErrorExportacion,
+  nombreArchivoPlanAccion,
+} from "../lib/descarga.js";
 import { agregarValor, quitarValor } from "../lib/filtros.js";
 import {
   busquedaAplicable,
   calcularResumen,
+  consultaDeFiltros,
   contarActivosPlan,
   FILTROS_PLAN_VACIOS,
   filtrarPlanAccion,
@@ -599,6 +627,13 @@ function ContenidoPlan({ datos }) {
   const refBotonFiltros = useRef(null);
   // Contenedor con scroll de la tabla: vuelve arriba al cambiar un filtro.
   const refScroll = useRef(null);
+  // Exportación a Excel. `exportando` pinta el botón; `refExportando` es el
+  // cerrojo contra un segundo clic (el estado se actualiza después del render,
+  // el ref al instante). `mensajeExito` y `mensajeError` nunca están los dos.
+  const [exportando, setExportando] = useState(false);
+  const [mensajeExito, setMensajeExito] = useState("");
+  const [mensajeError, setMensajeError] = useState("");
+  const refExportando = useRef(false);
 
   // Las opciones salen de TODAS las filas, no de las filtradas: no se
   // reducen al filtrar.
@@ -618,10 +653,20 @@ function ContenidoPlan({ datos }) {
     if (refScroll.current) refScroll.current.scrollTop = 0;
   }
 
+  // [E04-HU03] Un cambio de filtro deja obsoleto el último "Descarga lista" o
+  // aviso de error: ya no corresponde a lo que se ve. Se borra aquí, en los
+  // manejadores, no en un efecto (regla set-state-in-effect), y nunca por
+  // tiempo: un mensaje no desaparece solo.
+  function borrarMensajesExportacion() {
+    setMensajeExito("");
+    setMensajeError("");
+  }
+
   // Funcional (`anteriores`) para no leer un `filtros` viejo si llegan dos
   // cambios seguidos.
   function agregarFiltro(clave, valor) {
     setFiltros((anteriores) => agregarValor(anteriores, clave, valor));
+    borrarMensajesExportacion();
     volverArriba();
   }
 
@@ -632,6 +677,7 @@ function ContenidoPlan({ datos }) {
     } else {
       setFiltros((anteriores) => quitarValor(anteriores, clave, valor));
     }
+    borrarMensajesExportacion();
     volverArriba();
   }
 
@@ -641,6 +687,7 @@ function ContenidoPlan({ datos }) {
         ? quitarValor(anteriores, "estado_cruce", valor)
         : agregarValor(anteriores, "estado_cruce", valor),
     );
+    borrarMensajesExportacion();
     volverArriba();
   }
 
@@ -650,6 +697,7 @@ function ContenidoPlan({ datos }) {
       ...anteriores,
       busqueda: busquedaAplicable(texto),
     }));
+    borrarMensajesExportacion();
     volverArriba();
   }
 
@@ -659,8 +707,37 @@ function ContenidoPlan({ datos }) {
   function limpiarFiltros() {
     setFiltros(FILTROS_PLAN_VACIOS);
     setTextoMeta("");
+    borrarMensajesExportacion();
     volverArriba();
     refBotonFiltros.current?.focus();
+  }
+
+  // [E04-HU03] Descarga lo que se ve. La consulta se calcula AQUÍ, al hacer
+  // clic, con los `filtros` de ese instante. `guardarArchivo` va dentro del
+  // `try` para que un fallo al guardar también caiga en el mensaje de error
+  // (CA08); el `finally` baja el cerrojo y `exportando` pase lo que pase.
+  async function exportar() {
+    if (sinResultados || refExportando.current) return;
+    refExportando.current = true;
+    setExportando(true);
+    // Un intento nuevo borra el mensaje anterior: nunca quedan juntos un
+    // "Descarga lista" viejo y un error.
+    setMensajeExito("");
+    setMensajeError("");
+
+    try {
+      const consulta = consultaDeFiltros(filtros);
+      const { blob, nombre } = await api.exportarPlanAccion(consulta);
+      const nombreArchivo =
+        nombre ?? nombreArchivoPlanAccion(datos.vigencia, datos.fecha_corte);
+      guardarArchivo(blob, nombreArchivo);
+      setMensajeExito(`Descarga lista: ${nombreArchivo}`);
+    } catch (error) {
+      setMensajeError(mensajeErrorExportacion(error));
+    } finally {
+      refExportando.current = false;
+      setExportando(false);
+    }
   }
 
   return (
@@ -695,6 +772,32 @@ function ContenidoPlan({ datos }) {
             </button>
           )}
 
+          {/* [E04-HU03/CA07] `disabled` nativo SOLO sin filas visibles. Mientras
+              exporta se usa `aria-disabled` para que el foco se quede en el
+              botón. El estado deshabilitado no depende solo del color: borde
+              discontinuo, cursor de "no permitido" y, al exportar, el texto
+              cambia y gira un icono (solo si la persona acepta animaciones). */}
+          <button
+            type="button"
+            onClick={exportar}
+            disabled={sinResultados}
+            aria-disabled={exportando || undefined}
+            aria-busy={exportando}
+            title={sinResultados ? "No hay metas para exportar" : undefined}
+            className={`${BOTON_FILTROS} disabled:cursor-not-allowed disabled:border-dashed disabled:bg-gray-50 disabled:text-gray-500 aria-disabled:cursor-progress aria-disabled:bg-gray-50`}
+          >
+            {exportando ? (
+              <LoaderCircle
+                size={16}
+                aria-hidden="true"
+                className="motion-safe:animate-spin"
+              />
+            ) : (
+              <Download size={16} aria-hidden="true" />
+            )}
+            {exportando ? "Generando archivo…" : "Exportar a Excel"}
+          </button>
+
           {/* La región live existe SIEMPRE: una región que se monta ya con
               el texto no se anuncia. */}
           <p
@@ -705,6 +808,34 @@ function ContenidoPlan({ datos }) {
             Mostrando {filasVisibles.length} de {datos.filas.length} metas
           </p>
         </div>
+
+        {/* [E04-HU03] Un solo canal por resultado: el éxito, en una región
+            `aria-live` siempre montada; el error, solo con `role="alert"`
+            (que se anuncia al aparecer). */}
+        <p
+          aria-live="polite"
+          className={`flex items-center gap-2 text-sm font-medium text-green-800 ${mensajeExito ? "mt-3" : ""}`}
+        >
+          {mensajeExito && (
+            <>
+              <CircleCheck size={16} aria-hidden="true" className="shrink-0" />
+              <span>{mensajeExito}</span>
+            </>
+          )}
+        </p>
+        {mensajeError && (
+          <p
+            role="alert"
+            className="mt-3 flex items-start gap-2 rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          >
+            <CircleAlert
+              size={16}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0"
+            />
+            <span>{mensajeError}</span>
+          </p>
+        )}
 
         <FiltrosPlanAccion
           filtros={filtros}
