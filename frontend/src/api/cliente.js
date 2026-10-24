@@ -423,4 +423,39 @@ export const api = {
     descargarExcel(
       `/api/v1/plan-accion/exportar${consulta ? `?${consulta}` : ""}`,
     ),
+
+  /**
+   * [E04-HU04] `GET /api/v1/plan-accion/cortes-disponibles?vigencia=N`:
+   * cortes REGISTRADO de esa vigencia, `[{ id, fecha_corte }]` ordenados por
+   * `fecha_corte` ascendente ("AAAA-MM-DD"). Una lista de 0 o 1 no es un
+   * error: quien llama decide (HU04-CA02). 403 si el rol no tiene acceso.
+   */
+  cortesDisponibles: (vigencia) =>
+    solicitar(
+      `/api/v1/plan-accion/cortes-disponibles?${new URLSearchParams({ vigencia: String(vigencia) })}`,
+    ),
+
+  /**
+   * [E04-HU04] `GET /api/v1/plan-accion/comparar?<consulta>`. `consulta` es
+   * el query string de `consultaComparacion` (lib/comparacion.js). Devuelve
+   * `{ corte_a, corte_b, filas }`: el backend decide cuál es "Corte A" (el
+   * más antiguo) sin importar el orden de los ids (D29). Las cifras llegan
+   * como TEXTO (Decimal) o `null`.
+   *
+   * Errores (`ErrorApi`): 403 `permiso_insuficiente`; 404 si un corte no
+   * existe; 409 con `detalles.motivo` `"corte_no_registrado"` o
+   * `detalles.archivos_faltantes`; 422 con `detalles.motivo`
+   * `"mismo_corte"` o `"vigencias_distintas"`.
+   */
+  compararCortes: (consulta) =>
+    solicitar(`/api/v1/plan-accion/comparar?${consulta}`),
+
+  /**
+   * [E04-HU04] `GET /api/v1/plan-accion/comparar/exportar?<consulta>`: la
+   * comparación como `.xlsx`, con la misma consulta que `compararCortes`.
+   * Devuelve `{ blob, nombre }` y lanza los mismos errores que
+   * `exportarPlanAccion` y `compararCortes` (ver `descargarExcel`).
+   */
+  exportarComparacion: (consulta) =>
+    descargarExcel(`/api/v1/plan-accion/comparar/exportar?${consulta}`),
 };

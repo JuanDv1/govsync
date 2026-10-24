@@ -42,3 +42,61 @@ export function fechaHora(iso) {
     minute: "2-digit",
   });
 }
+
+/**
+ * [E04-HU04] Fecha de corte "AAAA-MM-DD" → "DD/MM/AAAA" partiendo el texto.
+ * Nunca `new Date(iso)`: lo interpreta como UTC y en Colombia muestra el día
+ * anterior. Copia de la función local de `PlanAccion.jsx` (deuda: que esa
+ * pantalla use esta). `null`/`undefined` devuelve `null`.
+ */
+export function fechaCorte(iso) {
+  if (!iso) return null;
+  const [anio, mes, dia] = iso.split("-");
+  return `${dia}/${mes}/${anio}`;
+}
+
+/**
+ * Valor absoluto con `decimales` fijos, o con 2 si con `decimales` quedaría en
+ * cero sin serlo (un Δ distinto de 0 nunca se muestra como "0").
+ */
+function absolutoLegible(n, decimales) {
+  const formatear = (cifras) =>
+    Math.abs(n).toLocaleString("es-CO", {
+      minimumFractionDigits: cifras,
+      maximumFractionDigits: cifras,
+    });
+  const texto = formatear(decimales);
+  return n !== 0 && Number(Math.abs(n).toFixed(decimales)) === 0
+    ? formatear(2)
+    : texto;
+}
+
+//: Signo de un Δ: "+" o "−" (signo menos tipográfico, no el guion).
+function signo(n) {
+  if (n > 0) return "+";
+  if (n < 0) return "−";
+  return "";
+}
+
+/**
+ * [E04-HU04/CA05] Δ de ejecución en pesos, con signo: "+$ 1.234.567",
+ * "−$ 50.000", "$ 0". Pesos enteros; si el Δ es distinto de 0 pero
+ * redondearía a "$ 0", lleva 2 decimales ("+$ 0,30"). `null` si no hay Δ.
+ * Acepta el texto Decimal del backend.
+ */
+export function copConSigno(valor) {
+  if (valor == null) return null;
+  const n = Number(valor);
+  return `${signo(n)}$ ${absolutoLegible(n, 0)}`;
+}
+
+/**
+ * [E04-HU04/CA05] Δ de un porcentaje en puntos porcentuales, con signo:
+ * "+2,5 pp", "−0,8 pp", "0,0 pp". 1 decimal; si el Δ es distinto de 0 pero
+ * redondearía a 0, lleva 2 ("+0,03 pp"). `null` si no hay Δ.
+ */
+export function ppConSigno(valor) {
+  if (valor == null) return null;
+  const n = Number(valor);
+  return `${signo(n)}${absolutoLegible(n, 1)} pp`;
+}

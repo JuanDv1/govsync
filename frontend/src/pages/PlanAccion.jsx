@@ -84,8 +84,17 @@
  * fallo, incluso al guardar, cae en el mensaje de error (CA08), y un mismo
  * intento publica un solo mensaje: el éxito por una región `aria-live` y el
  * error solo con `role="alert"`.
+ *
+ * TARJETA: [E04-HU04] Comparar dos cortes de una misma vigencia
+ * COMPARAR (CA01, CA02): la barra pide los cortes REGISTRADO de la vigencia
+ * (`api.cortesDisponibles`). Con 2 o más, "Comparar cortes" lleva a
+ * `/plan-accion/comparar?vigencia=N` (`CompararCortes.jsx`); con menos, el
+ * botón está deshabilitado con el aviso "Se necesitan al menos 2 cortes de la
+ * vigencia" visible a su lado. Si esa consulta falla, el botón queda
+ * deshabilitado con su propio aviso y el resto de la pantalla sigue igual.
  */
 import {
+  ArrowLeftRight,
   ChevronDown,
   CircleAlert,
   CircleCheck,
@@ -94,6 +103,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/cliente.js";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import FiltrosPlanAccion from "../components/FiltrosPlanAccion.jsx";
@@ -615,6 +625,56 @@ function ErrorPlan({ error, onReintentar }) {
  * `PlanAccion` (carga y error) y para que los filtros se reinicien al
  * recargar el plan (se desmonta mientras carga).
  */
+/**
+ * [E04-HU04/CA01-CA02] "Comparar cortes". `cortes` es la respuesta de
+ * `cortesDisponibles` (o `null` mientras carga) y `error` el de esa consulta.
+ * Con 2 o más cortes es un enlace; si no, un botón deshabilitado con el motivo
+ * visible a su lado (asociado con `aria-describedby`). El aspecto
+ * deshabilitado no depende solo del color: borde discontinuo y cursor de "no
+ * permitido".
+ */
+function BotonCompararCortes({ vigencia, cortes, error }) {
+  const idAviso = useId();
+
+  if (!error && cortes !== null && cortes.length >= 2) {
+    return (
+      <Link
+        to={`/plan-accion/comparar?vigencia=${vigencia}`}
+        className={BOTON_FILTROS}
+      >
+        <ArrowLeftRight size={16} aria-hidden="true" />
+        Comparar cortes
+      </Link>
+    );
+  }
+
+  let aviso = null;
+  if (error) aviso = "No se pudo comprobar los cortes disponibles";
+  else if (cortes !== null) {
+    aviso = "Se necesitan al menos 2 cortes de la vigencia";
+  }
+
+  return (
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        disabled
+        aria-describedby={aviso ? idAviso : undefined}
+        aria-busy={cortes === null && !error}
+        className={`${BOTON_FILTROS} disabled:cursor-not-allowed disabled:border-dashed disabled:bg-gray-50 disabled:text-gray-500`}
+      >
+        <ArrowLeftRight size={16} aria-hidden="true" />
+        Comparar cortes
+      </button>
+      {aviso && (
+        <span id={idAviso} className="text-sm text-gray-600">
+          {aviso}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function ContenidoPlan({ datos }) {
   const [filtros, setFiltros] = useState(FILTROS_PLAN_VACIOS);
   // Lo que la persona escribe en "Meta". `filtros.busqueda` guarda solo el
@@ -634,6 +694,34 @@ function ContenidoPlan({ datos }) {
   const [mensajeExito, setMensajeExito] = useState("");
   const [mensajeError, setMensajeError] = useState("");
   const refExportando = useRef(false);
+  // [E04-HU04] Cortes REGISTRADO de la vigencia, para "Comparar cortes".
+  // `clave` es la vigencia de lo guardado: mientras no coincida, carga. El
+  // único setState del efecto ocurre en los callbacks de la promesa.
+  const [cortes, setCortes] = useState({
+    clave: null,
+    datos: null,
+    error: null,
+  });
+
+  useEffect(() => {
+    const clave = datos.vigencia;
+    let vigente = true;
+
+    api
+      .cortesDisponibles(clave)
+      .then((lista) => {
+        if (vigente) setCortes({ clave, datos: lista, error: null });
+      })
+      .catch((error) => {
+        if (vigente) setCortes({ clave, datos: null, error });
+      });
+
+    return () => {
+      vigente = false;
+    };
+  }, [datos.vigencia]);
+
+  const cortesListos = cortes.clave === datos.vigencia;
 
   // Las opciones salen de TODAS las filas, no de las filtradas: no se
   // reducen al filtrar.
@@ -797,6 +885,12 @@ function ContenidoPlan({ datos }) {
             )}
             {exportando ? "Generando archivo…" : "Exportar a Excel"}
           </button>
+
+          <BotonCompararCortes
+            vigencia={datos.vigencia}
+            cortes={cortesListos ? cortes.datos : null}
+            error={cortesListos ? cortes.error : null}
+          />
 
           {/* La región live existe SIEMPRE: una región que se monta ya con
               el texto no se anuncia. */}
