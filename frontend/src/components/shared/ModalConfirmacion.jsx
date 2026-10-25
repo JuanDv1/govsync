@@ -19,6 +19,8 @@
  */
 import { useEffect, useRef } from "react";
 
+import Boton from "./Boton.jsx";
+
 export default function ModalConfirmacion({
   titulo = "Confirmar",
   mensaje,
@@ -48,37 +50,36 @@ export default function ModalConfirmacion({
         aria-modal="true"
         aria-labelledby="modal-confirmacion-titulo"
         aria-describedby="modal-confirmacion-mensaje"
-        className="w-full max-w-sm rounded-sm border border-gray-200 bg-white p-5 shadow-lg"
+        //: `max-h-full overflow-y-auto`: el overlay ya deja 16 px de margen; con
+        //: una pantalla de 768 px de alto o con zoom, el contenido se desplaza
+        //: dentro del diálogo en vez de cortarse.
+        className="max-h-full w-full max-w-md overflow-y-auto rounded-tarjeta border border-gray-200 bg-white p-6 shadow-suave"
       >
         <p
           id="modal-confirmacion-titulo"
-          className="text-sm font-semibold text-gray-800"
+          className="text-tarjeta font-semibold text-gray-800"
         >
           {titulo}
         </p>
         <p
           id="modal-confirmacion-mensaje"
-          className="mt-2 text-campo text-gray-600"
+          className="mt-3 text-cuerpo text-gray-700"
         >
           {mensaje}
         </p>
 
-        <div className="mt-5 flex justify-end gap-2">
-          <button
+        {/* `Boton` pasa el `ref` al <button> (React 19 lo recibe como prop y
+            `Boton` lo reenvía con `...resto`), así el foco inicial sigue en
+            "Cancelar". Ambos de 44 px. */}
+        <div className="mt-6 flex flex-wrap justify-end gap-3">
+          <Boton
             ref={botonCancelarRef}
-            type="button"
+            variante="secundario"
             onClick={onCancelar}
-            className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50"
           >
             {textoCancelar}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirmar}
-            className="rounded-sm bg-navy px-3 py-1.5 text-campo font-semibold text-white transition-colors hover:bg-navy-hover"
-          >
-            {textoConfirmar}
-          </button>
+          </Boton>
+          <Boton onClick={onConfirmar}>{textoConfirmar}</Boton>
         </div>
       </div>
     </div>

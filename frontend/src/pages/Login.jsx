@@ -19,7 +19,9 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-[42%] shrink-0 flex-col justify-between bg-navy p-12">
+      {/* Relleno de 32 px y de 48 px desde `xl`: con zoom o en pantallas de
+          1024 px el panel azul es angosto y 48 px le dejaban poco texto. */}
+      <aside className="flex w-[42%] shrink-0 flex-col justify-between bg-navy p-8 xl:p-12">
         <div>
           <div className="text-2xl font-bold tracking-[0.12em] text-white">
             GOV<span className="text-azul-claro">SYNC</span>
@@ -48,8 +50,10 @@ export default function Login() {
         </div>
       </aside>
 
-      <div className="flex flex-1 items-center justify-center bg-white">
-        <div style={{ width: "22rem" }}>
+      {/* `w-full max-w-sm` (384 px) en vez de un ancho fijo en línea: el
+          formulario se encoge con el panel y nunca lo desborda. */}
+      <div className="flex min-w-0 flex-1 items-center justify-center bg-white px-6">
+        <div className="w-full max-w-sm">
           <EncabezadoPantalla
             titulo="Iniciar sesión"
             descripcion="Acceso restringido a funcionarios autorizados de la Alcaldía."
