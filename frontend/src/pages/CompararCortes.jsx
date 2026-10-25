@@ -44,12 +44,15 @@
  */
 import { ArrowDown, ArrowLeft, ArrowUp } from "lucide-react";
 import { Fragment, useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 import { api } from "../api/cliente.js";
 import BotonExportarExcel from "../components/BotonExportarExcel.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
+import Boton from "../components/shared/Boton.jsx";
+import Campo from "../components/shared/Campo.jsx";
 import Card from "../components/shared/Card.jsx";
+import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
 import {
   consultaComparacion,
@@ -73,7 +76,7 @@ import {
 const TH_BASE =
   "whitespace-nowrap border-b border-gray-200 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-600";
 const TH = `${TH_BASE} bg-gray-50`;
-const TD = "border-b border-gray-100 px-3 py-3 text-sm align-top";
+const TD = "border-b border-gray-100 px-3 py-3 text-campo align-top";
 
 //: Separadores de la comparación. La tabla es `border-separate`, así que los
 //: bordes van en cada celda (encabezado y filas). Línea marcada al inicio de
@@ -117,13 +120,6 @@ const LEFT_META = "left-[120px]";
 //: Alto de la primera fila del encabezado: la segunda queda fija justo debajo
 //: (`top-10`).
 const ALTO_FILA_GRUPOS = "h-10";
-
-//: Controles de la pantalla: al menos 40 px, 14 px y foco visible.
-const CONTROL =
-  "min-h-10 w-full rounded-sm border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul disabled:cursor-not-allowed disabled:bg-gray-50";
-const ETIQUETA = "mb-1.5 block text-sm font-medium text-gray-700";
-const BOTON =
-  "inline-flex min-h-10 items-center gap-1.5 rounded-sm border border-gray-300 bg-white px-3 text-sm font-medium text-azul hover:bg-secundario focus:outline-none focus-visible:ring-2 focus-visible:ring-azul focus-visible:ring-offset-1";
 
 //: CA06: insignia de una meta que está en un solo corte.
 const PRESENCIA = {
@@ -402,7 +398,7 @@ function TablaComparacion({ datos }) {
 
 function Leyenda() {
   return (
-    <ul className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-sm text-gray-600">
+    <ul className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-campo text-gray-600">
       <li>Cambio = Corte B − Corte A.</li>
       <li className="flex items-center gap-1.5">
         <ArrowUp size={14} aria-hidden="true" className="text-green-700" />
@@ -416,7 +412,7 @@ function Leyenda() {
   );
 }
 
-/** Selector de un corte. `deshabilitado` es el id elegido en el otro. */
+/** Selector de un corte. `otro` es el id elegido en el otro selector. */
 function SelectorCorte({
   id,
   etiqueta,
@@ -427,34 +423,29 @@ function SelectorCorte({
   bloqueado,
 }) {
   return (
-    <div>
-      <label htmlFor={id} className={ETIQUETA}>
-        {etiqueta}
-      </label>
-      <select
-        id={id}
-        value={valor}
-        disabled={bloqueado}
-        onChange={(evento) => onCambiar(evento.target.value)}
-        className={CONTROL}
-      >
-        <option value="">Elija un corte</option>
-        {cortes.map((corte) => (
-          <option key={corte.id} value={corte.id} disabled={corte.id === otro}>
-            {fechaCorte(corte.fecha_corte)}
-          </option>
-        ))}
-      </select>
-    </div>
+    <Campo
+      variante="select"
+      etiqueta={etiqueta}
+      id={id}
+      value={valor}
+      disabled={bloqueado}
+      onChange={(evento) => onCambiar(evento.target.value)}
+    >
+      <option value="">Elija un corte</option>
+      {cortes.map((corte) => (
+        <option key={corte.id} value={corte.id} disabled={corte.id === otro}>
+          {fechaCorte(corte.fecha_corte)}
+        </option>
+      ))}
+    </Campo>
   );
 }
 
 function EnlaceVolver() {
   return (
-    <Link to="/plan-accion" className={BOTON}>
-      <ArrowLeft size={16} aria-hidden="true" />
+    <Boton variante="secundario" icono={ArrowLeft} to="/plan-accion">
       Volver al Plan de Acción
-    </Link>
+    </Boton>
   );
 }
 
@@ -507,17 +498,13 @@ function Resultado({
 
   if (error) {
     return (
-      <div className="flex flex-wrap items-center gap-3 rounded-sm border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <div className="flex flex-wrap items-center gap-3 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-campo text-red-800">
         {/* Solo el mensaje es la alerta: el botón queda fuera para que el
             lector no lo anuncie como parte del error. */}
         <p role="alert">{mensajeErrorComparacion(error)}</p>
-        <button
-          type="button"
-          onClick={() => setIntento((n) => n + 1)}
-          className={BOTON}
-        >
+        <Boton variante="secundario" onClick={() => setIntento((n) => n + 1)}>
           Reintentar
-        </button>
+        </Boton>
       </div>
     );
   }
@@ -535,7 +522,7 @@ function Resultado({
     <>
       <Card className="mb-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <dl className="grid gap-1 text-sm text-gray-700">
+          <dl className="grid gap-1 text-campo text-gray-700">
             <div className="flex gap-1.5">
               <dt className="font-semibold">Corte A (más antiguo):</dt>
               <dd className="font-mono">
@@ -572,8 +559,8 @@ function Resultado({
           />
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-gray-100 pt-4">
-          <label className="flex min-h-10 cursor-pointer items-center gap-2.5 text-sm font-medium text-gray-700">
+        <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-gray-200 pt-4">
+          <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-campo font-medium text-gray-700">
             <input
               type="checkbox"
               checked={soloCambios}
@@ -584,13 +571,13 @@ function Resultado({
             Solo metas con cambios
           </label>
           {actualizando && (
-            <span className="text-sm text-gray-600">Actualizando…</span>
+            <span className="text-campo text-gray-600">Actualizando…</span>
           )}
           {/* Región live siempre montada mientras hay resultado. */}
           <p
             aria-live="polite"
             aria-atomic="true"
-            className="ml-auto text-sm font-medium text-gray-700"
+            className="ml-auto text-campo font-medium text-gray-700"
           >
             {textoConteo}
           </p>
@@ -660,7 +647,7 @@ function ContenidoComparacion({ cortes }) {
           />
         </div>
         {!listos && (
-          <p className="mt-3 text-sm text-gray-600">
+          <p className="mt-3 text-campo text-gray-600">
             Elija dos cortes para comparar
           </p>
         )}
@@ -713,15 +700,11 @@ export default function CompararCortes() {
   }, [vigencia, intento]);
 
   const encabezado = (
-    <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h1 className="text-lg font-semibold text-gray-800">Comparar cortes</h1>
-        {vigencia !== null && (
-          <p className="mt-0.5 text-sm text-gray-600">Vigencia {vigencia}</p>
-        )}
-      </div>
-      <EnlaceVolver />
-    </header>
+    <EncabezadoPantalla
+      titulo="Comparar cortes"
+      descripcion={vigencia !== null ? `Vigencia ${vigencia}` : undefined}
+      acciones={<EnlaceVolver />}
+    />
   );
 
   if (vigencia === null) {
