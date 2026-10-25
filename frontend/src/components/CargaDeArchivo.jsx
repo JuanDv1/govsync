@@ -54,6 +54,7 @@
 import { useId, useState } from "react";
 import { AlertTriangle, Check, FileSpreadsheet } from "lucide-react";
 import { Cargando, EstadoError } from "./Estados.jsx";
+import { ESTILO_SECUNDARIO } from "./shared/Boton.jsx";
 
 const TAMANO_MAXIMO_BYTES = 2_097_152; // 2 MB — acordado con Cristhian,
 // archivos reales hoy < 200 KB (ver docs/DECISIONES.md D12)
@@ -144,7 +145,7 @@ export default function CargaDeArchivo({
   if (enviando) {
     return (
       <div
-        className="rounded-sm border border-gray-200 bg-white p-5"
+        className="rounded-tarjeta border border-gray-200 bg-white p-5 shadow-suave"
         data-tipo={tipo}
       >
         <Cargando mensaje={`Subiendo ${etiqueta}…`} />
@@ -162,10 +163,10 @@ export default function CargaDeArchivo({
 
   return (
     <div
-      className="rounded-sm border border-gray-200 bg-white p-5"
+      className="rounded-tarjeta border border-gray-200 bg-white p-5 shadow-suave has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-azul-accion has-[:focus-visible]:ring-offset-2"
       data-tipo={tipo}
     >
-      <p className="mb-1 text-sm font-semibold text-gray-800">{etiqueta}</p>
+      <p className="mb-1 text-campo font-semibold text-gray-800">{etiqueta}</p>
 
       {!cargado && (
         <label
@@ -173,28 +174,36 @@ export default function CargaDeArchivo({
           onDragOver={manejarArrastrarSobre}
           onDragLeave={manejarSalirArrastre}
           onDrop={manejarSoltar}
-          className={`mt-3 block cursor-pointer rounded-sm border-2 border-dashed p-10 text-center transition-colors ${
+          className={`mt-3 block cursor-pointer rounded-control border-2 border-dashed p-10 text-center transition-colors ${
             arrastrando
               ? "border-azul bg-blue-50/60"
-              : "border-gray-300 bg-fondo-input hover:border-gray-400"
+              : "border-borde-control bg-fondo-input hover:border-gray-500"
           }`}
         >
-          <FileSpreadsheet size={32} className="mx-auto mb-3 text-gray-300" />
-          <p className="text-sm font-medium text-gray-600">
+          <FileSpreadsheet
+            size={32}
+            aria-hidden="true"
+            className="mx-auto mb-3 text-gray-500"
+          />
+          <p className="text-campo font-medium text-gray-600">
             Arrastre el archivo aquí o haga clic
           </p>
           <p className="mt-1 text-ayuda text-gray-600">
             Formato: .xlsx · Máximo {TAMANO_MAXIMO_BYTES / 1_048_576} MB
           </p>
-          <span className="mt-4 inline-block rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-campo font-medium text-azul">
+          <span className={`mt-4 ${ESTILO_SECUNDARIO}`}>
             Seleccionar archivo
           </span>
         </label>
       )}
 
       {cargado && !error && (
-        <div className="mt-3 flex items-center gap-3 rounded-sm border border-green-200 bg-green-50 p-3">
-          <Check size={15} className="shrink-0 text-green-600" />
+        <div className="mt-3 flex items-center gap-3 rounded-control border border-green-200 bg-green-50 p-3">
+          <Check
+            size={16}
+            aria-hidden="true"
+            className="shrink-0 text-green-600"
+          />
           <div className="flex-1">
             <p className="text-campo font-semibold text-green-800">
               Archivo cargado correctamente
@@ -207,7 +216,7 @@ export default function CargaDeArchivo({
           </div>
           <label
             htmlFor={idEntrada}
-            className="cursor-pointer text-campo font-medium text-green-700 hover:text-green-800"
+            className="inline-flex min-h-11 cursor-pointer items-center text-campo font-medium text-green-700 hover:text-green-800"
           >
             Reemplazar
           </label>
@@ -221,7 +230,7 @@ export default function CargaDeArchivo({
       {cargado && error && (
         <label
           htmlFor={idEntrada}
-          className="mt-3 inline-block cursor-pointer text-campo font-medium text-azul hover:text-navy"
+          className="mt-3 inline-flex min-h-11 cursor-pointer items-center text-campo font-medium text-azul hover:text-navy"
         >
           Seleccionar otro archivo
         </label>
@@ -237,8 +246,12 @@ export default function CargaDeArchivo({
       />
 
       {avisoExtension && (
-        <div className="mt-3 flex items-start gap-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2.5">
-          <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-500" />
+        <div className="mt-3 flex items-start gap-2 rounded-control border border-amber-200 bg-amber-50 px-3 py-2.5">
+          <AlertTriangle
+            size={16}
+            aria-hidden="true"
+            className="mt-0.5 shrink-0 text-amber-500"
+          />
           <p className="text-campo text-amber-800">
             Solo se aceptan archivos .xlsx.
           </p>
@@ -246,8 +259,12 @@ export default function CargaDeArchivo({
       )}
 
       {avisoTamano && (
-        <div className="mt-3 flex items-start gap-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2.5">
-          <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-500" />
+        <div className="mt-3 flex items-start gap-2 rounded-control border border-amber-200 bg-amber-50 px-3 py-2.5">
+          <AlertTriangle
+            size={16}
+            aria-hidden="true"
+            className="mt-0.5 shrink-0 text-amber-500"
+          />
           <p className="text-campo text-amber-800">
             El archivo supera el tamaño máximo permitido (
             {TAMANO_MAXIMO_BYTES / 1_048_576} MB).
