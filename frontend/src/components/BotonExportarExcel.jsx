@@ -79,7 +79,7 @@ export default function BotonExportarExcel({
 
   return (
     <div
-      className={`flex flex-col ${alFin ? "ml-auto min-w-0 max-w-sm items-end text-right" : "items-start"}`}
+      className={`flex flex-col ${alFin ? "ml-auto min-w-0 max-w-sm items-end" : "items-start"}`}
     >
       {/* Sin motivo visible, `deshabilitado` usa el `disabled` nativo (igual que
           antes). Mientras exporta NO se usa `deshabilitado`: `aria-disabled` y
@@ -100,7 +100,7 @@ export default function BotonExportarExcel({
 
       <p
         aria-live="polite"
-        className={`flex items-center gap-2 text-campo font-medium text-green-800 ${mensajeExito ? "mt-2" : ""}`}
+        className={`flex items-center gap-2 ${alFin ? "self-stretch" : ""} text-campo font-medium text-green-800 ${mensajeExito ? "mt-2" : ""}`}
       >
         {mensajeExito && (
           <>
@@ -112,7 +112,7 @@ export default function BotonExportarExcel({
       {mensajeError && (
         <p
           role="alert"
-          className="mt-2 flex items-start gap-2 rounded-control border border-red-200 bg-red-50 px-3 py-2 text-campo text-red-800"
+          className={`mt-2 flex items-start gap-2 ${alFin ? "self-stretch" : ""} rounded-control border border-red-200 bg-red-50 px-3 py-2 text-campo text-red-800`}
         >
           <CircleAlert
             size={16}
