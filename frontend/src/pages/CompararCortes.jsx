@@ -179,7 +179,7 @@ function CeldaDelta({ valor, formato, sinDato, className = "" }) {
   if (sentido === "igual") {
     return (
       <td className={clases}>
-        <span className="font-mono text-gray-500">{formato(valor)}</span>
+        <span className="font-mono text-gray-600">{formato(valor)}</span>
         <span className="sr-only">, sin cambio</span>
       </td>
     );
@@ -189,11 +189,7 @@ function CeldaDelta({ valor, formato, sinDato, className = "" }) {
   const Flecha = sube ? ArrowUp : ArrowDown;
   return (
     <td className={clases}>
-      <span
-        className={`inline-flex items-center gap-1 font-mono font-semibold ${
-          sube ? "text-green-700" : "text-red-700"
-        }`}
-      >
+      <span className="inline-flex items-center gap-1 font-mono font-semibold text-gray-800">
         <Flecha size={14} aria-hidden="true" />
         {formato(valor)}
       </span>
@@ -410,9 +406,13 @@ function Leyenda() {
     <ul className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-campo text-gray-600">
       <li>Cambio = Corte B − Corte A.</li>
       <li className="flex items-center gap-1.5">
-        <ArrowUp size={14} aria-hidden="true" className="text-green-700" />
+        <ArrowUp size={14} aria-hidden="true" className="text-gray-800" />
         <span>sube</span>
-        <ArrowDown size={14} aria-hidden="true" className="ml-2 text-red-700" />
+        <ArrowDown
+          size={14}
+          aria-hidden="true"
+          className="ml-2 text-gray-800"
+        />
         <span>baja; en gris, sin cambio.</span>
       </li>
       <li>«—»: no comparable o sin dato.</li>
