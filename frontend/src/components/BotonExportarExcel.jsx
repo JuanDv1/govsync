@@ -28,11 +28,13 @@ import { CircleAlert, CircleCheck, Download, LoaderCircle } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { guardarArchivo } from "../lib/descarga.js";
+import Boton from "./shared/Boton.jsx";
 
-//: Mismas clases que `BOTON_FILTROS` de `PlanAccion.jsx` (40 px, 14 px, foco
-//: visible) más el aspecto deshabilitado, que no depende solo del color.
-const BOTON =
-  "inline-flex min-h-10 items-center gap-1.5 rounded-sm border border-gray-300 bg-white px-3 text-sm font-medium text-azul hover:bg-secundario focus:outline-none focus-visible:ring-2 focus-visible:ring-azul focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:border-dashed disabled:bg-gray-50 disabled:text-gray-500 aria-disabled:cursor-progress aria-disabled:bg-gray-50";
+//: `Boton` recibe el ícono como componente: este gira solo si la persona acepta
+//: animaciones.
+const IconoCargando = (props) => (
+  <LoaderCircle {...props} className="motion-safe:animate-spin" />
+);
 
 export default function BotonExportarExcel({
   descargar,
@@ -71,30 +73,26 @@ export default function BotonExportarExcel({
 
   return (
     <div className="flex flex-col items-start">
-      <button
-        type="button"
+      {/* Sin motivo visible, `deshabilitado` usa el `disabled` nativo (igual que
+          antes). Mientras exporta NO se usa `deshabilitado`: `aria-disabled` y
+          `aria-busy` pasan por `...resto`, el elemento es el mismo y conserva
+          el foco. */}
+      <Boton
+        variante="secundario"
+        icono={exportando ? IconoCargando : Download}
         onClick={exportar}
-        disabled={deshabilitado}
+        deshabilitado={deshabilitado}
         aria-disabled={exportando || undefined}
         aria-busy={exportando}
         title={deshabilitado ? tituloDeshabilitado : undefined}
-        className={BOTON}
+        className="aria-disabled:cursor-progress aria-disabled:bg-gray-50"
       >
-        {exportando ? (
-          <LoaderCircle
-            size={16}
-            aria-hidden="true"
-            className="motion-safe:animate-spin"
-          />
-        ) : (
-          <Download size={16} aria-hidden="true" />
-        )}
         {exportando ? "Generando archivo…" : "Exportar a Excel"}
-      </button>
+      </Boton>
 
       <p
         aria-live="polite"
-        className={`flex items-center gap-2 text-sm font-medium text-green-800 ${mensajeExito ? "mt-2" : ""}`}
+        className={`flex items-center gap-2 text-campo font-medium text-green-800 ${mensajeExito ? "mt-2" : ""}`}
       >
         {mensajeExito && (
           <>
@@ -106,7 +104,7 @@ export default function BotonExportarExcel({
       {mensajeError && (
         <p
           role="alert"
-          className="mt-2 flex items-start gap-2 rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+          className="mt-2 flex items-start gap-2 rounded-control border border-red-200 bg-red-50 px-3 py-2 text-campo text-red-800"
         >
           <CircleAlert
             size={16}
