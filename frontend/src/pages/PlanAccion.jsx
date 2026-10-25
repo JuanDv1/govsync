@@ -50,9 +50,10 @@
  * (con `border-collapse` los bordes de las celdas fijas se pierden al
  * desplazar), las dos columnas fijas tienen ancho fijo (el `left` de "Meta" es
  * el ancho de "Código meta") y sus celdas llevan fondo opaco. "Código meta"
- * mide 150 px porque aloja, debajo del código, el botón "Ver detalle" a 14px;
- * "Meta" mide 280 px para que los nombres se lean en hasta tres líneas. Si
- * cambia el ancho de "Código meta", cambia también `LEFT_META`.
+ * mide 150 px porque aloja, debajo del código, el botón "Ver detalle" (44 px
+ * de alto); "Meta" mide 320 px y el nombre se lee en hasta cuatro líneas (con
+ * 280 px y tres líneas se recortaban 10 nombres de 144; con 320 px y tres,
+ * 4). Si cambia el ancho de "Código meta", cambia también `LEFT_META`.
  *
  * TARJETA: [E04-HU02] Filtrar el Plan de Acción
  * ESPECIFICACIÓN: docs/specs/E04-HU02-filtrar-plan-accion.md
@@ -109,6 +110,7 @@ import FiltrosPlanAccion from "../components/FiltrosPlanAccion.jsx";
 import Boton from "../components/shared/Boton.jsx";
 import Card from "../components/shared/Card.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
+import { TD, TH, fondoDeFila } from "../components/shared/estilosTabla.js";
 import {
   guardarArchivo,
   mensajeErrorExportacion,
@@ -140,21 +142,10 @@ const ESTADOS_PARA_FILTRO = Object.entries(ESTADOS_CRUCE).map(
   ([valor, { texto }]) => ({ valor, texto }),
 );
 
-//: Clases comunes de encabezado y celda. Los bordes van en cada celda (no en
-//: la fila) porque la tabla es `border-separate`.
-const TH =
-  "whitespace-nowrap border-b border-gray-200 bg-gray-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600";
-const TD = "border-b border-gray-100 px-4 py-3 text-sm align-top";
-
-//: Botón secundario de la pantalla ("Ver detalle", "Ver los N rubros"):
-//: al menos 32px de alto y foco visible.
-const BOTON =
-  "inline-flex min-h-8 items-center rounded-sm border border-gray-300 bg-white px-2.5 text-sm font-medium text-azul hover:bg-secundario focus:outline-none focus-visible:ring-2 focus-visible:ring-azul focus-visible:ring-offset-1";
-
 //: Anchos de las dos columnas fijas (CA07). El `left` de la segunda es el
 //: ancho de la primera; si uno cambia, cambia el otro.
 const ANCHO_CODIGO = "w-[150px] min-w-[150px] max-w-[150px]";
-const ANCHO_META = "w-[280px] min-w-[280px] max-w-[280px]";
+const ANCHO_META = "w-[320px] min-w-[320px] max-w-[320px]";
 const LEFT_META = "left-[150px]";
 
 //: Cantidad de columnas de la tabla: debe coincidir con los `<th>` de
@@ -185,13 +176,14 @@ function etiquetaConteo(cantidad, singular) {
 /**
  * Celda (`td`) con el resaltado tenue de CA06 cuando `vacia`. `fija` es para
  * las columnas con `sticky` (CA07): necesitan un fondo opaco, o el contenido
- * que se desplaza se vería por debajo; el resaltado de celda vacía también es
- * opaco, así que lo reemplaza.
+ * que se desplaza se vería por debajo. Heredan el color de su fila
+ * (`bg-inherit`), así la alternancia blanco/gris no las deja de otro color; el
+ * resaltado de celda vacía también es opaco y gana a la alternancia.
  */
 function Celda({ vacia, fija = false, className = "", children, ...resto }) {
   let fondo = "";
   if (vacia) fondo = "bg-amber-50";
-  else if (fija) fondo = "bg-white";
+  else if (fija) fondo = "bg-inherit";
 
   return (
     <td className={`${TD} ${fondo} ${className}`} {...resto}>
@@ -228,30 +220,29 @@ function estadoDeCruce(fila) {
   );
 }
 
-function FilaPlan({ fila, abierta, onAlternar }) {
+function FilaPlan({ fila, indice, abierta, onAlternar }) {
   const estado = estadoDeCruce(fila);
   const codigo = fila.cod_indicador_producto;
   const idDetalle = `detalle-${codigo}`;
 
   return (
     <Fragment>
-      <tr>
+      <tr className={fondoDeFila(indice)}>
         <Celda vacia={fila.sector == null}>{fila.sector}</Celda>
         <Celda fija className={`sticky left-0 z-10 ${ANCHO_CODIGO}`}>
           <div className="flex flex-col items-start gap-1.5">
             <span className="font-mono">{codigo}</span>
             {/* El `aria-label` contiene el texto visible (WCAG 2.5.3) y el
                 código, para distinguir las filas en un lector de pantalla. */}
-            <button
-              type="button"
+            <Boton
+              variante="secundario"
               onClick={() => onAlternar(codigo)}
               aria-expanded={abierta}
               aria-controls={idDetalle}
               aria-label={`${abierta ? "Ocultar" : "Ver"} detalle de la meta ${codigo}`}
-              className={BOTON}
             >
               {abierta ? "Ocultar" : "Ver detalle"}
-            </button>
+            </Boton>
           </div>
         </Celda>
         <Celda
@@ -259,7 +250,7 @@ function FilaPlan({ fila, abierta, onAlternar }) {
           vacia={fila.nombre_producto == null}
           className={`sticky z-10 ${LEFT_META} ${ANCHO_META} border-r border-r-gray-200`}
         >
-          <div className="line-clamp-3" title={fila.nombre_producto}>
+          <div className="line-clamp-4" title={fila.nombre_producto}>
             {fila.nombre_producto}
           </div>
         </Celda>
@@ -317,14 +308,14 @@ function ListaDetalle({ id, valores, plural, vacio }) {
   const [todos, setTodos] = useState(false);
 
   if (valores.length === 0) {
-    return <p className="text-sm text-gray-500">{vacio}</p>;
+    return <p className="text-campo text-gray-500">{vacio}</p>;
   }
 
   const mostrados = todos ? valores : valores.slice(0, VISIBLES);
 
   return (
     <>
-      <ul id={id} className="divide-y divide-gray-100 font-mono text-sm">
+      <ul id={id} className="divide-y divide-gray-100 font-mono text-campo">
         {mostrados.map((valor) => (
           <li key={valor} className="break-all py-1.5">
             {valor}
@@ -332,15 +323,15 @@ function ListaDetalle({ id, valores, plural, vacio }) {
         ))}
       </ul>
       {valores.length > VISIBLES && (
-        <button
-          type="button"
+        <Boton
+          variante="secundario"
           onClick={() => setTodos((actual) => !actual)}
           aria-expanded={todos}
           aria-controls={id}
-          className={`${BOTON} mt-2`}
+          className="mt-2"
         >
           {todos ? "Ver menos" : `Ver los ${valores.length} ${plural}`}
-        </button>
+        </Boton>
       )}
     </>
   );
@@ -365,10 +356,10 @@ function Cifra({ etiqueta, valor, formato, barra = false }) {
       {barra && valor != null && (
         <div
           aria-hidden="true"
-          className="mt-3 h-2 w-full rounded-sm bg-gray-200"
+          className="mt-3 h-2 w-full rounded-full bg-gray-200"
         >
           <div
-            className="h-full rounded-sm bg-azul"
+            className="h-full rounded-full bg-azul"
             style={{ width: `${ancho}%` }}
           />
         </div>
@@ -395,13 +386,13 @@ function DetalleMeta({ fila, id }) {
       >
         <div className={`sticky left-0 ${ANCHO_DETALLE} px-4 py-4`}>
           <div className="mb-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-campo text-gray-600">
               Meta <span className="font-mono">{codigo}</span>
             </p>
             <p className="mt-0.5 text-base font-semibold text-gray-800">
               {fila.nombre_producto ?? "—"}
             </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-campo">
               <StateBadge
                 texto={estado.texto}
                 tono={estado.tono}
@@ -438,7 +429,7 @@ function DetalleMeta({ fila, id }) {
 
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <Card padding="p-4">
-              <h3 className="mb-2 text-sm font-semibold text-gray-800">
+              <h3 className="mb-2 text-campo font-semibold text-gray-800">
                 Rubros ({fila.rubros.length})
               </h3>
               <ListaDetalle
@@ -449,7 +440,7 @@ function DetalleMeta({ fila, id }) {
               />
             </Card>
             <Card padding="p-4">
-              <h3 className="mb-2 text-sm font-semibold text-gray-800">
+              <h3 className="mb-2 text-campo font-semibold text-gray-800">
                 Contratos ({fila.contratos.length})
               </h3>
               <ListaDetalle
@@ -461,7 +452,7 @@ function DetalleMeta({ fila, id }) {
             </Card>
           </div>
 
-          <p className="mt-4 flex items-start gap-2 text-sm text-gray-600">
+          <p className="mt-4 flex items-start gap-2 text-campo text-gray-600">
             <Info
               size={16}
               aria-hidden="true"
@@ -481,7 +472,7 @@ function DetalleMeta({ fila, id }) {
 
 function Leyenda() {
   return (
-    <ul className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-sm text-gray-600">
+    <ul className="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1.5 text-campo text-gray-600">
       <li className="flex items-center gap-2">
         <span
           aria-hidden="true"
@@ -577,10 +568,11 @@ function TablaPlan({ filas }) {
         </tr>
       </thead>
       <tbody>
-        {filas.map((fila) => (
+        {filas.map((fila, indice) => (
           <FilaPlan
             key={fila.cod_indicador_producto}
             fila={fila}
+            indice={indice}
             abierta={abiertas.has(fila.cod_indicador_producto)}
             onAlternar={alternar}
           />
@@ -937,7 +929,7 @@ function ContenidoPlan({ datos }) {
         <div ref={refScroll} className="max-h-[70vh] overflow-auto">
           <TablaPlan filas={filasVisibles} />
         </div>
-        <p className="border-t border-gray-200 px-4 py-3 text-sm font-medium text-gray-700">
+        <p className="border-t border-gray-200 px-4 py-3 text-campo font-medium text-gray-700">
           Total: {resumen.total} | Completo: {resumen.completo} | Parcial:{" "}
           {resumen.parcial} | Sin información: {resumen.sin_informacion}
         </p>
@@ -1000,7 +992,7 @@ export default function PlanAccion() {
     <section className="mx-auto max-w-[1400px]">
       <header className="mb-4">
         <h1 className="text-lg font-semibold text-gray-800">Plan de Acción</h1>
-        <p className="mt-0.5 text-sm text-gray-600">
+        <p className="mt-0.5 text-campo text-gray-600">
           Corte de vigencia {datos.vigencia}, fecha{" "}
           <span className="font-mono">{fechaCorte(datos.fecha_corte)}</span>.
         </p>
