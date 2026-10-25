@@ -224,12 +224,12 @@ function FilaComparacion({ fila, indice }) {
     <tr className={fondoDeFila(indice)}>
       <td className={TD}>{fila.sector ?? <Guion />}</td>
       <td
-        className={`${TD} sticky left-0 z-10 bg-inherit font-mono ${ANCHO_CODIGO}`}
+        className={`${TD} sticky left-0 z-10 ${fondoDeFila(indice)} font-mono ${ANCHO_CODIGO}`}
       >
         {fila.cod_indicador_producto}
       </td>
       <td
-        className={`${TD} sticky z-10 bg-inherit ${LEFT_META} ${ANCHO_META} ${BORDE_META}`}
+        className={`${TD} sticky z-10 ${fondoDeFila(indice)} ${LEFT_META} ${ANCHO_META} ${BORDE_META}`}
       >
         <div className="line-clamp-4" title={fila.nombre_producto ?? ""}>
           {fila.nombre_producto ?? <Guion />}
@@ -564,6 +564,7 @@ function Resultado({
             mensajeDeError={mensajeErrorExportarComparacion}
             deshabilitado={total === 0 || actualizando}
             tituloDeshabilitado="No hay metas para exportar"
+            alineacion="fin"
             alCambiarExportando={onExportando}
           />
         </div>

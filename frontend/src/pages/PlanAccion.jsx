@@ -177,14 +177,13 @@ function etiquetaConteo(cantidad, singular) {
 /**
  * Celda (`td`) con el resaltado tenue de CA06 cuando `vacia`. `fija` es para
  * las columnas con `sticky` (CA07): necesitan un fondo opaco, o el contenido
- * que se desplaza se vería por debajo. Heredan el color de su fila
- * (`bg-inherit`), así la alternancia blanco/gris no las deja de otro color; el
+ * que se desplaza se vería por debajo. Reciben `fondoFija`, la misma clase de
+ * alternancia de su fila (`fondoDeFila`), EXPLÍCITA y no heredada: no depende
+ * de cómo cada navegador pinte el fondo del `tr` bajo una celda `sticky`. El
  * resaltado de celda vacía también es opaco y gana a la alternancia.
  */
-function Celda({ vacia, fija = false, className = "", children, ...resto }) {
-  let fondo = "";
-  if (vacia) fondo = "bg-amber-50";
-  else if (fija) fondo = "bg-inherit";
+function Celda({ vacia, fondoFija = "", className = "", children, ...resto }) {
+  const fondo = vacia ? "bg-amber-50" : fondoFija;
 
   return (
     <td className={`${TD} ${fondo} ${className}`} {...resto}>
@@ -230,7 +229,10 @@ function FilaPlan({ fila, indice, abierta, onAlternar }) {
     <Fragment>
       <tr className={fondoDeFila(indice)}>
         <Celda vacia={fila.sector == null}>{fila.sector}</Celda>
-        <Celda fija className={`sticky left-0 z-10 ${ANCHO_CODIGO}`}>
+        <Celda
+          fondoFija={fondoDeFila(indice)}
+          className={`sticky left-0 z-10 ${ANCHO_CODIGO}`}
+        >
           <div className="flex flex-col items-start gap-1.5">
             <span className="font-mono">{codigo}</span>
             {/* El `aria-label` contiene el texto visible (WCAG 2.5.3) y el
@@ -247,7 +249,7 @@ function FilaPlan({ fila, indice, abierta, onAlternar }) {
           </div>
         </Celda>
         <Celda
-          fija
+          fondoFija={fondoDeFila(indice)}
           vacia={fila.nombre_producto == null}
           className={`sticky z-10 ${LEFT_META} ${ANCHO_META} border-r border-r-gray-200`}
         >

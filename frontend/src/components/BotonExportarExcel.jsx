@@ -14,6 +14,9 @@
  *   `Content-Disposition`.
  * - `mensajeDeError(error)`: el texto que se muestra si algo falla.
  * - `deshabilitado`: `disabled` nativo (p. ej. sin filas que exportar).
+ * - `alineacion`: `"inicio"` (por defecto) o `"fin"`. Con `"fin"` el bloque se
+ *   alinea a la derecha de su contenedor y el botón conserva su posición al
+ *   aparecer el mensaje o cambiar su rótulo (ancho mínimo fijo).
  * - `alCambiarExportando(bool)`: opcional, avisa al padre al empezar y al
  *   terminar (para bloquear controles que cambiarían lo que se exporta).
  *
@@ -42,6 +45,7 @@ export default function BotonExportarExcel({
   mensajeDeError,
   deshabilitado = false,
   tituloDeshabilitado,
+  alineacion = "inicio",
   alCambiarExportando,
 }) {
   const [exportando, setExportando] = useState(false);
@@ -71,8 +75,12 @@ export default function BotonExportarExcel({
     }
   }
 
+  const alFin = alineacion === "fin";
+
   return (
-    <div className="flex flex-col items-start">
+    <div
+      className={`flex flex-col ${alFin ? "ml-auto min-w-0 max-w-sm items-end text-right" : "items-start"}`}
+    >
       {/* Sin motivo visible, `deshabilitado` usa el `disabled` nativo (igual que
           antes). Mientras exporta NO se usa `deshabilitado`: `aria-disabled` y
           `aria-busy` pasan por `...resto`, el elemento es el mismo y conserva
@@ -85,7 +93,7 @@ export default function BotonExportarExcel({
         aria-disabled={exportando || undefined}
         aria-busy={exportando}
         title={deshabilitado ? tituloDeshabilitado : undefined}
-        className="aria-disabled:cursor-progress aria-disabled:bg-gray-50"
+        className={`aria-disabled:cursor-progress aria-disabled:bg-gray-50 ${alFin ? "min-w-[12.5rem] justify-center" : ""}`}
       >
         {exportando ? "Generando archivo…" : "Exportar a Excel"}
       </Boton>
@@ -97,7 +105,7 @@ export default function BotonExportarExcel({
         {mensajeExito && (
           <>
             <CircleCheck size={16} aria-hidden="true" className="shrink-0" />
-            <span>{mensajeExito}</span>
+            <span className="min-w-0 break-words">{mensajeExito}</span>
           </>
         )}
       </p>
@@ -111,7 +119,7 @@ export default function BotonExportarExcel({
             aria-hidden="true"
             className="mt-0.5 shrink-0"
           />
-          <span>{mensajeError}</span>
+          <span className="min-w-0 break-words">{mensajeError}</span>
         </p>
       )}
     </div>
