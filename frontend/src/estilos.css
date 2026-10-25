@@ -4,11 +4,11 @@
    Actualizado (docs/DECISIONES.md D19, D20): el equipo adoptó Tailwind —
    ver esas entradas para el motivo completo y el alcance de cada una. Lo que
    queda en este archivo son los tokens globales (:root, consumidos también
-   por componentes en Tailwind vía tailwind.config.js) y las clases BEM de
-   componentes que todavía no se migraron a Tailwind: Estados.jsx y
-   VistaPreviaDescartes.jsx (sí heredan la paleta actualizada de :root, solo
-   no tienen sus className en clases utilitarias). Login, NuevoCorte, Cortes
-   y MatrizRelacion ya están 100% en Tailwind. */
+   por componentes en Tailwind vía tailwind.config.js) y las clases BEM de lo
+   que todavía no se migró a Tailwind: VistaPreviaDescartes.jsx y
+   `.estado-sin-correspondencia` (Estados.jsx). Cargando, Vacío y Error ya
+   están en Tailwind (refresh visual, Fase 1). Login, NuevoCorte, Cortes y
+   MatrizRelacion también. */
 
 @tailwind base;
 @tailwind components;
@@ -89,42 +89,6 @@ textarea::placeholder {
 .codigo {
   font-family: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   white-space: nowrap;
-}
-
-/* [UX-03] Estado de error accionable (Estados.jsx::EstadoError). */
-.estado-error {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem 1.25rem;
-  border: 1px solid var(--error);
-  border-radius: var(--radio);
-  background: var(--error-fondo);
-  color: var(--error);
-}
-
-.estado-error-mensaje {
-  margin: 0;
-  font-weight: 600;
-}
-
-.estado-error-detalles {
-  margin: 0;
-  padding-left: 1.25rem;
-}
-
-.estado-error-reintentar {
-  align-self: flex-start;
-  padding: 0.4rem 0.9rem;
-  border: 1px solid var(--error);
-  border-radius: var(--radio);
-  background: var(--superficie);
-  color: var(--error);
-  cursor: pointer;
-}
-
-.estado-error-reintentar:hover {
-  background: var(--error-fondo);
 }
 
 /* [HU-04][FE-03] Vista previa de descartes (VistaPreviaDescartes.jsx).
