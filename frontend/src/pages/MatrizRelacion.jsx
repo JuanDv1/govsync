@@ -212,7 +212,7 @@ function PaginacionMatriz({
           total queda visible, fuera de las regiones live, en el mismo orden
           de siempre. Las dos regiones están siempre montadas (una región que
           se monta ya con texto no se anuncia). */}
-      <span className="text-ayuda text-gray-500">
+      <span className="text-ayuda text-gray-600">
         <span aria-live="polite">
           Página {pagina} de {totalPaginas}
         </span>
@@ -545,7 +545,7 @@ export default function MatrizRelacion() {
           Matriz de relación
         </h1>
         {corteId && (
-          <p className="mt-0.5 text-ayuda text-gray-500">
+          <p className="mt-0.5 text-ayuda text-gray-600">
             Corte <span className="font-mono">{corteId}</span>
           </p>
         )}
@@ -634,7 +634,7 @@ export default function MatrizRelacion() {
             <div
               aria-live="polite"
               aria-atomic="true"
-              className="ml-auto shrink-0 text-ayuda text-gray-500"
+              className="ml-auto shrink-0 text-ayuda text-gray-600"
             >
               {matrizVisible ? textoRegistros(matrizVisible.total_filas) : ""}
             </div>
@@ -687,12 +687,12 @@ export default function MatrizRelacion() {
                   {COLUMNAS.map((columna) => (
                     <th
                       key={columna.clave}
-                      className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-400"
+                      className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600"
                     >
                       {columna.titulo}
                     </th>
                   ))}
-                  <th className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  <th className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                     Estado
                   </th>
                 </tr>

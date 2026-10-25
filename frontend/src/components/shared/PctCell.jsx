@@ -8,7 +8,7 @@
  */
 export default function PctCell({ valor }) {
   if (valor === null || valor === undefined) {
-    return <span className="font-mono text-xs text-gray-400">—</span>;
+    return <span className="font-mono text-xs text-gray-600">—</span>;
   }
 
   const color =

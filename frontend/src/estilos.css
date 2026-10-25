@@ -60,6 +60,15 @@ body {
   background: var(--fondo);
 }
 
+/* El texto de ejemplo de los campos (placeholder) venía en gray-400, 2,5:1
+   sobre blanco. `--tinta-suave` llega a 5,5:1 sobre blanco y 4,8:1 sobre el
+   fondo de página. */
+input::placeholder,
+textarea::placeholder {
+  color: var(--tinta-suave);
+  opacity: 1;
+}
+
 /* Accesibilidad: foco visible en todo elemento interactivo. */
 :focus-visible {
   outline: 2px solid var(--primario);

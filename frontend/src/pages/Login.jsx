@@ -49,7 +49,7 @@ export default function Login() {
       <div className="flex flex-1 items-center justify-center bg-white">
         <div style={{ width: "22rem" }}>
           <h2 className="text-xl font-semibold text-navy">Iniciar sesión</h2>
-          <p className="mb-7 text-xs text-gray-500">
+          <p className="mb-7 text-xs text-gray-600">
             Acceso restringido a funcionarios autorizados de la Alcaldía.
           </p>
 

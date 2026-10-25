@@ -149,7 +149,7 @@ export default function CargaDeArchivo({
       >
         <Cargando mensaje={`Subiendo ${etiqueta}…`} />
         {progreso !== null && (
-          <p className="carga-de-archivo-progreso mt-2 flex items-center gap-2 text-xs text-gray-500">
+          <p className="carga-de-archivo-progreso mt-2 flex items-center gap-2 text-xs text-gray-600">
             <progress value={progreso} max={100} className="w-full" />
             <span className="font-mono">{progreso}%</span>
           </p>
@@ -183,7 +183,7 @@ export default function CargaDeArchivo({
           <p className="text-sm font-medium text-gray-600">
             Arrastre el archivo aquí o haga clic
           </p>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-gray-600">
             Formato: .xlsx · Máximo {TAMANO_MAXIMO_BYTES / 1_048_576} MB
           </p>
           <span className="mt-4 inline-block rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-campo font-medium text-azul">
@@ -200,14 +200,14 @@ export default function CargaDeArchivo({
               Archivo cargado correctamente
             </p>
             {nombreArchivo && (
-              <p className="mt-0.5 font-mono text-ayuda text-green-600">
+              <p className="mt-0.5 font-mono text-ayuda text-green-700">
                 {nombreArchivo}
               </p>
             )}
           </div>
           <label
             htmlFor={idEntrada}
-            className="cursor-pointer text-campo font-medium text-green-600 hover:text-green-800"
+            className="cursor-pointer text-campo font-medium text-green-700 hover:text-green-800"
           >
             Reemplazar
           </label>

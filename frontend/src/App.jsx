@@ -29,7 +29,7 @@ function RutaProtegida({ children }) {
 
   if (cargando) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-gray-500">
+      <div className="flex min-h-screen items-center justify-center text-sm text-gray-600">
         Verificando sesión…
       </div>
     );
@@ -68,11 +68,11 @@ function Pendiente() {
   return (
     <section className="mx-auto max-w-2xl rounded-sm border border-gray-200 bg-white p-5">
       <h1 className="text-base font-semibold text-gray-800">GovSync</h1>
-      <p className="mt-1 text-xs text-gray-500">
+      <p className="mt-1 text-xs text-gray-600">
         Esqueleto del Sprint 1. Las pantallas se implementan según{" "}
         <code className="font-mono">PLAN-DE-TRABAJO.md</code>.
       </p>
-      <p className="mt-2 text-xs text-gray-500">
+      <p className="mt-2 text-xs text-gray-600">
         Backend:{" "}
         <a
           href="http://localhost:8000/docs"

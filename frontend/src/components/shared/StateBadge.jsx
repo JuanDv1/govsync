@@ -9,7 +9,7 @@ const TONOS = {
   azul: "border-blue-200 bg-blue-50 text-azul",
   ambar: "border-amber-200 bg-amber-50 text-amber-800",
   rojo: "border-red-200 bg-red-50 text-critico",
-  gris: "border-gray-200 bg-gray-50 text-gray-500",
+  gris: "border-gray-200 bg-gray-50 text-gray-600",
 };
 
 //: `normal` es el tamaño de siempre (y el valor por defecto). `grande` lo usa

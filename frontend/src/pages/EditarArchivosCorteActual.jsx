@@ -358,7 +358,7 @@ export default function EditarArchivosCorteActual() {
         <h1 className="text-base font-semibold text-gray-800">
           Editar archivos del corte actual
         </h1>
-        <p className="mt-0.5 text-ayuda text-gray-500">
+        <p className="mt-0.5 text-ayuda text-gray-600">
           Corte de vigencia {corte.vigencia}, fecha{" "}
           <span className="font-mono">{corte.fecha_corte}</span>. Reemplazar una
           fuente actualiza la matriz del corte.
@@ -384,7 +384,7 @@ export default function EditarArchivosCorteActual() {
                     abajo. */}
                 <dl className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-600">
                       Archivo
                     </dt>
                     <dd className="mt-0.5 font-mono text-gray-700">
@@ -392,7 +392,7 @@ export default function EditarArchivosCorteActual() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-600">
                       Cargado
                     </dt>
                     <dd className="mt-0.5 font-mono text-gray-700">
@@ -443,7 +443,7 @@ export default function EditarArchivosCorteActual() {
         {!cargandoHistorial &&
           !errorHistorial &&
           (!historial || historial.length === 0) && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-600">
               Ningún archivo se ha reemplazado todavía en este corte.
             </p>
           )}
@@ -458,10 +458,10 @@ export default function EditarArchivosCorteActual() {
                 <span className="font-medium text-gray-700">
                   {etiquetaPorTipo(entrada.tipo)}
                 </span>
-                <span className="font-mono text-gray-500">
+                <span className="font-mono text-gray-600">
                   {entrada.nombre_archivo_anterior ?? "—"}
                 </span>
-                <span className="text-gray-400">
+                <span className="text-gray-600">
                   {entrada.usuario ?? "—"} ·{" "}
                   {fechaHora(entrada.fecha_hora) ?? "—"}
                 </span>

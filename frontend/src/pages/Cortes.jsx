@@ -75,7 +75,7 @@ export default function Cortes() {
         <h1 className="text-base font-semibold text-gray-800">
           Histórico de cortes
         </h1>
-        <p className="mt-0.5 text-ayuda text-gray-500">
+        <p className="mt-0.5 text-ayuda text-gray-600">
           Cortes de seguimiento creados hasta ahora, más reciente primero.
         </p>
       </header>
@@ -116,7 +116,7 @@ export default function Cortes() {
                   (titulo) => (
                     <th
                       key={titulo}
-                      className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-400"
+                      className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600"
                     >
                       {titulo}
                     </th>
@@ -194,7 +194,7 @@ export default function Cortes() {
                           Continuar carga
                         </Link>
                       ) : (
-                        <span className="text-ayuda text-gray-400">
+                        <span className="text-ayuda text-gray-600">
                           En borrador
                         </span>
                       )}
