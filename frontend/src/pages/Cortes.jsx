@@ -75,7 +75,7 @@ export default function Cortes() {
         <h1 className="text-base font-semibold text-gray-800">
           Histórico de cortes
         </h1>
-        <p className="mt-0.5 text-[11px] text-gray-500">
+        <p className="mt-0.5 text-ayuda text-gray-600">
           Cortes de seguimiento creados hasta ahora, más reciente primero.
         </p>
       </header>
@@ -98,7 +98,7 @@ export default function Cortes() {
             puedeEscribir ? (
               <Link
                 to="/cortes/nuevo"
-                className="text-xs font-medium text-azul hover:text-navy"
+                className="text-campo font-medium text-azul hover:text-navy"
               >
                 Crear corte
               </Link>
@@ -116,7 +116,7 @@ export default function Cortes() {
                   (titulo) => (
                     <th
                       key={titulo}
-                      className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                      className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600"
                     >
                       {titulo}
                     </th>
@@ -137,10 +137,10 @@ export default function Cortes() {
                         : "hover:bg-gray-50/60"
                     }`}
                   >
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-700">
+                    <td className="px-4 py-2.5 font-mono text-campo text-gray-700">
                       {corte.fecha_corte}
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-700">
+                    <td className="px-4 py-2.5 text-campo text-gray-700">
                       {corte.vigencia}
                     </td>
                     <td className="px-4 py-2.5">
@@ -154,7 +154,7 @@ export default function Cortes() {
                         {actual && <StateBadge texto="Actual" tono="azul" />}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-700">
+                    <td className="px-4 py-2.5 font-mono text-campo text-gray-700">
                       {corte.archivos?.length ?? 0} de 3
                     </td>
                     <td className="px-4 py-2.5 text-right">
@@ -162,7 +162,7 @@ export default function Cortes() {
                         <span className="inline-flex items-center gap-3">
                           <Link
                             to={`/matriz/${corte.id}`}
-                            className="text-[11px] font-medium text-azul hover:text-navy"
+                            className="text-campo font-medium text-azul hover:text-navy"
                           >
                             Ver matriz
                           </Link>
@@ -177,7 +177,7 @@ export default function Cortes() {
                           {actual && puedeEscribir && (
                             <Link
                               to={`/cortes/${corte.id}/editar`}
-                              className="text-[11px] font-medium text-azul hover:text-navy"
+                              className="text-campo font-medium text-azul hover:text-navy"
                             >
                               Editar archivos
                             </Link>
@@ -189,12 +189,12 @@ export default function Cortes() {
                         // de que esta pantalla ganara esCorteActual()/badge.
                         <Link
                           to={`/cortes/${corte.id}`}
-                          className="text-[11px] font-medium text-azul hover:text-navy"
+                          className="text-campo font-medium text-azul hover:text-navy"
                         >
                           Continuar carga
                         </Link>
                       ) : (
-                        <span className="text-[11px] text-gray-400">
+                        <span className="text-ayuda text-gray-600">
                           En borrador
                         </span>
                       )}

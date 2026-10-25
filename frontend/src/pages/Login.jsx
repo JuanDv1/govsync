@@ -11,6 +11,8 @@
  * autenticación no existía todavía (D2/[REF-05]), y ya no es el caso.
  */
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
+import Boton from "../components/shared/Boton.jsx";
+import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 
 export default function Login() {
   const { iniciarSesion, cargando } = useAutenticacion();
@@ -22,7 +24,7 @@ export default function Login() {
           <div className="text-2xl font-bold tracking-[0.12em] text-white">
             GOV<span className="text-azul-claro">SYNC</span>
           </div>
-          <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.2em] text-azul-tenue">
+          <p className="mt-1 text-xs font-medium uppercase tracking-wide text-azul-tenue">
             Sistema de Gestión · Plan de Desarrollo
           </p>
         </div>
@@ -35,12 +37,12 @@ export default function Login() {
             — consolidación y cruce de la información de planeación, ejecución
             presupuestal y proyectos de inversión.
           </p>
-          <p className="mt-2 text-xs text-azul-claro">
+          <p className="mt-2 text-campo text-azul-claro">
             Alcaldía Municipal de Santa Rosa, Cauca
           </p>
         </div>
 
-        <div className="flex justify-between text-[11px] text-azul-apagado">
+        <div className="flex justify-between text-xs text-azul-apagado">
           <span>v2.0.0</span>
           <span className="font-mono">Vigencia 2026</span>
         </div>
@@ -48,19 +50,20 @@ export default function Login() {
 
       <div className="flex flex-1 items-center justify-center bg-white">
         <div style={{ width: "22rem" }}>
-          <h2 className="text-xl font-semibold text-navy">Iniciar sesión</h2>
-          <p className="mb-7 text-xs text-gray-500">
-            Acceso restringido a funcionarios autorizados de la Alcaldía.
-          </p>
+          <EncabezadoPantalla
+            titulo="Iniciar sesión"
+            descripcion="Acceso restringido a funcionarios autorizados de la Alcaldía."
+          />
 
-          <button
-            type="button"
+          {/* Mientras verifica la sesión el botón queda inactivo y su propio
+              texto ("Verificando sesión…") es el motivo visible. */}
+          <Boton
             onClick={iniciarSesion}
-            disabled={cargando}
-            className="w-full rounded-sm bg-navy py-2.5 text-sm font-semibold tracking-wide text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-60"
+            deshabilitado={cargando}
+            className="w-full"
           >
             {cargando ? "Verificando sesión…" : "Ingresar"}
-          </button>
+          </Boton>
         </div>
       </div>
     </div>

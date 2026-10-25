@@ -6,6 +6,8 @@ import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
+import Boton from "../components/shared/Boton.jsx";
+import Campo from "../components/shared/Campo.jsx";
 import Card from "../components/shared/Card.jsx";
 import SectionHeader from "../components/shared/SectionHeader.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
@@ -234,7 +236,7 @@ export default function NuevoCorte() {
           accion={
             <Link
               to="/cortes"
-              className="text-xs font-medium text-azul hover:text-navy"
+              className="text-campo font-medium text-azul hover:text-navy"
             >
               ← Volver al histórico
             </Link>
@@ -307,7 +309,7 @@ export default function NuevoCorte() {
           <h1 className="text-base font-semibold text-gray-800">
             Cargar archivos del corte
           </h1>
-          <p className="mt-0.5 text-[11px] text-gray-500">
+          <p className="mt-0.5 text-ayuda text-gray-600">
             Corte de vigencia {corte.vigencia}, fecha{" "}
             <span className="font-mono">{corte.fecha_corte}</span> — estado{" "}
             <span className="font-semibold">{corte.estado}</span>.
@@ -333,7 +335,7 @@ export default function NuevoCorte() {
             ].map(([etiquetaFuente, estado]) => (
               <li
                 key={etiquetaFuente}
-                className="flex items-center justify-between text-xs"
+                className="flex items-center justify-between text-campo"
               >
                 <span className="font-medium text-gray-700">
                   {etiquetaFuente}
@@ -395,7 +397,7 @@ export default function NuevoCorte() {
                       {/* [HU-04][FE-02]: confirmación del conteo genérico, mismo
                     criterio que ya usa PDT — esta pantalla es la que sabe
                     que para PROYECTOS esas filas son "proyectos". */}
-                      <p className="text-xs text-gray-600">
+                      <p className="text-ayuda text-gray-600">
                         {resultadoProyectos.filas_reconocidas} proyectos
                         reconocidos.
                       </p>
@@ -406,7 +408,7 @@ export default function NuevoCorte() {
                     estándar. El backend ya lo conserva tal cual
                     (HU-04/CA-2, lectores/proyectos.py), esto solo lo
                     comunica. */}
-                      <p className="carga-de-archivo-nota mt-1 text-xs">
+                      <p className="carga-de-archivo-nota mt-1 text-ayuda">
                         El archivo se conservó tal cual fue cargado, aunque su
                         estructura no sea estándar.
                       </p>
@@ -418,7 +420,7 @@ export default function NuevoCorte() {
                       {resultadoProyectos.codigos.length > 0 && (
                         <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                           {resultadoProyectos.codigos.map((codigo) => (
-                            <li key={codigo} className="codigo text-xs">
+                            <li key={codigo} className="codigo text-campo">
                               {codigo}
                             </li>
                           ))}
@@ -448,7 +450,7 @@ export default function NuevoCorte() {
                 />
                 <Link
                   to={`/matriz/${corte.id}`}
-                  className="rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover"
+                  className="rounded-sm bg-navy px-4 py-2 text-campo font-semibold text-white transition-colors hover:bg-navy-hover"
                 >
                   Ver matriz de relación
                 </Link>
@@ -462,14 +464,14 @@ export default function NuevoCorte() {
                     todosCargados ? undefined : "fuentes-faltantes"
                   }
                   onClick={manejarRegistro}
-                  className="self-start rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
+                  className="self-start rounded-sm bg-navy px-4 py-2 text-campo font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Registrar corte
                 </button>
                 {!todosCargados && (
                   <p
                     id="fuentes-faltantes"
-                    className="text-[11px] italic text-gray-400"
+                    className="text-ayuda italic text-gray-600"
                   >
                     Cargue los tres archivos para registrar el corte. Falta:{" "}
                     {fuentesFaltantes.join(", ")}.
@@ -489,7 +491,7 @@ export default function NuevoCorte() {
     <section className="mx-auto max-w-4xl">
       <header className="mb-5">
         <h1 className="text-base font-semibold text-gray-800">Nuevo corte</h1>
-        <p className="mt-0.5 text-[11px] text-gray-500">
+        <p className="mt-0.5 text-ayuda text-gray-600">
           Configure los datos del corte para habilitar la carga de archivos.
         </p>
       </header>
@@ -498,65 +500,46 @@ export default function NuevoCorte() {
         <SectionHeader>Datos del corte</SectionHeader>
 
         <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label
-              htmlFor="vigencia"
-              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
-            >
-              Vigencia
-            </label>
-            <input
-              id="vigencia"
-              name="vigencia"
-              type="number"
-              // D18 (docs/DECISIONES.md, 2026-09-23): min/max solo es ayuda
-              // de UX -- el rechazo real ya lo hace el backend
-              // (Corte.validar_vigencia), igual que la fecha de abajo. No se
-              // repiten estos numeros como constante compartida porque el
-              // backend es Python y el frontend JS; si el rango cambia, hay
-              // que actualizar los dos lados (ver D18).
-              min={2000}
-              max={2100}
-              placeholder="Ej: 2026"
-              value={vigencia}
-              onChange={(evento) => setVigencia(evento.target.value)}
-              required
-              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
-            />
-          </div>
+          <Campo
+            etiqueta="Vigencia"
+            id="vigencia"
+            name="vigencia"
+            type="number"
+            // D18 (docs/DECISIONES.md, 2026-09-23): min/max solo es ayuda
+            // de UX -- el rechazo real ya lo hace el backend
+            // (Corte.validar_vigencia), igual que la fecha de abajo. No se
+            // repiten estos numeros como constante compartida porque el
+            // backend es Python y el frontend JS; si el rango cambia, hay
+            // que actualizar los dos lados (ver D18).
+            min={2000}
+            max={2100}
+            placeholder="Ej: 2026"
+            value={vigencia}
+            onChange={(evento) => setVigencia(evento.target.value)}
+            required
+          />
 
-          <div>
-            <label
-              htmlFor="fecha-corte"
-              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
-            >
-              Fecha del corte
-            </label>
-            <input
-              id="fecha-corte"
-              name="fechaCorte"
-              type="date"
-              max={fechaMaxima}
-              value={fechaCorte}
-              onChange={(evento) => {
-                const nuevaFecha = evento.target.value;
-                if (nuevaFecha <= fechaMaxima) {
-                  setFechaCorte(nuevaFecha);
-                }
-              }}
-              required
-              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 font-mono text-sm focus:border-azul focus:outline-none"
-            />
-          </div>
+          <Campo
+            etiqueta="Fecha del corte"
+            id="fecha-corte"
+            name="fechaCorte"
+            type="date"
+            max={fechaMaxima}
+            value={fechaCorte}
+            onChange={(evento) => {
+              const nuevaFecha = evento.target.value;
+              if (nuevaFecha <= fechaMaxima) {
+                setFechaCorte(nuevaFecha);
+              }
+            }}
+            required
+            className="font-mono"
+          />
 
           <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={enviando}
-              className="rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
-            >
+            <Boton type="submit" deshabilitado={enviando}>
               Continuar
-            </button>
+            </Boton>
           </div>
         </div>
 

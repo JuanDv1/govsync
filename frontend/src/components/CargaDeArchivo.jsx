@@ -149,7 +149,7 @@ export default function CargaDeArchivo({
       >
         <Cargando mensaje={`Subiendo ${etiqueta}…`} />
         {progreso !== null && (
-          <p className="carga-de-archivo-progreso mt-2 flex items-center gap-2 text-xs text-gray-500">
+          <p className="carga-de-archivo-progreso mt-2 flex items-center gap-2 text-campo text-gray-600">
             <progress value={progreso} max={100} className="w-full" />
             <span className="font-mono">{progreso}%</span>
           </p>
@@ -183,10 +183,10 @@ export default function CargaDeArchivo({
           <p className="text-sm font-medium text-gray-600">
             Arrastre el archivo aquí o haga clic
           </p>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-ayuda text-gray-600">
             Formato: .xlsx · Máximo {TAMANO_MAXIMO_BYTES / 1_048_576} MB
           </p>
-          <span className="mt-4 inline-block rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-[11px] font-medium text-azul">
+          <span className="mt-4 inline-block rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-campo font-medium text-azul">
             Seleccionar archivo
           </span>
         </label>
@@ -196,18 +196,18 @@ export default function CargaDeArchivo({
         <div className="mt-3 flex items-center gap-3 rounded-sm border border-green-200 bg-green-50 p-3">
           <Check size={15} className="shrink-0 text-green-600" />
           <div className="flex-1">
-            <p className="text-xs font-semibold text-green-800">
+            <p className="text-campo font-semibold text-green-800">
               Archivo cargado correctamente
             </p>
             {nombreArchivo && (
-              <p className="mt-0.5 font-mono text-[11px] text-green-600">
+              <p className="mt-0.5 font-mono text-ayuda text-green-700">
                 {nombreArchivo}
               </p>
             )}
           </div>
           <label
             htmlFor={idEntrada}
-            className="cursor-pointer text-[11px] font-medium text-green-600 hover:text-green-800"
+            className="cursor-pointer text-campo font-medium text-green-700 hover:text-green-800"
           >
             Reemplazar
           </label>
@@ -221,7 +221,7 @@ export default function CargaDeArchivo({
       {cargado && error && (
         <label
           htmlFor={idEntrada}
-          className="mt-3 inline-block cursor-pointer text-[11px] font-medium text-azul hover:text-navy"
+          className="mt-3 inline-block cursor-pointer text-campo font-medium text-azul hover:text-navy"
         >
           Seleccionar otro archivo
         </label>
@@ -239,7 +239,7 @@ export default function CargaDeArchivo({
       {avisoExtension && (
         <div className="mt-3 flex items-start gap-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2.5">
           <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-500" />
-          <p className="text-[11px] text-amber-800">
+          <p className="text-campo text-amber-800">
             Solo se aceptan archivos .xlsx.
           </p>
         </div>
@@ -248,7 +248,7 @@ export default function CargaDeArchivo({
       {avisoTamano && (
         <div className="mt-3 flex items-start gap-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2.5">
           <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-500" />
-          <p className="text-[11px] text-amber-800">
+          <p className="text-campo text-amber-800">
             El archivo supera el tamaño máximo permitido (
             {TAMANO_MAXIMO_BYTES / 1_048_576} MB).
           </p>

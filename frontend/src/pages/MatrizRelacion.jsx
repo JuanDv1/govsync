@@ -202,7 +202,7 @@ function PaginacionMatriz({
         type="button"
         onClick={() => onCambiarPagina(pagina - 1)}
         disabled={pagina <= 1 || actualizando}
-        className="rounded-sm border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Anterior
       </button>
@@ -212,7 +212,7 @@ function PaginacionMatriz({
           total queda visible, fuera de las regiones live, en el mismo orden
           de siempre. Las dos regiones están siempre montadas (una región que
           se monta ya con texto no se anuncia). */}
-      <span className="text-[11px] text-gray-500">
+      <span className="text-ayuda text-gray-600">
         <span aria-live="polite">
           Página {pagina} de {totalPaginas}
         </span>
@@ -224,7 +224,7 @@ function PaginacionMatriz({
         type="button"
         onClick={() => onCambiarPagina(pagina + 1)}
         disabled={pagina >= totalPaginas || actualizando}
-        className="rounded-sm border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Siguiente
       </button>
@@ -545,7 +545,7 @@ export default function MatrizRelacion() {
           Matriz de relación
         </h1>
         {corteId && (
-          <p className="mt-0.5 text-[11px] text-gray-500">
+          <p className="mt-0.5 text-ayuda text-gray-600">
             Corte <span className="font-mono">{corteId}</span>
           </p>
         )}
@@ -564,7 +564,7 @@ export default function MatrizRelacion() {
             <div>
               <label
                 htmlFor="estado-cruce"
-                className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
+                className="mb-1.5 block text-campo font-medium text-gray-700"
               >
                 Estado del cruce
               </label>
@@ -572,7 +572,7 @@ export default function MatrizRelacion() {
                 id="estado-cruce"
                 value={estadoCruce}
                 onChange={(evento) => cambiarEstadoCruce(evento.target.value)}
-                className="rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
+                className="rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
               >
                 {OPCIONES_ESTADO_CRUCE.map((opcion) => (
                   <option key={opcion.valor} value={opcion.valor}>
@@ -585,7 +585,7 @@ export default function MatrizRelacion() {
             <div className="min-w-[220px] flex-1">
               <label
                 htmlFor="busqueda-matriz"
-                className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
+                className="mb-1.5 block text-campo font-medium text-gray-700"
               >
                 Buscar
               </label>
@@ -595,7 +595,7 @@ export default function MatrizRelacion() {
                 placeholder="Código de indicador, BPIN o número de contrato"
                 value={busquedaInput}
                 onChange={(evento) => setBusquedaInput(evento.target.value)}
-                className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
+                className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
               />
             </div>
 
@@ -634,7 +634,7 @@ export default function MatrizRelacion() {
             <div
               aria-live="polite"
               aria-atomic="true"
-              className="ml-auto shrink-0 text-[11px] text-gray-500"
+              className="ml-auto shrink-0 text-ayuda text-gray-600"
             >
               {matrizVisible ? textoRegistros(matrizVisible.total_filas) : ""}
             </div>
@@ -687,12 +687,12 @@ export default function MatrizRelacion() {
                   {COLUMNAS.map((columna) => (
                     <th
                       key={columna.clave}
-                      className="whitespace-nowrap px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400"
+                      className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600"
                     >
                       {columna.titulo}
                     </th>
                   ))}
-                  <th className="whitespace-nowrap px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                  <th className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
                     Estado
                   </th>
                 </tr>
@@ -706,7 +706,10 @@ export default function MatrizRelacion() {
                       className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60"
                     >
                       {COLUMNAS.map((columna) => (
-                        <td key={columna.clave} className="px-4 py-2.5 text-xs">
+                        <td
+                          key={columna.clave}
+                          className="px-4 py-2.5 text-campo"
+                        >
                           <Celda
                             clave={columna.clave}
                             valor={fila[columna.clave]}

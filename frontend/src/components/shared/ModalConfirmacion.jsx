@@ -58,7 +58,7 @@ export default function ModalConfirmacion({
         </p>
         <p
           id="modal-confirmacion-mensaje"
-          className="mt-2 text-xs text-gray-600"
+          className="mt-2 text-campo text-gray-600"
         >
           {mensaje}
         </p>
@@ -68,14 +68,14 @@ export default function ModalConfirmacion({
             ref={botonCancelarRef}
             type="button"
             onClick={onCancelar}
-            className="rounded-sm border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50"
           >
             {textoCancelar}
           </button>
           <button
             type="button"
             onClick={onConfirmar}
-            className="rounded-sm bg-navy px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-navy-hover"
+            className="rounded-sm bg-navy px-3 py-1.5 text-campo font-semibold text-white transition-colors hover:bg-navy-hover"
           >
             {textoConfirmar}
           </button>
