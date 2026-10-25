@@ -1927,18 +1927,25 @@ tomarán en la Fase 0.
 - Adoptar una librería de componentes. Descartada: sobreingeniería para el
   tamaño actual.
 
-**Pendientes (abiertos, no decididos):**
+**Decisiones adoptadas por el equipo (pendientes de ratificar por el PO):**
+adoptadas el 2026-10-25.
 
-- Ancho mínimo soportado y si tablet/móvil entran en el alcance.
-- Tratamiento de Sube/Baja. Recomendación: píldora con flecha y palabra, sin
-  verde ni rojo, para no chocar con el semáforo.
-- Tratamiento de los filtros activos. Recomendación: azul (no ámbar, por
-  choque con el amarillo del semáforo).
-- Función del header vacío de 44 px de `Disposicion.jsx`: contenido útil o
-  eliminarlo.
-- Si la aceptación del PO cubre toda la app o solo Comparar cortes.
+- **(a) Alcance:** el refresh aplica a toda la aplicación.
+- **(b) Sube/Baja en Comparar cortes:** se mantiene verde (sube) y rojo
+  (baja), siempre acompañados de flecha, signo (+/−) y palabra; el significado
+  nunca depende solo del color. Contraste ≥ 4,5:1: verde 5,02 sobre blanco y
+  4,71 sobre la fila alterna; rojo 6,47 y 6,07 (cifras calculadas por el
+  equipo).
+- **(c) Filtros activos:** en azul. El amarillo y el ámbar quedan para el
+  semáforo y los datos sin información.
+- **(d) Barra superior de 44 px de `Disposicion.jsx`:** se deja como está, sin
+  contenido.
+- **(e) Pantallas soportadas:** escritorio y portátil (≥ 1024 px, también con
+  zoom al 150 %). Tablet y celular quedan fuera por ahora, como fase aparte si
+  se pide.
 
 **Estado:** PROPUESTA — pendiente de confirmar con el PO. No tratar como
 vigente hasta que lo ratifique.
 
-**Registrado:** 2026-10-25, Juan David (frontend).
+**Registrado:** 2026-10-25, Juan David (frontend). Actualizado el 2026-10-25
+con las decisiones del equipo.
