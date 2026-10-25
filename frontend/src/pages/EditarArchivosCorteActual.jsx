@@ -59,13 +59,15 @@
  *         rollback del backend, visto desde el frontend).
  */
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { api } from "../api/cliente.js";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 import AvisoMetasEliminadas from "../components/AvisoMetasEliminadas.jsx";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
+import Boton from "../components/shared/Boton.jsx";
 import Card from "../components/shared/Card.jsx";
+import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import ModalConfirmacion from "../components/shared/ModalConfirmacion.jsx";
 import SectionHeader from "../components/shared/SectionHeader.jsx";
 import { esCorteActual } from "../lib/corteActual.js";
@@ -272,12 +274,9 @@ export default function EditarArchivosCorteActual() {
           titulo="No tiene permiso para editar los archivos del corte"
           descripcion="Su rol es de solo lectura: puede consultar el corte, pero no modificar sus archivos."
           accion={
-            <Link
-              to="/cortes"
-              className="text-campo font-medium text-azul hover:text-navy"
-            >
+            <Boton variante="secundario" to="/cortes">
               ← Volver al histórico
-            </Link>
+            </Boton>
           }
         />
       </section>
@@ -312,12 +311,9 @@ export default function EditarArchivosCorteActual() {
           titulo="Este corte todavía no está registrado"
           descripcion='Sigue en estado "En creación" — use el flujo de creación para cargar o corregir sus archivos.'
           accion={
-            <Link
-              to={`/cortes/${corte.id}`}
-              className="text-campo font-medium text-azul hover:text-navy"
-            >
+            <Boton variante="secundario" to={`/cortes/${corte.id}`}>
               Ir al flujo de creación
-            </Link>
+            </Boton>
           }
         />
       </section>
@@ -333,12 +329,9 @@ export default function EditarArchivosCorteActual() {
           titulo="Solo se puede editar el corte más reciente"
           descripcion="Este corte ya está registrado, pero no es el corte actual."
           accion={
-            <Link
-              to={`/matriz/${corte.id}`}
-              className="text-campo font-medium text-azul hover:text-navy"
-            >
+            <Boton variante="secundario" to={`/matriz/${corte.id}`}>
               Ver su matriz de relación
-            </Link>
+            </Boton>
           }
         />
       </section>
@@ -347,23 +340,22 @@ export default function EditarArchivosCorteActual() {
 
   return (
     <section className="mx-auto max-w-4xl">
-      <Link
-        to="/cortes"
-        className="text-campo font-medium text-azul hover:text-navy"
-      >
-        ← Volver al histórico
-      </Link>
+      <div className="mb-3">
+        <Boton variante="secundario" to="/cortes">
+          ← Volver al histórico
+        </Boton>
+      </div>
 
-      <header className="mt-2 mb-5">
-        <h1 className="text-base font-semibold text-gray-800">
-          Editar archivos del corte actual
-        </h1>
-        <p className="mt-0.5 text-ayuda text-gray-600">
-          Corte de vigencia {corte.vigencia}, fecha{" "}
-          <span className="font-mono">{corte.fecha_corte}</span>. Reemplazar una
-          fuente actualiza la matriz del corte.
-        </p>
-      </header>
+      <EncabezadoPantalla
+        titulo="Editar archivos del corte actual"
+        descripcion={
+          <>
+            Corte de vigencia {corte.vigencia}, fecha{" "}
+            <span className="font-mono">{corte.fecha_corte}</span>. Reemplazar
+            una fuente actualiza la matriz del corte.
+          </>
+        }
+      />
 
       <div className="flex flex-col gap-5">
         {FUENTES.map(({ tipo, etiqueta }) => {
@@ -384,7 +376,7 @@ export default function EditarArchivosCorteActual() {
                     abajo. */}
                 <dl className="grid grid-cols-2 gap-3 text-campo">
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <dt className="text-minimo font-semibold uppercase tracking-wide text-gray-600">
                       Archivo
                     </dt>
                     <dd className="mt-0.5 font-mono text-gray-700">
@@ -392,7 +384,7 @@ export default function EditarArchivosCorteActual() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                    <dt className="text-minimo font-semibold uppercase tracking-wide text-gray-600">
                       Cargado
                     </dt>
                     <dd className="mt-0.5 font-mono text-gray-700">
@@ -453,7 +445,7 @@ export default function EditarArchivosCorteActual() {
             {historial.map((entrada) => (
               <li
                 key={entrada.id}
-                className="flex items-center justify-between border-b border-gray-100 pb-2 text-campo last:border-0 last:pb-0"
+                className="flex items-center justify-between border-b border-borde-suave pb-2 text-campo last:border-0 last:pb-0"
               >
                 <span className="font-medium text-gray-700">
                   {etiquetaPorTipo(entrada.tipo)}
