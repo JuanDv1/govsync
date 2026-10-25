@@ -55,6 +55,12 @@ import Card from "../components/shared/Card.jsx";
 import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
 import {
+  TD,
+  TH,
+  TH_BASE,
+  fondoDeFila,
+} from "../components/shared/estilosTabla.js";
+import {
   consultaComparacion,
   mensajeErrorComparacion,
   mensajeErrorExportarComparacion,
@@ -69,27 +75,31 @@ import {
   ppConSigno,
 } from "../lib/formato.js";
 
-//: Clases de encabezado y celda (copia de `PlanAccion.jsx`). Los bordes van
-//: en cada celda porque la tabla es `border-separate` (columnas fijas).
-//: `TH_BASE` no lleva fondo: la columna "Cambio" pone el suyo sin que dos
-//: clases `bg-*` dependan del orden del CSS.
-const TH_BASE =
-  "whitespace-nowrap border-b border-gray-200 px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-gray-600";
-const TH = `${TH_BASE} bg-gray-50`;
-const TD = "border-b border-gray-100 px-3 py-3 text-campo align-top";
-
 //: Separadores de la comparación. La tabla es `border-separate`, así que los
 //: bordes van en cada celda (encabezado y filas). Línea marcada al inicio de
 //: cada grupo de métricas y suave entre A | B | Cambio. El inicio del primer
 //: grupo lo aporta el `border-r` de la columna fija "Meta" (mismo color), así
 //: no hay línea doble y el separador sigue a la vista al desplazar.
 const INICIO_GRUPO = "border-l border-l-gray-300";
-const ENTRE_SUBCOLUMNAS = "border-l border-l-gray-100";
+const ENTRE_SUBCOLUMNAS = "border-l border-l-borde-suave";
 const BORDE_META = "border-r border-r-gray-300";
-//: Fondo muy leve de la columna "Cambio". El del encabezado es opaco porque
-//: es `sticky`: lo que se desplaza por debajo no debe verse a través.
-const FONDO_CAMBIO_CELDA = "bg-gray-50";
-const FONDO_CAMBIO_ENCABEZADO = "bg-gray-100";
+
+//: Grupos de columnas, de izquierda a derecha. Cada grupo lleva su tinte y el
+//: texto de su `sobretinte` SOLO en la fila de grupos del encabezado (no en
+//: cada celda): violeta para % Avance físico, azul para Ejecución y verde para
+//: % Avance financiero. La columna "Cambio" NO lleva fondo propio: se
+//: distingue por el separador y por su rótulo.
+const GRUPOS = [
+  {
+    texto: "% Avance físico",
+    tinte: "bg-tinte-violeta text-sobretinte-violeta",
+  },
+  { texto: "Ejecución", tinte: "bg-tinte-azul text-sobretinte-azul" },
+  {
+    texto: "% Avance financiero",
+    tinte: "bg-tinte-verde text-sobretinte-verde",
+  },
+];
 
 /**
  * Bordes de una subcolumna (`posicion`: 0 = A, 1 = B, 2 = Cambio) del grupo
@@ -100,12 +110,6 @@ function bordesSubcolumna(grupo, posicion) {
   return ENTRE_SUBCOLUMNAS;
 }
 
-/** Bordes y fondo de una celda de fila en esa subcolumna. */
-function clasesCelda(grupo, posicion) {
-  const fondo = posicion === 2 ? FONDO_CAMBIO_CELDA : "";
-  return `${bordesSubcolumna(grupo, posicion)} ${fondo}`;
-}
-
 /** "AAAA-MM-DD" → "DD/MM", partiendo el texto (nunca `new Date`). */
 function fechaCorta(iso) {
   return fechaCorte(iso)?.slice(0, 5) ?? null;
@@ -114,12 +118,14 @@ function fechaCorta(iso) {
 //: Columnas fijas "Código" y "Meta": el `left` de "Meta" es el ancho de
 //: "Código"; si uno cambia, cambia el otro.
 const ANCHO_CODIGO = "w-[120px] min-w-[120px] max-w-[120px]";
-const ANCHO_META = "w-[280px] min-w-[280px] max-w-[280px]";
+const ANCHO_META = "w-[320px] min-w-[320px] max-w-[320px]";
 const LEFT_META = "left-[120px]";
 
-//: Alto de la primera fila del encabezado: la segunda queda fija justo debajo
-//: (`top-10`).
-const ALTO_FILA_GRUPOS = "h-10";
+//: Alto de la primera fila del encabezado (grupos) y `top` de la segunda, que
+//: queda fija justo debajo: los dos valen 2,75 rem (44 px), así escalan juntos
+//: y no queda hueco ni solape. Si cambia uno, cambia el otro.
+const ALTO_FILA_GRUPOS = "h-11";
+const TOP_SUBENCABEZADO = "top-11";
 
 //: CA06: insignia de una meta que está en un solo corte.
 const PRESENCIA = {
@@ -208,24 +214,24 @@ function CeldaValor({ valor, formato, className = "" }) {
   );
 }
 
-function FilaComparacion({ fila }) {
+function FilaComparacion({ fila, indice }) {
   const enUnSoloCorte = fila.presencia !== "ambos";
   const sinDato = enUnSoloCorte
     ? "No comparable: la meta está en un solo corte"
     : "No comparable: falta el dato en al menos uno de los cortes";
 
   return (
-    <tr>
+    <tr className={fondoDeFila(indice)}>
       <td className={TD}>{fila.sector ?? <Guion />}</td>
       <td
-        className={`${TD} sticky left-0 z-10 bg-white font-mono ${ANCHO_CODIGO}`}
+        className={`${TD} sticky left-0 z-10 bg-inherit font-mono ${ANCHO_CODIGO}`}
       >
         {fila.cod_indicador_producto}
       </td>
       <td
-        className={`${TD} sticky z-10 bg-white ${LEFT_META} ${ANCHO_META} ${BORDE_META}`}
+        className={`${TD} sticky z-10 bg-inherit ${LEFT_META} ${ANCHO_META} ${BORDE_META}`}
       >
-        <div className="line-clamp-3" title={fila.nombre_producto ?? ""}>
+        <div className="line-clamp-4" title={fila.nombre_producto ?? ""}>
           {fila.nombre_producto ?? <Guion />}
         </div>
         {enUnSoloCorte && (
@@ -242,7 +248,7 @@ function FilaComparacion({ fila }) {
       {[0, 1, 2].map((posicion) => (
         <td
           key={posicion}
-          className={`${TD} text-right ${clasesCelda(0, posicion)}`}
+          className={`${TD} text-right ${bordesSubcolumna(0, posicion)}`}
         >
           <Guion />
         </td>
@@ -250,34 +256,34 @@ function FilaComparacion({ fila }) {
       <CeldaValor
         valor={fila.ejecucion_a}
         formato={(v) => cop(Number(v))}
-        className={clasesCelda(1, 0)}
+        className={bordesSubcolumna(1, 0)}
       />
       <CeldaValor
         valor={fila.ejecucion_b}
         formato={(v) => cop(Number(v))}
-        className={clasesCelda(1, 1)}
+        className={bordesSubcolumna(1, 1)}
       />
       <CeldaDelta
         valor={fila.ejecucion_delta}
         formato={copConSigno}
         sinDato={sinDato}
-        className={clasesCelda(1, 2)}
+        className={bordesSubcolumna(1, 2)}
       />
       <CeldaValor
         valor={fila.avance_financiero_pct_a}
         formato={pct}
-        className={clasesCelda(2, 0)}
+        className={bordesSubcolumna(2, 0)}
       />
       <CeldaValor
         valor={fila.avance_financiero_pct_b}
         formato={pct}
-        className={clasesCelda(2, 1)}
+        className={bordesSubcolumna(2, 1)}
       />
       <CeldaDelta
         valor={fila.avance_financiero_delta}
         formato={ppConSigno}
         sinDato={sinDato}
-        className={clasesCelda(2, 2)}
+        className={bordesSubcolumna(2, 2)}
       />
     </tr>
   );
@@ -309,8 +315,8 @@ function SubencabezadosGrupo({ grupo, fechaA, fechaB }) {
         key={sub.texto}
         scope="col"
         title={sub.detalle}
-        className={`${TH_BASE} sticky top-10 z-10 text-right ${bordesSubcolumna(grupo, posicion)} ${
-          esCambio ? `min-w-[72px] ${FONDO_CAMBIO_ENCABEZADO}` : "bg-gray-50"
+        className={`${TH} sticky ${TOP_SUBENCABEZADO} z-10 text-right ${bordesSubcolumna(grupo, posicion)} ${
+          esCambio ? "min-w-[72px]" : ""
         }`}
       >
         <span aria-hidden="true" className="block">
@@ -333,7 +339,6 @@ function SubencabezadosGrupo({ grupo, fechaA, fechaB }) {
 function TablaComparacion({ datos }) {
   const fechaA = fechaCorte(datos.corte_a.fecha_corte);
   const fechaB = fechaCorte(datos.corte_b.fecha_corte);
-  const grupos = ["% Avance físico", "Ejecución", "% Avance financiero"];
 
   return (
     <table className="w-full border-separate border-spacing-0">
@@ -364,20 +369,20 @@ function TablaComparacion({ datos }) {
           >
             Meta
           </th>
-          {grupos.map((grupo, indice) => (
+          {GRUPOS.map((grupo, indice) => (
             <th
-              key={grupo}
+              key={grupo.texto}
               scope="colgroup"
               colSpan={3}
-              className={`${TH} sticky top-0 z-10 ${ALTO_FILA_GRUPOS} ${indice === 0 ? "" : INICIO_GRUPO} text-center`}
+              className={`${TH_BASE} ${grupo.tinte} sticky top-0 z-10 ${ALTO_FILA_GRUPOS} ${indice === 0 ? "" : INICIO_GRUPO} text-center`}
             >
-              {grupo}
+              {grupo.texto}
             </th>
           ))}
         </tr>
         <tr>
-          {grupos.map((grupo, indice) => (
-            <Fragment key={grupo}>
+          {GRUPOS.map((grupo, indice) => (
+            <Fragment key={grupo.texto}>
               <SubencabezadosGrupo
                 grupo={indice}
                 fechaA={datos.corte_a.fecha_corte}
@@ -388,8 +393,12 @@ function TablaComparacion({ datos }) {
         </tr>
       </thead>
       <tbody>
-        {datos.filas.map((fila) => (
-          <FilaComparacion key={fila.cod_indicador_producto} fila={fila} />
+        {datos.filas.map((fila, indice) => (
+          <FilaComparacion
+            key={fila.cod_indicador_producto}
+            fila={fila}
+            indice={indice}
+          />
         ))}
       </tbody>
     </table>

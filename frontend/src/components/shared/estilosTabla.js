@@ -14,13 +14,14 @@
  *   con `whitespace-nowrap` y alineados a la derecha.
  */
 
-//: Encabezado de columna SIN fondo: 12 px en mayúsculas, `gray-600`. Sirve
-//: para los encabezados que llevan su propio tinte (grupos de columnas).
+//: Encabezado de columna SIN fondo ni color de texto: 12 px en mayúsculas. Sirve
+//: para los encabezados que llevan su propio tinte y texto (grupos de columnas);
+//: así no compiten dos clases `bg-*` ni dos `text-*` por el orden del CSS.
 export const TH_BASE =
-  "whitespace-nowrap border-b border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-600";
+  "whitespace-nowrap border-b border-gray-200 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide";
 
-//: Encabezado de columna con el gris suave de siempre (6,7:1 el texto).
-export const TH = `${TH_BASE} bg-gray-50`;
+//: Encabezado de columna con el gris suave de siempre (7,2:1 el texto).
+export const TH = `${TH_BASE} bg-gray-50 text-gray-600`;
 
 //: Celda de dato: 14 px y separador horizontal suave de 1 px.
 export const TD = "border-b border-borde-suave px-4 py-3 text-campo align-top";
