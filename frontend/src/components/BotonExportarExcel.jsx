@@ -32,7 +32,7 @@ import Boton from "./shared/Boton.jsx";
 
 //: `Boton` recibe el ícono como componente: este gira solo si la persona acepta
 //: animaciones.
-const IconoCargando = (props) => (
+export const IconoCargando = (props) => (
   <LoaderCircle {...props} className="motion-safe:animate-spin" />
 );
 

@@ -100,13 +100,13 @@ import {
   CircleCheck,
   Download,
   Info,
-  LoaderCircle,
 } from "lucide-react";
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { api } from "../api/cliente.js";
+import { IconoCargando } from "../components/BotonExportarExcel.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import FiltrosPlanAccion from "../components/FiltrosPlanAccion.jsx";
+import Boton from "../components/shared/Boton.jsx";
 import Card from "../components/shared/Card.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
 import {
@@ -150,12 +150,6 @@ const TD = "border-b border-gray-100 px-4 py-3 text-sm align-top";
 //: al menos 32px de alto y foco visible.
 const BOTON =
   "inline-flex min-h-8 items-center rounded-sm border border-gray-300 bg-white px-2.5 text-sm font-medium text-azul hover:bg-secundario focus:outline-none focus-visible:ring-2 focus-visible:ring-azul focus-visible:ring-offset-1";
-
-//: Botón de la barra de filtros ("Filtros", "Limpiar filtros"): al menos 40px
-//: de alto, 14px y foco visible. Aparte de `BOTON` porque dos `min-h-*` en la
-//: misma clase no se pueden pisar entre sí.
-const BOTON_FILTROS =
-  "inline-flex min-h-10 items-center gap-1.5 rounded-sm border border-gray-300 bg-white px-3 text-sm font-medium text-azul hover:bg-secundario focus:outline-none focus-visible:ring-2 focus-visible:ring-azul focus-visible:ring-offset-1";
 
 //: Anchos de las dos columnas fijas (CA07). El `left` de la segunda es el
 //: ancho de la primera; si uno cambia, cambia el otro.
@@ -628,23 +622,21 @@ function ErrorPlan({ error, onReintentar }) {
 /**
  * [E04-HU04/CA01-CA02] "Comparar cortes". `cortes` es la respuesta de
  * `cortesDisponibles` (o `null` mientras carga) y `error` el de esa consulta.
- * Con 2 o más cortes es un enlace; si no, un botón deshabilitado con el motivo
- * visible a su lado (asociado con `aria-describedby`). El aspecto
- * deshabilitado no depende solo del color: borde discontinuo y cursor de "no
- * permitido".
+ * Con 2 o más cortes es un enlace (`Boton to`); si no, un `Boton` inactivo con
+ * el motivo visible a su lado, según la convención de `Boton` (`aria-disabled`
+ * y `aria-describedby`; se puede enfocar). Mientras carga no hay motivo y queda
+ * con `disabled` nativo.
  */
 function BotonCompararCortes({ vigencia, cortes, error }) {
-  const idAviso = useId();
-
   if (!error && cortes !== null && cortes.length >= 2) {
     return (
-      <Link
+      <Boton
+        variante="secundario"
+        icono={ArrowLeftRight}
         to={`/plan-accion/comparar?vigencia=${vigencia}`}
-        className={BOTON_FILTROS}
       >
-        <ArrowLeftRight size={16} aria-hidden="true" />
         Comparar cortes
-      </Link>
+      </Boton>
     );
   }
 
@@ -655,23 +647,15 @@ function BotonCompararCortes({ vigencia, cortes, error }) {
   }
 
   return (
-    <span className="inline-flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        disabled
-        aria-describedby={aviso ? idAviso : undefined}
-        aria-busy={cortes === null && !error}
-        className={`${BOTON_FILTROS} disabled:cursor-not-allowed disabled:border-dashed disabled:bg-gray-50 disabled:text-gray-500`}
-      >
-        <ArrowLeftRight size={16} aria-hidden="true" />
-        Comparar cortes
-      </button>
-      {aviso && (
-        <span id={idAviso} className="text-sm text-gray-600">
-          {aviso}
-        </span>
-      )}
-    </span>
+    <Boton
+      variante="secundario"
+      icono={ArrowLeftRight}
+      deshabilitado
+      motivo={aviso}
+      aria-busy={cortes === null && !error}
+    >
+      Comparar cortes
+    </Boton>
   );
 }
 
@@ -832,13 +816,12 @@ function ContenidoPlan({ datos }) {
     <>
       <Card className="mb-4">
         <div className="flex flex-wrap items-center gap-3">
-          <button
+          <Boton
             ref={refBotonFiltros}
-            type="button"
+            variante="secundario"
             aria-expanded={panelAbierto}
             aria-controls={idPanel}
             onClick={() => setPanelAbierto((abierto) => !abierto)}
-            className={BOTON_FILTROS}
           >
             Filtros{activos > 0 ? ` (${activos})` : ""}
             <ChevronDown
@@ -846,18 +829,14 @@ function ContenidoPlan({ datos }) {
               aria-hidden="true"
               className={panelAbierto ? "rotate-180" : ""}
             />
-          </button>
+          </Boton>
 
           {/* Con el aviso de "sin resultados" el botón ya está allí: no hay
               dos botones con el mismo nombre a la vez. */}
           {activos > 0 && !sinResultados && (
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className={BOTON_FILTROS}
-            >
+            <Boton variante="secundario" onClick={limpiarFiltros}>
               Limpiar filtros
-            </button>
+            </Boton>
           )}
 
           {/* [E04-HU03/CA07] `disabled` nativo SOLO sin filas visibles. Mientras
@@ -865,26 +844,18 @@ function ContenidoPlan({ datos }) {
               botón. El estado deshabilitado no depende solo del color: borde
               discontinuo, cursor de "no permitido" y, al exportar, el texto
               cambia y gira un icono (solo si la persona acepta animaciones). */}
-          <button
-            type="button"
+          <Boton
+            variante="secundario"
+            icono={exportando ? IconoCargando : Download}
             onClick={exportar}
-            disabled={sinResultados}
+            deshabilitado={sinResultados}
             aria-disabled={exportando || undefined}
             aria-busy={exportando}
             title={sinResultados ? "No hay metas para exportar" : undefined}
-            className={`${BOTON_FILTROS} disabled:cursor-not-allowed disabled:border-dashed disabled:bg-gray-50 disabled:text-gray-500 aria-disabled:cursor-progress aria-disabled:bg-gray-50`}
+            className="aria-disabled:cursor-progress aria-disabled:bg-gray-50"
           >
-            {exportando ? (
-              <LoaderCircle
-                size={16}
-                aria-hidden="true"
-                className="motion-safe:animate-spin"
-              />
-            ) : (
-              <Download size={16} aria-hidden="true" />
-            )}
             {exportando ? "Generando archivo…" : "Exportar a Excel"}
-          </button>
+          </Boton>
 
           <BotonCompararCortes
             vigencia={datos.vigencia}
@@ -897,7 +868,7 @@ function ContenidoPlan({ datos }) {
           <p
             aria-live="polite"
             aria-atomic="true"
-            className="ml-auto text-sm font-medium text-gray-700"
+            className="ml-auto text-campo font-medium text-gray-700"
           >
             Mostrando {filasVisibles.length} de {datos.filas.length} metas
           </p>
@@ -908,7 +879,7 @@ function ContenidoPlan({ datos }) {
             (que se anuncia al aparecer). */}
         <p
           aria-live="polite"
-          className={`flex items-center gap-2 text-sm font-medium text-green-800 ${mensajeExito ? "mt-3" : ""}`}
+          className={`flex items-center gap-2 text-campo font-medium text-green-800 ${mensajeExito ? "mt-3" : ""}`}
         >
           {mensajeExito && (
             <>
@@ -920,7 +891,7 @@ function ContenidoPlan({ datos }) {
         {mensajeError && (
           <p
             role="alert"
-            className="mt-3 flex items-start gap-2 rounded-sm border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800"
+            className="mt-3 flex items-start gap-2 rounded-control border border-red-200 bg-red-50 px-3 py-2 text-campo text-red-800"
           >
             <CircleAlert
               size={16}
@@ -951,13 +922,9 @@ function ContenidoPlan({ datos }) {
         <Vacio
           titulo="No hay metas que cumplan los filtros seleccionados"
           accion={
-            <button
-              type="button"
-              onClick={limpiarFiltros}
-              className={BOTON_FILTROS}
-            >
+            <Boton variante="secundario" onClick={limpiarFiltros}>
               Limpiar filtros
-            </button>
+            </Boton>
           }
         />
       ) : (
