@@ -6,6 +6,8 @@ import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
+import Boton from "../components/shared/Boton.jsx";
+import Campo from "../components/shared/Campo.jsx";
 import Card from "../components/shared/Card.jsx";
 import SectionHeader from "../components/shared/SectionHeader.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
@@ -498,65 +500,46 @@ export default function NuevoCorte() {
         <SectionHeader>Datos del corte</SectionHeader>
 
         <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label
-              htmlFor="vigencia"
-              className="mb-1.5 block text-campo font-medium text-gray-700"
-            >
-              Vigencia
-            </label>
-            <input
-              id="vigencia"
-              name="vigencia"
-              type="number"
-              // D18 (docs/DECISIONES.md, 2026-09-23): min/max solo es ayuda
-              // de UX -- el rechazo real ya lo hace el backend
-              // (Corte.validar_vigencia), igual que la fecha de abajo. No se
-              // repiten estos numeros como constante compartida porque el
-              // backend es Python y el frontend JS; si el rango cambia, hay
-              // que actualizar los dos lados (ver D18).
-              min={2000}
-              max={2100}
-              placeholder="Ej: 2026"
-              value={vigencia}
-              onChange={(evento) => setVigencia(evento.target.value)}
-              required
-              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
-            />
-          </div>
+          <Campo
+            etiqueta="Vigencia"
+            id="vigencia"
+            name="vigencia"
+            type="number"
+            // D18 (docs/DECISIONES.md, 2026-09-23): min/max solo es ayuda
+            // de UX -- el rechazo real ya lo hace el backend
+            // (Corte.validar_vigencia), igual que la fecha de abajo. No se
+            // repiten estos numeros como constante compartida porque el
+            // backend es Python y el frontend JS; si el rango cambia, hay
+            // que actualizar los dos lados (ver D18).
+            min={2000}
+            max={2100}
+            placeholder="Ej: 2026"
+            value={vigencia}
+            onChange={(evento) => setVigencia(evento.target.value)}
+            required
+          />
 
-          <div>
-            <label
-              htmlFor="fecha-corte"
-              className="mb-1.5 block text-campo font-medium text-gray-700"
-            >
-              Fecha del corte
-            </label>
-            <input
-              id="fecha-corte"
-              name="fechaCorte"
-              type="date"
-              max={fechaMaxima}
-              value={fechaCorte}
-              onChange={(evento) => {
-                const nuevaFecha = evento.target.value;
-                if (nuevaFecha <= fechaMaxima) {
-                  setFechaCorte(nuevaFecha);
-                }
-              }}
-              required
-              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 font-mono text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
-            />
-          </div>
+          <Campo
+            etiqueta="Fecha del corte"
+            id="fecha-corte"
+            name="fechaCorte"
+            type="date"
+            max={fechaMaxima}
+            value={fechaCorte}
+            onChange={(evento) => {
+              const nuevaFecha = evento.target.value;
+              if (nuevaFecha <= fechaMaxima) {
+                setFechaCorte(nuevaFecha);
+              }
+            }}
+            required
+            className="font-mono"
+          />
 
           <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={enviando}
-              className="rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
-            >
+            <Boton type="submit" deshabilitado={enviando}>
               Continuar
-            </button>
+            </Boton>
           </div>
         </div>
 
