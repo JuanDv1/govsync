@@ -109,6 +109,7 @@ import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import FiltrosPlanAccion from "../components/FiltrosPlanAccion.jsx";
 import Boton from "../components/shared/Boton.jsx";
 import Card from "../components/shared/Card.jsx";
+import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
 import { TD, TH, fondoDeFila } from "../components/shared/estilosTabla.js";
 import {
@@ -476,7 +477,7 @@ function Leyenda() {
       <li className="flex items-center gap-2">
         <span
           aria-hidden="true"
-          className="inline-block h-3.5 w-6 rounded-sm border border-amber-200 bg-amber-50"
+          className="inline-block h-3.5 w-6 border border-amber-200 bg-amber-50"
         />
         <span>
           Celda resaltada: dato sin información en las fuentes del corte.
@@ -990,13 +991,15 @@ export default function PlanAccion() {
 
   return (
     <section className="mx-auto max-w-[1400px]">
-      <header className="mb-4">
-        <h1 className="text-lg font-semibold text-gray-800">Plan de Acción</h1>
-        <p className="mt-0.5 text-campo text-gray-600">
-          Corte de vigencia {datos.vigencia}, fecha{" "}
-          <span className="font-mono">{fechaCorte(datos.fecha_corte)}</span>.
-        </p>
-      </header>
+      <EncabezadoPantalla
+        titulo="Plan de Acción"
+        descripcion={
+          <>
+            Corte de vigencia {datos.vigencia}, fecha{" "}
+            <span className="font-mono">{fechaCorte(datos.fecha_corte)}</span>.
+          </>
+        }
+      />
 
       {datos.filas.length === 0 ? (
         <Vacio
