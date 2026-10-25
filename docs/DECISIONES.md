@@ -793,6 +793,10 @@ tarjeta.
 tarjeta de estilo visual, pendiente de que el equipo la ratifique como las
 demás decisiones de arquitectura de este documento.
 
+**Nota (2026-10-25):** D35 (PROPUESTA, pendiente de ratificar) propone
+reemplazar parcialmente lo visual (radios, sombras, densidad y escala
+tipográfica). La adopción de Tailwind sigue vigente en todo lo demás.
+
 **Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
 
 ---
@@ -847,6 +851,11 @@ descartan sin costo (son ~20 líneas cada uno).
 
 **Estado:** PROPUESTA — mismo criterio que D19, pendiente de ratificación
 del equipo.
+
+**Nota (2026-10-25):** D35 (PROPUESTA, pendiente de ratificar) propone
+reemplazar parcialmente lo visual que D20 heredó de `DESIGN_SPEC.md` (radios,
+sombras, densidad y escala tipográfica). El sidebar AppShell y la ausencia de
+RBAC siguen vigentes.
 
 **Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
 
@@ -1830,3 +1839,106 @@ Descartada porque dejaba contratos cortos sin poder elegirse.
 **Estado:** RATIFICADA por el PO.
 
 **Registrado:** 2026-10-15, PO.
+
+---
+
+## D35 · Refresh visual del frontend por fases: legibilidad para usuarios de ~50 años
+
+**Clasificación:** Decisión de arquitectura/alcance.
+
+**Decisión:** se hace un refresh visual del frontend por fases, sobre la
+arquitectura existente. No es una reescritura: solo cambia la presentación,
+no la lógica, las rutas ni los contratos.
+
+- **Fases:** 0 decisión y línea base; 1 fundamentos (tokens, escala, átomos,
+  estados globales); 2 shell, Login y modal; 3 Plan de Acción y Comparar
+  cortes; 4 resto de pantallas (por bloques); 5 cierre y limpieza.
+- **Radios y sombra:** 16 px en tarjetas, paneles y tablas; 12 px en botones,
+  campos y listas; píldora solo para estados. Una sola sombra suave, solo en
+  tarjetas y modales.
+- **Tipografía:** texto funcional ≥ 14 px, ayudas 13 px, mínimo absoluto
+  12 px; título de pantalla 24 px, de tarjeta 18 px.
+- **Controles:** botones y campos de 44 px de alto; filas de tabla ≥ 40 px de
+  alto útil.
+- **Contraste:** texto ≥ 4,5:1; bordes de control ≥ 3:1. No se usa gray-400
+  como color de texto.
+- **Foco:** visible en todo control, con anillo de 2 px; nunca solo un cambio
+  de color del borde.
+- **Significado:** nunca depende solo del color (flecha o palabra, más texto
+  para lector de pantalla).
+- **No cambian:** el semáforo (verde/amarillo/rojo/sin-info) y los colores de
+  gráficos (chart 1–5).
+- **Fuera de alcance** (aparecen en la imagen de referencia, pero el proyecto
+  no los tiene): pantalla de Inicio, notificaciones, selector de municipio,
+  paginación y rol "Analista".
+- **Relación con decisiones previas:** reemplaza parcialmente, solo en lo
+  visual (radios, sombras, densidad y escala tipográfica), lo que D19 y D20
+  heredaron de `DESIGN_SPEC.md`. D19 (adopción de Tailwind) y D20 (sidebar
+  AppShell, sin RBAC) siguen vigentes en todo lo demás.
+
+**Avance:** Fase 1 implementada, PR pendiente.
+
+- La raíz tipográfica pasó a `html { font-size: 100% }`. Queda como
+  "implementada en la Fase 1, pendiente de ratificar por el PO".
+- Escala efectiva: mínimo absoluto 12 px (rótulos en mayúsculas), notas y
+  píldoras 13 px, cuerpo de tablas, celdas, botones y enlaces 14 px, píldora
+  grande 14 px. Esta escala y los 44 px de botones y campos se midieron en 5
+  pantallas durante la Fase 1.
+- Átomos nuevos en `components/shared/`: `Boton`, `Campo`, `Pildora` y
+  `EncabezadoPantalla`; los estilos de `Th`/`Td` viven en `estilosTabla.js`.
+  Los controles de Plan de Acción y Comparar cortes (`min-h-10`) miden 40 px
+  hasta la Fase 3.
+- Los tokens `azul.claro`, `azul.tenue` y `azul.apagado` cambiaron de valor
+  conservando su nombre (son texto sobre el navy del sidebar; se subieron por
+  contraste).
+- gray-400 ya no se usa como texto. El placeholder de los campos subió de
+  2,54:1 a ≥ 4,8:1 (5,47 sobre blanco, 5,19 sobre el campo, 4,83 sobre la
+  página), calculado durante la Fase 1.
+
+**Motivo/Evidencia:** los usuarios finales son personal administrativo de
+~50 años (dato aportado por el equipo; no hay un estudio de usuarios
+documentado). Al leer el código de `develop` antes de la Fase 1 se vio que:
+
+- `frontend/src/estilos.css` definía `html { font-size: 14px }`. Con los rem
+  de Tailwind, `text-sm` ≈ 12,25 px, `text-xs` ≈ 10,5 px y `min-h-10` ≈ 35 px,
+  de modo que la regla "14 px / 40 px" no se cumplía. Son valores calculados
+  a partir del código, no medidos en el navegador. `min-h-10` aparece 8 veces
+  en 5 archivos (Plan de Acción, Comparar cortes y sus componentes).
+- `DESIGN_SPEC.md` afirmaba que `text-xs` = 12 px; con esa raíz era ≈ 10,5 px.
+- Contraste calculado con la fórmula WCAG: gray-400 (`#9CA3AF`) sobre blanco
+  2,54:1; gray-500 (`#6B7280`) sobre el fondo de página (`#EEF1F5`) 4,27:1.
+  Ambos quedan bajo el mínimo de 4,5:1. `SectionHeader.jsx` usaba gray-400 a
+  10 px.
+- Cuatro inputs (2 en `MatrizRelacion.jsx` y 2 en `NuevoCorte.jsx`) tenían
+  `focus:outline-none` y solo cambiaban el borde al enfocar. Los demás
+  controles con esa clase sí traen `focus-visible:ring-2`.
+- `Vacio` en `Estados.jsx` usaba 4 clases `estado-vacio*` y `estilos.css` no
+  tiene ninguna regla con ese nombre (se dedujo por búsqueda, no visual).
+
+Estas observaciones salen de la lectura del código; las capturas "antes" se
+tomarán en la Fase 0.
+
+**Alternativas consideradas:**
+
+- Mantener la estética de 2 px y la densidad actual. Descartada: no cumple la
+  legibilidad para el público objetivo.
+- Reescritura completa del frontend. Descartada: costo y riesgo
+  desproporcionados.
+- Adoptar una librería de componentes. Descartada: sobreingeniería para el
+  tamaño actual.
+
+**Pendientes (abiertos, no decididos):**
+
+- Ancho mínimo soportado y si tablet/móvil entran en el alcance.
+- Tratamiento de Sube/Baja. Recomendación: píldora con flecha y palabra, sin
+  verde ni rojo, para no chocar con el semáforo.
+- Tratamiento de los filtros activos. Recomendación: azul (no ámbar, por
+  choque con el amarillo del semáforo).
+- Función del header vacío de 44 px de `Disposicion.jsx`: contenido útil o
+  eliminarlo.
+- Si la aceptación del PO cubre toda la app o solo Comparar cortes.
+
+**Estado:** PROPUESTA — pendiente de confirmar con el PO. No tratar como
+vigente hasta que lo ratifique.
+
+**Registrado:** 2026-10-25, Juan David (frontend).

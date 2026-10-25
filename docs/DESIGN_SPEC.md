@@ -4,6 +4,8 @@
 >
 > **Nota (docs/DECISIONES.md D19):** este documento describe un mockup de Figma Make más grande que el alcance del sprint actual — incluye RBAC por rol y seis pantallas (Tablero, Conciliación, Avance físico, Gestión de usuarios, entre otras) que no tienen tarjeta en `docs/archivo/sprint-1/PLANDETRABAJO.md` y no existen en este repo. Se conserva aquí como referencia de diseño; D19 documenta exactamente qué parte se adaptó al código real y qué parte no.
 
+> **Objetivo propuesto en D35 (pendiente de ratificar).** Las secciones marcadas (→ D35) describen el objetivo del refresh visual por fases (ver D35 en `docs/DECISIONES.md`). El código se migra por fases; mientras tanto, parte del frontend aún usa los valores anteriores.
+
 ---
 
 ## 1. Stack técnico
@@ -18,26 +20,27 @@
 
 ---
 
-## 2. Tokens de diseño (design tokens)
+## 2. Tokens de diseño (design tokens) (→ D35)
 
 Definidos en `src/styles/theme.css` como variables CSS y expuestos a Tailwind vía `@theme inline`.
 
-| Token                  | Valor                                                 | Uso                                                                  |
-| ---------------------- | ----------------------------------------------------- | -------------------------------------------------------------------- |
-| `--background`         | `#EEF1F5`                                             | Fondo general de la app (gris azulado muy claro)                     |
-| `--foreground`         | `#1A202C`                                             | Texto principal                                                      |
-| `--card`               | `#ffffff`                                             | Fondo de tarjetas/paneles                                            |
-| `--primary`            | `#1A3A6B`                                             | Azul marino institucional — sidebar, headers, botones primarios      |
-| `--primary-foreground` | `#ffffff`                                             | Texto sobre primary                                                  |
-| `--secondary`          | `#E8EDF5`                                             | Fondos secundarios sutiles                                           |
-| `--muted`              | `#E2E8F0`                                             | Bordes/fondos neutros                                                |
-| `--muted-foreground`   | `#718096`                                             | Texto secundario/gris                                                |
-| `--accent`             | `#2B6CB0`                                             | Azul de acción — links, focus ring, hover de sidebar activo          |
-| `--destructive`        | `#C53030`                                             | Rojo de error/alerta crítica                                         |
-| `--input-background`   | `#F7F9FC`                                             | Fondo de inputs (gris casi blanco)                                   |
-| `--radius`             | `0.125rem` (2px)                                      | Radio de borde — **muy poco redondeado**, look "gubernamental/serio" |
-| `--chart-1..5`         | `#2B6CB0`, `#90CDF4`, `#276749`, `#D97706`, `#C53030` | Paleta de series en gráficos                                         |
-| `--font-size` base     | `14px`                                                | Tamaño base html (compacto, denso en información)                    |
+| Token                  | Valor                                                    | Uso                                                                                                                                   |
+| ---------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `--background`         | `#EEF1F5`                                                | Fondo general de la app (gris azulado muy claro)                                                                                      |
+| `--foreground`         | `#1A202C`                                                | Texto principal                                                                                                                       |
+| `--card`               | `#ffffff`                                                | Fondo de tarjetas/paneles                                                                                                             |
+| `--primary`            | `#1A3A6B`                                                | Azul marino institucional — sidebar, headers, botones primarios                                                                       |
+| `--primary-foreground` | `#ffffff`                                                | Texto sobre primary                                                                                                                   |
+| `--secondary`          | `#E8EDF5`                                                | Fondos secundarios sutiles                                                                                                            |
+| `--muted`              | `#E2E8F0`                                                | Bordes/fondos neutros                                                                                                                 |
+| `--muted-foreground`   | `#718096`                                                | Texto secundario/gris                                                                                                                 |
+| `--accent`             | `#2B6CB0`                                                | Azul de acción — links, focus ring, hover de sidebar activo                                                                           |
+| `--destructive`        | `#C53030`                                                | Rojo de error/alerta crítica                                                                                                          |
+| `--input-background`   | `#F7F9FC`                                                | Fondo de inputs (gris casi blanco)                                                                                                    |
+| `--radius`             | 16 px / 12 px (D35; el mockup original usaba `0.125rem`) | `rounded-tarjeta` (16 px): tarjetas, paneles y tablas; `rounded-control` (12 px): botones, campos y listas; píldora solo para estados |
+| `--chart-1..5`         | `#2B6CB0`, `#90CDF4`, `#276749`, `#D97706`, `#C53030`    | Paleta de series en gráficos                                                                                                          |
+| `--font-size` base     | `100%` (D35; el mockup original usaba `14px`)            | Tamaño base html                                                                                                                      |
+| sombra                 | una sola, suave (D35)                                    | `shadow-suave`: solo en tarjetas y modales                                                                                            |
 
 ### Colores semánticos adicionales (hardcoded en componentes, no tokens)
 
@@ -51,19 +54,20 @@ Definidos en `src/styles/theme.css` como variables CSS y expuestos a Tailwind v�
 
 ---
 
-## 3. Tipografía y densidad
+## 3. Tipografía y densidad (→ D35)
 
 - Familia: **Inter**.
-- Escala tipográfica deliberadamente **pequeña y compacta** (características de dashboards de datos gubernamentales):
-  - Títulos de pantalla (`h1`): `text-base font-semibold` (~16px).
-  - Subtítulos/descripciones: `text-[11px] text-gray-500`.
-  - Labels de formulario: `text-[10px] font-semibold uppercase tracking-widest text-gray-500`.
-  - Encabezados de sección (`SectionHeader`): `text-[10px] font-semibold text-gray-400 uppercase tracking-widest`.
-  - Encabezados de tabla (`th`): `text-[10px] font-semibold text-gray-400 uppercase tracking-wider`.
-  - Texto de celda: `text-xs` (12px).
+- Escala tipográfica (D35), pensada para usuarios de ~50 años:
+  - Títulos de pantalla (`h1`): 24 px `font-semibold`; título de tarjeta: 18 px.
+  - Texto funcional (cuerpo, celdas, botones, enlaces): ≥ 14 px.
+  - Ayudas, notas y píldoras: 13 px.
+  - Mínimo absoluto: 12 px (rótulos en mayúsculas: labels de formulario, `SectionHeader`, `th`).
   - Cifras monetarias/numéricas: siempre `font-mono` para alineación visual.
+- Con la raíz en `100%`, `text-xs` = 12 px; con la raíz anterior valía ≈ 10,5 px.
 - **Mayúsculas + tracking ancho** para: botones de acción primaria (`INGRESAR AL SISTEMA`, `NUEVO CORTE`, `GUARDAR AVANCE`), labels de campo, encabezados de sección/tabla.
-- Jerarquía por _peso y tamaño_, no por color: casi todo el texto secundario es gris (`text-gray-400/500`).
+- Jerarquía por _peso y tamaño_, no por color. `gray-400` no se usa como color de texto.
+
+**Legibilidad y accesibilidad (D35):** botones y campos de 44 px de alto; filas de tabla ≥ 40 px de alto útil; contraste de texto ≥ 4,5:1 y de bordes de control ≥ 3:1; foco visible en todo control (anillo de 2 px), nunca solo un cambio de color del borde; el significado nunca depende solo del color (flecha o palabra, más texto para lector de pantalla). El semáforo y los colores de gráficos (chart 1–5) no cambian.
 
 ---
 
@@ -91,12 +95,12 @@ Definidos en `src/styles/theme.css` como variables CSS y expuestos a Tailwind v�
 - **Main**: fondo gris azulado, `padding: 1.25rem` (`p-5`), scroll propio.
 - El menú de navegación **cambia según el rol** (ver sección 6) — no hay un menú único; se filtra un arreglo `NAV_BY_ROLE`.
 
-### 4.2 Patrón de encabezado de pantalla (repetido en casi todas las vistas)
+### 4.2 Patrón de encabezado de pantalla (repetido en casi todas las vistas) (→ D35)
 
 ```
 ┌───────────────────────────────────────────────────┐
 │ Título (h1, text-base font-semibold)   [Acción CTA]│
-│ Subtítulo contextual (text-[11px] gray-500)        │
+│ Subtítulo contextual (13 px, gray-500; el mockup original usaba text-[11px]) │
 └───────────────────────────────────────────────────┘
 ```
 
@@ -104,51 +108,51 @@ Definidos en `src/styles/theme.css` como variables CSS y expuestos a Tailwind v�
 - Botón(es) de acción principal alineados a la derecha del título (mismo nivel), estilo primario azul marino, texto en mayúsculas.
 - Debajo del header puede aparecer un **banner contextual** (azul claro `bg-blue-50` para "vista de solo lectura", ámbar `bg-amber-50` para alertas/advertencias, verde `bg-green-50` para confirmaciones).
 
-### 4.3 Patrón de "tarjeta" (card) universal
+### 4.3 Patrón de "tarjeta" (card) universal (→ D35)
 
 Todas las secciones de contenido usan la misma envoltura:
 
 ```css
-bg-white border border-gray-200 rounded-sm p-4 (o p-5)
+bg-white border border-gray-200 rounded-tarjeta p-4 (o p-5)   /* 16 px, D35 */
 ```
 
-- `rounded-sm` (2px) en **todo** — nunca esquinas muy redondeadas.
-- Bordes sutiles `border-gray-200`, sin sombras salvo en modales (`shadow-xl`).
+- `rounded-tarjeta` (16 px) en tarjetas, paneles y tablas; `rounded-control` (12 px) en botones, campos y listas (D35). El mockup original usaba `rounded-sm` (2px).
+- Bordes sutiles `border-gray-200` y una sola sombra suave (`shadow-suave`), solo en tarjetas y modales (D35). El mockup original no usaba sombras salvo en modales (`shadow-xl`).
 - `SectionHeader` (label uppercase gris) como título interno de cada tarjeta/tabla.
 
-### 4.4 Patrón de tabla universal
+### 4.4 Patrón de tabla universal (→ D35)
 
 - Contenedor: tarjeta blanca con `overflow-x-auto` si hay muchas columnas.
-- `<thead>` con fondo `bg-gray-50`, texto `text-[10px] uppercase tracking-wider text-gray-400`.
+- `<thead>` con fondo `bg-gray-50`, texto en mayúsculas de 12 px (`tracking-wider`) con contraste ≥ 4,5:1 (D35; el mockup original usaba `text-[10px] text-gray-400`).
 - Filas con `border-b border-gray-100`, hover `hover:bg-gray-50/60`.
 - Primera columna a veces `sticky left-0` para tablas anchas (ej. Plan de Acción).
 - Filas expandibles (accordion inline) para mostrar detalle anidado (ej. contratos por meta) — fila hija con fondo `bg-[#EEF1F5]/50`, `colSpan` completo, tabla interna más pequeña.
 - Celdas numéricas: alineadas a la derecha, `font-mono`.
-- Footer de tabla: línea de resumen fuera de la tarjeta (`text-[11px] text-gray-400`, ej. "144 metas · Cifras en pesos colombianos").
+- Footer de tabla: línea de resumen fuera de la tarjeta (13 px con contraste ≥ 4,5:1 según D35; el mockup original usaba `text-[11px] text-gray-400`, ej. "144 metas · Cifras en pesos colombianos").
 
 ### 4.5 Patrón de filtros
 
 - Barra horizontal en tarjeta blanca, `flex items-center gap-4`, con `<select>` nativos estilizados (no combobox custom) + leyenda de conteos a la derecha (`ml-auto`) + botón de exportar al final.
 
-### 4.6 Patrón KPI (tarjetas de métricas)
+### 4.6 Patrón KPI (tarjetas de métricas) (→ D35)
 
 Grid de 3-4 columnas, cada tarjeta:
 
 ```
-LABEL (uppercase, gris, 10px)
+LABEL (uppercase, gris, 12px mínimo; el mockup original usaba 10px)
 VALOR (font-mono, bold, xl, color primary o semántico)
-sub-texto (gris, 11px)
-delta opcional (verde, ▲ + texto, 10px)
+sub-texto (gris, 13px; el mockup original usaba 11px)
+delta opcional (verde, ▲ + texto, 12px mínimo; el mockup original usaba 10px)
 ```
 
-### 4.7 Patrones de estado/feedback
+### 4.7 Patrones de estado/feedback (→ D35)
 
 - **Badge de estado** (`StateBadge`): pill pequeña con borde, colores por estado (Borrador=gris, Registrado=verde).
 - **Semáforo** (`SemaforoDot`): círculo de color sólido (verde/ámbar/rojo/gris).
 - **Celda de porcentaje** (`PctCell`): color condicional por umbral (≥60% verde, ≥30% ámbar, <30% rojo), siempre `font-mono`.
 - **Banners de alerta**: `bg-amber-50 border-amber-200` + icono `AlertTriangle` + texto `text-amber-800`, usado de forma consistente para advertencias en todo el sistema (carga de archivos, conciliación, avance físico).
 - **Banners de éxito**: `bg-green-50 border-green-300` + icono `Check`.
-- **Modal**: overlay `bg-black/40`, tarjeta blanca centrada `rounded-sm shadow-xl`, header con título+subtítulo+botón X, body con form fields, footer con acciones alineadas a la derecha (Cancelar secundario + acción primaria).
+- **Modal**: overlay `bg-black/40`, tarjeta blanca centrada con `rounded-tarjeta` y `shadow-suave` (D35) (el mockup original usaba `rounded-sm shadow-xl`), header con título+subtítulo+botón X, body con form fields, footer con acciones alineadas a la derecha (Cancelar secundario + acción primaria).
 
 ---
 
@@ -210,7 +214,7 @@ Patrones visuales para diferenciar el modo:
 
 ---
 
-## 7. Componentes atómicos reutilizables (a portar primero)
+## 7. Componentes atómicos reutilizables (a portar primero) (→ D35)
 
 Estos son pequeños, sin estado o con estado mínimo, y deben implementarse primero porque se reutilizan en casi toda la app:
 
@@ -219,7 +223,7 @@ Estos son pequeños, sin estado o con estado mínimo, y deben implementarse prim
 3. `SemaforoDot` — punto de color para semáforo verde/ámbar/rojo.
 4. `PctCell` — texto monoespaciado con color condicional por umbral numérico.
 5. Helper `cop(n)` — formateador de moneda COP con separador de miles por puntos, sin decimales, prefijo `$ `.
-6. Card wrapper (`bg-white border border-gray-200 rounded-sm`) — no está extraído como componente en el original pero **debería extraerse** al portar.
+6. Card wrapper (`bg-white border border-gray-200 rounded-tarjeta`; el mockup original usaba `rounded-sm`) — no está extraído como componente en el original pero **debería extraerse** al portar.
 
 ---
 
@@ -231,3 +235,5 @@ Estos son pequeños, sin estado o con estado mínimo, y deben implementarse prim
 4. **Mantener la convención de tamaños de fuente ultra-compactos** (`text-[10px]`/`text-[11px]` para metadatos, `text-xs` para tablas) si el nuevo proyecto también es un dashboard denso en datos; si es una app más consumer-facing, esta densidad probablemente debe aumentarse.
 5. **Los componentes shadcn ya instalados** (`src/app/components/ui/*`) cubren prácticamente todo lo necesario (dialog, table, tabs, select, sidebar, chart) — conviene migrar los HTML/Tailwind ad-hoc actuales hacia esos componentes shadcn para consistencia y accesibilidad, en vez de reconstruir todo desde cero.
 6. **RBAC**: portar el patrón `NAV_BY_ROLE` + guards condicionales (`role === "x" && (...)`) tal cual, ya que es simple y explícito; si el nuevo proyecto tiene más de 3 roles o permisos granulares, considerar una tabla de permisos en vez de condicionales inline.
+
+> Nota: los puntos 3 y 4 describen el mockup original; para GovSync, D35 los supera en radio, sombra y escala tipográfica.
