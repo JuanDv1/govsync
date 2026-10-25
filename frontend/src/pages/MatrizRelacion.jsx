@@ -572,7 +572,7 @@ export default function MatrizRelacion() {
                 id="estado-cruce"
                 value={estadoCruce}
                 onChange={(evento) => cambiarEstadoCruce(evento.target.value)}
-                className="rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
+                className="rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
               >
                 {OPCIONES_ESTADO_CRUCE.map((opcion) => (
                   <option key={opcion.valor} value={opcion.valor}>
@@ -595,7 +595,7 @@ export default function MatrizRelacion() {
                 placeholder="Código de indicador, BPIN o número de contrato"
                 value={busquedaInput}
                 onChange={(evento) => setBusquedaInput(evento.target.value)}
-                className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
+                className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
               />
             </div>
 

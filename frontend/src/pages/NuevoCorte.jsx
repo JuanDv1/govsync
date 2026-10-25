@@ -521,7 +521,7 @@ export default function NuevoCorte() {
               value={vigencia}
               onChange={(evento) => setVigencia(evento.target.value)}
               required
-              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
+              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
             />
           </div>
 
@@ -545,7 +545,7 @@ export default function NuevoCorte() {
                 }
               }}
               required
-              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 font-mono text-sm focus:border-azul focus:outline-none"
+              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 font-mono text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
             />
           </div>
 
