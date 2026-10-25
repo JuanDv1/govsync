@@ -39,14 +39,25 @@ export default {
           verde: "#E2F4EE",
           violeta: "#EEE8FB",
         },
+        //: Texto sobre cada tinte (encabezados de grupo de columnas). Se usa
+        //: SOLO sobre su tinte: azul 8,9:1, verde 6,9:1 y violeta 8,3:1.
+        sobretinte: {
+          azul: "#1E3A8A",
+          verde: "#0B5D4B",
+          violeta: "#4C2A9A",
+        },
         //: Borde de campos y botones secundarios: 4,8:1 sobre blanco (el
         //: `gray-300` de antes daba 1,5:1 y no llegaba al 3:1 de WCAG 1.4.11).
         borde: {
           control: "#6B7280",
+          //: Separador horizontal de las tablas (decorativo, 1 px).
+          suave: "#E5EAF2",
         },
         fondo: {
           pagina: "#EEF1F5",
           input: "#F7F9FC",
+          //: Fila alterna de las tablas (la otra es blanca).
+          fila: "#F5F8FC",
         },
         secundario: "#E8EDF5",
         critico: "#C53030",
