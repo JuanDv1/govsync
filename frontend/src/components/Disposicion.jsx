@@ -18,11 +18,24 @@ import { LogOut } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 
+//: Anillo de foco de los controles del sidebar. El contorno global de
+//: `estilos.css` es navy y sobre el fondo navy da 1:1 (no se ve); el blanco
+//: da 11,3:1 sobre el navy, 9,2:1 sobre el hover y 5,4:1 junto al ítem activo.
+const FOCO =
+  "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy";
+
+//: Base común de los ítems del menú y de "Cerrar sesión": 44 px de alto
+//: (`min-h-11`), texto de 14 px y radio de control.
+const ITEM = `relative flex min-h-11 items-center gap-2 rounded-control px-4 text-campo transition-colors ${FOCO}`;
+
+//: El ítem activo NO depende solo del color: además del fondo, lleva el texto
+//: en negrita y una barra blanca de 4 px a la izquierda (forma y peso).
+//: `aria-current="page"` ya lo agrega NavLink.
 const enlaceClase = ({ isActive }) =>
-  `block rounded-sm px-3 py-2 text-sm font-medium transition-colors ${
+  `${ITEM} ${
     isActive
-      ? "bg-azul text-white"
-      : "text-azul-tenue hover:bg-navy-sidebar hover:text-white"
+      ? "bg-azul font-bold text-white before:absolute before:bottom-2.5 before:left-1.5 before:top-2.5 before:w-1 before:rounded-full before:bg-white"
+      : "font-medium text-azul-tenue hover:bg-navy-sidebar hover:text-white"
   }`;
 
 export default function Disposicion() {
@@ -32,7 +45,10 @@ export default function Disposicion() {
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-52 shrink-0 flex-col bg-navy">
-        <NavLink to="/cortes" className="border-b border-white/10 p-5">
+        <NavLink
+          to="/cortes"
+          className="border-b border-white/10 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+        >
           <div className="text-lg font-bold tracking-[0.1em] text-white">
             GOV<span className="text-azul-claro">SYNC</span>
           </div>
@@ -71,9 +87,9 @@ export default function Disposicion() {
           <button
             type="button"
             onClick={cerrarSesion}
-            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-campo font-medium text-azul-tenue transition-colors hover:bg-navy-sidebar hover:text-white"
+            className={`${ITEM} w-full font-medium text-azul-tenue hover:bg-navy-sidebar hover:text-white`}
           >
-            <LogOut size={13} />
+            <LogOut size={16} aria-hidden="true" />
             Cerrar sesión
           </button>
         </div>
