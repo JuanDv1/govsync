@@ -15,7 +15,7 @@ const TONOS = {
 //: `normal` es el tamaño de siempre (y el valor por defecto). `grande` lo usa
 //: el Plan de Acción (E04-HU01), que necesita un texto más legible.
 const TAMANOS = {
-  normal: "px-2 py-0.5 text-[11px]",
+  normal: "px-2 py-0.5 text-xs",
   grande: "px-2.5 py-1 text-xs",
 };
 

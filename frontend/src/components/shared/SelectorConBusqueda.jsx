@@ -39,29 +39,27 @@
  * reinicia en los manejadores (onChange/onFocus/onBlur) y se acota al
  * leerlo. El único efecto toca solo el DOM (`scrollIntoView`).
  *
- * TAMAÑO (`tamano`): "normal" es la escala compacta de docs/DESIGN_SPEC.md §3
- * y la que usa el panel de la matriz; NO se toca. "grande" es para el Plan de
- * Acción [E04-HU02], que se aparta a propósito de esa escala por legibilidad:
- * etiqueta y textos a 14px en `gray-700`/`gray-600`, campo de al menos 40px de
- * alto, foco visible, y la lista con `z-30` para quedar por encima del
- * encabezado fijo de la tabla (`z-20`). Solo cambian las clases (`TAMANOS`):
- * el comportamiento es el mismo.
+ * TAMAÑO (`tamano`): "normal" es el que usa el panel de la matriz: etiqueta
+ * de 14px, ayuda de 13px y opciones de 12px. "grande" es para el Plan de
+ * Acción [E04-HU02]: textos de 14px, campo de al menos 40px de alto, foco
+ * visible, y la lista con `z-30` para quedar por encima del encabezado fijo
+ * de la tabla (`z-20`). Solo cambian las clases (`TAMANOS`): el
+ * comportamiento es el mismo.
  */
 import { useEffect, useId, useState } from "react";
 
 import { normalizar, sugerir } from "../../lib/filtros.js";
 
-//: Clases por tamaño. "normal" conserva exactamente las de la matriz.
+//: Clases por tamaño (los px suponen la raíz al 100 %, 16 px).
 const TAMANOS = {
   normal: {
-    etiqueta:
-      "mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500",
+    etiqueta: "mb-1.5 block text-campo font-medium text-gray-700",
     campo:
       "w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul disabled:cursor-not-allowed disabled:opacity-40",
     lista:
       "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-sm border border-gray-200 bg-white py-1 shadow-sm",
     opcion: "cursor-pointer whitespace-normal break-words px-3 py-1.5 text-xs",
-    ayuda: "mt-1 text-[11px] text-gray-500",
+    ayuda: "mt-1 text-ayuda text-gray-600",
   },
   grande: {
     etiqueta: "mb-1.5 block text-sm font-medium text-gray-700",

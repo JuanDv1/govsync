@@ -349,7 +349,7 @@ export default function EditarArchivosCorteActual() {
     <section className="mx-auto max-w-4xl">
       <Link
         to="/cortes"
-        className="text-[11px] font-medium text-azul hover:text-navy"
+        className="text-campo font-medium text-azul hover:text-navy"
       >
         ← Volver al histórico
       </Link>
@@ -358,7 +358,7 @@ export default function EditarArchivosCorteActual() {
         <h1 className="text-base font-semibold text-gray-800">
           Editar archivos del corte actual
         </h1>
-        <p className="mt-0.5 text-[11px] text-gray-500">
+        <p className="mt-0.5 text-ayuda text-gray-500">
           Corte de vigencia {corte.vigencia}, fecha{" "}
           <span className="font-mono">{corte.fecha_corte}</span>. Reemplazar una
           fuente actualiza la matriz del corte.
@@ -384,7 +384,7 @@ export default function EditarArchivosCorteActual() {
                     abajo. */}
                 <dl className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <dt className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                       Archivo
                     </dt>
                     <dd className="mt-0.5 font-mono text-gray-700">
@@ -392,7 +392,7 @@ export default function EditarArchivosCorteActual() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                    <dt className="text-xs font-semibold uppercase tracking-wide text-gray-400">
                       Cargado
                     </dt>
                     <dd className="mt-0.5 font-mono text-gray-700">

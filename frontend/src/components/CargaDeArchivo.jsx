@@ -186,7 +186,7 @@ export default function CargaDeArchivo({
           <p className="mt-1 text-xs text-gray-400">
             Formato: .xlsx · Máximo {TAMANO_MAXIMO_BYTES / 1_048_576} MB
           </p>
-          <span className="mt-4 inline-block rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-[11px] font-medium text-azul">
+          <span className="mt-4 inline-block rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-campo font-medium text-azul">
             Seleccionar archivo
           </span>
         </label>
@@ -200,14 +200,14 @@ export default function CargaDeArchivo({
               Archivo cargado correctamente
             </p>
             {nombreArchivo && (
-              <p className="mt-0.5 font-mono text-[11px] text-green-600">
+              <p className="mt-0.5 font-mono text-ayuda text-green-600">
                 {nombreArchivo}
               </p>
             )}
           </div>
           <label
             htmlFor={idEntrada}
-            className="cursor-pointer text-[11px] font-medium text-green-600 hover:text-green-800"
+            className="cursor-pointer text-campo font-medium text-green-600 hover:text-green-800"
           >
             Reemplazar
           </label>
@@ -221,7 +221,7 @@ export default function CargaDeArchivo({
       {cargado && error && (
         <label
           htmlFor={idEntrada}
-          className="mt-3 inline-block cursor-pointer text-[11px] font-medium text-azul hover:text-navy"
+          className="mt-3 inline-block cursor-pointer text-campo font-medium text-azul hover:text-navy"
         >
           Seleccionar otro archivo
         </label>
@@ -239,7 +239,7 @@ export default function CargaDeArchivo({
       {avisoExtension && (
         <div className="mt-3 flex items-start gap-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2.5">
           <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-500" />
-          <p className="text-[11px] text-amber-800">
+          <p className="text-campo text-amber-800">
             Solo se aceptan archivos .xlsx.
           </p>
         </div>
@@ -248,7 +248,7 @@ export default function CargaDeArchivo({
       {avisoTamano && (
         <div className="mt-3 flex items-start gap-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2.5">
           <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-500" />
-          <p className="text-[11px] text-amber-800">
+          <p className="text-campo text-amber-800">
             El archivo supera el tamaño máximo permitido (
             {TAMANO_MAXIMO_BYTES / 1_048_576} MB).
           </p>

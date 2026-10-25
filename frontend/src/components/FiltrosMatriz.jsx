@@ -97,7 +97,7 @@ function EtiquetasActivas({
       {etiquetas.map((etiqueta, indice) => (
         <li
           key={idDe(etiqueta)}
-          className="inline-flex items-center gap-1.5 rounded-sm border border-blue-200 bg-blue-50 py-0.5 pl-2 pr-1 text-[11px] font-medium text-azul"
+          className="inline-flex items-center gap-1.5 rounded-sm border border-blue-200 bg-blue-50 py-0.5 pl-2 pr-1 text-campo font-medium text-azul"
         >
           <span>
             {etiqueta.titulo}: {etiqueta.texto}

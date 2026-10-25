@@ -22,7 +22,7 @@ export default function Login() {
           <div className="text-2xl font-bold tracking-[0.12em] text-white">
             GOV<span className="text-azul-claro">SYNC</span>
           </div>
-          <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.2em] text-azul-tenue">
+          <p className="mt-1 text-xs font-medium uppercase tracking-wide text-azul-tenue">
             Sistema de Gestión · Plan de Desarrollo
           </p>
         </div>
@@ -40,7 +40,7 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="flex justify-between text-[11px] text-azul-apagado">
+        <div className="flex justify-between text-xs text-azul-apagado">
           <span>v2.0.0</span>
           <span className="font-mono">Vigencia 2026</span>
         </div>

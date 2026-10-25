@@ -307,7 +307,7 @@ export default function NuevoCorte() {
           <h1 className="text-base font-semibold text-gray-800">
             Cargar archivos del corte
           </h1>
-          <p className="mt-0.5 text-[11px] text-gray-500">
+          <p className="mt-0.5 text-ayuda text-gray-500">
             Corte de vigencia {corte.vigencia}, fecha{" "}
             <span className="font-mono">{corte.fecha_corte}</span> — estado{" "}
             <span className="font-semibold">{corte.estado}</span>.
@@ -469,7 +469,7 @@ export default function NuevoCorte() {
                 {!todosCargados && (
                   <p
                     id="fuentes-faltantes"
-                    className="text-[11px] italic text-gray-400"
+                    className="text-ayuda italic text-gray-400"
                   >
                     Cargue los tres archivos para registrar el corte. Falta:{" "}
                     {fuentesFaltantes.join(", ")}.
@@ -489,7 +489,7 @@ export default function NuevoCorte() {
     <section className="mx-auto max-w-4xl">
       <header className="mb-5">
         <h1 className="text-base font-semibold text-gray-800">Nuevo corte</h1>
-        <p className="mt-0.5 text-[11px] text-gray-500">
+        <p className="mt-0.5 text-ayuda text-gray-500">
           Configure los datos del corte para habilitar la carga de archivos.
         </p>
       </header>
@@ -501,7 +501,7 @@ export default function NuevoCorte() {
           <div>
             <label
               htmlFor="vigencia"
-              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
+              className="mb-1.5 block text-campo font-medium text-gray-700"
             >
               Vigencia
             </label>
@@ -528,7 +528,7 @@ export default function NuevoCorte() {
           <div>
             <label
               htmlFor="fecha-corte"
-              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
+              className="mb-1.5 block text-campo font-medium text-gray-700"
             >
               Fecha del corte
             </label>
