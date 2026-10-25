@@ -71,7 +71,7 @@ export default function Disposicion() {
           <button
             type="button"
             onClick={cerrarSesion}
-            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-xs font-medium text-azul-tenue transition-colors hover:bg-navy-sidebar hover:text-white"
+            className="flex w-full items-center gap-2 rounded-sm px-3 py-2 text-campo font-medium text-azul-tenue transition-colors hover:bg-navy-sidebar hover:text-white"
           >
             <LogOut size={13} />
             Cerrar sesión

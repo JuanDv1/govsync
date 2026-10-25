@@ -58,7 +58,8 @@ const TAMANOS = {
       "w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul disabled:cursor-not-allowed disabled:opacity-40",
     lista:
       "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-sm border border-gray-200 bg-white py-1 shadow-sm",
-    opcion: "cursor-pointer whitespace-normal break-words px-3 py-1.5 text-xs",
+    opcion:
+      "cursor-pointer whitespace-normal break-words px-3 py-1.5 text-campo",
     ayuda: "mt-1 text-ayuda text-gray-600",
   },
   grande: {

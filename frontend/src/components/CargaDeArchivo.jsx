@@ -149,7 +149,7 @@ export default function CargaDeArchivo({
       >
         <Cargando mensaje={`Subiendo ${etiqueta}…`} />
         {progreso !== null && (
-          <p className="carga-de-archivo-progreso mt-2 flex items-center gap-2 text-xs text-gray-600">
+          <p className="carga-de-archivo-progreso mt-2 flex items-center gap-2 text-campo text-gray-600">
             <progress value={progreso} max={100} className="w-full" />
             <span className="font-mono">{progreso}%</span>
           </p>
@@ -183,7 +183,7 @@ export default function CargaDeArchivo({
           <p className="text-sm font-medium text-gray-600">
             Arrastre el archivo aquí o haga clic
           </p>
-          <p className="mt-1 text-xs text-gray-600">
+          <p className="mt-1 text-ayuda text-gray-600">
             Formato: .xlsx · Máximo {TAMANO_MAXIMO_BYTES / 1_048_576} MB
           </p>
           <span className="mt-4 inline-block rounded-sm border border-gray-200 bg-white px-3 py-1.5 text-campo font-medium text-azul">
@@ -196,7 +196,7 @@ export default function CargaDeArchivo({
         <div className="mt-3 flex items-center gap-3 rounded-sm border border-green-200 bg-green-50 p-3">
           <Check size={15} className="shrink-0 text-green-600" />
           <div className="flex-1">
-            <p className="text-xs font-semibold text-green-800">
+            <p className="text-campo font-semibold text-green-800">
               Archivo cargado correctamente
             </p>
             {nombreArchivo && (

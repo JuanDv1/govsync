@@ -37,7 +37,7 @@ export default function Login() {
             — consolidación y cruce de la información de planeación, ejecución
             presupuestal y proyectos de inversión.
           </p>
-          <p className="mt-2 text-xs text-azul-claro">
+          <p className="mt-2 text-campo text-azul-claro">
             Alcaldía Municipal de Santa Rosa, Cauca
           </p>
         </div>

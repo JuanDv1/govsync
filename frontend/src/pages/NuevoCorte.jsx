@@ -236,7 +236,7 @@ export default function NuevoCorte() {
           accion={
             <Link
               to="/cortes"
-              className="text-xs font-medium text-azul hover:text-navy"
+              className="text-campo font-medium text-azul hover:text-navy"
             >
               ← Volver al histórico
             </Link>
@@ -335,7 +335,7 @@ export default function NuevoCorte() {
             ].map(([etiquetaFuente, estado]) => (
               <li
                 key={etiquetaFuente}
-                className="flex items-center justify-between text-xs"
+                className="flex items-center justify-between text-campo"
               >
                 <span className="font-medium text-gray-700">
                   {etiquetaFuente}
@@ -397,7 +397,7 @@ export default function NuevoCorte() {
                       {/* [HU-04][FE-02]: confirmación del conteo genérico, mismo
                     criterio que ya usa PDT — esta pantalla es la que sabe
                     que para PROYECTOS esas filas son "proyectos". */}
-                      <p className="text-xs text-gray-600">
+                      <p className="text-ayuda text-gray-600">
                         {resultadoProyectos.filas_reconocidas} proyectos
                         reconocidos.
                       </p>
@@ -408,7 +408,7 @@ export default function NuevoCorte() {
                     estándar. El backend ya lo conserva tal cual
                     (HU-04/CA-2, lectores/proyectos.py), esto solo lo
                     comunica. */}
-                      <p className="carga-de-archivo-nota mt-1 text-xs">
+                      <p className="carga-de-archivo-nota mt-1 text-ayuda">
                         El archivo se conservó tal cual fue cargado, aunque su
                         estructura no sea estándar.
                       </p>
@@ -420,7 +420,7 @@ export default function NuevoCorte() {
                       {resultadoProyectos.codigos.length > 0 && (
                         <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                           {resultadoProyectos.codigos.map((codigo) => (
-                            <li key={codigo} className="codigo text-xs">
+                            <li key={codigo} className="codigo text-campo">
                               {codigo}
                             </li>
                           ))}
@@ -450,7 +450,7 @@ export default function NuevoCorte() {
                 />
                 <Link
                   to={`/matriz/${corte.id}`}
-                  className="rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover"
+                  className="rounded-sm bg-navy px-4 py-2 text-campo font-semibold text-white transition-colors hover:bg-navy-hover"
                 >
                   Ver matriz de relación
                 </Link>
@@ -464,7 +464,7 @@ export default function NuevoCorte() {
                     todosCargados ? undefined : "fuentes-faltantes"
                   }
                   onClick={manejarRegistro}
-                  className="self-start rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
+                  className="self-start rounded-sm bg-navy px-4 py-2 text-campo font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Registrar corte
                 </button>

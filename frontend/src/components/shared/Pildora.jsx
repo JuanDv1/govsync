@@ -23,10 +23,11 @@ const TONOS = {
 };
 
 //: `normal` es el tamaño de siempre. `grande` lo usa el Plan de Acción
-//: (E04-HU01), que necesita más aire. Ambos con texto de 12 px, el mínimo.
+//: (E04-HU01), que necesita más aire. Texto de 13 px (`normal`) y de 14 px
+//: (`grande`).
 const TAMANOS = {
-  normal: "px-2.5 py-0.5 text-xs",
-  grande: "px-3 py-1 text-xs",
+  normal: "px-2.5 py-0.5 text-ayuda",
+  grande: "px-3 py-1 text-campo",
 };
 
 export default function Pildora({

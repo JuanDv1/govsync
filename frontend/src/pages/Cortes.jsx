@@ -98,7 +98,7 @@ export default function Cortes() {
             puedeEscribir ? (
               <Link
                 to="/cortes/nuevo"
-                className="text-xs font-medium text-azul hover:text-navy"
+                className="text-campo font-medium text-azul hover:text-navy"
               >
                 Crear corte
               </Link>
@@ -137,10 +137,10 @@ export default function Cortes() {
                         : "hover:bg-gray-50/60"
                     }`}
                   >
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-700">
+                    <td className="px-4 py-2.5 font-mono text-campo text-gray-700">
                       {corte.fecha_corte}
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-700">
+                    <td className="px-4 py-2.5 text-campo text-gray-700">
                       {corte.vigencia}
                     </td>
                     <td className="px-4 py-2.5">
@@ -154,7 +154,7 @@ export default function Cortes() {
                         {actual && <StateBadge texto="Actual" tono="azul" />}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-700">
+                    <td className="px-4 py-2.5 font-mono text-campo text-gray-700">
                       {corte.archivos?.length ?? 0} de 3
                     </td>
                     <td className="px-4 py-2.5 text-right">

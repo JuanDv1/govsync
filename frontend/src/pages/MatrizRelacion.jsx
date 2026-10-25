@@ -202,7 +202,7 @@ function PaginacionMatriz({
         type="button"
         onClick={() => onCambiarPagina(pagina - 1)}
         disabled={pagina <= 1 || actualizando}
-        className="rounded-sm border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Anterior
       </button>
@@ -224,7 +224,7 @@ function PaginacionMatriz({
         type="button"
         onClick={() => onCambiarPagina(pagina + 1)}
         disabled={pagina >= totalPaginas || actualizando}
-        className="rounded-sm border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Siguiente
       </button>
@@ -706,7 +706,10 @@ export default function MatrizRelacion() {
                       className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60"
                     >
                       {COLUMNAS.map((columna) => (
-                        <td key={columna.clave} className="px-4 py-2.5 text-xs">
+                        <td
+                          key={columna.clave}
+                          className="px-4 py-2.5 text-campo"
+                        >
                           <Celda
                             clave={columna.clave}
                             valor={fila[columna.clave]}

@@ -8,7 +8,7 @@
  */
 export default function PctCell({ valor }) {
   if (valor === null || valor === undefined) {
-    return <span className="font-mono text-xs text-gray-600">—</span>;
+    return <span className="font-mono text-campo text-gray-600">—</span>;
   }
 
   const color =
@@ -19,7 +19,7 @@ export default function PctCell({ valor }) {
         : "text-semaforo-rojo";
 
   return (
-    <span className={`font-mono text-xs font-medium ${color}`}>
+    <span className={`font-mono text-campo font-medium ${color}`}>
       {Math.round(valor)}%
     </span>
   );
