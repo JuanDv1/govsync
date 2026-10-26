@@ -35,11 +35,11 @@
  * siguiente, o al de la anterior si era la última, o al botón "Filtros" si no
  * queda ninguna.
  */
-import { X } from "lucide-react";
 import { useRef } from "react";
 
 import { MINIMO_BUSQUEDA } from "../lib/filtrosPlanAccion.js";
 import Campo from "./shared/Campo.jsx";
+import EtiquetaFiltro from "./shared/EtiquetaFiltro.jsx";
 import SelectorConBusqueda from "./shared/SelectorConBusqueda.jsx";
 
 function EtiquetasActivas({ etiquetas, onQuitar, refBotonFiltros }) {
@@ -64,26 +64,16 @@ function EtiquetasActivas({ etiquetas, onQuitar, refBotonFiltros }) {
   return (
     <ul aria-label="Filtros activos" className="mt-4 flex flex-wrap gap-2">
       {etiquetas.map((etiqueta, indice) => (
-        <li
+        <EtiquetaFiltro
           key={idDe(etiqueta)}
-          className="inline-flex items-center gap-1 rounded-control border border-blue-200 bg-blue-50 py-0.5 pl-2.5 pr-0.5 text-campo font-medium text-azul"
-        >
-          <span>
-            {etiqueta.titulo}: {etiqueta.texto}
-          </span>
-          <button
-            ref={(boton) => {
-              if (boton) botonesQuitar.current.set(idDe(etiqueta), boton);
-              else botonesQuitar.current.delete(idDe(etiqueta));
-            }}
-            type="button"
-            aria-label={`Quitar filtro ${etiqueta.titulo} ${etiqueta.texto}`}
-            onClick={() => quitar(indice)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-control text-azul hover:bg-blue-100 hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        </li>
+          texto={`${etiqueta.titulo}: ${etiqueta.texto}`}
+          etiquetaAria={`Quitar filtro ${etiqueta.titulo} ${etiqueta.texto}`}
+          refBoton={(boton) => {
+            if (boton) botonesQuitar.current.set(idDe(etiqueta), boton);
+            else botonesQuitar.current.delete(idDe(etiqueta));
+          }}
+          onQuitar={() => quitar(indice)}
+        />
       ))}
     </ul>
   );

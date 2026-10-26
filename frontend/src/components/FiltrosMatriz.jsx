@@ -37,7 +37,6 @@
  * sigue montado después de quitar la etiqueta y no pierde el foco. Todos los
  * destinos están siempre visibles: nunca se enfoca algo del panel cerrado.
  */
-import { X } from "lucide-react";
 import { useRef } from "react";
 
 import {
@@ -46,6 +45,7 @@ import {
   opcionesParaCriterio,
 } from "../lib/filtros.js";
 import { Cargando, EstadoError } from "./Estados.jsx";
+import EtiquetaFiltro from "./shared/EtiquetaFiltro.jsx";
 import SelectorConBusqueda from "./shared/SelectorConBusqueda.jsx";
 
 //: Estados HTTP cuyo error ya muestra la matriz del mismo corte.
@@ -95,26 +95,16 @@ function EtiquetasActivas({
   return (
     <ul aria-label="Filtros activos" className="mt-4 flex flex-wrap gap-2">
       {etiquetas.map((etiqueta, indice) => (
-        <li
+        <EtiquetaFiltro
           key={idDe(etiqueta)}
-          className="inline-flex items-center gap-1 rounded-control border border-blue-200 bg-blue-50 py-0.5 pl-2.5 pr-0.5 text-campo font-medium text-azul"
-        >
-          <span>
-            {etiqueta.titulo}: {etiqueta.texto}
-          </span>
-          <button
-            ref={(boton) => {
-              if (boton) botonesQuitar.current.set(idDe(etiqueta), boton);
-              else botonesQuitar.current.delete(idDe(etiqueta));
-            }}
-            type="button"
-            aria-label={`Quitar filtro ${etiqueta.titulo} ${etiqueta.texto}`}
-            onClick={() => quitar(indice)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-control text-azul hover:bg-blue-100 hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        </li>
+          texto={`${etiqueta.titulo}: ${etiqueta.texto}`}
+          etiquetaAria={`Quitar filtro ${etiqueta.titulo} ${etiqueta.texto}`}
+          refBoton={(boton) => {
+            if (boton) botonesQuitar.current.set(idDe(etiqueta), boton);
+            else botonesQuitar.current.delete(idDe(etiqueta));
+          }}
+          onQuitar={() => quitar(indice)}
+        />
       ))}
     </ul>
   );
