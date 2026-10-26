@@ -32,7 +32,7 @@
  *    cada elemento de `matriz.filas` se renderiza como una fila independiente,
  *    preservando el resultado entregado por el backend (CA-7).
  *
- * 3. Los códigos se muestran con la clase `.codigo` (monoespaciada): es lo
+ * 3. Los códigos se muestran en `font-mono` (monoespaciada, la fuente de `.codigo`): es lo
  *    que hace visible el cero a la izquierda de 040110500. Nunca `Number()`
  *    ni `parseInt()` sobre `cod_bpin`, `cod_indicador_producto` ni
  *    `cod_indicador_ejecucion`.
@@ -92,8 +92,12 @@ import {
   Vacio,
 } from "../components/Estados.jsx";
 import FiltrosMatriz from "../components/FiltrosMatriz.jsx";
+import Boton from "../components/shared/Boton.jsx";
+import Campo from "../components/shared/Campo.jsx";
 import Card from "../components/shared/Card.jsx";
+import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
+import { TD, TH, fondoDeFila } from "../components/shared/estilosTabla.js";
 import {
   FILTROS_VACIOS,
   agregarValor,
@@ -162,7 +166,7 @@ function Celda({ clave, valor }) {
     return <span className="font-mono">{cop(valor)}</span>;
   }
   return CLAVES_CODIGO.has(clave) ? (
-    <span className="codigo">{valor}</span>
+    <span className="whitespace-nowrap font-mono">{valor}</span>
   ) : (
     valor
   );
@@ -198,14 +202,13 @@ function PaginacionMatriz({
       className="mt-3 flex items-center justify-center gap-4"
       aria-label="Paginación de la matriz de relación"
     >
-      <button
-        type="button"
+      <Boton
+        variante="secundario"
         onClick={() => onCambiarPagina(pagina - 1)}
-        disabled={pagina <= 1 || actualizando}
-        className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        deshabilitado={pagina <= 1 || actualizando}
       >
         Anterior
-      </button>
+      </Boton>
 
       {/* [E02-HU10] El total ya lo anuncia el contador de la Card (su propia
           región live): aquí solo se anuncian la página y "actualizando…". El
@@ -220,14 +223,13 @@ function PaginacionMatriz({
         <span aria-live="polite">{actualizando ? " · actualizando…" : ""}</span>
       </span>
 
-      <button
-        type="button"
+      <Boton
+        variante="secundario"
         onClick={() => onCambiarPagina(pagina + 1)}
-        disabled={pagina >= totalPaginas || actualizando}
-        className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        deshabilitado={pagina >= totalPaginas || actualizando}
       >
         Siguiente
-      </button>
+      </Boton>
     </nav>
   );
 }
@@ -264,13 +266,9 @@ function EstadoSinFilas({
       <Vacio
         titulo="No hay registros que cumplan los filtros seleccionados"
         accion={
-          <button
-            type="button"
-            onClick={onLimpiar}
-            className="rounded-sm px-2 py-2 text-sm font-medium text-azul transition-colors hover:text-navy"
-          >
+          <Boton variante="secundario" onClick={onLimpiar}>
             Limpiar filtros
-          </button>
+          </Boton>
         }
       />
     );
@@ -540,16 +538,16 @@ export default function MatrizRelacion() {
 
   return (
     <section className="mx-auto max-w-6xl">
-      <header className="mb-5">
-        <h1 className="text-base font-semibold text-gray-800">
-          Matriz de relación
-        </h1>
-        {corteId && (
-          <p className="mt-0.5 text-ayuda text-gray-600">
-            Corte <span className="font-mono">{corteId}</span>
-          </p>
-        )}
-      </header>
+      <EncabezadoPantalla
+        titulo="Matriz de relación"
+        descripcion={
+          corteId ? (
+            <>
+              Corte <span className="font-mono">{corteId}</span>
+            </>
+          ) : undefined
+        }
+      />
 
       {!corteId && (
         <Vacio
@@ -562,69 +560,53 @@ export default function MatrizRelacion() {
         <Card className="mb-4">
           <div className="flex flex-wrap items-end gap-4">
             <div>
-              <label
-                htmlFor="estado-cruce"
-                className="mb-1.5 block text-campo font-medium text-gray-700"
-              >
-                Estado del cruce
-              </label>
-              <select
+              <Campo
+                variante="select"
+                etiqueta="Estado del cruce"
                 id="estado-cruce"
                 value={estadoCruce}
                 onChange={(evento) => cambiarEstadoCruce(evento.target.value)}
-                className="rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
               >
                 {OPCIONES_ESTADO_CRUCE.map((opcion) => (
                   <option key={opcion.valor} value={opcion.valor}>
                     {opcion.etiqueta}
                   </option>
                 ))}
-              </select>
+              </Campo>
             </div>
 
             <div className="min-w-[220px] flex-1">
-              <label
-                htmlFor="busqueda-matriz"
-                className="mb-1.5 block text-campo font-medium text-gray-700"
-              >
-                Buscar
-              </label>
-              <input
+              <Campo
+                etiqueta="Buscar"
                 id="busqueda-matriz"
                 type="text"
                 placeholder="Código de indicador, BPIN o número de contrato"
                 value={busquedaInput}
                 onChange={(evento) => setBusquedaInput(evento.target.value)}
-                className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
               />
             </div>
 
             {puedeFiltrar && (
-              <button
+              <Boton
                 ref={refBotonFiltros}
-                type="button"
+                variante="secundario"
                 aria-expanded={panelAbierto}
                 aria-controls={idPanel}
                 onClick={() => setPanelAbierto((abierto) => !abierto)}
-                className="inline-flex items-center gap-1.5 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 Filtros{filtrosActivos > 0 ? ` (${filtrosActivos})` : ""}
                 <ChevronDown
-                  size={14}
+                  size={16}
                   aria-hidden="true"
                   className={panelAbierto ? "rotate-180" : ""}
                 />
-              </button>
+              </Boton>
             )}
 
             {hayAlgoQueLimpiar && !mostrarSinResultados && (
-              <button
-                type="button"
-                onClick={limpiarFiltros}
-                className="rounded-sm px-2 py-2 text-sm font-medium text-azul transition-colors hover:text-navy"
-              >
+              <Boton variante="secundario" onClick={limpiarFiltros}>
                 Limpiar filtros
-              </button>
+              </Boton>
             )}
 
             {/* [E02-HU10/CA02/CA12] La región live existe SIEMPRE: una región
@@ -634,7 +616,7 @@ export default function MatrizRelacion() {
             <div
               aria-live="polite"
               aria-atomic="true"
-              className="ml-auto shrink-0 text-ayuda text-gray-600"
+              className="ml-auto flex min-h-11 shrink-0 items-center text-ayuda text-gray-600"
             >
               {matrizVisible ? textoRegistros(matrizVisible.total_filas) : ""}
             </div>
@@ -681,20 +663,21 @@ export default function MatrizRelacion() {
       {corteId && matrizVisible && matrizVisible.total_filas > 0 && (
         <>
           <Card padding="p-0" className="max-h-[70vh] overflow-auto">
-            <table className="w-full">
-              <thead className="sticky top-0 bg-gray-50">
+            {/* `border-separate`: con `border-collapse` el borde inferior del
+                encabezado fijo se pierde al desplazar. Cada `th` es `sticky` y
+                lleva su fondo opaco (`TH`). */}
+            <table className="w-full border-separate border-spacing-0">
+              <thead>
                 <tr>
                   {COLUMNAS.map((columna) => (
                     <th
                       key={columna.clave}
-                      className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600"
+                      className={`${TH} sticky top-0 z-10`}
                     >
                       {columna.titulo}
                     </th>
                   ))}
-                  <th className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Estado
-                  </th>
+                  <th className={`${TH} sticky top-0 z-10`}>Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -703,20 +686,17 @@ export default function MatrizRelacion() {
                   return (
                     <tr
                       key={`${fila.cod_indicador_producto}-${indice}`}
-                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60"
+                      className={fondoDeFila(indice)}
                     >
                       {COLUMNAS.map((columna) => (
-                        <td
-                          key={columna.clave}
-                          className="px-4 py-2.5 text-campo"
-                        >
+                        <td key={columna.clave} className={TD}>
                           <Celda
                             clave={columna.clave}
                             valor={fila[columna.clave]}
                           />
                         </td>
                       ))}
-                      <td className="px-4 py-2.5">
+                      <td className={TD}>
                         <StateBadge texto={estado.texto} tono={estado.tono} />
                       </td>
                     </tr>

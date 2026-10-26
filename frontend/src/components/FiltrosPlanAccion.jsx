@@ -30,64 +30,15 @@
  *     `display` le ganaría al atributo `hidden`; la grilla va en un `div`
  *     interno.
  *
- * FOCO AL QUITAR UNA ETIQUETA: igual que en `FiltrosMatriz.jsx` (se mueve
- * dentro del manejador, antes de avisar al padre): al ✕ de la etiqueta
- * siguiente, o al de la anterior si era la última, o al botón "Filtros" si no
- * queda ninguna.
+ * FOCO AL QUITAR UNA ETIQUETA: lo gestiona `shared/ListaEtiquetasFiltro.jsx`
+ * (compartida con `FiltrosMatriz.jsx`): al ✕ de la etiqueta siguiente, al de
+ * la anterior si era la última, o al botón "Filtros" si no queda ninguna.
  */
-import { X } from "lucide-react";
-import { useRef } from "react";
 
 import { MINIMO_BUSQUEDA } from "../lib/filtrosPlanAccion.js";
 import Campo from "./shared/Campo.jsx";
+import ListaEtiquetasFiltro from "./shared/ListaEtiquetasFiltro.jsx";
 import SelectorConBusqueda from "./shared/SelectorConBusqueda.jsx";
-
-function EtiquetasActivas({ etiquetas, onQuitar, refBotonFiltros }) {
-  // ✕ montados, por `clave:valor`. Cada ref de callback se auto-limpia al
-  // desmontarse la etiqueta, así que nunca se enfoca un nodo que ya no está.
-  const botonesQuitar = useRef(new Map());
-
-  if (etiquetas.length === 0) return null;
-
-  const idDe = (etiqueta) => `${etiqueta.clave}:${etiqueta.valor}`;
-
-  function quitar(indice) {
-    const etiqueta = etiquetas[indice];
-    const vecino = [etiquetas[indice + 1], etiquetas[indice - 1]]
-      .filter(Boolean)
-      .map((candidata) => botonesQuitar.current.get(idDe(candidata)))
-      .find(Boolean);
-    (vecino ?? refBotonFiltros?.current)?.focus();
-    onQuitar(etiqueta.clave, etiqueta.valor);
-  }
-
-  return (
-    <ul aria-label="Filtros activos" className="mt-4 flex flex-wrap gap-2">
-      {etiquetas.map((etiqueta, indice) => (
-        <li
-          key={idDe(etiqueta)}
-          className="inline-flex items-center gap-1 rounded-control border border-blue-200 bg-blue-50 py-0.5 pl-2.5 pr-0.5 text-campo font-medium text-azul"
-        >
-          <span>
-            {etiqueta.titulo}: {etiqueta.texto}
-          </span>
-          <button
-            ref={(boton) => {
-              if (boton) botonesQuitar.current.set(idDe(etiqueta), boton);
-              else botonesQuitar.current.delete(idDe(etiqueta));
-            }}
-            type="button"
-            aria-label={`Quitar filtro ${etiqueta.titulo} ${etiqueta.texto}`}
-            onClick={() => quitar(indice)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-control text-azul hover:bg-blue-100 hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 export default function FiltrosPlanAccion({
   filtros,
@@ -204,7 +155,7 @@ export default function FiltrosPlanAccion({
         </div>
       </section>
 
-      <EtiquetasActivas
+      <ListaEtiquetasFiltro
         etiquetas={etiquetas}
         onQuitar={onQuitar}
         refBotonFiltros={refBotonFiltros}
