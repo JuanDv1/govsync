@@ -92,7 +92,10 @@ import {
   Vacio,
 } from "../components/Estados.jsx";
 import FiltrosMatriz from "../components/FiltrosMatriz.jsx";
+import Boton from "../components/shared/Boton.jsx";
+import Campo from "../components/shared/Campo.jsx";
 import Card from "../components/shared/Card.jsx";
+import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
 import {
   FILTROS_VACIOS,
@@ -540,16 +543,16 @@ export default function MatrizRelacion() {
 
   return (
     <section className="mx-auto max-w-6xl">
-      <header className="mb-5">
-        <h1 className="text-base font-semibold text-gray-800">
-          Matriz de relación
-        </h1>
-        {corteId && (
-          <p className="mt-0.5 text-ayuda text-gray-600">
-            Corte <span className="font-mono">{corteId}</span>
-          </p>
-        )}
-      </header>
+      <EncabezadoPantalla
+        titulo="Matriz de relación"
+        descripcion={
+          corteId ? (
+            <>
+              Corte <span className="font-mono">{corteId}</span>
+            </>
+          ) : undefined
+        }
+      />
 
       {!corteId && (
         <Vacio
@@ -562,69 +565,53 @@ export default function MatrizRelacion() {
         <Card className="mb-4">
           <div className="flex flex-wrap items-end gap-4">
             <div>
-              <label
-                htmlFor="estado-cruce"
-                className="mb-1.5 block text-campo font-medium text-gray-700"
-              >
-                Estado del cruce
-              </label>
-              <select
+              <Campo
+                variante="select"
+                etiqueta="Estado del cruce"
                 id="estado-cruce"
                 value={estadoCruce}
                 onChange={(evento) => cambiarEstadoCruce(evento.target.value)}
-                className="rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
               >
                 {OPCIONES_ESTADO_CRUCE.map((opcion) => (
                   <option key={opcion.valor} value={opcion.valor}>
                     {opcion.etiqueta}
                   </option>
                 ))}
-              </select>
+              </Campo>
             </div>
 
             <div className="min-w-[220px] flex-1">
-              <label
-                htmlFor="busqueda-matriz"
-                className="mb-1.5 block text-campo font-medium text-gray-700"
-              >
-                Buscar
-              </label>
-              <input
+              <Campo
+                etiqueta="Buscar"
                 id="busqueda-matriz"
                 type="text"
                 placeholder="Código de indicador, BPIN o número de contrato"
                 value={busquedaInput}
                 onChange={(evento) => setBusquedaInput(evento.target.value)}
-                className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
               />
             </div>
 
             {puedeFiltrar && (
-              <button
+              <Boton
                 ref={refBotonFiltros}
-                type="button"
+                variante="secundario"
                 aria-expanded={panelAbierto}
                 aria-controls={idPanel}
                 onClick={() => setPanelAbierto((abierto) => !abierto)}
-                className="inline-flex items-center gap-1.5 rounded-sm border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 Filtros{filtrosActivos > 0 ? ` (${filtrosActivos})` : ""}
                 <ChevronDown
-                  size={14}
+                  size={16}
                   aria-hidden="true"
                   className={panelAbierto ? "rotate-180" : ""}
                 />
-              </button>
+              </Boton>
             )}
 
             {hayAlgoQueLimpiar && !mostrarSinResultados && (
-              <button
-                type="button"
-                onClick={limpiarFiltros}
-                className="rounded-sm px-2 py-2 text-sm font-medium text-azul transition-colors hover:text-navy"
-              >
+              <Boton variante="secundario" onClick={limpiarFiltros}>
                 Limpiar filtros
-              </button>
+              </Boton>
             )}
 
             {/* [E02-HU10/CA02/CA12] La región live existe SIEMPRE: una región
@@ -634,7 +621,7 @@ export default function MatrizRelacion() {
             <div
               aria-live="polite"
               aria-atomic="true"
-              className="ml-auto shrink-0 text-ayuda text-gray-600"
+              className="ml-auto flex min-h-11 shrink-0 items-center text-ayuda text-gray-600"
             >
               {matrizVisible ? textoRegistros(matrizVisible.total_filas) : ""}
             </div>
