@@ -32,7 +32,7 @@
  *    cada elemento de `matriz.filas` se renderiza como una fila independiente,
  *    preservando el resultado entregado por el backend (CA-7).
  *
- * 3. Los códigos se muestran con la clase `.codigo` (monoespaciada): es lo
+ * 3. Los códigos se muestran en `font-mono` (monoespaciada, la fuente de `.codigo`): es lo
  *    que hace visible el cero a la izquierda de 040110500. Nunca `Number()`
  *    ni `parseInt()` sobre `cod_bpin`, `cod_indicador_producto` ni
  *    `cod_indicador_ejecucion`.
@@ -97,6 +97,7 @@ import Campo from "../components/shared/Campo.jsx";
 import Card from "../components/shared/Card.jsx";
 import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
+import { TD, TH, fondoDeFila } from "../components/shared/estilosTabla.js";
 import {
   FILTROS_VACIOS,
   agregarValor,
@@ -165,7 +166,7 @@ function Celda({ clave, valor }) {
     return <span className="font-mono">{cop(valor)}</span>;
   }
   return CLAVES_CODIGO.has(clave) ? (
-    <span className="codigo">{valor}</span>
+    <span className="whitespace-nowrap font-mono">{valor}</span>
   ) : (
     valor
   );
@@ -668,20 +669,22 @@ export default function MatrizRelacion() {
       {corteId && matrizVisible && matrizVisible.total_filas > 0 && (
         <>
           <Card padding="p-0" className="max-h-[70vh] overflow-auto">
-            <table className="w-full">
-              <thead className="sticky top-0 bg-gray-50">
+            {/* `border-separate`: con `border-collapse` el borde inferior del
+                encabezado fijo se pierde al desplazar. Cada `th` es `sticky` y
+                lleva su fondo opaco (`TH`). */}
+            <table className="w-full border-separate border-spacing-0">
+              <thead>
                 <tr>
                   {COLUMNAS.map((columna) => (
                     <th
                       key={columna.clave}
-                      className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600"
+
+                      className={`${TH} sticky top-0 z-10`}
                     >
                       {columna.titulo}
                     </th>
                   ))}
-                  <th className="whitespace-nowrap px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600">
-                    Estado
-                  </th>
+                  <th className={`${TH} sticky top-0 z-10`}>Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -690,20 +693,17 @@ export default function MatrizRelacion() {
                   return (
                     <tr
                       key={`${fila.cod_indicador_producto}-${indice}`}
-                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60"
+                      className={fondoDeFila(indice)}
                     >
                       {COLUMNAS.map((columna) => (
-                        <td
-                          key={columna.clave}
-                          className="px-4 py-2.5 text-campo"
-                        >
+                        <td key={columna.clave} className={TD}>
                           <Celda
                             clave={columna.clave}
                             valor={fila[columna.clave]}
                           />
                         </td>
                       ))}
-                      <td className="px-4 py-2.5">
+                      <td className={TD}>
                         <StateBadge texto={estado.texto} tono={estado.tono} />
                       </td>
                     </tr>
