@@ -350,7 +350,7 @@ function Cifra({ etiqueta, valor, formato, barra = false }) {
 
   return (
     <Card padding="p-4">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+      <p className="text-minimo font-semibold uppercase tracking-wider text-gray-600">
         {etiqueta}
       </p>
       <p className="mt-1 font-mono text-xl font-semibold text-navy">
@@ -392,7 +392,7 @@ function DetalleMeta({ fila, id }) {
             <p className="text-campo text-gray-600">
               Meta <span className="font-mono">{codigo}</span>
             </p>
-            <p className="mt-0.5 text-base font-semibold text-gray-800">
+            <p className="mt-0.5 text-tarjeta font-semibold text-gray-800">
               {fila.nombre_producto ?? "—"}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-campo">
