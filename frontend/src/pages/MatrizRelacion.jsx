@@ -202,14 +202,13 @@ function PaginacionMatriz({
       className="mt-3 flex items-center justify-center gap-4"
       aria-label="Paginación de la matriz de relación"
     >
-      <button
-        type="button"
+      <Boton
+        variante="secundario"
         onClick={() => onCambiarPagina(pagina - 1)}
-        disabled={pagina <= 1 || actualizando}
-        className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        deshabilitado={pagina <= 1 || actualizando}
       >
         Anterior
-      </button>
+      </Boton>
 
       {/* [E02-HU10] El total ya lo anuncia el contador de la Card (su propia
           región live): aquí solo se anuncian la página y "actualizando…". El
@@ -224,14 +223,13 @@ function PaginacionMatriz({
         <span aria-live="polite">{actualizando ? " · actualizando…" : ""}</span>
       </span>
 
-      <button
-        type="button"
+      <Boton
+        variante="secundario"
         onClick={() => onCambiarPagina(pagina + 1)}
-        disabled={pagina >= totalPaginas || actualizando}
-        className="rounded-sm border border-gray-300 px-3 py-1.5 text-campo font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+        deshabilitado={pagina >= totalPaginas || actualizando}
       >
         Siguiente
-      </button>
+      </Boton>
     </nav>
   );
 }
@@ -268,13 +266,9 @@ function EstadoSinFilas({
       <Vacio
         titulo="No hay registros que cumplan los filtros seleccionados"
         accion={
-          <button
-            type="button"
-            onClick={onLimpiar}
-            className="rounded-sm px-2 py-2 text-sm font-medium text-azul transition-colors hover:text-navy"
-          >
+          <Boton variante="secundario" onClick={onLimpiar}>
             Limpiar filtros
-          </button>
+          </Boton>
         }
       />
     );
