@@ -97,7 +97,7 @@ function EtiquetasActivas({
       {etiquetas.map((etiqueta, indice) => (
         <li
           key={idDe(etiqueta)}
-          className="inline-flex items-center gap-1.5 rounded-sm border border-blue-200 bg-blue-50 py-0.5 pl-2 pr-1 text-campo font-medium text-azul"
+          className="inline-flex items-center gap-1 rounded-control border border-blue-200 bg-blue-50 py-0.5 pl-2.5 pr-0.5 text-campo font-medium text-azul"
         >
           <span>
             {etiqueta.titulo}: {etiqueta.texto}
@@ -110,9 +110,9 @@ function EtiquetasActivas({
             type="button"
             aria-label={`Quitar filtro ${etiqueta.titulo} ${etiqueta.texto}`}
             onClick={() => quitar(indice)}
-            className="rounded-sm p-0.5 text-azul transition-colors hover:bg-blue-100 hover:text-navy"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-control text-azul hover:bg-blue-100 hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
           >
-            <X size={12} aria-hidden="true" />
+            <X size={16} aria-hidden="true" />
           </button>
         </li>
       ))}
@@ -180,7 +180,7 @@ export default function FiltrosMatriz({
           id={idPanel}
           hidden={!abierto}
           aria-label="Filtros de la matriz de relación"
-          className="mt-4 border-t border-gray-100 pt-4"
+          className="mt-4 border-t border-gray-200 pt-4"
         >
           {abierto && (
             <ContenidoPanel
