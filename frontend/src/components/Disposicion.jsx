@@ -52,7 +52,7 @@ export default function Disposicion() {
           <div className="text-lg font-bold tracking-[0.1em] text-white">
             GOV<span className="text-azul-claro">SYNC</span>
           </div>
-          <p className="mt-1 text-xs font-medium uppercase tracking-wide text-azul-tenue">
+          <p className="mt-1 text-minimo font-medium uppercase tracking-wide text-azul-tenue">
             Plan de Desarrollo
           </p>
         </NavLink>
