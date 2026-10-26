@@ -672,7 +672,6 @@ export default function MatrizRelacion() {
                   {COLUMNAS.map((columna) => (
                     <th
                       key={columna.clave}
-
                       className={`${TH} sticky top-0 z-10`}
                     >
                       {columna.titulo}
