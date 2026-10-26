@@ -19,9 +19,9 @@
 }
 
 /* La raíz respeta la preferencia de tamaño de texto del navegador (16 px por
-   defecto). Antes valía 14 px y `text-sm` medía 12,25 px, `text-xs` 10,5 px y
-   `min-h-10` 35 px: la regla de 14 px de texto y 40 px de control nunca se
-   cumplió. Con el 100 %, la escala de Tailwind queda en 12 / 14 / 18 / 24 px. */
+   defecto). Antes valía 14 px y la escala de Tailwind quedaba por debajo de
+   14 px de texto y 40 px de control. Con el 100 %, la escala queda en
+   12 / 14 / 18 / 24 px (ver `fontSize` en tailwind.config.js). */
 html {
   font-size: 100%;
 }
