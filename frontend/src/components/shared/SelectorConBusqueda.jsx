@@ -55,21 +55,21 @@ const TAMANOS = {
   normal: {
     etiqueta: "mb-1.5 block text-campo font-medium text-gray-700",
     campo:
-      "w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul disabled:cursor-not-allowed disabled:opacity-40",
+      "min-h-11 w-full rounded-control border-[1.5px] border-borde-control bg-white px-3 text-campo focus:border-azul-accion focus:outline-none focus-visible:ring-2 focus-visible:ring-azul-accion disabled:cursor-not-allowed disabled:opacity-40",
     lista:
-      "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-sm border border-gray-200 bg-white py-1 shadow-sm",
+      "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-control border border-gray-200 bg-white py-1 shadow-suave",
     opcion:
       "cursor-pointer whitespace-normal break-words px-3 py-1.5 text-campo",
     ayuda: "mt-1 text-ayuda text-gray-600",
   },
   grande: {
-    etiqueta: "mb-1.5 block text-sm font-medium text-gray-700",
+    etiqueta: "mb-1.5 block text-campo font-medium text-gray-700",
     campo:
-      "min-h-10 w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul disabled:cursor-not-allowed disabled:opacity-40",
+      "min-h-11 w-full rounded-control border-[1.5px] border-borde-control bg-white px-3 text-campo focus:border-azul-accion focus:outline-none focus-visible:ring-2 focus-visible:ring-azul-accion disabled:cursor-not-allowed disabled:opacity-40",
     lista:
-      "absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-sm border border-gray-200 bg-white py-1 shadow-sm",
-    opcion: "cursor-pointer whitespace-normal break-words px-3 py-2 text-sm",
-    ayuda: "mt-1 text-sm text-gray-600",
+      "absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-control border border-gray-200 bg-white py-1 shadow-suave",
+    opcion: "cursor-pointer whitespace-normal break-words px-3 py-2 text-campo",
+    ayuda: "mt-1 text-campo text-gray-600",
   },
 };
 

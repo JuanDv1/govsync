@@ -36,13 +36,11 @@
  * queda ninguna.
  */
 import { X } from "lucide-react";
-import { useId, useRef } from "react";
+import { useRef } from "react";
 
 import { MINIMO_BUSQUEDA } from "../lib/filtrosPlanAccion.js";
+import Campo from "./shared/Campo.jsx";
 import SelectorConBusqueda from "./shared/SelectorConBusqueda.jsx";
-
-//: Etiqueta de los campos del panel: 14px, legible, sin mayúsculas forzadas.
-const ETIQUETA_CAMPO = "mb-1.5 block text-sm font-medium text-gray-700";
 
 function EtiquetasActivas({ etiquetas, onQuitar, refBotonFiltros }) {
   // ✕ montados, por `clave:valor`. Cada ref de callback se auto-limpia al
@@ -68,7 +66,7 @@ function EtiquetasActivas({ etiquetas, onQuitar, refBotonFiltros }) {
       {etiquetas.map((etiqueta, indice) => (
         <li
           key={idDe(etiqueta)}
-          className="inline-flex items-center gap-1 rounded-sm border border-blue-200 bg-blue-50 py-0.5 pl-2.5 pr-0.5 text-sm font-medium text-azul"
+          className="inline-flex items-center gap-1 rounded-control border border-blue-200 bg-blue-50 py-0.5 pl-2.5 pr-0.5 text-campo font-medium text-azul"
         >
           <span>
             {etiqueta.titulo}: {etiqueta.texto}
@@ -81,7 +79,7 @@ function EtiquetasActivas({ etiquetas, onQuitar, refBotonFiltros }) {
             type="button"
             aria-label={`Quitar filtro ${etiqueta.titulo} ${etiqueta.texto}`}
             onClick={() => quitar(indice)}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-azul hover:bg-blue-100 hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-control text-azul hover:bg-blue-100 hover:text-navy focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -105,10 +103,6 @@ export default function FiltrosPlanAccion({
   onCambiarTextoMeta,
   onAlternarEstado,
 }) {
-  const id = useId();
-  const idMeta = `${id}-meta`;
-  const idAyudaMeta = `${id}-meta-ayuda`;
-
   // Textos de las etiquetas: el indicador muestra "código – nombre" y el
   // estado, su texto de pantalla; si no se encuentra, se cae al valor.
   const textosIndicador = new Map(
@@ -156,7 +150,7 @@ export default function FiltrosPlanAccion({
         id={idPanel}
         hidden={!abierto}
         aria-label="Filtros del Plan de Acción"
-        className="mt-4 border-t border-gray-100 pt-4"
+        className="mt-4 border-t border-gray-200 pt-4"
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <SelectorConBusqueda
@@ -177,31 +171,24 @@ export default function FiltrosPlanAccion({
             placeholder="Escriba para buscar"
           />
 
-          <div>
-            <label htmlFor={idMeta} className={ETIQUETA_CAMPO}>
-              Meta
-            </label>
-            <input
-              id={idMeta}
-              type="text"
-              autoComplete="off"
-              aria-describedby={idAyudaMeta}
-              value={textoMeta}
-              onChange={(evento) => onCambiarTextoMeta(evento.target.value)}
-              className="min-h-10 w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none focus-visible:ring-2 focus-visible:ring-azul"
-            />
-            <p id={idAyudaMeta} className="mt-1 text-sm text-gray-600">
-              Código o parte del nombre (mínimo {MINIMO_BUSQUEDA} caracteres)
-            </p>
-          </div>
+          <Campo
+            etiqueta="Meta"
+            type="text"
+            autoComplete="off"
+            ayuda={`Código o parte del nombre (mínimo ${MINIMO_BUSQUEDA} caracteres)`}
+            value={textoMeta}
+            onChange={(evento) => onCambiarTextoMeta(evento.target.value)}
+          />
 
           <fieldset>
-            <legend className={ETIQUETA_CAMPO}>Estado de cruce</legend>
+            <legend className="mb-1.5 block text-campo font-medium text-gray-700">
+              Estado de cruce
+            </legend>
             <div className="flex flex-col">
               {estadosCruce.map((estado) => (
                 <label
                   key={estado.valor}
-                  className="flex min-h-10 cursor-pointer items-center gap-2.5 text-sm text-gray-700"
+                  className="flex min-h-11 cursor-pointer items-center gap-2.5 text-campo text-gray-700"
                 >
                   <input
                     type="checkbox"
