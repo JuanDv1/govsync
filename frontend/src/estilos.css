@@ -13,20 +13,8 @@
 :root {
   --tinta: #16202c;
   --tinta-suave: #5b6b7c;
-  --borde: #e5e7eb;
   --fondo: #eef1f5;
-  --superficie: #ffffff;
   --primario: #1a3a6b;
-  --primario-oscuro: #2c5282;
-  --interactivo: #2b6cb0;
-  --exito: #15803d;
-  --exito-fondo: #f0fdf4;
-  --alerta: #92400e;
-  --alerta-fondo: #fffbeb;
-  --error: #c53030;
-  --error-fondo: #fdeceb;
-  --radio: 2px;
-  --sombra: 0 1px 3px rgba(22, 32, 44, 0.08);
   color-scheme: light;
 }
 
