@@ -151,7 +151,8 @@ export function EstadoError({ error, onReintentar, accionSugerida }) {
 
         {error.codigo && (
           <p className="mt-2 text-ayuda text-gray-600">
-            Código del error: <span className="codigo">{error.codigo}</span>
+            Código del error:{" "}
+            <span className="whitespace-nowrap font-mono">{error.codigo}</span>
           </p>
         )}
 
