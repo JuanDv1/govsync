@@ -26,13 +26,13 @@ export default function Login() {
           <div className="text-2xl font-bold tracking-[0.12em] text-white">
             GOV<span className="text-azul-claro">SYNC</span>
           </div>
-          <p className="mt-1 text-xs font-medium uppercase tracking-wide text-azul-tenue">
+          <p className="mt-1 text-minimo font-medium uppercase tracking-wide text-azul-tenue">
             Sistema de Gestión · Plan de Desarrollo
           </p>
         </div>
 
         <div className="border-l-2 border-azul pl-4">
-          <p className="text-sm leading-relaxed text-blue-100">
+          <p className="text-campo leading-relaxed text-blue-100">
             <span className="font-medium text-white">
               Plan de Desarrollo Municipal 2024–2027
             </span>{" "}
@@ -44,7 +44,7 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="flex justify-between text-xs text-azul-apagado">
+        <div className="flex justify-between text-ayuda text-azul-apagado">
           <span>v2.0.0</span>
           <span className="font-mono">Vigencia 2026</span>
         </div>
