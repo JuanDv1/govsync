@@ -17,7 +17,7 @@ ALCANCE DE ESTA ENTREGA
 `RepositorioCortesSQL` queda completo (los seis métodos del puerto). La etapa
 Load (`RepositorioDatosCorteSQL`) se implementa con cada tarjeta que la
 consume: `copiar_datos` con [BD-03] (bug activo detectado en producción: HU-01/
-CA-5, ya mergeado, lo llama sin protección — ver docs/TRAZABILIDAD.md),
+CA-5, ya mergeado, lo llama sin protección — ver docs/archivo/sprint-1/TRAZABILIDAD.md),
 `reemplazar_metas` con [HU-02][BE-04], `reemplazar_presupuesto` con
 [HU-03][BE-06], `reemplazar_proyectos` con [HU-04][BE-04].
 
@@ -42,18 +42,25 @@ elimina la trampa de orden. La misma regla aplica a `CorteORM` aquí.
 from __future__ import annotations
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, selectinload
 
-from app.modules.cortes.domain.entidades import ArchivoFuente, Corte, EstadoCorte, TipoArchivoFuente
+from app.modules.cortes.domain.entidades import (
+    ArchivoFuente,
+    Corte,
+    EstadoCorte,
+    HistorialReemplazoArchivo,
+    TipoArchivoFuente,
+)
 from app.modules.cortes.domain.puertos import RepositorioCortes, RepositorioDatosCorte
 from app.modules.cortes.persistence.models import (
     ArchivoFuenteORM,
     ContratoORM,
     CorteORM,
+    HistorialReemplazoArchivoORM,
     MetaORM,
     MetaProgramacionFisicaORM,
     ProgramacionFinancieraORM,
@@ -72,6 +79,19 @@ def _archivo_a_dominio(o: ArchivoFuenteORM) -> ArchivoFuente:
         filas_reconocidas=o.filas_reconocidas,
         reutilizado=o.reutilizado,
         corte_origen_id=o.corte_origen_id,
+        fecha_carga=o.fecha_carga,
+    )
+
+
+def _historial_a_dominio(o: HistorialReemplazoArchivoORM) -> HistorialReemplazoArchivo:
+    return HistorialReemplazoArchivo(
+        id=o.id,
+        corte_id=o.corte_id,
+        tipo=o.tipo,
+        nombre_archivo_anterior=o.nombre_archivo_anterior,
+        nombre_archivo_nuevo=o.nombre_archivo_nuevo,
+        usuario=o.usuario,
+        fecha=o.fecha,
     )
 
 
@@ -172,6 +192,11 @@ class RepositorioCortesSQL(RepositorioCortes):
             existente.filas_reconocidas = archivo.filas_reconocidas
             existente.reutilizado = archivo.reutilizado
             existente.corte_origen_id = archivo.corte_origen_id
+            # [E02-HU05][CA01] hallazgo de la spec: `server_default=func.now()`
+            # solo se evalua al INSERTAR -- sin esta linea, "fecha_carga" se
+            # quedaba congelada en la primera carga y no reflejaba ningun
+            # reemplazo posterior (HU-06 ni esta HU).
+            existente.fecha_carga = datetime.now(UTC)
         else:
             self._s.add(
                 ArchivoFuenteORM(
@@ -209,6 +234,27 @@ class RepositorioCortesSQL(RepositorioCortes):
         orm.fecha_corte = corte.fecha_corte
         self._s.flush()
 
+    def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
+        self._s.add(
+            HistorialReemplazoArchivoORM(
+                id=historial.id,
+                corte_id=historial.corte_id,
+                tipo=historial.tipo,
+                nombre_archivo_anterior=historial.nombre_archivo_anterior,
+                nombre_archivo_nuevo=historial.nombre_archivo_nuevo,
+                usuario=historial.usuario,
+            )
+        )
+        self._s.flush()
+
+    def listar_historial_reemplazos(self, corte_id: uuid.UUID) -> list[HistorialReemplazoArchivo]:
+        consulta = (
+            select(HistorialReemplazoArchivoORM)
+            .where(HistorialReemplazoArchivoORM.corte_id == corte_id)
+            .order_by(HistorialReemplazoArchivoORM.fecha.desc())
+        )
+        return [_historial_a_dominio(o) for o in self._s.scalars(consulta)]
+
 
 class RepositorioDatosCorteSQL(RepositorioDatosCorte):
     """Etapa Load del ETL. Escribe en lote; nunca hace commit por fila.
@@ -220,6 +266,10 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
 
     def __init__(self, sesion: Session) -> None:
         self._s = sesion
+
+    def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
+        consulta = select(MetaORM.cod_indicador_producto).where(MetaORM.corte_id == corte_id)
+        return set(self._s.scalars(consulta))
 
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
         """[HU-02][BE-04]: reemplazo total de las metas del corte.
@@ -454,6 +504,14 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
         self._s.flush()
         return len(proyectos) + indicadores_insertados
 
+    # Usada por `_copiar_metas` (ver su docstring): todas las columnas de
+    # datos de `meta`, excepto `id`/`corte_id` (identidad propia de la fila
+    # destino, nunca se copian). Derivada de `MetaORM.__table__` en vez de
+    # enumerada a mano, para que un campo nuevo no vuelva a quedar afuera.
+    _COLUMNAS_COPIABLES_META = tuple(
+        c.name for c in MetaORM.__table__.columns if c.name not in {"id", "corte_id"}
+    )
+
     def copiar_datos(
         self, origen_id: uuid.UUID, destino_id: uuid.UUID, tipo: TipoArchivoFuente
     ) -> int:
@@ -478,6 +536,25 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
         Sin relationship declarada entre MetaORM y sus hijas en models.py:
         se resuelven con un mapa id_origen -> id_nuevo, igual a la trampa de
         UUID documentada arriba (se genera el id ANTES de usarlo como FK).
+
+        CORRECCIÓN (hallazgo de Juan David, 2026-10-19): esta función
+        enumeraba a mano 8 de las 19 columnas de datos de `MetaORM` --
+        quedaban en NULL las 11 agregadas el 2026-09-23 (migración
+        `122e94509b80`: `entidad_territorial`, `nombre_plan`,
+        `fecha_creacion_plan`, `linea_estrategica`, `codigo_sector`,
+        `sector`, `codigo_programa`, `programa`, `codigo_ods`, `ods`,
+        `tipo_acumulacion`), porque se escribió ANTES de que esas columnas
+        existieran y nadie la actualizó al agregarlas (a diferencia de
+        `reemplazar_metas`, que sí las tiene todas). Efecto: un corte con
+        PDT reutilizado perdía el sector/programa de cada meta -- sin
+        opciones en los filtros de la matriz (`trazabilidad`) y sin
+        columna/filtro de Sector en el Plan de Acción (`plan_accion`, que sí
+        lee `MetaORM.sector` pero no `programa`).
+
+        Se copian ahora TODAS las columnas de `meta` salvo `id`/`corte_id`
+        (que deben cambiar), iterando sobre `MetaORM.__table__.columns` en
+        vez de enumerarlas: un campo agregado a `MetaORM` en el futuro se
+        copia automáticamente, sin volver a tocar este método.
         """
         metas_origen = self._s.scalars(select(MetaORM).where(MetaORM.corte_id == origen_id)).all()
         if not metas_origen:
@@ -491,14 +568,9 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
                 MetaORM(
                     id=nueva_id,
                     corte_id=destino_id,
-                    cod_indicador_producto=meta.cod_indicador_producto,
-                    cod_indicador_sistp=meta.cod_indicador_sistp,
-                    codigo_producto_mga=meta.codigo_producto_mga,
-                    nombre_producto=meta.nombre_producto,
-                    unidad_medida=meta.unidad_medida,
-                    meta_cuatrienio=meta.meta_cuatrienio,
-                    es_principal=meta.es_principal,
-                    bpin_relacionados=meta.bpin_relacionados,
+                    **{
+                        columna: getattr(meta, columna) for columna in self._COLUMNAS_COPIABLES_META
+                    },
                 )
             )
 

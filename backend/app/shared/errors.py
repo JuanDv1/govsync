@@ -34,6 +34,16 @@ class CredencialesInvalidas(GovSyncError):
     codigo = "credenciales_invalidas"
 
 
+class PermisoInsuficiente(GovSyncError):
+    """El usuario está autenticado, pero su rol no alcanza para la acción.
+
+    Distinta de OperacionNoPermitida (conflicto de negocio, D9/D11): esta es
+    HTTP 403 — identidad válida, autorización insuficiente.
+    """
+
+    codigo = "permiso_insuficiente"
+
+
 class ArchivoInvalido(GovSyncError):
     """El archivo cargado no corresponde al formato esperado.
 

@@ -3,32 +3,56 @@
  *
  * TARJETA: [UX-01] Layout base, enrutamiento y cliente HTTP
  *
- * Adaptado de DESIGN_SPEC.md §4.1. Sin RBAC: ese documento describe un menú
- * filtrado por rol (`NAV_BY_ROLE`), pero la épica de roles/autenticación
- * está deliberadamente fuera de alcance de este sprint (docs/DECISIONES.md
- * D2, [REF-05]) — el menú de abajo es único y fijo, con solo las rutas que
- * ya existen en `App.jsx`. El enlace "Cerrar sesión" navega a `/login` sin
- * lógica de sesión real, mismo criterio que la propia pantalla de Login.
+ * Adaptado de DESIGN_SPEC.md §4.1. RBAC parcial: "Nuevo corte" solo se
+ * muestra si `puedeEscribir` (D24 — administrador/gestor), igual que
+ * `Cortes.jsx` oculta "Crear corte"/"Continuar carga" para `visitante`. Es
+ * solo UI — el backend ya rechaza con 403 de todas formas (`exigir_roles`
+ * en `core/dependencias.py`), esto evita ofrecer una acción que de todos
+ * modos fallaría. "Matriz"/"Cortes" siguen visibles para los 3 roles
+ * (D24: lectura abierta). "Plan de Acción" solo se muestra si
+ * `puedeVerPlanAccion` (administrador/visitante, D26 — `gestor` no).
+ * "Cerrar sesión" llama a `useAutenticacion().cerrarSesion()` (termina la
+ * sesión de Keycloak).
  */
 import { LogOut } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 
+//: Anillo de foco de los controles del sidebar. El contorno global de
+//: `estilos.css` es navy y sobre el fondo navy da 1:1 (no se ve); el blanco
+//: da 11,3:1 sobre el navy, 9,2:1 sobre el hover y 5,4:1 junto al ítem activo.
+const FOCO =
+  "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy";
+
+//: Base común de los ítems del menú y de "Cerrar sesión": 44 px de alto
+//: (`min-h-11`), texto de 14 px y radio de control.
+const ITEM = `relative flex min-h-11 items-center gap-2 rounded-control px-4 text-campo transition-colors ${FOCO}`;
+
+//: El ítem activo NO depende solo del color: además del fondo, lleva el texto
+//: en negrita y una barra blanca de 4 px a la izquierda (forma y peso).
+//: `aria-current="page"` ya lo agrega NavLink.
 const enlaceClase = ({ isActive }) =>
-  `block rounded-sm px-3 py-2 text-sm font-medium transition-colors ${
+  `${ITEM} ${
     isActive
-      ? "bg-azul text-white"
-      : "text-azul-tenue hover:bg-navy-sidebar hover:text-white"
+      ? "bg-azul font-bold text-white before:absolute before:bottom-2.5 before:left-1.5 before:top-2.5 before:w-1 before:rounded-full before:bg-white"
+      : "font-medium text-azul-tenue hover:bg-navy-sidebar hover:text-white"
   }`;
 
 export default function Disposicion() {
+  const { cerrarSesion, puedeEscribir, puedeVerPlanAccion } =
+    useAutenticacion();
+
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-52 shrink-0 flex-col bg-navy">
-        <NavLink to="/cortes" className="border-b border-white/10 p-5">
+        <NavLink
+          to="/cortes"
+          className="border-b border-white/10 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+        >
           <div className="text-lg font-bold tracking-[0.1em] text-white">
             GOV<span className="text-azul-claro">SYNC</span>
           </div>
-          <p className="mt-1 text-[10px] font-medium uppercase tracking-[0.15em] text-azul-tenue">
+          <p className="mt-1 text-minimo font-medium uppercase tracking-wide text-azul-tenue">
             Plan de Desarrollo
           </p>
         </NavLink>
@@ -37,9 +61,11 @@ export default function Disposicion() {
           aria-label="Navegación principal"
           className="flex flex-1 flex-col gap-1 p-3"
         >
-          <NavLink to="/cortes/nuevo" className={enlaceClase}>
-            Nuevo corte
-          </NavLink>
+          {puedeEscribir && (
+            <NavLink to="/cortes/nuevo" className={enlaceClase}>
+              Nuevo corte
+            </NavLink>
+          )}
           {/* `end`: sin esto, NavLink resalta "Cortes" para cualquier ruta
               que empiece con "/cortes" — incluidas "/cortes/nuevo" y
               "/cortes/:id" (reanudar borrador) — y quedaban dos ítems
@@ -50,20 +76,30 @@ export default function Disposicion() {
           <NavLink to="/matriz" className={enlaceClase}>
             Matriz
           </NavLink>
+          {puedeVerPlanAccion && (
+            <NavLink to="/plan-accion" className={enlaceClase}>
+              Plan de Acción
+            </NavLink>
+          )}
         </nav>
 
         <div className="border-t border-white/10 p-3">
-          <NavLink
-            to="/login"
-            className="flex items-center gap-2 rounded-sm px-3 py-2 text-xs font-medium text-azul-tenue transition-colors hover:bg-navy-sidebar hover:text-white"
+          <button
+            type="button"
+            onClick={cerrarSesion}
+            className={`${ITEM} w-full font-medium text-azul-tenue hover:bg-navy-sidebar hover:text-white`}
           >
-            <LogOut size={13} />
+            <LogOut size={16} aria-hidden="true" />
             Cerrar sesión
-          </NavLink>
+          </button>
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
+      {/* `min-w-0`: sin él, un hijo flex no puede quedar más angosto que su
+          contenido, y una tabla ancha (p. ej. el Plan de Acción con zoom)
+          ensanchaba todo el panel y la página mostraba una segunda barra de
+          scroll horizontal. Con él, cada tabla usa solo su propio scroll. */}
+      <div className="flex min-w-0 flex-1 flex-col">
         <header className="h-11 shrink-0 border-b border-gray-200 bg-white" />
 
         <main className="flex-1 overflow-auto bg-fondo-pagina p-5">

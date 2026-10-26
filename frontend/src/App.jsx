@@ -7,23 +7,73 @@
  * muestra un marcador de posición: así `npm run dev` arranca y confirma que la
  * cadena de herramientas funciona, sin fingir que la pantalla ya está hecha.
  */
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import NuevoCorte from "./pages/NuevoCorte.jsx";
 import Cortes from "./pages/Cortes.jsx";
+import EditarArchivosCorteActual from "./pages/EditarArchivosCorteActual.jsx";
 import Login from "./pages/Login.jsx";
 
 import Disposicion from "./components/Disposicion.jsx";
 import MatrizRelacion from "./pages/MatrizRelacion.jsx";
+import PlanAccion from "./pages/PlanAccion.jsx";
+import CompararCortes from "./pages/CompararCortes.jsx";
+import { Vacio } from "./components/Estados.jsx";
+import Card from "./components/shared/Card.jsx";
+import { useAutenticacion } from "./auth/ProveedorAutenticacion.jsx";
+
+/** [HU-E01-01] / D23/D24: exige sesión de Keycloak activa antes de montar
+ * las rutas que envuelve. `cargando` cubre la ventana entre que la app
+ * arranca y `keycloak.init()` resuelve — sin esto, un usuario SIN sesión
+ * vería un parpadeo de contenido protegido antes del redirect. */
+function RutaProtegida({ children }) {
+  const { cargando, estaAutenticado } = useAutenticacion();
+
+  if (cargando) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-campo text-gray-600">
+        Verificando sesión…
+      </div>
+    );
+  }
+
+  if (!estaAutenticado) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+/** [E04-HU01/CA10] / D26: el Plan de Acción solo lo ven `administrador` y
+ * `visitante`. Sin ese rol, el acceso por URL directa muestra el aviso de
+ * permiso y NO monta la pantalla, así que tampoco se dispara la petición.
+ * Es solo UI: el backend ya responde 403 a los demás roles. Va dentro de
+ * `RutaProtegida`, que ya garantiza que hay sesión. */
+function RutaConPlanAccion({ children }) {
+  const { puedeVerPlanAccion } = useAutenticacion();
+
+  if (!puedeVerPlanAccion) {
+    return (
+      <section className="mx-auto max-w-4xl">
+        <Vacio
+          titulo="No tiene permiso para ver el Plan de Acción"
+          descripcion="Su rol no tiene acceso a este módulo."
+        />
+      </section>
+    );
+  }
+
+  return children;
+}
 
 function Pendiente() {
   return (
-    <section className="mx-auto max-w-2xl rounded-sm border border-gray-200 bg-white p-5">
-      <h1 className="text-base font-semibold text-gray-800">GovSync</h1>
-      <p className="mt-1 text-xs text-gray-500">
+    <Card as="section" className="mx-auto max-w-2xl">
+      <h1 className="text-cuerpo font-semibold text-gray-800">GovSync</h1>
+      <p className="mt-1 text-campo text-gray-600">
         Esqueleto del Sprint 1. Las pantallas se implementan según{" "}
         <code className="font-mono">PLAN-DE-TRABAJO.md</code>.
       </p>
-      <p className="mt-2 text-xs text-gray-500">
+      <p className="mt-2 text-campo text-gray-600">
         Backend:{" "}
         <a
           href="http://localhost:8000/docs"
@@ -32,7 +82,7 @@ function Pendiente() {
           http://localhost:8000/docs
         </a>
       </p>
-    </section>
+    </Card>
   );
 }
 
@@ -41,7 +91,13 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
 
-      <Route element={<Disposicion />}>
+      <Route
+        element={
+          <RutaProtegida>
+            <Disposicion />
+          </RutaProtegida>
+        }
+      >
         <Route path="/cortes" element={<Cortes />} />
         <Route path="/cortes/nuevo" element={<NuevoCorte />} />
         {/* Reanudar un corte en BORRADOR — ver docstring de NuevoCorte.jsx.
@@ -49,7 +105,32 @@ export default function App() {
             sobre los dinámicos, así que el orden de estas dos rutas no
             importa para que no choquen entre sí. */}
         <Route path="/cortes/:corteId" element={<NuevoCorte />} />
+        {/* [E02-HU05] Editar archivos del corte actual, ya REGISTRADO —
+            distinta de "/cortes/:corteId" (reanudar un BORRADOR, arriba). */}
+        <Route
+          path="/cortes/:corteId/editar"
+          element={<EditarArchivosCorteActual />}
+        />
         <Route path="/matriz/:corteId?" element={<MatrizRelacion />} />
+        {/* [E04-HU01] Plan de Acción consolidado del corte actual. */}
+        <Route
+          path="/plan-accion"
+          element={
+            <RutaConPlanAccion>
+              <PlanAccion />
+            </RutaConPlanAccion>
+          }
+        />
+        {/* [E04-HU04] Comparación entre dos cortes de una vigencia
+            (`?vigencia=N`); mismo permiso que el Plan de Acción. */}
+        <Route
+          path="/plan-accion/comparar"
+          element={
+            <RutaConPlanAccion>
+              <CompararCortes />
+            </RutaConPlanAccion>
+          }
+        />
         <Route path="*" element={<Pendiente />} />
       </Route>
     </Routes>

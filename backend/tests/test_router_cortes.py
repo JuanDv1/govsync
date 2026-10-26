@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import io
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 import pytest
@@ -26,13 +26,14 @@ from fastapi.testclient import TestClient
 from openpyxl import Workbook
 
 from app.core.config import Settings, get_settings
-from app.core.dependencias import obtener_servicio_cortes
+from app.core.dependencias import obtener_servicio_cortes, obtener_usuario_actual
 from app.main import crear_app
 from app.modules.cortes.application.casos_uso import ServicioCortes
 from app.modules.cortes.domain.entidades import (
     ArchivoFuente,
     Corte,
     EstadoCorte,
+    HistorialReemplazoArchivo,
     TipoArchivoFuente,
 )
 from app.modules.cortes.domain.puertos import RepositorioCortes, RepositorioDatosCorte
@@ -42,6 +43,7 @@ from app.modules.ingesta.domain.contratos import (
     TipoArchivo,
 )
 from app.shared.codigos import CategoriaDescarte, CodigoIndicadorProducto, DescarteIndicador
+from tests.conftest import USUARIO_DE_PRUEBA
 
 HOY = date(2026, 9, 8)
 
@@ -49,6 +51,7 @@ HOY = date(2026, 9, 8)
 class RepositorioCortesEnMemoria(RepositorioCortes):
     def __init__(self) -> None:
         self._cortes: dict[uuid.UUID, Corte] = {}
+        self.historial: list[HistorialReemplazoArchivo] = []
 
     def guardar(self, corte: Corte) -> Corte:
         self._cortes[corte.id] = corte
@@ -87,13 +90,28 @@ class RepositorioCortesEnMemoria(RepositorioCortes):
         self._cortes[corte.id].vigencia = corte.vigencia
         self._cortes[corte.id].fecha_corte = corte.fecha_corte
 
+    def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
+        if historial.fecha is None:
+            historial.fecha = datetime.now(UTC)
+        self.historial.append(historial)
+
+    def listar_historial_reemplazos(self, corte_id: uuid.UUID) -> list[HistorialReemplazoArchivo]:
+        return [h for h in self.historial if h.corte_id == corte_id]
+
 
 class RepositorioDatosCorteEnMemoria(RepositorioDatosCorte):
     """Los 3 métodos de carga se ejercitan (TestCargarArchivo, un tipo cada
     uno) — ya no quedan NotImplementedError aquí, mismo estado que el real
     en `develop` desde que [HU-03][BE-06]/[HU-04][BE-01] cerraron."""
 
+    def __init__(self) -> None:
+        self.codigos_metas: dict[uuid.UUID, set[str]] = {}
+
+    def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
+        return self.codigos_metas.get(corte_id, set())
+
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
+        self.codigos_metas[corte_id] = {m["cod_indicador_producto"] for m in metas}
         return len(metas)
 
     def reemplazar_presupuesto(self, corte_id, rubros, contratos, registros) -> int:
@@ -118,6 +136,18 @@ class LectorPDTFalso(LectorArchivoFuente):
         return ResultadoLectura(
             tipo=TipoArchivo.PDT,
             filas={"metas": [{"cod_indicador_producto": "040110500", "principal": True}]},
+            conteos={"metas": 1},
+        )
+
+
+class LectorPDTOtraMetaFalso(LectorPDTFalso):
+    """Como `LectorPDTFalso`, pero con una meta distinta: simula el archivo de
+    reemplazo que ya no trae la meta `040110500` ([E02-HU05][CA07])."""
+
+    def leer(self, contenido: bytes, nombre_archivo: str, vigencia: int) -> ResultadoLectura:
+        return ResultadoLectura(
+            tipo=TipoArchivo.PDT,
+            filas={"metas": [{"cod_indicador_producto": "330105300", "principal": True}]},
             conteos={"metas": 1},
         )
 
@@ -184,6 +214,7 @@ def cliente():
 
     app = crear_app()
     app.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+    app.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
     with TestClient(app) as c:
         c.repo_cortes = repo_cortes  # D11: acceso directo para registrar cortes en pruebas
         yield c
@@ -242,6 +273,91 @@ def test_get_cortes_id_inexistente_devuelve_404(cliente):
 
     assert respuesta.status_code == 404
     assert respuesta.json()["codigo"] == "recurso_no_encontrado"
+
+
+# --- es_corte_actual — [E02-HU05], Contrato de la spec original ------------
+# Indicador calculado por el backend para que el frontend
+# (`EditarArchivosCorteActual.jsx`) no tenga que recalcular el orden con
+# una segunda petición a GET /cortes completo (ver docstring de
+# `CorteRespuesta.es_corte_actual` en el router).
+
+
+def test_corte_en_borrador_nunca_es_el_actual(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+
+    respuesta = cliente.get(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.json()["es_corte_actual"] is False
+
+
+def test_unico_corte_registrado_es_el_actual(cliente_con_lectores):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+
+    respuesta = cliente_con_lectores.get(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.json()["es_corte_actual"] is True
+
+
+def test_corte_registrado_desplazado_por_uno_mas_reciente_deja_de_ser_el_actual(
+    cliente_con_lectores,
+):
+    """CA05: mismo escenario que ya prueba el reemplazo (corte global, no
+    por vigencia) -- aquí se confirma el valor del indicador en sí."""
+    corte_antiguo_id = _crear_corte_actual_registrado(
+        cliente_con_lectores, vigencia=2025, fecha_corte="2025-12-31"
+    )
+    corte_reciente_id = _crear_corte_actual_registrado(
+        cliente_con_lectores, vigencia=2026, fecha_corte="2026-09-08"
+    )
+
+    respuesta_antiguo = cliente_con_lectores.get(f"/api/v1/cortes/{corte_antiguo_id}")
+    respuesta_reciente = cliente_con_lectores.get(f"/api/v1/cortes/{corte_reciente_id}")
+
+    assert respuesta_antiguo.json()["es_corte_actual"] is False
+    assert respuesta_reciente.json()["es_corte_actual"] is True
+
+
+def test_listar_cortes_marca_es_corte_actual_sin_consultar_por_cada_fila(cliente_con_lectores):
+    corte_antiguo_id = _crear_corte_actual_registrado(
+        cliente_con_lectores, vigencia=2025, fecha_corte="2025-12-31"
+    )
+    corte_reciente_id = _crear_corte_actual_registrado(
+        cliente_con_lectores, vigencia=2026, fecha_corte="2026-09-08"
+    )
+
+    respuesta = cliente_con_lectores.get("/api/v1/cortes")
+
+    por_id = {fila["id"]: fila["es_corte_actual"] for fila in respuesta.json()}
+    assert por_id[corte_antiguo_id] is False
+    assert por_id[corte_reciente_id] is True
+
+
+def test_sin_ningun_corte_registrado_ninguno_es_el_actual(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+
+    respuesta = cliente.get("/api/v1/cortes")
+
+    assert all(fila["es_corte_actual"] is False for fila in respuesta.json())
+    assert any(fila["id"] == corte_id for fila in respuesta.json())
+
+
+def test_al_registrar_un_corte_pasa_a_ser_el_actual(cliente_con_lectores):
+    corte_id = _crear_corte_borrador(cliente_con_lectores)
+    _cargar_los_tres_archivos(cliente_con_lectores, corte_id)
+
+    respuesta = cliente_con_lectores.post(f"/api/v1/cortes/{corte_id}/registrar")
+
+    assert respuesta.json()["es_corte_actual"] is True
+
+
+def test_corregir_un_corte_en_borrador_mantiene_es_corte_actual_en_falso(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+
+    respuesta = cliente.patch(
+        f"/api/v1/cortes/{corte_id}", json={"vigencia": 2026, "fecha_corte": "2026-01-01"}
+    )
+
+    assert respuesta.json()["es_corte_actual"] is False
 
 
 # --- PATCH /cortes/{id} — D11 (docs/DECISIONES.md, aclaración 2026-09-19) --
@@ -349,8 +465,10 @@ def cliente_con_lectores():
 
     app = crear_app()
     app.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+    app.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
     with TestClient(app) as c:
         c.repo_cortes = repo_cortes
+        c.servicio = servicio
         yield c
     app.dependency_overrides.clear()
 
@@ -401,7 +519,7 @@ def test_post_archivos_pdt_devuelve_201(cliente_con_lectores):
 def test_post_archivos_ejecucion_devuelve_201(cliente_con_lectores):
     """Confirma que el guard que rechazaba EJECUCION con 501 ya no existe:
     [HU-03][BE-06] cerró en develop, reemplazar_presupuesto ya no lanza
-    NotImplementedError (ver docs/TRAZABILIDAD.md, HU-03/CA-1)."""
+    NotImplementedError (ver docs/archivo/sprint-1/TRAZABILIDAD.md, HU-03/CA-1)."""
     corte_id = _crear_corte_borrador(cliente_con_lectores)
 
     respuesta = cliente_con_lectores.post(
@@ -432,7 +550,7 @@ def test_post_archivos_ejecucion_devuelve_201(cliente_con_lectores):
 def test_post_archivos_proyectos_devuelve_201(cliente_con_lectores):
     """Confirma que el guard que rechazaba PROYECTOS con 501 ya no existe:
     [HU-04][BE-01] cerró en develop, LectorProyectos.leer ya no lanza
-    NotImplementedError (ver docs/TRAZABILIDAD.md, HU-04/CA-1)."""
+    NotImplementedError (ver docs/archivo/sprint-1/TRAZABILIDAD.md, HU-04/CA-1)."""
     corte_id = _crear_corte_borrador(cliente_con_lectores)
 
     respuesta = cliente_con_lectores.post(
@@ -544,6 +662,7 @@ def test_post_archivos_tamano_excedido_sin_content_length_devuelve_413(monkeypat
     # porque son objetos Python independientes del `FastAPI` que los envuelve.
     app_normal = crear_app()
     app_normal.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+    app_normal.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
     corte_id = _crear_corte_borrador(TestClient(app_normal))
 
     monkeypatch.setenv("MAX_UPLOAD_BYTES", "20")
@@ -551,6 +670,7 @@ def test_post_archivos_tamano_excedido_sin_content_length_devuelve_413(monkeypat
     try:
         app = crear_app()
         app.dependency_overrides[obtener_servicio_cortes] = lambda: servicio
+        app.dependency_overrides[obtener_usuario_actual] = lambda: USUARIO_DE_PRUEBA
         cliente = TestClient(app)
 
         boundary = "boundaryDePrueba"
@@ -651,3 +771,200 @@ def test_post_registrar_corte_inexistente_devuelve_404(cliente):
 
     assert respuesta.status_code == 404
     assert respuesta.json()["codigo"] == "recurso_no_encontrado"
+
+
+# --- PUT /cortes/{id}/archivos/{tipo} — [E02-HU05] --------------------------
+
+
+def _crear_corte_actual_registrado(
+    cliente, *, vigencia: int = 2026, fecha_corte: str = "2026-09-08"
+) -> str:
+    """Corte REGISTRADO con los 3 archivos. Con un solo corte en la tabla es,
+    por construcción, el único candidato a `ultimo_registrado()`, o sea el
+    "corte actual" que [E02-HU05] exige para el reemplazo. `vigencia` y
+    `fecha_corte` son parametrizables para poder construir un corte MÁS
+    ANTIGUO que otro (CA05): usar la MISMA vigencia activaría la
+    reutilización automática de fuentes de HU-01/CA-5 (`copiar_datos`, sin
+    implementar en `RepositorioDatosCorteEnMemoria` de este archivo), así
+    que los tests que crean dos cortes usan vigencias distintas a
+    propósito -- no están probando reutilización aquí, sino CA05 de
+    [E02-HU05] ("corte actual" es global, no por vigencia). `fecha_corte`
+    no puede ser posterior a HOY = 2026-09-08 (`Corte.validar_fecha`)."""
+    corte_id = cliente.post(
+        "/api/v1/cortes", json={"vigencia": vigencia, "fecha_corte": fecha_corte}
+    ).json()["id"]
+    _cargar_los_tres_archivos(cliente, corte_id)
+    respuesta = cliente.post(f"/api/v1/cortes/{corte_id}/registrar")
+    assert respuesta.status_code == 200
+    return corte_id
+
+
+def test_put_archivos_del_corte_actual_devuelve_200_y_registra_el_historial(
+    cliente_con_lectores,
+):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+
+    respuesta = cliente_con_lectores.post(
+        f"/api/v1/cortes/{corte_id}/archivos/PDT/reemplazo",
+        files={
+            "archivo": (
+                "pdt_corregido.xlsx",
+                _xlsx_minimo(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["tipo"] == "PDT"
+    assert cuerpo["nombre_archivo"] == "pdt_corregido.xlsx"
+
+    historial = cliente_con_lectores.get(f"/api/v1/cortes/{corte_id}/historial")
+    assert historial.status_code == 200
+    filas = historial.json()
+    assert len(filas) == 1
+    assert filas[0]["nombre_archivo_nuevo"] == "pdt_corregido.xlsx"
+    assert filas[0]["usuario"] == USUARIO_DE_PRUEBA.correo
+
+
+def test_put_archivos_corte_en_borrador_devuelve_409_motivo_corte_no_registrado(
+    cliente_con_lectores,
+):
+    corte_id = _crear_corte_borrador(cliente_con_lectores)
+
+    respuesta = cliente_con_lectores.post(
+        f"/api/v1/cortes/{corte_id}/archivos/PDT/reemplazo",
+        files={
+            "archivo": (
+                "plan.xlsx",
+                _xlsx_minimo(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+
+    assert respuesta.status_code == 409
+    assert respuesta.json()["detalles"]["motivo"] == "corte_no_registrado"
+
+
+def test_put_archivos_corte_registrado_pero_no_es_el_actual_devuelve_409(cliente_con_lectores):
+    """CA05: un segundo corte REGISTRADO con fecha posterior desplaza al
+    primero como "el actual" -- el primero deja de ser editable."""
+    corte_antiguo_id = _crear_corte_actual_registrado(
+        cliente_con_lectores, vigencia=2025, fecha_corte="2025-12-31"
+    )
+    _crear_corte_actual_registrado(cliente_con_lectores, vigencia=2026, fecha_corte="2026-09-08")
+
+    respuesta = cliente_con_lectores.post(
+        f"/api/v1/cortes/{corte_antiguo_id}/archivos/PDT/reemplazo",
+        files={
+            "archivo": (
+                "plan.xlsx",
+                _xlsx_minimo(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+
+    assert respuesta.status_code == 409
+    assert respuesta.json()["detalles"]["motivo"] == "corte_no_es_el_actual"
+
+
+def test_put_archivos_corte_inexistente_devuelve_404(cliente):
+    respuesta = cliente.post(
+        f"/api/v1/cortes/{uuid.uuid4()}/archivos/PDT/reemplazo",
+        files={
+            "archivo": (
+                "plan.xlsx",
+                _xlsx_minimo(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+
+    assert respuesta.status_code == 404
+    assert respuesta.json()["codigo"] == "recurso_no_encontrado"
+
+
+# --- GET /cortes/{id}/historial — [E02-HU05][CA06] -------------------------
+
+
+def test_get_historial_reemplazos_vacio_si_nunca_se_reemplazo_nada(cliente_con_lectores):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+
+    respuesta = cliente_con_lectores.get(f"/api/v1/cortes/{corte_id}/historial")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json() == []
+
+
+def test_get_historial_reemplazos_corte_inexistente_devuelve_404(cliente):
+    respuesta = cliente.get(f"/api/v1/cortes/{uuid.uuid4()}/historial")
+
+    assert respuesta.status_code == 404
+    assert respuesta.json()["codigo"] == "recurso_no_encontrado"
+
+
+# --- POST /cortes/{id}/archivos/{tipo}/reemplazo — metas_eliminadas [E02-HU05][CA07] ---
+
+
+def _reemplazar(cliente, corte_id: str, tipo: str):
+    return cliente.post(
+        f"/api/v1/cortes/{corte_id}/archivos/{tipo}/reemplazo",
+        files={
+            "archivo": (
+                "archivo_corregido.xlsx",
+                _xlsx_minimo(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+
+
+def test_reemplazo_pdt_informa_las_metas_que_ya_no_vienen_ca07(cliente_con_lectores):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+    cliente_con_lectores.servicio._lectores[TipoArchivoFuente.PDT] = LectorPDTOtraMetaFalso()
+
+    respuesta = _reemplazar(cliente_con_lectores, corte_id, "PDT")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["metas_eliminadas"] == ["040110500"]
+
+
+def test_reemplazo_pdt_con_las_mismas_metas_devuelve_lista_vacia_ca07(cliente_con_lectores):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+
+    respuesta = _reemplazar(cliente_con_lectores, corte_id, "PDT")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["metas_eliminadas"] == []
+
+
+def test_reemplazo_de_proyectos_devuelve_metas_eliminadas_vacio_ca07(cliente_con_lectores):
+    corte_id = _crear_corte_actual_registrado(cliente_con_lectores)
+
+    respuesta = _reemplazar(cliente_con_lectores, corte_id, "PROYECTOS")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["metas_eliminadas"] == []
+
+
+def test_carga_normal_de_pdt_devuelve_metas_eliminadas_vacio_ca07(cliente_con_lectores):
+    """La carga inicial (POST /archivos/{tipo}, HU-02) no calcula metas
+    eliminadas: el campo existe en el contrato pero siempre va vacío."""
+    corte_id = _crear_corte_borrador(cliente_con_lectores)
+
+    respuesta = cliente_con_lectores.post(
+        f"/api/v1/cortes/{corte_id}/archivos/PDT",
+        files={
+            "archivo": (
+                "pdt.xlsx",
+                _xlsx_minimo(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+    )
+
+    assert respuesta.status_code == 201
+    assert respuesta.json()["metas_eliminadas"] == []

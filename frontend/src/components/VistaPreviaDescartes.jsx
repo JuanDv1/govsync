@@ -26,7 +26,7 @@
  * `CargaDeArchivo` ni de `NuevoCorte.jsx`.
  */
 
-// PROPUESTA DE TEXTO, NO DECIDIDA — verificado contra PLANDETRABAJO.md,
+// PROPUESTA DE TEXTO, NO DECIDIDA — verificado contra docs/archivo/sprint-1/PLANDETRABAJO.md,
 // ESPECIFICACIONES_TECNICAS.md y DECISIONES.md: ninguno define copy de
 // interfaz para estas tres categorías (D14 solo las nombra a nivel técnico:
 // POSIBLE_CERO_PERDIDO/LONGITUD_CORTA/LONGITUD_LARGA). Estos tres títulos
@@ -46,6 +46,15 @@ const ETIQUETAS_CATEGORIA = {
     titulo: "Probablemente no es un código",
     prioridad: "baja",
   },
+};
+
+//: Aspecto de cada grupo según su prioridad. La alta (posible código real
+//: perdido) usa el tono de alerta de siempre —ámbar oscuro `#92400e`
+//: (`amber-800`, 6,8:1 sobre `amber-50`)—; la baja, un borde neutro para no
+//: competir con lo que sí merece revisión.
+const ESTILO_GRUPO = {
+  alta: "border-amber-800 bg-amber-50",
+  baja: "border-gray-200 bg-white",
 };
 
 function agruparPorCategoria(descartes) {
@@ -73,9 +82,9 @@ export default function VistaPreviaDescartes({ descartes }) {
   const grupos = agruparPorCategoria(descartes);
 
   return (
-    <div className="vista-previa-descartes">
+    <div className="flex flex-col gap-3">
       {/* Propuesta de texto, no decidida — mismo caso que ETIQUETAS_CATEGORIA arriba. */}
-      <p className="vista-previa-descartes-resumen">
+      <p className="font-semibold text-amber-800">
         {descartes.length === 1
           ? "1 fragmento descartado — revísalo antes de continuar."
           : `${descartes.length} fragmentos descartados — revísalos antes de continuar.`}
@@ -89,17 +98,24 @@ export default function VistaPreviaDescartes({ descartes }) {
         return (
           <section
             key={categoria}
-            className="vista-previa-descartes-grupo"
+            className={`rounded-control border px-4 py-3 ${
+              ESTILO_GRUPO[etiqueta.prioridad] ?? ESTILO_GRUPO.baja
+            }`}
             data-prioridad={etiqueta.prioridad}
           >
-            <h3>{etiqueta.titulo}</h3>
-            <ul>
+            <h3 className="mb-2 text-campo font-semibold text-gray-800">
+              {etiqueta.titulo}
+            </h3>
+            <ul className="flex flex-col gap-1.5">
               {items.map((descarte, indice) => (
-                <li key={`${descarte.valor_crudo}-${indice}`}>
-                  <span className="codigo">{descarte.valor_crudo}</span>
-                  <span className="vista-previa-descartes-motivo">
-                    {descarte.motivo}
+                <li
+                  key={`${descarte.valor_crudo}-${indice}`}
+                  className="flex items-baseline gap-3 text-campo"
+                >
+                  <span className="whitespace-nowrap font-mono">
+                    {descarte.valor_crudo}
                   </span>
+                  <span className="text-gray-600">{descarte.motivo}</span>
                 </li>
               ))}
             </ul>

@@ -23,7 +23,7 @@ from app.modules.cortes.persistence.models import (
     RegistroPresupuestalORM,
     RubroORM,
 )
-from app.modules.trazabilidad.persistence.consultas import construir_matriz
+from app.modules.trazabilidad.persistence.consultas import construir_matriz, obtener_opciones_filtro
 
 COD_1 = "170202300"
 COD_2 = "330105300"
@@ -43,21 +43,43 @@ def _crear_corte(
     return corte_id
 
 
-def _crear_meta(sesion, corte_id: uuid.UUID, cod: str, *, nombre: str | None = None) -> None:
+def _crear_meta(
+    sesion,
+    corte_id: uuid.UUID,
+    cod: str,
+    *,
+    nombre: str | None = None,
+    sector: str | None = None,
+    programa: str | None = None,
+) -> None:
+    """`sector`/`programa` (HU-10/CA-7, CA-16): viven en MetaORM -- ver
+    DECISIÓN TÉCNICA "Sector" en consultas.py."""
     sesion.add(
         MetaORM(
             id=uuid.uuid4(),
             corte_id=corte_id,
             cod_indicador_producto=cod,
             nombre_producto=nombre,
+            sector=sector,
+            programa=programa,
             es_principal=True,
         )
     )
 
 
-def _crear_proyecto_con_indicador(sesion, corte_id: uuid.UUID, bpin: str, cod: str) -> None:
+def _crear_proyecto_con_indicador(
+    sesion,
+    corte_id: uuid.UUID,
+    bpin: str,
+    cod: str,
+    *,
+    nombre_proyecto: str | None = None,
+) -> None:
+    """`nombre_proyecto` (HU-10/CA-17, absorbido de HU-07 el 2026-10-03)."""
     proyecto_id = uuid.uuid4()
-    sesion.add(ProyectoORM(id=proyecto_id, corte_id=corte_id, bpin=bpin))
+    sesion.add(
+        ProyectoORM(id=proyecto_id, corte_id=corte_id, bpin=bpin, nombre_proyecto=nombre_proyecto)
+    )
     sesion.add(
         ProyectoIndicadorORM(id=uuid.uuid4(), proyecto_id=proyecto_id, cod_indicador_producto=cod)
     )
@@ -467,3 +489,232 @@ class TestFiltrosMatriz:
 
         assert resultado.total == 1
         assert resultado.filas[0].cod_indicador_producto == COD_1
+
+
+class TestHU10Filtros:
+    """HU-10 (Sprint 2): filtrar la matriz por BPIN, Indicador, Producto,
+    Contrato, Sector y Programa, combinables (CA-2, CA-4 a CA-9, CA-16)."""
+
+    def _preparar_corte_con_dos_metas(self, sesion) -> uuid.UUID:
+        """Dos metas completamente cruzadas, con sector/programa/producto/
+        BPIN/contrato distintos entre sí -- permite probar que cada filtro
+        aísla la meta correcta y no la otra."""
+        corte_id = _crear_corte(sesion)
+
+        _crear_meta(
+            sesion,
+            corte_id,
+            COD_1,
+            nombre="Aulas construidas",
+            sector="Educación",
+            programa="Educación para todos",
+        )
+        _crear_proyecto_con_indicador(
+            sesion,
+            corte_id,
+            "BPIN-1",
+            COD_1,
+            nombre_proyecto="Mejoramiento de infraestructura educativa",
+        )
+        rubro_1 = _crear_rubro(sesion, corte_id, COD_1)
+        contrato_1 = _crear_contrato(sesion, corte_id, "C-001", "Construccion de aulas")
+        _crear_registro(sesion, rubro_1, contrato_1)
+
+        _crear_meta(
+            sesion,
+            corte_id,
+            COD_2,
+            nombre="Vias pavimentadas",
+            sector="Transporte",
+            programa="Movilidad rural",
+        )
+        _crear_proyecto_con_indicador(
+            sesion, corte_id, "BPIN-2", COD_2, nombre_proyecto="Mejoramiento de vias terciarias"
+        )
+        rubro_2 = _crear_rubro(sesion, corte_id, COD_2)
+        contrato_2 = _crear_contrato(sesion, corte_id, "C-002", "Pavimentacion")
+        _crear_registro(sesion, rubro_2, contrato_2)
+
+        sesion.flush()
+        return corte_id
+
+    def test_filtrar_por_bpin(self, sesion) -> None:
+        corte_id = self._preparar_corte_con_dos_metas(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, bpin=["BPIN-1"])
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_1
+
+    def test_filtrar_por_indicador(self, sesion) -> None:
+        corte_id = self._preparar_corte_con_dos_metas(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, cod_indicador_producto=[COD_2])
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_2
+
+    def test_filtrar_por_producto(self, sesion) -> None:
+        corte_id = self._preparar_corte_con_dos_metas(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, producto=["Aulas construidas"])
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_1
+
+    def test_filtrar_por_contrato(self, sesion) -> None:
+        corte_id = self._preparar_corte_con_dos_metas(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, numero_contrato=["C-002"])
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_2
+
+    def test_filtrar_por_sector(self, sesion) -> None:
+        corte_id = self._preparar_corte_con_dos_metas(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, sector=["Transporte"])
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_2
+
+    def test_filtrar_por_programa(self, sesion) -> None:
+        corte_id = self._preparar_corte_con_dos_metas(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, programa=["Educación para todos"])
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_1
+
+    def test_varios_valores_del_mismo_criterio_es_or(self, sesion) -> None:
+        """CA-8: 2 sectores -> trae las filas que cumplen cualquiera."""
+        corte_id = self._preparar_corte_con_dos_metas(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, sector=["Educación", "Transporte"])
+
+        assert resultado.total == 2
+
+    def test_criterios_distintos_combinados_es_and(self, sesion) -> None:
+        """CA-9: BPIN de la meta 1 + Sector de la meta 2 -> ninguna fila
+        cumple ambos a la vez."""
+        corte_id = self._preparar_corte_con_dos_metas(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, bpin=["BPIN-1"], sector=["Transporte"])
+
+        assert resultado.total == 0
+
+    def test_criterios_distintos_combinados_caso_feliz(self, sesion) -> None:
+        corte_id = self._preparar_corte_con_dos_metas(sesion)
+
+        resultado = construir_matriz(sesion, corte_id, bpin=["BPIN-1"], sector=["Educación"])
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_1
+
+    def test_registro_sin_valor_en_el_criterio_no_aparece_al_filtrar(self, sesion) -> None:
+        """CA-14: una meta sin contrato no aparece al filtrar por Contrato,
+        pero sí aparece sin ese filtro."""
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)  # sin proyecto, rubro ni contrato
+        sesion.flush()
+
+        con_filtro = construir_matriz(sesion, corte_id, numero_contrato=["cualquiera"])
+        sin_filtro = construir_matriz(sesion, corte_id)
+
+        assert con_filtro.total == 0
+        assert sin_filtro.total == 1
+
+    def test_sector_de_una_meta_sin_cruce_presupuestal_sigue_filtrable(self, sesion) -> None:
+        """DECISIÓN TÉCNICA "Sector" (consultas.py): el filtro usa
+        MetaORM.sector, no RubroORM.nombre_sector_ccpet -- una meta sin
+        rubro (CA-8) sigue apareciendo al filtrar por su sector del PDT."""
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1, sector="Salud")  # sin rubro
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id, sector=["Salud"])
+
+        assert resultado.total == 1
+        assert resultado.filas[0].cod_indicador_producto == COD_1
+
+
+class TestHU10NombreProyecto:
+    """HU-10/CA-17 (absorbido de HU-07 el 2026-10-03): nombre del proyecto
+    visible en la matriz, pedido explícito de Emilse en Reunión 5."""
+
+    def test_incluye_nombre_del_proyecto(self, sesion) -> None:
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)
+        _crear_proyecto_con_indicador(
+            sesion, corte_id, "BPIN-1", COD_1, nombre_proyecto="Mejoramiento de vias terciarias"
+        )
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id)
+
+        assert resultado.filas[0].nombre_proyecto == "Mejoramiento de vias terciarias"
+
+    def test_meta_sin_proyecto_tiene_nombre_proyecto_null_explicito(self, sesion) -> None:
+        """CA-8 sigue intacto: sin proyecto, `nombre_proyecto` es None, no
+        cadena vacía."""
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)
+        sesion.flush()
+
+        resultado = construir_matriz(sesion, corte_id)
+
+        assert resultado.filas[0].nombre_proyecto is None
+
+
+class TestObtenerOpcionesFiltro:
+    """HU-10/CA-1: valores disponibles por criterio, solo los del corte
+    mostrado."""
+
+    def test_opciones_solo_incluyen_valores_del_corte_mostrado(self, sesion) -> None:
+        corte_id = _crear_corte(sesion)
+        _crear_meta(
+            sesion,
+            corte_id,
+            COD_1,
+            nombre="Aulas construidas",
+            sector="Educación",
+            programa="Prog A",
+        )
+        _crear_proyecto_con_indicador(
+            sesion, corte_id, "BPIN-1", COD_1, nombre_proyecto="Proyecto A"
+        )
+        rubro_1 = _crear_rubro(sesion, corte_id, COD_1)
+        contrato_1 = _crear_contrato(sesion, corte_id, "C-001")
+        _crear_registro(sesion, rubro_1, contrato_1)
+
+        # D11: a lo sumo un corte BORRADOR en todo el sistema -- el segundo
+        # corte de esta prueba debe quedar REGISTRADO para no violar ese
+        # índice único parcial (no es parte de lo que prueba este caso).
+        otro_corte_id = _crear_corte(
+            sesion, estado=EstadoCorte.REGISTRADO, vigencia=2025, fecha=date(2025, 1, 1)
+        )
+        _crear_meta(sesion, otro_corte_id, COD_2, sector="Transporte", programa="Prog B")
+        _crear_proyecto_con_indicador(sesion, otro_corte_id, "BPIN-2", COD_2)
+        sesion.flush()
+
+        opciones = obtener_opciones_filtro(sesion, corte_id)
+
+        assert opciones.bpin == ["BPIN-1"]
+        assert opciones.productos == ["Aulas construidas"]
+        assert opciones.contratos == ["C-001"]
+        assert opciones.sectores == ["Educación"]
+        assert opciones.programas == ["Prog A"]
+        assert opciones.indicadores == [(COD_1, "Aulas construidas")]
+
+    def test_opciones_no_incluyen_valores_nulos(self, sesion) -> None:
+        corte_id = _crear_corte(sesion)
+        _crear_meta(sesion, corte_id, COD_1)  # sin producto/sector/programa, sin cruce
+        sesion.flush()
+
+        opciones = obtener_opciones_filtro(sesion, corte_id)
+
+        assert opciones.bpin == []
+        assert opciones.productos == []
+        assert opciones.contratos == []
+        assert opciones.sectores == []
+        assert opciones.programas == []

@@ -20,13 +20,44 @@ export default {
         },
         azul: {
           DEFAULT: "#2B6CB0",
-          claro: "#5BA3E0",
-          tenue: "#90B8DC",
-          apagado: "#4A7FA5",
+          //: `claro`, `tenue` y `apagado` son TEXTO sobre el navy del sidebar
+          //: y del Login. Se aclararon para llegar a 4,5:1 (antes 4,17 / 5,41 /
+          //: 2,62; `tenue` también fallaba sobre el hover del sidebar). Los
+          //: nombres no cambian.
+          claro: "#7DBBEE",
+          tenue: "#A3C7E8",
+          apagado: "#96BAD9",
+          //: Azul de acción del refresh visual: blanco sobre él = 6,7:1. El
+          //: `hover` llega a 8,7:1.
+          accion: "#1D4ED8",
+          "accion-hover": "#1E40AF",
+        },
+        //: Tintes suaves para agrupar (grupos de columnas, paneles). Texto
+        //: `gray-600` o más oscuro sobre ellos supera 4,5:1.
+        tinte: {
+          azul: "#E6EEFD",
+          verde: "#E2F4EE",
+          violeta: "#EEE8FB",
+        },
+        //: Texto sobre cada tinte (encabezados de grupo de columnas). Se usa
+        //: SOLO sobre su tinte: azul 8,9:1, verde 6,9:1 y violeta 8,3:1.
+        sobretinte: {
+          azul: "#1E3A8A",
+          verde: "#0B5D4B",
+          violeta: "#4C2A9A",
+        },
+        //: Borde de campos y botones secundarios: 4,8:1 sobre blanco (el
+        //: `gray-300` de antes daba 1,5:1 y no llegaba al 3:1 de WCAG 1.4.11).
+        borde: {
+          control: "#6B7280",
+          //: Separador horizontal de las tablas (decorativo, 1 px).
+          suave: "#E5EAF2",
         },
         fondo: {
           pagina: "#EEF1F5",
           input: "#F7F9FC",
+          //: Fila alterna de las tablas (la otra es blanca).
+          fila: "#F5F8FC",
         },
         secundario: "#E8EDF5",
         critico: "#C53030",
@@ -47,6 +78,30 @@ export default {
           4: "#D97706",
           5: "#C53030",
         },
+      },
+      //: Escala de texto con nombre (tamaños para la raíz al 100 %, 16 px).
+      //: Se AÑADE a la de Tailwind, que no se reemplaza: `text-xs` (12 px),
+      //: `text-sm` (14 px), `text-lg` (18 px) y `text-2xl` (24 px) ya
+      //: coinciden con la escala objetivo. Nada funcional por debajo de 12 px.
+      fontSize: {
+        pantalla: ["1.5rem", { lineHeight: "2rem" }], // 24 px: título de pantalla
+        tarjeta: ["1.125rem", { lineHeight: "1.75rem" }], // 18 px: título de tarjeta
+        cuerpo: ["0.9375rem", { lineHeight: "1.375rem" }], // 15 px: párrafos
+        campo: ["0.875rem", { lineHeight: "1.25rem" }], // 14 px: celdas, campos, botones, etiquetas
+        ayuda: ["0.8125rem", { lineHeight: "1.125rem" }], // 13 px: ayudas y notas
+        minimo: ["0.75rem", { lineHeight: "1rem" }], // 12 px: mínimo absoluto
+      },
+      //: Radios: 16 px tarjetas, paneles y tablas; 12 px botones, campos y
+      //: listas. La píldora (`rounded-full`) es solo para estados. Se mantiene
+      //: `rounded-sm` mientras las páginas se migran.
+      borderRadius: {
+        tarjeta: "1rem",
+        control: "0.75rem",
+      },
+      //: Una sola sombra suave, para tarjetas y modales.
+      boxShadow: {
+        suave:
+          "0 1px 2px rgb(22 32 44 / 0.06), 0 4px 12px rgb(22 32 44 / 0.06)",
       },
       fontFamily: {
         sans: [

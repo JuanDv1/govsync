@@ -1,3 +1,5 @@
+> Archivado: documento histórico del Sprint 1, no se mantiene.
+
 # Plan de trabajo — Sprint 1
 
 Orden de implementación de las 59 tarjetas del tablero, con quién hace qué,
@@ -104,6 +106,12 @@ Vale la pena revisarla porque son 2 de las 6 filas de un criterio que pesa
 entra en la Fase 2 y toca `core/dependencias.py` más un módulo
 `modules/identidad/`. Si la mantienen, escriban la justificación en la Tabla 4,
 no dejen la celda vacía.
+
+**Actualización (2026-10-02):** en Sprint 2 se mantiene la inclusión, con
+Keycloak en vez del JWT propio que esta sección anticipaba — ver
+`docs/DECISIONES.md` D23. Este documento es el plan de Sprint 1 (59
+tarjetas ya repartidas); la tarjeta de E-01 se trackea en el tablero de
+Trello de Sprint 2, no aquí.
 
 ### D3 · ¿Qué es «el archivo del municipio» de HU-01/CA-5?
 

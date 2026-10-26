@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Check } from "lucide-react";
 import { api } from "../api/cliente.js";
+import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 import CargaDeArchivo from "../components/CargaDeArchivo.jsx";
-import { Cargando, EstadoError } from "../components/Estados.jsx";
+import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
+import Boton from "../components/shared/Boton.jsx";
+import Campo from "../components/shared/Campo.jsx";
 import Card from "../components/shared/Card.jsx";
+import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import SectionHeader from "../components/shared/SectionHeader.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
 
@@ -46,6 +50,11 @@ const TONO_ESTADO_FUENTE = {
  * directo al paso 2 con el corte ya existente. `Cortes.jsx` enlaza aquí para
  * cualquier corte en BORRADOR.
  *
+ * ROL: solo `administrador` y `gestor` (`puedeEscribir`, D24) usan esta
+ * pantalla, en las dos rutas. Cualquier otro rol (el `visitante`, de solo
+ * lectura) ve un aviso de permiso y no dispara ninguna petición. Es solo UI:
+ * el backend ya responde 403 de todas formas.
+ *
  * FLUJO
  *   Paso 1  vigencia y fecha — el calendario NO permite fechas futuras (CA-2),
  *           pero el rechazo también debe venir del backend: ocultar la opción
@@ -79,6 +88,7 @@ const TONO_ESTADO_FUENTE = {
 
 export default function NuevoCorte() {
   const { corteId } = useParams();
+  const { puedeEscribir } = useAutenticacion();
   const [vigencia, setVigencia] = useState("");
   const [fechaCorte, setFechaCorte] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -132,7 +142,9 @@ export default function NuevoCorte() {
   // (cambio de `corteId` o reintento) antes de que la petición anterior
   // resuelva — mismo patrón que ya usan Cortes.jsx y MatrizRelacion.jsx.
   useEffect(() => {
-    if (!corteId) return;
+    // Sin permiso de escritura no se pide nada: la pantalla muestra solo el
+    // aviso de permiso (ver el `return` de más abajo).
+    if (!corteId || !puedeEscribir) return;
 
     const clave = `${corteId}:${intentoCarga}`;
     let vigente = true;
@@ -156,7 +168,7 @@ export default function NuevoCorte() {
     return () => {
       vigente = false;
     };
-  }, [corteId, intentoCarga]);
+  }, [corteId, intentoCarga, puedeEscribir]);
 
   const claveActualCarga = corteId ? `${corteId}:${intentoCarga}` : null;
   const cargandoCorte =
@@ -213,6 +225,25 @@ export default function NuevoCorte() {
     }
   }
 
+  // Va antes que cualquier otro estado. Con el efecto de arriba saltado,
+  // `claveCorteCargado` nunca se llena y `cargandoCorte` quedaría en `true`:
+  // de ir después, `/cortes/:corteId` se quedaría en "Cargando corte…".
+  if (!puedeEscribir) {
+    return (
+      <section className="mx-auto max-w-4xl">
+        <Vacio
+          titulo="No tiene permiso para crear ni continuar cortes"
+          descripcion="Su rol es de solo lectura: puede consultar los cortes, pero no crearlos ni cargar sus archivos."
+          accion={
+            <Boton variante="secundario" to="/cortes">
+              ← Volver al histórico
+            </Boton>
+          }
+        />
+      </section>
+    );
+  }
+
   if (corteId && cargandoCorte) {
     return (
       <section className="mx-auto max-w-4xl">
@@ -252,6 +283,12 @@ export default function NuevoCorte() {
 
     const todosCargados =
       pdtDisponible && proyectosDisponibles && ejecucionDisponible;
+    // E02-HU06/CA07: nombres tal como aparecen en "Fuentes obligatorias".
+    const fuentesFaltantes = [
+      !pdtDisponible && "Plan Indicativo",
+      !ejecucionDisponible && "Ejecución presupuestal",
+      !proyectosDisponibles && "Plantilla de proyectos BPIN",
+    ].filter(Boolean);
     const yaRegistrado = corte.estado === "REGISTRADO";
 
     function estadoFuente(archivo, resultado) {
@@ -266,16 +303,16 @@ export default function NuevoCorte() {
 
     return (
       <section className="mx-auto max-w-4xl">
-        <header className="mb-5">
-          <h1 className="text-base font-semibold text-gray-800">
-            Cargar archivos del corte
-          </h1>
-          <p className="mt-0.5 text-[11px] text-gray-500">
-            Corte de vigencia {corte.vigencia}, fecha{" "}
-            <span className="font-mono">{corte.fecha_corte}</span> — estado{" "}
-            <span className="font-semibold">{corte.estado}</span>.
-          </p>
-        </header>
+        <EncabezadoPantalla
+          titulo="Cargar archivos del corte"
+          descripcion={
+            <>
+              Corte de vigencia {corte.vigencia}, fecha{" "}
+              <span className="font-mono">{corte.fecha_corte}</span> — estado{" "}
+              <span className="font-semibold">{corte.estado}</span>.
+            </>
+          }
+        />
 
         <Card className="mb-5">
           <SectionHeader>Fuentes obligatorias</SectionHeader>
@@ -296,7 +333,7 @@ export default function NuevoCorte() {
             ].map(([etiquetaFuente, estado]) => (
               <li
                 key={etiquetaFuente}
-                className="flex items-center justify-between text-xs"
+                className="flex items-center justify-between text-campo"
               >
                 <span className="font-medium text-gray-700">
                   {etiquetaFuente}
@@ -311,93 +348,100 @@ export default function NuevoCorte() {
         </Card>
 
         <div className="flex flex-col gap-5">
-          <CargaDeArchivo
-            tipo="PDT"
-            etiqueta="Plan Indicativo"
-            cargado={pdtDisponible}
-            resultado={
-              resultadoPdt &&
-              // HU-02/CA-5: "confirma visualmente cuántas metas fueron
-              // reconocidas" — `filas_reconocidas` es el conteo genérico que
-              // expone `ArchivoFuenteRespuestaParcial`; esta pantalla es la
-              // que sabe que para PDT esas filas son "metas" (el componente
-              // compartido no lo interpreta, ver su docstring).
-              `${resultadoPdt.filas_reconocidas} metas reconocidas.`
-            }
-            error={errorPdt}
-            onCargar={subirPdt}
-          />
+          {!yaRegistrado && (
+            <>
+              <CargaDeArchivo
+                tipo="PDT"
+                etiqueta="Plan Indicativo"
+                cargado={pdtDisponible}
+                resultado={
+                  resultadoPdt &&
+                  // HU-02/CA-5: "confirma visualmente cuántas metas fueron
+                  // reconocidas" — `filas_reconocidas` es el conteo genérico que
+                  // expone `ArchivoFuenteRespuestaParcial`; esta pantalla es la
+                  // que sabe que para PDT esas filas son "metas" (el componente
+                  // compartido no lo interpreta, ver su docstring).
+                  `${resultadoPdt.filas_reconocidas} metas reconocidas.`
+                }
+                error={errorPdt}
+                onCargar={subirPdt}
+              />
 
-          <CargaDeArchivo
-            tipo="EJECUCION"
-            etiqueta="Ejecución presupuestal"
-            cargado={ejecucionDisponible}
-            resultado={
-              resultadoEjecucion &&
-              // [HU-03][FE-02]: el backend ya distingue ejecución de
-              // contratación (`filas_ejecucion_reconocidas`/
-              // `filas_contratacion_reconocidas`, ver cortes/api/router.py) —
-              // se muestran por separado en vez del total genérico, que
-              // mezclaría dos fuentes distintas en un solo número.
-              `${resultadoEjecucion.filas_ejecucion_reconocidas ?? 0} filas de ejecución y ` +
-                `${resultadoEjecucion.filas_contratacion_reconocidas ?? 0} de contratación reconocidas.`
-            }
-            error={errorEjecucion}
-            onCargar={subirEjecucion}
-          />
+              <CargaDeArchivo
+                tipo="EJECUCION"
+                etiqueta="Ejecución presupuestal"
+                cargado={ejecucionDisponible}
+                resultado={
+                  resultadoEjecucion &&
+                  // [HU-03][FE-02]: el backend ya distingue ejecución de
+                  // contratación (`filas_ejecucion_reconocidas`/
+                  // `filas_contratacion_reconocidas`, ver cortes/api/router.py) —
+                  // se muestran por separado en vez del total genérico, que
+                  // mezclaría dos fuentes distintas en un solo número.
+                  `${resultadoEjecucion.filas_ejecucion_reconocidas ?? 0} filas de ejecución y ` +
+                    `${resultadoEjecucion.filas_contratacion_reconocidas ?? 0} de contratación reconocidas.`
+                }
+                error={errorEjecucion}
+                onCargar={subirEjecucion}
+              />
 
-          <CargaDeArchivo
-            tipo="PROYECTOS"
-            etiqueta="Plantilla de proyectos BPIN"
-            cargado={proyectosDisponibles}
-            resultado={
-              resultadoProyectos && (
-                <>
-                  {/* [HU-04][FE-02]: confirmación del conteo genérico, mismo
+              <CargaDeArchivo
+                tipo="PROYECTOS"
+                etiqueta="Plantilla de proyectos BPIN"
+                cargado={proyectosDisponibles}
+                resultado={
+                  resultadoProyectos && (
+                    <>
+                      {/* [HU-04][FE-02]: confirmación del conteo genérico, mismo
                     criterio que ya usa PDT — esta pantalla es la que sabe
                     que para PROYECTOS esas filas son "proyectos". */}
-                  <p className="text-xs text-gray-600">
-                    {resultadoProyectos.filas_reconocidas} proyectos
-                    reconocidos.
-                  </p>
+                      <p className="text-ayuda text-gray-600">
+                        {resultadoProyectos.filas_reconocidas} proyectos
+                        reconocidos.
+                      </p>
 
-                  {/* [HU-04][FE-02]/CA-2: mensaje explícito exigido por la
+                      {/* [HU-04][FE-02]/CA-2: mensaje explícito exigido por la
                     tarjeta — evita que la administradora crea que el
                     sistema rechazó el archivo por no tener estructura
                     estándar. El backend ya lo conserva tal cual
                     (HU-04/CA-2, lectores/proyectos.py), esto solo lo
                     comunica. */}
-                  <p className="carga-de-archivo-nota mt-1 text-xs">
-                    El archivo se conservó tal cual fue cargado, aunque su
-                    estructura no sea estándar.
-                  </p>
+                      <p className="mt-1 text-ayuda text-gray-600">
+                        El archivo se conservó tal cual fue cargado, aunque su
+                        estructura no sea estándar.
+                      </p>
 
-                  {/* [HU-04][FE-03], Opción B: lista simple, sin componente
+                      {/* [HU-04][FE-03], Opción B: lista simple, sin componente
                     nuevo ni agrupación -- los códigos descartados sí la
                     necesitan (categoria), los válidos no aportan nada
                     agrupándolos. */}
-                  {resultadoProyectos.codigos.length > 0 && (
-                    <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                      {resultadoProyectos.codigos.map((codigo) => (
-                        <li key={codigo} className="codigo text-xs">
-                          {codigo}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                      {resultadoProyectos.codigos.length > 0 && (
+                        <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                          {resultadoProyectos.codigos.map((codigo) => (
+                            <li
+                              key={codigo}
+                              className="whitespace-nowrap font-mono text-campo"
+                            >
+                              {codigo}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
 
-                  {/* [HU-04][FE-03]: ya construido en PR #79, solo se integra. */}
-                  <VistaPreviaDescartes
-                    descartes={resultadoProyectos.descartes}
-                  />
-                </>
-              )
-            }
-            error={errorProyectos}
-            onCargar={subirProyectos}
-          />
+                      {/* [HU-04][FE-03]: ya construido en PR #79, solo se integra. */}
+                      <VistaPreviaDescartes
+                        descartes={resultadoProyectos.descartes}
+                      />
+                    </>
+                  )
+                }
+                error={errorProyectos}
+                onCargar={subirProyectos}
+              />
+            </>
+          )}
 
-          <div className="flex items-center justify-between border-t border-gray-100 pt-5">
+          <div className="flex items-center justify-between border-t border-gray-200 pt-5">
             {yaRegistrado ? (
               <>
                 <StateBadge
@@ -405,26 +449,30 @@ export default function NuevoCorte() {
                   tono="verde"
                   icono={Check}
                 />
-                <Link
-                  to={`/matriz/${corte.id}`}
-                  className="rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover"
-                >
-                  Ver matriz de relación
-                </Link>
+                <Boton to={`/matriz/${corte.id}`}>Ver matriz de relación</Boton>
               </>
             ) : (
               <div className="flex flex-1 flex-col gap-2">
-                <button
-                  type="button"
-                  disabled={!todosCargados || registrando}
+                {/* Sin `motivo`: `Boton` usa el `disabled` nativo (igual que
+                    antes) y el texto de abajo sigue enlazado con
+                    `aria-describedby`. */}
+                <Boton
+                  deshabilitado={!todosCargados || registrando}
+                  aria-describedby={
+                    todosCargados ? undefined : "fuentes-faltantes"
+                  }
                   onClick={manejarRegistro}
-                  className="self-start rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
+                  className="self-start"
                 >
                   Registrar corte
-                </button>
+                </Boton>
                 {!todosCargados && (
-                  <p className="text-[11px] italic text-gray-400">
-                    Cargue los tres archivos para registrar el corte.
+                  <p
+                    id="fuentes-faltantes"
+                    className="text-ayuda italic text-gray-600"
+                  >
+                    Cargue los tres archivos para registrar el corte. Falta:{" "}
+                    {fuentesFaltantes.join(", ")}.
                   </p>
                 )}
                 {registrando && <Cargando mensaje="Registrando corte…" />}
@@ -439,76 +487,55 @@ export default function NuevoCorte() {
 
   return (
     <section className="mx-auto max-w-4xl">
-      <header className="mb-5">
-        <h1 className="text-base font-semibold text-gray-800">Nuevo corte</h1>
-        <p className="mt-0.5 text-[11px] text-gray-500">
-          Configure los datos del corte para habilitar la carga de archivos.
-        </p>
-      </header>
+      <EncabezadoPantalla
+        titulo="Nuevo corte"
+        descripcion="Configure los datos del corte para habilitar la carga de archivos."
+      />
 
       <Card as="form" onSubmit={manejarEnvio}>
         <SectionHeader>Datos del corte</SectionHeader>
 
         <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label
-              htmlFor="vigencia"
-              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
-            >
-              Vigencia
-            </label>
-            <input
-              id="vigencia"
-              name="vigencia"
-              type="number"
-              // D18 (docs/DECISIONES.md, 2026-09-23): min/max solo es ayuda
-              // de UX -- el rechazo real ya lo hace el backend
-              // (Corte.validar_vigencia), igual que la fecha de abajo. No se
-              // repiten estos numeros como constante compartida porque el
-              // backend es Python y el frontend JS; si el rango cambia, hay
-              // que actualizar los dos lados (ver D18).
-              min={2000}
-              max={2100}
-              placeholder="Ej: 2026"
-              value={vigencia}
-              onChange={(evento) => setVigencia(evento.target.value)}
-              required
-              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 text-sm focus:border-azul focus:outline-none"
-            />
-          </div>
+          <Campo
+            etiqueta="Vigencia"
+            id="vigencia"
+            name="vigencia"
+            type="number"
+            // D18 (docs/DECISIONES.md, 2026-09-23): min/max solo es ayuda
+            // de UX -- el rechazo real ya lo hace el backend
+            // (Corte.validar_vigencia), igual que la fecha de abajo. No se
+            // repiten estos numeros como constante compartida porque el
+            // backend es Python y el frontend JS; si el rango cambia, hay
+            // que actualizar los dos lados (ver D18).
+            min={2000}
+            max={2100}
+            placeholder="Ej: 2026"
+            value={vigencia}
+            onChange={(evento) => setVigencia(evento.target.value)}
+            required
+          />
 
-          <div>
-            <label
-              htmlFor="fecha-corte"
-              className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-gray-500"
-            >
-              Fecha del corte
-            </label>
-            <input
-              id="fecha-corte"
-              name="fechaCorte"
-              type="date"
-              max={fechaMaxima}
-              value={fechaCorte}
-              onChange={(evento) => {
-                const nuevaFecha = evento.target.value;
-                if (nuevaFecha <= fechaMaxima) {
-                  setFechaCorte(nuevaFecha);
-                }
-              }}
-              required
-              className="w-full rounded-sm border border-gray-300 bg-fondo-input px-3 py-2 font-mono text-sm focus:border-azul focus:outline-none"
-            />
-          </div>
+          <Campo
+            etiqueta="Fecha del corte"
+            id="fecha-corte"
+            name="fechaCorte"
+            type="date"
+            max={fechaMaxima}
+            value={fechaCorte}
+            onChange={(evento) => {
+              const nuevaFecha = evento.target.value;
+              if (nuevaFecha <= fechaMaxima) {
+                setFechaCorte(nuevaFecha);
+              }
+            }}
+            required
+            className="font-mono"
+          />
 
           <div className="flex items-end">
-            <button
-              type="submit"
-              disabled={enviando}
-              className="rounded-sm bg-navy px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
-            >
+            <Boton type="submit" deshabilitado={enviando}>
               Continuar
-            </button>
+            </Boton>
           </div>
         </div>
 

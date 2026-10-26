@@ -4,9 +4,29 @@ Registro de decisiones tomadas por el equipo, con su evidencia y su estado.
 Formato por entrada: **Decisión**, **Motivo/Evidencia**, **Alternativas consideradas**,
 **Estado**, **Quién y cuándo**.
 
+## Cómo leer este documento
+
+Cada entrada lleva una marca de **Clasificación**:
+
+- **Decisión de arquitectura/alcance** — afecta el diseño del sistema o el
+  alcance comprometido con la clienta o el docente, más allá de una tarjeta
+  puntual. Es lo que un ADR (Architecture Decision Record) registraría en
+  otros proyectos.
+- **Registro de tarjeta** — deja constancia de una reconciliación, un
+  hallazgo o una interpretación tomada al construir una tarjeta concreta; no
+  introduce una decisión de arquitectura nueva.
+
+Esta marca es una clasificación agregada en la reorganización documental de
+2026-10-05; no cambia el contenido original de cada entrada ni su **Estado**
+(RATIFICADA/PROPUESTA/VIGENTE/SUPUESTO/etc.), que sigue siendo la fuente real
+de si algo ya es definitivo. Una entrada marcada **PROPUESTA** o
+**PENDIENTE** no se vuelve vigente por estar clasificada aquí.
+
 ---
 
 ## D1 · La migración de Alembic es la única fuente de verdad del esquema
+
+**Clasificación:** Decisión de arquitectura/alcance.
 
 **Decisión:** el esquema vigente es el que resulta de las migraciones en
 `backend/alembic/versions/`. Los archivos `govsync_schema.sql`,
@@ -31,6 +51,8 @@ movida a "Tareas hechas" en Trello).
 ---
 
 ## D2 · Autenticación (E-01) diferida al Sprint 2
+
+**Clasificación:** Decisión de arquitectura/alcance.
 
 **Decisión:** las Historias de Usuario de la épica E-01 (Gestión de Acceso y
 Roles) no entran al Sprint 1. El esqueleto no incluye módulo de identidad ni
@@ -57,9 +79,16 @@ de estimar la tarjeta.
 
 **Registrado:** 2026-09-08.
 
+**Nota (2026-10-02):** Sprint 2 revisita esta decisión — ver **D23** (se
+confirma que E-01 entra, con Keycloak como mecanismo en vez del JWT propio
+que esta entrada daba por sentado).
+
 ---
 
 ## D3 · Qué archivo es "el archivo del municipio" en HU-01/CA-5
+
+**Clasificación:** Registro de tarjeta — pendiente de validar con la
+clienta. No tratar como requisito hasta que se confirme (ver **Estado**).
 
 **Decisión (supuesto de trabajo, no confirmado):** "el archivo del
 municipio" que se reutiliza junto con el PDT (HU-01/CA-5) es la plantilla de
@@ -85,6 +114,8 @@ completo, antes de cerrar Fase 4 de `PLANDETRABAJO.md`.
 ---
 
 ## D4 · Corte de referencia para medir los atributos de rendimiento (Tabla 7, Entrega 1)
+
+**Clasificación:** Decisión de arquitectura/alcance.
 
 **Decisión:** el corte de referencia contra el que se miden los umbrales de
 rendimiento declarados en la Entrega 1 (procesamiento completo de un corte en
@@ -130,6 +161,8 @@ medición de los 60 s / 4 s sea comparable entre sprints.
 
 ## D5 · Reconciliación de numeración de CA entre Excel y Trello (HU-01, HU-07)
 
+**Clasificación:** Registro de tarjeta.
+
 **Hallazgo:** `Levantamiento de Requisitos.md` tenía menos Criterios de
 Aceptación de los que ya estaban definidos y en uso: HU-01 llegaba solo hasta
 CA-7 y HU-07 solo tenía CA-1 y CA-4, mientras que el checklist "Criterios de
@@ -165,6 +198,8 @@ nunca tuvo tarjeta ni ítem de checklist para esta regla.
 ---
 
 ## D6 · Reconciliación de numeración de CA entre Excel, Trello y PLANDETRABAJO.md (HU-02, HU-03, HU-04)
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo:** al revisar un export actualizado de Trello, se encontró el mismo
 patrón que motivó D5, ahora en HU-02, HU-03 y HU-04: el checklist de Trello
@@ -211,6 +246,8 @@ Trello no se modifica: ya tenía la numeración correcta.
 
 ## D7 · La entidad Corte tiene dos estados: BORRADOR y REGISTRADO
 
+**Clasificación:** Decisión de arquitectura/alcance.
+
 **Decisión:** `Corte` modela explícitamente dos estados — `BORRADOR` (creado
 solo con vigencia y fecha, acepta cargas de archivos) y `REGISTRADO` (las
 tres fuentes obligatorias presentes, entra al histórico). El paso de uno a
@@ -243,6 +280,8 @@ documental.
 ---
 
 ## D8 · Reconciliación de CA-8 entre PLANDETRABAJO.md/TRAZABILIDAD.md y CASOS_DE_PRUEBA.md (HU-01)
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo:** `docs/CASOS_DE_PRUEBA.md` (CP-HU01-08) marcaba CA-8 como "✅
 Probado" con evidencia de `test_casos_uso_cortes.py` (capa de aplicación,
@@ -288,6 +327,8 @@ vigente como precedente.
 
 ## D9 · Qué hace que dos cortes se consideren duplicados
 
+**Clasificación:** Decisión de arquitectura/alcance.
+
 **Decisión:** se rechaza la creación de un corte si ya existe otro con la
 misma vigencia y la misma fecha_corte exacta. Con D11 (un solo corte en
 BORRADOR activo a la vez), este conflicto solo puede darse entre cortes ya
@@ -313,6 +354,9 @@ coincidencia de número entre dos sistemas de numeración diferentes.
 
 ## D10 · La creación del corte requiere una acción explícita
 
+**Clasificación:** Registro de tarjeta — **Estado: PROPUESTA**. No tratar
+como vigente hasta que el equipo la ratifique.
+
 **Decisión:** `POST /cortes` se dispara solo con un clic explícito (ej.
 "Continuar") al cerrar el paso de vigencia/fecha, nunca porque la
 validación del formulario pase mientras se escribe.
@@ -332,6 +376,8 @@ dos sin saber cuál se espera.
 ---
 
 ## D11 · Solo un corte en BORRADOR activo a la vez
+
+**Clasificación:** Decisión de arquitectura/alcance.
 
 **Decisión:** al crear un corte, se rechaza si ya existe otro en BORRADOR.
 Corregirlo requiere `PATCH /cortes/{id}`, que no existe hoy.
@@ -373,6 +419,8 @@ original dejó abiertas:
 
 ## D12 · Límite de tamaño de archivo verificado en el cliente
 
+**Clasificación:** Registro de tarjeta.
+
 **Decisión:** el frontend rechaza, antes de intentar subir, cualquier
 archivo mayor a 2.097.152 bytes (2 MB) — aviso inmediato en
 `CargaDeArchivo.jsx`, sin llamar a `onCargar`.
@@ -389,6 +437,8 @@ cliente es más conservador, no lo reemplaza ni lo duplica.
 **Ratificado:** 2026-09-15, acordado con Cristhian.
 
 ## D13 · `[HU-04][BE-03]` reabierta y corregida: separadores y descartes registrados
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo (2026-09-19, Juan David + verificación cruzada):** el texto
 literal de la tarjeta Trello `[HU-04][BE-03]` exige, en "casos borde
@@ -448,6 +498,8 @@ bug). 258 passed en local (2026-09-19).
 
 ## D14 · Categorización de descartes en `extraer_todos` (no cambia qué se descarta)
 
+**Clasificación:** Registro de tarjeta.
+
 **Hallazgo (2026-09-19, Juan David, construyendo `[HU-04][FE-03]`):** tras
 D13, `extraer_todos` registra correctamente todo candidato numérico de
 longitud inválida como descarte — pero un número suelto dentro de texto
@@ -496,6 +548,8 @@ ejemplos reales reportados por Juan David. 262 passed en local
 
 ## D15 · `[HU-02][FE-02]`: un solo mensaje de error cubre "pestaña no encontrada" y "archivo incorrecto"
 
+**Clasificación:** Registro de tarjeta.
+
 **Decisión:** el frontend muestra `error.message` del backend tal cual para
 los dos casos de rechazo del PDT, sin fabricar un tercer texto propio.
 
@@ -537,6 +591,8 @@ introducir una heurística de detección en frontend o backend.
 ---
 
 ## D16 · `[HU-04][FE-03]`: `ResultadoLectura.codigos` se deduplica por `.valor`, preservando el orden de primera aparición
+
+**Clasificación:** Registro de tarjeta.
 
 **Decisión:** el nuevo campo `codigos: list[CodigoIndicadorProducto]`
 (`ResultadoLectura`/`ArchivoFuente`, mismo patrón que `descartes` de D14)
@@ -585,6 +641,8 @@ por orden de aparición), 2026-09-20.
 
 ## D17 · `[HU-07][FE-04]`: paginación visible en vez de virtualización, y método de verificación
 
+**Clasificación:** Registro de tarjeta.
+
 **Decisión:** la tarjeta Trello `[HU-07][FE-04]` acepta explícitamente
 "virtualización o paginación visible" para no renderizar miles de filas de
 golpe. Se implementó PAGINACIÓN VISIBLE (controles "Anterior/Siguiente" en
@@ -630,6 +688,9 @@ PENDIENTE.
 ---
 
 ## D18 · Rango válido de `vigencia`: hallazgo del QA manual y decisión de rango fijo
+
+**Clasificación:** Decisión de arquitectura/alcance (fija el patrón de que
+las reglas de validación viven en el dominio, no en el esquema de transporte).
 
 **Hallazgo:** durante la ejecución manual de `docs/QA_manual_sprint1.md`
 (2026-09-23) se detectó que `vigencia` no tenía ninguna validación de rango
@@ -693,6 +754,9 @@ rechazar datos nuevos.
 
 ## D19 · Se adopta Tailwind CSS para las pantallas nuevas del frontend
 
+**Clasificación:** Decisión de arquitectura/alcance — **Estado: PROPUESTA**.
+No tratar como vigente hasta que el equipo la ratifique.
+
 **Decisión:** a partir de esta tarjeta (estilo visual de Login y Nuevo
 corte), el frontend usa Tailwind CSS para las pantallas y componentes que
 se construyan o restilicen de aquí en adelante. Las pantallas y
@@ -729,11 +793,18 @@ tarjeta.
 tarjeta de estilo visual, pendiente de que el equipo la ratifique como las
 demás decisiones de arquitectura de este documento.
 
+**Nota (2026-10-25):** D35 (PROPUESTA, pendiente de ratificar) propone
+reemplazar parcialmente lo visual (radios, sombras, densidad y escala
+tipográfica). La adopción de Tailwind sigue vigente en todo lo demás.
+
 **Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
 
 ---
 
 ## D20 · Sidebar AppShell + átomos compartidos, adaptados de `DESIGN_SPEC.md` (mockup Figma Make), sin RBAC
+
+**Clasificación:** Decisión de arquitectura/alcance — **Estado: PROPUESTA**.
+No tratar como vigente hasta que el equipo la ratifique.
 
 **Decisión:** se reemplazó la barra superior simple de `Disposicion.jsx`
 por un sidebar fijo (`w-52`, navy) siguiendo `DESIGN_SPEC.md` §4.1, y se
@@ -781,11 +852,18 @@ descartan sin costo (son ~20 líneas cada uno).
 **Estado:** PROPUESTA — mismo criterio que D19, pendiente de ratificación
 del equipo.
 
+**Nota (2026-10-25):** D35 (PROPUESTA, pendiente de ratificar) propone
+reemplazar parcialmente lo visual que D20 heredó de `DESIGN_SPEC.md` (radios,
+sombras, densidad y escala tipográfica). El sidebar AppShell y la ausencia de
+RBAC siguen vigentes.
+
 **Registrado:** 2026-09-21, Cristhian (`CrisCamUO`).
 
 ---
 
 ## D21 · `/cortes/:corteId` reanuda un corte en BORRADOR desde el frontend
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo (2026-09-21, probando el flujo de punta a punta):** un corte
 creado y abandonado a mitad del wizard (por ejemplo, cerrando la pestaña
@@ -843,6 +921,8 @@ alcance a ratificar.
 ---
 
 ## D22 · Columnas faltantes en PDT/Ejecución, dos reglas de negocio nuevas en la matriz, y definición de filtros
+
+**Clasificación:** Registro de tarjeta.
 
 **Hallazgo (2026-09-23, revisión de columnas pedida por el equipo):**
 comparando la lista de columnas de PDT/Ejecución/Proyectos contra el
@@ -960,3 +1040,912 @@ PROPUESTA (filtros adicionales del punto 6, pendientes de que el equipo
 decida cuáles construir).
 
 **Registrado:** 2026-09-23, Cristhian (`CrisCamUO`).
+
+---
+
+## D23 · Sprint 2: E-01 se implementa con Keycloak, no con JWT propio
+
+**Decisión:** `[REF-05]`/D2 se da por resuelto para Sprint 2 — la épica E-01
+(Gestión de Acceso y Roles) entra, y el mecanismo elegido es **Keycloak**
+como proveedor de identidad (OIDC, flujo Authorization Code + PKCE), no un
+JWT firmado por el propio backend.
+
+**Motivo:** se necesita escalabilidad y gestión avanzada de usuarios/roles
+(altas, bajas, recuperación de contraseña, grupos) sin construir esa
+infraestructura a mano. D2 ya anticipaba esta tarjeta (`[HU-E01-01]`,
+~5 SP, `modules/identidad/` + `core/dependencias.py`) asumiendo JWT propio;
+el cambio a Keycloak la hace más grande y agrega una pieza de
+infraestructura nueva (el propio servidor Keycloak), no solo código.
+
+**Alternativas consideradas:** JWT propio (`config.py::secret_key`/
+`algorithm`/`access_token_expire_minutes`, ya anticipado en el esqueleto) —
+más simple de desplegar, sin servicio adicional, pero exige construir a
+mano gestión de usuarios, roles, expiración/rotación y recuperación de
+contraseña. Se descarta porque evitar justo ese trabajo es el motivo de
+elegir Keycloak.
+
+**Qué cambia respecto al plan original de D2:**
+
+- `config.py::secret_key`/`algorithm`/`access_token_expire_minutes`
+  (pensado para JWT propio) queda sin uso para este propósito — pendiente
+  decidir si se elimina o se reaprovecha para otra cosa.
+- La validación de token en el backend es contra el JWKS de Keycloak
+  (RS256), no con un secreto compartido.
+- El flujo de login ya no es el formulario propio de `Login.jsx` tal cual:
+  Keycloak redirige a su propia pantalla, salvo que se le aplique un theme
+  con la identidad visual de GovSync.
+- Se agrega infraestructura nueva: un servicio de Keycloak (+ su propia
+  BD/esquema) en `docker-compose.yml` para desarrollo, y una decisión de
+  despliegue en producción todavía pendiente (Keycloak propio vs
+  gestionado).
+
+**Las 4 preguntas pendientes, resueltas (2026-10-02):**
+
+1. **Infraestructura:** solo local por ahora (`docker-compose.yml`), sin
+   decidir producción. Se construye y se demuestra en desarrollo/Code
+   Walkthrough sin comprometer presupuesto todavía; queda pendiente para
+   una tarjeta/entrega posterior decidir dónde corre Keycloak en
+   producción (self-host en Render vs gestionado por un tercero).
+2. **Modelo de roles:** **realm roles**, no client roles — una sola lista
+   de roles a nivel del realm, válida para el único cliente OIDC que hoy
+   consume este Keycloak (GovSync). Y los roles en sí **cambian respecto
+   al placeholder de `Login.jsx`** ("Planeación"/"Hacienda"/"Control
+   interno", que eran solo botones de maqueta deshabilitados): el
+   conjunto real a modelar es `administrador` (gestión completa),
+   `gestor` (sube/corrige cortes y archivos — ejecución presupuestal y
+   demás), `visitante` (solo lectura — p. ej. el alcalde o cualquier
+   consulta externa). `Login.jsx` necesita actualizar esos tres botones
+   de acceso de prueba cuando se construya esta tarjeta.
+3. **Pruebas en CI:** Keycloak real en un contenedor efímero dentro del
+   pipeline (no mocks/tokens firmados a mano), para cobertura de
+   integración real del flujo completo.
+4. **Pantalla de login:** se mantiene `Login.jsx` como superficie visual,
+   aplicando un **theme de Keycloak con la marca de GovSync** — Keycloak
+   sigue siendo quien autentica (Authorization Code + PKCE), pero su
+   pantalla se skinea para verse como el diseño actual, no como el tema
+   por defecto de Keycloak.
+
+**Cambio de regla asociado (2026-10-02):** para resolver el punto 3, el
+usuario levantó en general la regla de no modificar
+`.github/workflows/ci.yml` sin permiso puntual (vigente desde
+2026-09-13) — a partir de ahora ese archivo se trata como cualquier otro
+del repo, sin pedir permiso cada vez.
+
+**Estado:** PROPUESTA — las 4 decisiones de diseño quedan resueltas;
+falta construir. Primer archivo a diseñar: a definir entre
+`modules/identidad/` (nuevo) y `core/dependencias.py`.
+
+**Registrado:** 2026-10-02, Cristhian (`CrisCamUO`).
+
+**Actualización (2026-10-06):** `modules/identidad/` (dominio +
+persistencia), `core/dependencias.py` (`exigir_roles`, `UsuarioActualDep`)
+y el servicio `keycloak` de `docker-compose.yml` ya están construidos y
+probados (349 pruebas en verde, `test_arquitectura.py` incluido). Pendiente
+real de los 4 puntos: (3) solo hay smoke test en CI (`backend-keycloak`:
+confirma que el contenedor arranca, no aprovisiona realm/token real
+todavía) y (4) no empezado. Commit `acf93e0` en la rama `feat/login/be/fe`.
+
+**`[VALIDAR]` abiertos frente al Excel de HU01/E-01, hallazgos de revisión
+del PR #141 (2026-10-13), confirmados leyendo la hoja `HU_E01_01` del
+Excel de requisitos — ninguno bloquea el PR, pero HU-01 no se da por
+cerrada sin resolverlos:**
+
+1. **HU01-CA01 — redirect a la vista inicial según el rol.** El Excel pide
+   Administradora → Gestión de Cortes, Supervisor → Metas de su sector,
+   Alcalde → Plan de Acción, y el propio Excel ya lo marca
+   `[VALIDAR vista inicial por rol]` — no es un hueco que haya introducido
+   este PR. Hoy `iniciarSesion()` (`ProveedorAutenticacion.jsx`) redirige
+   siempre a `/cortes`, sin distinguir rol. Bloqueado en la práctica por
+   que las pantallas de Supervisor/Alcalde no existen todavía (E-03/E-04).
+2. **Mapeo Administradora/Supervisor/Alcalde (Excel) ↔
+   administrador/gestor/visitante (Keycloak, D23) nunca se escribió en
+   ningún documento.** Pista no formalizada todavía: `visitante` ("solo
+   ve el plan de acción y el dashboard", según la aclaración de roles de
+   esta misma conversación) coincide con la descripción textual de
+   Alcalde en CA01 — mapeo razonablemente seguro.
+   `administrador`↔Administradora también, por nombre y alcance. Lo que
+   sigue genuinamente sin definir es Supervisor↔`gestor` ("Metas de su
+   sector" no es obviamente lo mismo que el rol de presupuesto sin
+   definir que ya se dejó anotado como pendiente).
+
+**Resuelto en la misma revisión (2026-10-13), no quedan como
+`[VALIDAR]`:**
+
+- **HU01-CA05** ("usuario sin rol asignado no tiene acceso a ningún
+  módulo"): `obtener_usuario_actual` (`core/dependencias.py`) ahora
+  rechaza con `PermisoInsuficiente` (`motivo: sin_rol_asignado`) cualquier
+  token válido cuyo `Usuario.roles` esté vacío — antes de este arreglo, un
+  usuario autenticado sin rol seguía viendo los endpoints de lectura
+  (D24 solo exigía _algún_ rol para escritura, nunca validaba que
+  existiera alguno).
+- **HU01-CA06** ("campo vacío muestra 'Campo obligatorio', no envía la
+  petición"): `login.ftl` no tenía `required` en `username`/`password` —
+  agregado, con `oninvalid`/`oninput` para fijar el mensaje exacto en
+  español sin depender de la configuración regional del navegador.
+- **HU01-CA02/CA09** (mensaje genérico de credenciales inválidas; hash de
+  contraseña, nunca texto plano): ya satisfechos por el comportamiento
+  por defecto de Keycloak (confirmado: `persona1` quedó con
+  `"algorithm":"argon2"` al crearla) — no necesitaron cambio de código,
+  solo quedan documentados aquí en vez de aparecer como huecos abiertos.
+- **HU01-CA03/CA04** (bloqueo 3 intentos/15 min; expiración por
+  inactividad de 30 min): ya no dependen de configuración manual —
+  resuelto junto con el punto siguiente (provisión automática del
+  realm).
+
+**Actualización (2026-10-13) — el realm ya no se configura a mano:**
+`keycloak/import/govsync-realm.json` (exportado del realm que se había
+configurado manualmente, con `partial-export` de la API de
+administración, y editado a mano: solo nuestros 2 clients y 3 roles,
+sin los internos que Keycloak crea solo; `bruteForceProtected`/
+`failureFactor`/`waitIncrementSeconds` agregados para CA03;
+`ssoSessionIdleTimeout` ya venía en 30 min por defecto, CA04 sin
+cambio; 3 usuarios de prueba agregados a mano, uno por rol, contraseña
+`GovSync2026!` — solo desarrollo local) se importa solo al arrancar
+(`docker-compose.yml`, `--import-realm`), solo la primera vez que
+Keycloak arranca sobre un volumen `datos_keycloak` nuevo. Verificado de
+punta a punta: volumen borrado, `docker compose up -d`, realm/clients/
+roles/theme/CA03/CA04 confirmados vía API de administración, y login
+real con los 3 usuarios de prueba contra el backend real (200/200/403
+según el rol). **Hallazgo durante la construcción, no relacionado con
+Keycloak en sí:** el primer intento de montar el JSON como archivo
+suelto (en vez del directorio completo) le llegaba vacío al proceso de
+Java de Keycloak en Docker Desktop para Windows, aunque `cat`/`wc` desde
+una shell en el mismo contenedor lo leían bien — se resolvió montando
+`./keycloak/import` completo, no el archivo solo.
+
+---
+
+## D24 · Qué rol exige cada endpoint de `cortes`/`trazabilidad`
+
+**Decisión:** los cuatro endpoints de lectura exigen solo autenticación
+(cualquiera de los 3 roles, vía `UsuarioActualDep` sin chequeo de rol); los
+cuatro de escritura exigen `exigir_roles(Rol.ADMINISTRADOR, Rol.GESTOR)`:
+
+| Endpoint                            | Rol exigido                 |
+| ----------------------------------- | --------------------------- |
+| `GET /cortes`                       | autenticado (cualquier rol) |
+| `GET /cortes/{id}`                  | autenticado (cualquier rol) |
+| `GET /matriz-relacion/actual`       | autenticado (cualquier rol) |
+| `GET /matriz-relacion/{corte_id}`   | autenticado (cualquier rol) |
+| `POST /cortes`                      | `administrador` o `gestor`  |
+| `POST /cortes/{id}/archivos/{tipo}` | `administrador` o `gestor`  |
+| `PATCH /cortes/{id}`                | `administrador` o `gestor`  |
+| `POST /cortes/{id}/registrar`       | `administrador` o `gestor`  |
+
+**Motivo:** coincide con la descripción de roles de D23 — `gestor` "sube/
+corrige cortes y archivos" (exactamente los cuatro endpoints de escritura),
+`visitante` "solo lectura". `administrador` y `gestor` quedan con los
+mismos permisos en este conjunto de endpoints porque ninguna de las ocho
+rutas describe una acción exclusiva de `administrador` — la única
+diferencia entre esos dos roles hoy es conceptual (D23), no una regla de
+autorización todavía necesaria en código. Si aparece una acción
+exclusivamente de `administrador`, se diferencia en esa tarjeta, no aquí.
+
+**Impacto en archivos que no son de esta tarjeta:** `tests/
+test_router_cortes.py` y `tests/test_router_trazabilidad.py` (de Juan
+Esteban/Juan David según sus propios docstrings) necesitan
+`app.dependency_overrides[obtener_usuario_actual]` en cada fixture que
+construye un `TestClient`, para no empezar a fallar con 401 — cambio
+mecánico, avisado y aprobado antes de tocarlos.
+
+**Estado:** RATIFICADA — aprobada por Cristhian antes de implementar.
+
+**Registrado:** 2026-10-06, Cristhian (`CrisCamUO`).
+
+**Actualización 2026-10-13 ([E01-HU02], fix):** `GET /matriz-relacion/
+{corte_id}/opciones-filtro` (agregado en HU-10, Sprint 2, después de que
+esta decisión quedara ratificada) había quedado fuera de la tabla de
+arriba y sin `UsuarioActualDep` -- el único endpoint de lectura del
+módulo sin autenticación. Corregido para seguir la misma regla que los
+otros cuatro de lectura: autenticado, cualquier rol. La tabla de arriba
+no se reescribe (quedaría desactualizada respecto al estado en que fue
+ratificada); esta nota deja registrado el hallazgo y la corrección.
+---
+
+## D25 · [E02-HU05] Reemplazo de archivos del corte actual: Opción B, y hallazgos resueltos
+
+**Contexto:** `docs/specs/E02-HU05-modificar-archivos-corte-actual.md` dejaba
+abierta explícitamente la elección entre dos formas de implementar CA02/CA03/
+CA08 ("Pendiente de que el equipo decida con backend"):
+
+- **Opción A** — validar el archivo de reemplazo SIN aplicarlo, en una
+  llamada separada de la confirmación (CA03).
+- **Opción B** — un solo endpoint que confirma y aplica, revirtiendo con
+  rollback si el archivo resulta inválido o el Load falla (CA04/CA08).
+
+**Decisión:** Opción B.
+
+**Motivos:**
+
+1. CA03 ("Se reemplazará \<archivo anterior> por \<archivo nuevo>... ¿Desea
+   continuar?") ya describe un flujo de confirmación, no de validación
+   previa separada — la confirmación la hace el frontend ANTES de llamar al
+   backend; el backend no necesita una llamada de "preview" aparte.
+2. Reutiliza sin cambios el patrón transaccional que ya existe para HU-06
+   (`ServicioCortes.cargar_archivo`: EXTRACT+TRANSFORM fuera de la
+   transacción, LOAD dentro, rollback total si falla) — la Opción A hubiera
+   exigido un motor de validación que recalcula todo sin persistir nada, una
+   segunda noción de "sería válido si..." separada de "aplicarlo de
+   verdad", con riesgo real de que ambas diverjan.
+3. Menos código nuevo, mismo nivel de seguridad para el usuario (CA04/CA08
+   ya garantizan que un archivo inválido o un fallo de carga no deja nada a
+   medio aplicar).
+
+**Hallazgos de la spec resueltos con esta implementación** (`backend/app/
+modules/cortes/` — dominio `Corte.verificar_reemplazable`, aplicación
+`ServicioCortes.reemplazar_archivo_corte_actual`, API `PUT /cortes/{id}/
+archivos/{tipo}`):
+
+- **"Recalcular el cruce" (CA02/CA08) no necesita un paso explícito**:
+  confirmado — la matriz de HU-07 (`construir_matriz`) ya se arma con un
+  JOIN en el momento de la consulta sobre las tablas que el Load sobrescribe
+  (`reemplazar_metas`/`reemplazar_presupuesto`/`reemplazar_proyectos`); no
+  se agregó ningún código de "recalculo".
+- **No existía una clase de error 403**: ya resuelto por D24/PR #141
+  (`PermisoInsuficiente`) — CA09 reutiliza `EscrituraDep`
+  (`exigir_roles(ADMINISTRADOR, GESTOR)`) sin código nuevo de autorización.
+- **`fecha_carga` no se actualizaba al reemplazar** (CA01):
+  `RepositorioCortesSQL.registrar_archivo` ahora reescribe `fecha_carga`
+  también en la rama de reemplazo (antes solo se evaluaba el
+  `server_default` en el INSERT original). Beneficia también a HU-06,
+  no solo a esta HU.
+- **Auditoría (CA06)**: nueva tabla `historial_reemplazo_archivo`
+  (migración `5e231b94049b`) + `GET /cortes/{id}/historial-reemplazos`.
+  No se conserva el `.xlsx` reemplazado (decisión ya cerrada, fila 3.0 de
+  `03_DECISIONES_SPRINT2.xlsx`) — solo fuente, nombre anterior, usuario y
+  fecha.
+- **Ampliación del contrato de `GET /cortes`/`GET /cortes/{id}`**:
+  `ArchivoFuenteRespuesta` ahora expone `nombre_archivo` y `fecha_carga`
+  (CA01); ya existían en `ArchivoFuenteORM`, solo faltaba exponerlos.
+
+**Sigue `[VALIDAR]`, fuera de esta tarjeta (no se decide aquí):**
+
+- **CA07** (preservar avances físicos al reemplazar un archivo que elimina
+  una meta): depende de la fila `4.0` de `03_DECISIONES_SPRINT2.xlsx`
+  ("Preguntar a Emilse"), que sigue `Abierta`; `avance_fisico/`/`alertas/`
+  siguen sin ningún código (solo `.gitkeep`).
+- **Mapeo de roles Excel↔Keycloak** ("Administradora"/"Supervisor"/
+  "Alcalde" vs `administrador`/`gestor`/`visitante`): CA09 se implementó
+  con el mismo criterio ya ratificado por D24 (`administrador`+`gestor`
+  pueden escribir, `visitante` no) — el mapeo conceptual exacto nombre a
+  nombre sigue sin cerrarse formalmente.
+- **Actualización del "Plan de Acción"** en CA02: no existe ningún módulo
+  de Plan de Acción en el backend (E04-HU01 sin implementar) — no aplica
+  todavía.
+- **Copia de datos no se refresca** (hallazgo ya documentado en la spec):
+  un corte en Borrador que reutilizó PDT/PROYECTOS del corte actual antes
+  de este reemplazo no se actualiza automáticamente. Sin cambios en esta
+  tarjeta.
+
+**Estado:** RATIFICADA — decisión tomada por Juan Esteban con autorización
+expresa del equipo ("elige y haz lo que creas más conveniente") para
+desbloquear el desarrollo de [E02-HU05] backend.
+
+**Registrado:** 2026-10-13, Juan Esteban (`juanestebanmunoz`).
+
+## D26 · Plan de Acción Consolidado (E-04/HU-01): "Ejecución", agregación por meta y restricción de rol
+
+**Estado: DECISIÓN TÉCNICA PENDIENTE DE RATIFICAR.** El equipo autorizó
+avanzar con una propuesta razonable, documentada aquí, en vez de bloquear
+el desarrollo hasta que el PO/Emilse confirme las decisiones #8 y #9 de
+`03_DECISIONES_SPRINT2.xlsx` (ambas siguen `Abierta` en el tracker del
+equipo a la fecha de este registro). Si el equipo decide algo distinto,
+esto se corrige en `app/modules/plan_accion/domain/entidades.py` (la
+agregación) o en `api/router.py` (el rol) — ningún otro archivo depende de
+la decisión final.
+
+**1. "Ejecución" (CA02) = `RubroORM.obligacion_acumulada` (OrdenPagoAcumulado).**
+Ya es un mapeo documentado, no uno nuevo: `docs/DATOS.md` línea 65 registra
+que la columna real del Excel "OrdenPagoAcumulado" corresponde a ese campo.
+Evidencia adicional (Reunión 5): el semáforo que Emilse ya usa con el
+alcalde compara OrdenPagoAcumulado contra ApropiacionDefinitiva — el mismo
+par de campos que esta HU expone como "Ejecución" / "Presupuesto
+definitivo". NO se usa `compromiso_acumulado` ni `pago_acumulado`.
+
+**2. Agregación por meta sin duplicar dinero (CA03/CA08).** Una meta puede
+tener N rubros y cada rubro N contratos (mismo fan-out documentado en
+`trazabilidad/persistence/consultas.py` para HU-07). Sumar fila a fila
+duplicaría presupuesto/ejecución tantas veces como contratos tenga el
+rubro. Regla implementada en `domain.entidades.agregar_por_meta`:
+deduplicar por `codigo_rubro_nivel` (la llave real del rubro, Decisión 3 de
+`RubroORM` — nunca `codigo_rubro_ccpet`, que tiene 142 duplicados) ANTES de
+sumar; `rubros`/`contratos` de la fila agregada son los valores DISTINTOS
+que aportaron a esa meta.
+
+**3. Estado de cruce por meta (CA05)**: se traduce literalmente el texto
+del propio CA05 del Excel — "Completo = la meta relacionó PDT, presupuesto
+y BPIN; Parcial = falta al menos una relación; Sin información = solo
+existe en el PDT" — sin inventar una cuarta categoría ni intentar
+unificarla con el `estado_cruce` de 5 valores de HU-07 (que es por FILA,
+no por meta; decisión #9 sigue abierta sobre si debería existir un único
+vocabulario, no sobre esta definición en sí, que ya es la que el negocio
+escribió).
+
+**4. Restricción de rol (CA10): `administrador` + `visitante`, SIN `gestor`.**
+CA10 solo dice explícitamente que un "Usuario con rol Supervisor" no debe
+tener acceso; la historia nombra como actores únicamente "administradora y
+alcalde". Se interpreta "alcalde" como el rol `visitante` (solo lectura,
+D23) y se excluye `gestor` a propósito: ese rol existe para las
+operaciones de ESCRITURA de `cortes` (D24) y no aparece nombrado en esta
+historia de solo lectura. Es un patrón de autorización DISTINTO al de D24
+(que da acceso igual a `administrador`+`gestor`) — aquí la exclusión de
+`gestor` es intencional, no un descuido. Si el equipo decide que `gestor`
+también debe poder consultar el Plan de Acción, es un cambio de una sola
+línea en `AccesoPlanAccionDep` (`plan_accion/api/router.py`).
+
+**5. No decidido aquí (sigue `[VALIDAR]`, fuera del alcance de esta HU):**
+
+- `% Avance físico` (una de las 14 columnas de CA02): siempre `None` —
+  depende de E-03 (`avance_fisico/`), que no tiene ningún código todavía.
+- Qué significan exactamente "Meta"/"Indicador"/"Producto" como 3 columnas
+  de CA02 separadas: el modelo de datos solo distingue
+  `cod_indicador_producto` (código) y `nombre_producto` (texto) — no hay
+  evidencia de 3 campos de texto independientes. Se expone
+  `nombre_producto` una sola vez; no se fabrica un dato que no existe en
+  el esquema.
+- CA07 (scroll horizontal + columnas fijas) y CA08 (exactitud contra un
+  "Excel manual del corte de referencia") son, respectivamente, 100%
+  frontend y dependientes de un dataset de referencia que no existe en el
+  repo — ninguno de los dos tiene contraparte de backend en esta tarjeta.
+
+**Sin cambio de esquema:** `codigo_rubro_nivel` y `obligacion_acumulada` ya
+existen en `RubroORM` desde la migración inicial (`e96e8c9fd07d`) — esta
+HU no agrega ninguna migración Alembic.
+
+**Registrado:** 2026-10-13, Juan Esteban (asistido por Claude Code —
+`[E04-HU01] Consultar Plan de Acción Consolidado`, implementación
+backend).
+
+**Actualización 2026-10-13 (respuestas de Cristian):**
+
+- **Punto 1 ratificado.** "Ejecución" = `obligacion_acumulada`
+  (OrdenPagoAcumulado) queda cerrado como decisión definitiva, no
+  propuesta: coincide con el semáforo que Emilse ya usa con el alcalde
+  (OrdenPagoAcumulado / ApropiacionDefinitiva). No se toca código.
+- **BPIN que determina "Completo" (parte de punto 5):** se ratifica la
+  plantilla de Proyectos como fuente — es justo lo que ya implementa
+  `construir_filas_plan_accion` (JOIN vía `ProyectoIndicadorORM`/
+  `ProyectoORM`, columna `ProyectoORM.bpin`). La columna `bpin_relacionados`
+  del PDT (`MetaORM`) queda como diagnóstico, sin usarse en el cruce — ya
+  es así desde la primera versión, no hubo que tocar `persistence/
+consultas.py`.
+- **Unificación de vocabularios de estado: NO se unifican** (se mantienen
+  `estado_cruce` de HU-07/matriz — 5 valores, por fila — y
+  `EstadoCruceMeta` de esta HU — 3 valores, por meta — como conceptos
+  distintos). Ya es así en el código; queda ratificado, no solo
+  implementado por decisión unilateral.
+- **Siguen abiertos (no resueltos por esta actualización):** si el Plan de
+  Acción debe mostrarse solo para metas programadas en la vigencia del
+  corte (pregunta a Emilse); qué va exactamente en "Meta" cuando
+  "Meta"/"Indicador" darían el mismo texto; si "Meta programada" es la del
+  cuatrienio o la del año del corte; inclusión de `gestor` en el punto 4
+  (pendiente de que @Cristhian la ratifique); y la brecha del rol
+  "Supervisor" del Excel sin equivalente en el realm de Keycloak (bloquea
+  toda E-03).
+
+---
+
+## D27 · Plan de Acción (E-04/HU-02): filtros de la HU, incluido "Indicador" como criterio exacto
+
+**Estado: SUPUESTO MENOR** — no afecta esquema, seguridad ni dinero, así
+que se registra y se avanza (regla del proceso: una ambigüedad menor se
+anota como supuesto, no bloquea la implementación).
+
+CA01 de `HU_E04_02` describe el panel de filtros como "Sector, Indicador,
+Meta y Estado de cruce" — 4 entradas. Pero ningún criterio del CA02 al
+CA08 define un comportamiento propio para "Indicador" distinto del de
+"Meta" (CA04: búsqueda de texto por código o nombre). Es la misma
+ambigüedad ya señalada en D26 punto 5: el modelo de datos no distingue
+"Indicador" de "Meta"/"Producto" como campos independientes —
+`cod_indicador_producto` (código) y `nombre_producto` (texto) son los
+únicos dos campos reales.
+
+**Decisión:** se implementa un único criterio de búsqueda libre
+(`busqueda`, CA04) sobre `cod_indicador_producto`/`nombre_producto`, sin
+agregar un cuarto filtro "Indicador" que sería redundante con el actual
+esquema de datos. Si el equipo confirma que "Indicador" debe ser un
+filtro EXACTO (lista, como el `cod_indicador_producto` de HU-10 en
+`trazabilidad`) y distinto de la búsqueda libre de "Meta", se agrega como
+un campo más de `FiltrosPlanAccion`
+(`app/modules/plan_accion/domain/entidades.py`) sin tocar los demás
+criterios.
+
+**Decisión técnica (no de negocio) acompañante:** los 3 filtros
+(`sector`, `estado_cruce`, `busqueda`) se aplican en Python, sobre la
+lista ya agregada por meta (`list[FilaPlanAccion]`), no en la consulta
+SQL — a diferencia de HU-10, que filtra al nivel de fila cruda. Motivo:
+`estado_cruce` es un valor que solo existe DESPUÉS de `agregar_por_meta`
+(es Python, no SQL); replicar esa lógica en la consulta para poder
+filtrar ahí duplicaría la regla de CA05/HU-01 en dos lugares. El volumen
+esperado (~144 metas/corte, CA15 de HU-10) hace que filtrar en memoria
+sea tan barato como filtrar en la base de datos.
+
+**Registrado:** 2026-10-13, Juan Esteban (asistido por Claude Code —
+`[E04-HU02] Filtrar el Plan de Acción`, implementación backend).
+
+**Actualización 2026-10-13 (corrección de Cristian):** el SUPUESTO MENOR
+de arriba queda **reemplazado** — Cristian se corrigió y confirmó que
+"Indicador" SÍ es un cuarto criterio propio, EXACTO (lista "código –
+nombre" con buscador, igual que define E02-HU10-CA04 para la matriz), y
+distinto de la búsqueda libre de "Meta" (CA04). Se implementa como
+`cod_indicador_producto: tuple[str, ...] | None` en `FiltrosPlanAccion`
+(`app/modules/plan_accion/domain/entidades.py`) y el query param
+`cod_indicador_producto` (repetible) en el router — mismo nombre de
+campo/param que usa `trazabilidad/api/router.py` para el filtro
+equivalente de HU-10, por consistencia de la API. Se agrega CA09 al spec
+(`docs/specs/E04-HU02-filtrar-plan-accion.md`). No afecta el resto de
+`FiltrosPlanAccion`/`filtrar_plan_accion` ni la decisión de filtrar en
+Python (sección anterior de este documento).
+
+---
+
+## D28 · Plan de Acción (E-04/HU-03): columnas del Excel exportado y convención de nombre de archivo
+
+**Estado: SUPUESTO MENOR** — no afecta esquema, dinero ni seguridad.
+
+**1. Columnas exportadas.** El Excel de requisitos describe esta tarjeta
+en términos de "las mismas columnas y orden de la vista" (HU03-CA01), pero
+la vista misma (CA02 de HU-01) tiene la ambigüedad de las "14 columnas" sin
+resolver (D26 punto 5 — "Meta"/"Indicador"/"Producto" no son 3 campos
+reales). Se exportan EXACTAMENTE las 12 columnas que ya expone
+`FilaPlanAccionRespuesta` (la respuesta JSON de `GET /actual`), ni una más
+ni una menos — no se inventa una decimocuarta columna que el modelo de
+datos no sostiene. Si D26 punto 5 se resuelve y cambian las columnas de la
+vista, el único archivo que cambia es
+`plan_accion/persistence/exportacion_excel.py` (`_ENCABEZADOS` y
+`_escribir_fila`).
+
+**2. Nombre de archivo (HU03-CA05).** El Excel marca esta convención con
+`[VALIDAR convención]`. Se implementa tal cual la describe el CA:
+`Plan_Accion_<vigencia>_Corte_<AAAA-MM-DD>.xlsx`, con la fecha del CORTE
+(no la de la descarga) — es la lectura más literal del texto del CA y no
+compromete nada si el equipo pide otro formato después.
+
+**3. Formato de porcentaje (decisión técnica, no de negocio).**
+`avance_financiero_pct` ya está en escala 0-100 (ej. `45.2`), no como
+fracción 0-1. Se escribe el valor TAL CUAL con un formato de celda
+`0.0"%"` (símbolo literal), NO el formato nativo `0.0%` de Excel — ese
+formato nativo multiplica por 100 al mostrar, y como el valor ya está en
+esa escala, el archivo mostraría "4520.0%" en vez de "45.2%", rompiendo
+CA06 ("cifras idénticas a pantalla").
+
+**Sin cambio de esquema ni de dependencias nuevas:** `openpyxl` ya es
+dependencia del backend (lectura de PDT/Ejecución/BPIN) — esta HU es el
+primer uso de ESCRITURA de `openpyxl` en el proyecto, pero no agrega
+ninguna librería nueva a `requirements.txt`.
+
+**Reutilización deliberada:** `GET /exportar` comparte el pipeline
+completo (`_obtener_filas_filtradas`) con `GET /actual` — mismos filtros
+(D27), misma agregación (D26) — para no duplicar esa lógica entre los dos
+endpoints; la única diferencia entre ambos es la serialización final
+(JSON vs. `.xlsx`).
+
+**Registrado:** 2026-10-14, Juan Esteban (asistido por Claude Code —
+`[E04-HU03] Exportar el Plan de Acción Consolidado a Excel`,
+implementación backend).
+
+---
+
+## D29 · Plan de Acción (E-04/HU-04): comparación entre dos cortes, orden A/B y reutilización de la exportación
+
+**Estado: DECISIÓN TÉCNICA** (implementación), con un **SUPUESTO MENOR**
+documentado en el punto 4.
+
+**1. "Corte A"/"Corte B" se determinan por fecha, no por el orden de los
+query params.** La HU no dice si el usuario elige "cuál va primero" en el
+selector o si el sistema decide. Se implementa que el sistema SIEMPRE
+ordena por `fecha_corte` ascendente — "Corte A" es el más antiguo, "Corte
+B" el más reciente — sin importar en qué orden lleguen
+`corte_id_1`/`corte_id_2`. Esto evita que el mismo par de cortes produzca
+un resultado "al revés" (Δ con signo invertido) según el orden en que el
+usuario los haya clickeado en el selector. Si el equipo decide que el
+usuario SÍ debe poder elegir explícitamente cuál es "antes" y cuál
+"después" (por ejemplo, para comparar un corte contra uno posterior en el
+tiempo pero tratarlo como referencia), este es el único punto que cambia
+(`_validar_y_ordenar_cortes` en `plan_accion/api/router.py`).
+
+**2. Validaciones y códigos HTTP (CA03).** Mismo corte dos veces y
+vigencias distintas son errores de regla de negocio (`422
+regla_de_negocio_violada` — no tiene sentido "comparar algo consigo
+mismo" ni cruzar vigencias distintas, igual criterio que
+`Corte.validar_vigencia`). Un corte en estado `BORRADOR` es `409
+operacion_no_permitida` — mismo código y mismo razonamiento que
+`_verificar_fuentes_completas` ("el recurso existe pero no está en
+condiciones de usarse para esto"), NO `422`, porque no es un dato de
+entrada inválido sino un estado del recurso. Un `corte_id` que no existe
+ya produce `404` por el `RecursoNoEncontrado` que `ServicioCortes.
+obtener_corte` lanza — no se duplica esa validación en el router.
+
+**3. Emparejamiento de metas por `cod_indicador_producto` (CA04/CA05/CA06).**
+Es la misma llave que usa `agregar_por_meta` (D26) para identificar una
+meta de forma única dentro de UN corte — compararla entre dos cortes
+reutiliza esa misma llave, no se inventa una nueva. Una meta que solo
+aparece en uno de los dos cortes (`SOLO_CORTE_A`/`SOLO_CORTE_B`) tiene
+`None` en los campos del corte donde falta y en su Δ — `None` es
+deliberadamente distinto de `0`: `0` significa "no cambió", `None`
+significa "no es comparable" (apareció o desapareció). CA07 ("ver solo
+cambios") es, por la misma razón, un filtro de BACKEND (no un toggle
+puramente visual), igual criterio que D27/HU-02: la regla de "qué cuenta
+como cambio" vive en un solo lugar (`domain/comparacion.py::
+filtrar_solo_cambios`), y una meta `SOLO_CORTE_A`/`SOLO_CORTE_B` NUNCA se
+oculta con ese filtro (aparecer/desaparecer siempre es, por definición, un
+cambio).
+
+**4. Exportación de la comparación (CA08) — SUPUESTO MENOR.** El Excel de
+requisitos no especifica columnas para esta exportación. Se construye una
+tabla paralela a la de HU-03 (`construir_libro_comparacion` en
+`persistence/exportacion_excel.py`, reutilizando sus constantes de estilo
+pero NO su función `construir_libro_excel`, porque la forma de la fila es
+distinta: A/B/Δ por cada métrica en vez de un solo valor) con las columnas
+mínimas necesarias para mostrar lo que CA04-CA06 ya exponen en pantalla:
+Sector, Código Indicador, Meta, Presencia, y A/B/Δ de avance físico (sin
+implementar, igual que en todas las HU de Plan de Acción), ejecución y
+avance financiero. Si el equipo define un layout distinto para esta
+exportación, es un cambio acotado a ese archivo, sin tocar
+`domain/comparacion.py`.
+
+**5. Endpoints nuevos, no una variante de `/actual`.** `GET
+/cortes-disponibles` (CA01/CA02) y `GET /comparar` (CA03-CA07) son
+endpoints propios — no se reutiliza `/actual` con parámetros adicionales,
+porque esta HU necesita las filas agregadas de DOS cortes específicos por
+`id` (no "el corte actual"). Se extrajo `_construir_filas_agregadas`
+(consulta + `FilaFuenteMeta` + `agregar_por_meta`, SIN filtrar) de la
+función que antes hacía todo el trabajo de `/actual`/`/exportar`
+(`_obtener_filas_filtradas`), para que `/comparar` pueda llamarla dos
+veces (una por cada corte) sin duplicar el armado de `FilaFuenteMeta`.
+
+**Registrado:** 2026-10-14, Juan Esteban (asistido por Claude Code —
+`[E04-HU04] Comparar dos cortes de una misma vigencia`, implementación
+backend).
+
+**Actualización 2026-10-18 (correcciones de la revisión de Juan David
+sobre el PR #154, ya mergeado a `develop`):** revisó el PR después de
+fusionado y encontró 6 puntos, los 6 corregidos en un solo PR de
+seguimiento (decisión expresa del equipo: priorizar cerrar todo de una vez
+sobre dividir en varios PRs pequeños, aunque lo segundo sea lo usual):
+
+1. **Bug real de datos (CA07 — `solo_cambios`).** `filtrar_solo_cambios`/
+   `_tiene_cambio` (`domain/comparacion.py`) solo preguntaba si el delta
+   era distinto de `0`, así que una meta que GANA o PIERDE el cruce
+   presupuestal de un lado a otro (`ejecucion_a=100 -> ejecucion_b=None`,
+   o al revés) tiene `delta=None` — y `None` nunca contaba como cambio, por
+   lo que esa meta se ocultaba con `solo_cambios=true`. Exactamente lo que
+   este mismo punto 3 de arriba dice que CA06/CA07 deben evitar. Corregido:
+   `_tiene_cambio` ahora también cuenta como cambio cuando un lado es
+   `None` y el otro no, para ejecución y para avance financiero por
+   separado. Se agregaron las pruebas que faltaban.
+2. **CI nunca corrió sobre el código del PR antes de fusionarlo.** El PR
+   abrió contra `feature/e04-hu03/...` y se reapuntó a `develop` sin un
+   push nuevo — `pull_request` sin `types:` explícito no dispara en un
+   simple cambio de base. El commit de merge sí corrió CI completo (y
+   pasó), pero fue buena suerte, no control. Corregido: se agregó
+   `types: [opened, synchronize, reopened, edited]` en `ci.yml`.
+3. La descripción del PR #154 en GitHub seguía diciendo que su base era
+   `feature/e04-hu03/...` — corregida directamente en GitHub, no es algo
+   que viva en este repositorio.
+4. **Numeración de CA cruzada entre CA06 y CA07** en varios docstrings de
+   `plan_accion/api/router.py` y en el punto 2 de esta misma decisión (ya
+   corregido arriba): `solo_cambios` es CA07 ("ver solo cambios"), no CA06
+   ("metas presentes en un solo corte"). No cambia ningún comportamiento,
+   solo las referencias.
+5. **Tipos de fecha inconsistentes en el contrato.** `CorteDisponibleRespuesta.
+fecha_corte` y `CorteComparadoRespuesta.fecha_corte` eran `str` (con
+   `.isoformat()` manual); el resto del backend (`cortes/api/router.py`)
+   usa `date` y deja que Pydantic serialice. Mismo valor en el HTTP, pero
+   el OpenAPI generado los describía distinto. Corregidos esos dos DTO a
+   `date`. `PlanAccionRespuesta.fecha_corte` (HU-01/03, preexistente) queda
+   señalado para un cambio aparte — no se tocó aquí.
+6. **Preexistente, no introducido por HU-04:** `exportacion_excel.py`
+   escribía `sector`/`nombre_producto` (y los textos unidos de
+   `rubros`/`contratos`) sin sanear — un valor que empiece por `=`, `+`,
+   `-` o `@` puede interpretarse como fórmula al abrir el archivo
+   ("inyección de fórmulas"/CSV injection). El origen es un archivo que
+   sube la propia administradora autenticada, así que el riesgo es bajo,
+   pero la mitigación (anteponer una comilla simple, mismo criterio que
+   recomienda OWASP) es gratis y ya se aplicó en ambas funciones de
+   escritura (`_escribir_fila` de HU-03 y `_escribir_fila_comparacion` de
+   HU-04). De paso se agregó `summary`/`responses` a los 3 endpoints de
+   HU-04 (primera vez que se usa en todo el backend lo que `CLAUDE.md`
+   pide para endpoints nuevos) — extenderlo al resto de los routers queda
+   como limpieza aparte, no se hizo de paso aquí.
+
+**Registrado:** 2026-10-18, Juan Esteban (asistido por Claude Code).
+
+---
+
+## Adenda a D25 (2026-10-15) · [E02-HU05]: alinear el backend al contrato que ya consumía el frontend
+
+**Contexto:** D25 (2026-10-13) implementó el reemplazo de archivos del
+corte actual directamente desde los CA del Excel/spec, sin revisar la
+sección **Contrato** (marcada `PROPUESTA`) que Juan David ya había dejado
+en `docs/specs/E02-HU05-modificar-archivos-corte-actual.md` el 2026-10-07,
+ni el frontend que YA estaba construido contra esa propuesta
+(`EditarArchivosCorteActual.jsx`, `api/cliente.js`). Resultado: 3 puntos de
+contrato divergentes entre un backend y un frontend escritos por separado,
+cada uno correcto en su propia lógica, descubiertos en una auditoría
+cruzada el 2026-10-15.
+
+**Decisión del equipo (Juan Esteban + Juan David, 2026-10-15): alinear el
+backend al contrato que el frontend ya consume, sin modificar el
+frontend** (ya construido y probado) — menos riesgo que reabrir una
+pantalla funcionando por una preferencia de nomenclatura del backend.
+
+**Cambios aplicados** (`backend/app/modules/cortes/api/router.py`):
+
+1. **Ruta y verbo del reemplazo:** `PUT /cortes/{id}/archivos/{tipo}` →
+   `POST /cortes/{id}/archivos/{tipo}/reemplazo`. El razonamiento REST
+   original de D25 (PUT reemplaza un recurso existente) seguía siendo
+   válido en abstracto, pero no justifica reescribir un cliente ya
+   construido — `api/cliente.js::reemplazarArchivoCorteActual` ya hacía
+   `POST` a esa ruta exacta.
+2. **Ruta del historial:** `GET /cortes/{id}/historial-reemplazos` →
+   `GET /cortes/{id}/historial` — mismo criterio, `api/cliente.js::
+historialCorte` ya apuntaba ahí.
+3. **Campo de fecha del historial:** `HistorialReemplazoRespuesta.fecha` →
+   `fecha_hora` — `EditarArchivosCorteActual.jsx` ya leía
+   `entrada.fecha_hora`; con el nombre antiguo, la fecha del historial se
+   habría mostrado siempre como "—" sin ningún error visible (el más
+   peligroso de los tres: no rompía nada, solo mostraba datos
+   incompletos).
+4. **`es_corte_actual` (nuevo campo en `CorteRespuesta`):** la spec
+   original de Juan David, en su sección Contrato, ya pedía explícitamente
+   "un indicador 'es editable/es el actual' calculado por el backend (el
+   frontend no debe recalcular el orden)". D25 lo había omitido —
+   `EditarArchivosCorteActual.jsx` compensaba con un fallback: una segunda
+   petición a `GET /cortes` completo más comparación manual en
+   `lib/corteActual.js`. Se agrega el campo (mismo criterio que
+   `ServicioCortes.obtener_corte_actual`: REGISTRADO más reciente, GLOBAL)
+   calculado en `GET /cortes`, `GET /cortes/{id}`, `POST /cortes`,
+   `PATCH /cortes/{id}` y `POST /cortes/{id}/registrar`. Se eligió esta
+   opción (agregar el campo) sobre ratificar el fallback existente porque
+   el costo es bajo y cierra el `[VALIDAR]` que la propia spec señalaba
+   como abierto, en vez de dejarlo tácitamente resuelto por omisión.
+
+**Nada de la lógica de negocio de D25 cambia** (Opción B con rollback,
+`fecha_carga` corregida al reemplazar, tabla de auditoría, restricción de
+rol CA09) — es exclusivamente una alineación de nombres de ruta/campo
+entre dos partes del sistema construidas por separado.
+
+**Lección de proceso, no solo de código:** cuando una HU tiene una spec
+previa con una sección "Contrato" marcada `PROPUESTA` por otro miembro del
+equipo, revisarla (y el código que ya consume esa propuesta) es un paso
+obligatorio antes de implementar el backend, no opcional — el Excel/CA por
+sí solos no bastan cuando ya existe trabajo de otra capa construido sobre
+una interpretación previa.
+
+**Registrado:** 2026-10-15, Juan Esteban (asistido por Claude Code).
+
+---
+
+## D30 · [E02-HU10] Programa es el sexto filtro de la matriz
+
+**Clasificación:** Decisión de arquitectura/alcance.
+
+**Decisión:** la historia y el panel de filtros (HU10-CA01) listan **seis**
+criterios: BPIN, Indicador, Producto, Contrato, Sector y Programa.
+HU10-CA16 (Programa) queda dentro del alcance de la HU.
+
+**Motivo/Evidencia:** la historia y HU10-CA01 del Excel (v2.2) listaban cinco
+criterios, mientras que HU10-CA16 de la misma hoja agregaba Programa; la spec
+lo dejó como `[VALIDAR]`. Ya está implementado: parámetro `programa` en
+`GET /matriz-relacion/...` (backend, #131), lista `programas` en
+`opciones-filtro` y selector en el panel (frontend, #156). Programa y Sector
+filtran sobre `MetaORM` (ver D22 y "Decisiones aplicadas" de la spec).
+
+**Alternativas consideradas:** dejar Programa fuera del panel y de la
+historia, como criterio aparte o diferido. Descartada: el pedido salió de las
+reuniones 3 y 5 con la clienta (ver la spec) y el dato ya existía en BD.
+
+**Estado:** RATIFICADA por el PO.
+
+**Registrado:** 2026-10-16, PO.
+
+---
+
+## D31 · [E02-HU10] El contador de la matriz es "N registros" (total filtrado)
+
+**Clasificación:** Registro de tarjeta.
+
+**Decisión:** el contador muestra "N registros" ("1 registro" en singular),
+donde N es el total de la consulta con los filtros aplicados. HU10-CA02 deja
+de decir "Mostrando X de Y registros". Al limpiar los filtros (HU10-CA12), N es
+el total del corte.
+
+**Motivo/Evidencia:** la spec tenía un `[VALIDAR]` sobre qué era Y (¿el total
+del corte sin filtros o el total filtrado?). La API solo devuelve el total
+filtrado (`total_filas`); mostrar Y habría exigido un cambio de backend. En el
+frontend, `textoRegistros` en `MatrizRelacion.jsx` da el mismo texto en el
+contador de la tarjeta de filtros y en la paginación.
+
+**Alternativas consideradas:** "Mostrando X de Y" con Y = total del corte sin
+filtros; requiere que el backend devuelva ese segundo total. Descartada por
+ahora.
+
+**Estado:** RATIFICADA por el PO.
+
+**Registrado:** 2026-10-16, PO.
+
+---
+
+## D32 · [E02-HU10] HU10-CA13 no incluye ordenamiento
+
+**Clasificación:** Registro de tarjeta.
+
+**Decisión:** HU10-CA13 se limita a la persistencia de los filtros: se
+mantienen al paginar y se limpian al cambiar de corte. Se elimina "u ordena".
+
+**Motivo/Evidencia:** ningún CA de la HU define ordenamiento de la matriz y
+hoy el orden es fijo (`order_by(MetaORM.cod_indicador_producto)` en
+`trazabilidad/persistence/consultas.py`); el frontend no ofrece ordenar. La
+spec lo había dejado como `[VALIDAR]`.
+
+**Alternativas consideradas:** agregar ordenamiento por columna a la matriz.
+Descartada: no está pedida por ningún CA y sería alcance nuevo.
+
+**Estado:** RATIFICADA por el PO.
+
+**Registrado:** 2026-10-16, PO.
+
+---
+
+## D33 · [E02-HU10] HU10-CA15 (tiempo de respuesta) sale de la HU
+
+**Clasificación:** Decisión de arquitectura/alcance.
+
+**Decisión:** el tiempo de respuesta con filtros deja de ser parte de HU10 y
+pasa a una tarjeta de rendimiento aparte, junto con los demás umbrales de la
+D4. Para esa tarjeta, el PO propone **4 segundos** (el umbral de carga de
+vistas de la D4) en lugar de los 3 s del Excel.
+
+**Pendiente:** confirmar con la clienta o el docente el umbral y si el volumen
+de Santa Rosa (D4: 144 metas por corte) es representativo de otros municipios
+de categoría 6. Hasta entonces
+ni 3 s ni 4 s son definitivos. La fila CA15 se conserva en la spec y el Excel,
+marcada como fuera de HU10, para no renumerar los demás CA.
+
+**Motivo/Evidencia:** no se midió ni se optimizó el rendimiento en esta
+entrega; el `[VALIDAR]` sobre el umbral (3 s del Excel frente a 4 s de la D4)
+sigue abierto.
+
+**Alternativas consideradas:** mantener CA15 dentro de HU10 con 3 s. Descartada
+por el PO.
+
+**Estado:** PROPUESTA — pendiente de confirmar con la clienta o el docente.
+
+**Registrado:** 2026-10-16, PO.
+
+---
+
+## D34 · [E02-HU10] Mínimos del autocompletado por criterio: BPIN 3, Contrato 1
+
+**Clasificación:** Registro de tarjeta.
+
+**Decisión:** el autocompletado de HU10-CA03 sugiere desde **3 caracteres**
+para BPIN y desde **1 carácter** para Contrato, con un máximo de 10
+sugerencias, buscando por "contiene", sin distinguir mayúsculas ni guiones, y
+con el mensaje "Sin coincidencias" cuando no hay resultados. Sigue resolviéndose
+en el cliente sobre las listas de `opciones-filtro` (sin endpoint propio).
+
+**Motivo/Evidencia:** en la prueba manual se vio que existen números de
+contrato de 1 o 2 caracteres (por ejemplo "12") que no se podían elegir con el
+mínimo de 3. El mínimo vive en la configuración de cada criterio
+(`minimoCaracteres` en `frontend/src/lib/filtros.js`). Reemplaza, para
+Contrato, la decisión #5 de `03_DECISIONES_SPRINT2` del Excel ("Contiene, desde
+3 caracteres").
+
+**Alternativas consideradas:** mínimo único de 3 para ambos criterios.
+Descartada porque dejaba contratos cortos sin poder elegirse.
+
+**Estado:** RATIFICADA por el PO.
+
+**Registrado:** 2026-10-15, PO.
+
+---
+
+## D35 · Refresh visual del frontend por fases: legibilidad para usuarios de ~50 años
+
+**Clasificación:** Decisión de arquitectura/alcance.
+
+**Decisión:** se hace un refresh visual del frontend por fases, sobre la
+arquitectura existente. No es una reescritura: solo cambia la presentación,
+no la lógica, las rutas ni los contratos.
+
+- **Fases:** 0 decisión y línea base; 1 fundamentos (tokens, escala, átomos,
+  estados globales); 2 shell, Login y modal; 3 Plan de Acción y Comparar
+  cortes; 4 resto de pantallas (por bloques); 5 cierre y limpieza.
+- **Radios y sombra:** 16 px en tarjetas, paneles y tablas; 12 px en botones,
+  campos y listas; píldora solo para estados. Una sola sombra suave, solo en
+  tarjetas y modales.
+- **Tipografía:** texto funcional ≥ 14 px, ayudas 13 px, mínimo absoluto
+  12 px; título de pantalla 24 px, de tarjeta 18 px.
+- **Controles:** botones y campos de 44 px de alto; filas de tabla ≥ 40 px de
+  alto útil.
+- **Contraste:** texto ≥ 4,5:1; bordes de control ≥ 3:1. No se usa gray-400
+  como color de texto.
+- **Foco:** visible en todo control, con anillo de 2 px; nunca solo un cambio
+  de color del borde.
+- **Significado:** nunca depende solo del color (flecha o palabra, más texto
+  para lector de pantalla).
+- **No cambian:** el semáforo (verde/amarillo/rojo/sin-info) y los colores de
+  gráficos (chart 1–5).
+- **Fuera de alcance** (aparecen en la imagen de referencia, pero el proyecto
+  no los tiene): pantalla de Inicio, notificaciones, selector de municipio,
+  paginación y rol "Analista".
+- **Relación con decisiones previas:** reemplaza parcialmente, solo en lo
+  visual (radios, sombras, densidad y escala tipográfica), lo que D19 y D20
+  heredaron de `DESIGN_SPEC.md`. D19 (adopción de Tailwind) y D20 (sidebar
+  AppShell, sin RBAC) siguen vigentes en todo lo demás.
+
+**Avance:** Fase 1 implementada, PR pendiente.
+
+- La raíz tipográfica pasó a `html { font-size: 100% }`. Queda como
+  "implementada en la Fase 1, pendiente de ratificar por el PO".
+- Escala efectiva: mínimo absoluto 12 px (rótulos en mayúsculas), notas y
+  píldoras 13 px, cuerpo de tablas, celdas, botones y enlaces 14 px, píldora
+  grande 14 px. Esta escala y los 44 px de botones y campos se midieron en 5
+  pantallas durante la Fase 1.
+- Átomos nuevos en `components/shared/`: `Boton`, `Campo`, `Pildora` y
+  `EncabezadoPantalla`; los estilos de `Th`/`Td` viven en `estilosTabla.js`.
+  Los controles de Plan de Acción y Comparar cortes (`min-h-10`) miden 40 px
+  hasta la Fase 3.
+- Los tokens `azul.claro`, `azul.tenue` y `azul.apagado` cambiaron de valor
+  conservando su nombre (son texto sobre el navy del sidebar; se subieron por
+  contraste).
+- gray-400 ya no se usa como texto. El placeholder de los campos subió de
+  2,54:1 a ≥ 4,8:1 (5,47 sobre blanco, 5,19 sobre el campo, 4,83 sobre la
+  página), calculado durante la Fase 1.
+
+**Motivo/Evidencia:** los usuarios finales son personal administrativo de
+~50 años (dato aportado por el equipo; no hay un estudio de usuarios
+documentado). Al leer el código de `develop` antes de la Fase 1 se vio que:
+
+- `frontend/src/estilos.css` definía `html { font-size: 14px }`. Con los rem
+  de Tailwind, `text-sm` ≈ 12,25 px, `text-xs` ≈ 10,5 px y `min-h-10` ≈ 35 px,
+  de modo que la regla "14 px / 40 px" no se cumplía. Son valores calculados
+  a partir del código, no medidos en el navegador. `min-h-10` aparece 8 veces
+  en 5 archivos (Plan de Acción, Comparar cortes y sus componentes).
+- `DESIGN_SPEC.md` afirmaba que `text-xs` = 12 px; con esa raíz era ≈ 10,5 px.
+- Contraste calculado con la fórmula WCAG: gray-400 (`#9CA3AF`) sobre blanco
+  2,54:1; gray-500 (`#6B7280`) sobre el fondo de página (`#EEF1F5`) 4,27:1.
+  Ambos quedan bajo el mínimo de 4,5:1. `SectionHeader.jsx` usaba gray-400 a
+  10 px.
+- Cuatro inputs (2 en `MatrizRelacion.jsx` y 2 en `NuevoCorte.jsx`) tenían
+  `focus:outline-none` y solo cambiaban el borde al enfocar. Los demás
+  controles con esa clase sí traen `focus-visible:ring-2`.
+- `Vacio` en `Estados.jsx` usaba 4 clases `estado-vacio*` y `estilos.css` no
+  tiene ninguna regla con ese nombre (se dedujo por búsqueda, no visual).
+
+Estas observaciones salen de la lectura del código; las capturas "antes" se
+tomarán en la Fase 0.
+
+**Alternativas consideradas:**
+
+- Mantener la estética de 2 px y la densidad actual. Descartada: no cumple la
+  legibilidad para el público objetivo.
+- Reescritura completa del frontend. Descartada: costo y riesgo
+  desproporcionados.
+- Adoptar una librería de componentes. Descartada: sobreingeniería para el
+  tamaño actual.
+
+**Decisiones adoptadas por el equipo (pendientes de ratificar por el PO):**
+adoptadas el 2026-10-25.
+
+- **(a) Alcance:** el refresh aplica a toda la aplicación.
+- **(b) Sube/Baja en Comparar cortes:** se mantiene verde (sube) y rojo
+  (baja), siempre acompañados de flecha, signo (+/−) y palabra; el significado
+  nunca depende solo del color. Contraste ≥ 4,5:1: verde 5,02 sobre blanco y
+  4,71 sobre la fila alterna; rojo 6,47 y 6,07 (cifras calculadas por el
+  equipo).
+- **(c) Filtros activos:** en azul. El amarillo y el ámbar quedan para el
+  semáforo y los datos sin información.
+- **(d) Barra superior de 44 px de `Disposicion.jsx`:** se deja como está, sin
+  contenido.
+- **(e) Pantallas soportadas:** escritorio y portátil (≥ 1024 px, también con
+  zoom al 150 %). Tablet y celular quedan fuera por ahora, como fase aparte si
+  se pide.
+
+**Estado:** PROPUESTA — pendiente de confirmar con el PO. No tratar como
+vigente hasta que lo ratifique.
+
+**Registrado:** 2026-10-25, Juan David (frontend). Actualizado el 2026-10-25
+con las decisiones del equipo.

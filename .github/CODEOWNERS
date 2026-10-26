@@ -1,7 +1,7 @@
 # Regla general: los 2 devs core del backend revisan por defecto.
 *       @CrisCamUO @JEMG2004
 
-# Reparto por capa (PLANDETRABAJO.md §2) — aprobación obligatoria:
+# Reparto por capa (docs/archivo/sprint-1/PLANDETRABAJO.md §2) — aprobación obligatoria:
 # Dominio y casos de uso (Juan Esteban escribe) -> aprueba Cristhian
 backend/app/modules/*/domain/**       @CrisCamUO
 backend/app/modules/*/application/**  @CrisCamUO

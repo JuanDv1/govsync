@@ -1,7 +1,7 @@
 /**
  * Punto de color para semáforo de estado (verde/ámbar/rojo/sin información).
  *
- * Sin consumidor todavía en este sprint — PLANDETRABAJO.md no tiene tarjeta
+ * Sin consumidor todavía en este sprint — docs/archivo/sprint-1/PLANDETRABAJO.md no tiene tarjeta
  * de Tablero/indicadores que lo necesite hoy. Se porta ahora porque
  * DESIGN_SPEC.md lo lista como átomo base, listo para cuando una pantalla
  * (ej. Matriz o Cortes) necesite mostrar un estado de semáforo.

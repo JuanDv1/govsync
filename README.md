@@ -9,6 +9,7 @@ Consolida y cruza tres fuentes que hoy viven en Excels sueltos — el Plan Indic
 - **Backend:** FastAPI (Python 3.12+) — monolito modular por capas (`api` → `application` → `domain` ← `persistence`), ver [`CLAUDE.md`](./CLAUDE.md) para el detalle de la arquitectura.
 - **Frontend:** React + Vite, Tailwind CSS.
 - **Base de datos:** PostgreSQL 16, migraciones con Alembic.
+- **Identidad:** Keycloak (OIDC, Authorization Code + PKCE) — tres roles (`administrador`, `gestor`, `visitante`), ver `[HU-E01-01]`/D23/D24 en `docs/DECISIONES.md`.
 
 ## Estructura
 
@@ -20,7 +21,7 @@ Monorepo — [`backend/`](./backend) (API + lógica de negocio), [`frontend/`](.
 
 ### Requisitos previos
 
-- **Docker Desktop** (para Postgres 16).
+- **Docker Desktop** (para Postgres 16 y Keycloak).
 - **Node.js 18+** y **npm**.
 - **Python 3.12+** con `venv`.
 
@@ -33,21 +34,46 @@ cp frontend/.env.example frontend/.env
 
 Los valores por defecto de `backend/.env.example` ya apuntan al Postgres de Docker Compose (`govsync`/`govsync`/`localhost:5432`) — no hace falta cambiar nada para desarrollo local. **Ojo:** la URL usa el prefijo `postgresql+psycopg://` (psycopg3), no `postgresql://` a secas.
 
-### 2. Base de datos (Postgres, vía Docker)
+### 2. Infraestructura (Postgres + Keycloak, vía Docker)
 
 ```bash
 docker compose up -d
 ```
 
-Esto **solo levanta Postgres** — backend y frontend corren localmente para tener recarga en caliente. Verifica que esté sano antes de seguir:
+Levanta Postgres **y** Keycloak (modo `start-dev`, solo local — ver D23 en `docs/DECISIONES.md`)
+— backend y frontend corren localmente para tener recarga en caliente. Verifica Postgres antes de
+seguir:
 
 ```bash
 docker inspect --format='{{.State.Health.Status}}' govsync-postgres
 ```
 
-Repite hasta que diga `healthy`.
+Repite hasta que diga `healthy`. Keycloak no tiene healthcheck propio — confirma que responde:
 
-### 3. Backend
+```bash
+curl -s http://localhost:8080/realms/master > /dev/null && echo "Keycloak listo"
+```
+
+### 3. Keycloak ya queda configurado — nada que hacer a mano
+
+El paso 2 (`docker compose up -d`) ya deja todo listo: el realm `govsync`, los dos clients
+(`govsync-backend`/`govsync-frontend`, con su audience mapper), los 3 roles, el theme de login, el
+bloqueo por intentos fallidos (3 intentos → 15 min) y 3 usuarios de prueba se importan solos desde
+[`keycloak/import/govsync-realm.json`](./keycloak/import/govsync-realm.json) la primera vez que
+Keycloak arranca sobre un volumen nuevo. Usuarios listos para probar (contraseña `GovSync2026!`
+para los tres — **solo para desarrollo local, nunca producción**):
+
+| Usuario                | Rol             |
+| ---------------------- | --------------- |
+| `administrador.prueba` | `administrador` |
+| `gestor.prueba`        | `gestor`        |
+| `visitante.prueba`     | `visitante`     |
+
+Si `datos_keycloak` ya tenía un realm `govsync` de una corrida anterior, la importación no se
+repite ni lo sobreescribe — para forzarla de nuevo: `docker compose down && docker volume rm
+govsync_datos_keycloak && docker compose up -d`.
+
+### 4. Backend
 
 ```bash
 cd backend
@@ -60,7 +86,7 @@ uvicorn app.main:app --reload --port 8000
 
 Esta terminal queda ocupada sirviendo el backend. Verifica en `http://localhost:8000/docs` (Swagger).
 
-### 4. Frontend
+### 5. Frontend
 
 En **otra terminal**, desde la raíz del repo:
 
@@ -71,12 +97,17 @@ npm run dev
 
 `npm install` en la raíz también activa los hooks de Git (`commit-msg`/`pre-commit` vía husky) — hazlo una sola vez después de clonar.
 
-Abre `http://localhost:5173`. La app parte en el histórico de cortes (`/cortes`); desde ahí se crea un corte nuevo (`/cortes/nuevo`), se cargan los tres archivos, se registra, y se navega a su matriz de relación (`/matriz/:corteId`).
+Abre `http://localhost:5173` → te recibe `Login.jsx`; el botón "Ingresar" redirige a Keycloak —
+entra con cualquiera de los usuarios de prueba de la tabla del paso 3. Ya autenticado, la app parte
+en el histórico de cortes
+(`/cortes`); desde ahí se crea un corte nuevo (`/cortes/nuevo`, solo visible para
+`administrador`/`gestor`), se cargan los tres archivos, se registra, y se navega a su matriz de
+relación (`/matriz/:corteId`).
 
 ### Apagar todo
 
 ```bash
-docker compose down      # detiene y elimina el contenedor (los datos persisten en el volumen)
+docker compose down      # detiene y elimina los contenedores (los datos persisten en los volúmenes)
 # Ctrl+C en las terminales de backend y frontend
 ```
 
@@ -108,16 +139,16 @@ npm run build           # build de producción del frontend
 | Documento                                                                | Para qué sirve                                                                                                                                                                                     |
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [CONTRIBUTING.md](./CONTRIBUTING.md)                                     | Flujo de trabajo: convención de ramas, formato de commits (Conventional Commits + commitlint), mecánica de sprints.                                                                                |
-| [PLANDETRABAJO.md](./PLANDETRABAJO.md)                                   | Orden de implementación de las tarjetas del sprint, quién hace qué.                                                                                                                                |
+| [docs/PROCESO.md](./docs/PROCESO.md)                                     | Reglas del juego, definición de terminado y convención de uso de IA (vigentes para cualquier sprint).                                                                                              |
 | [docs/DECISIONES.md](./docs/DECISIONES.md)                               | Registro histórico de decisiones de arquitectura y alcance, con su motivo y estado (RATIFICADA/PROPUESTA/VIGENTE). Es la fuente de verdad cuando el código, un doc derivado y Trello no coinciden. |
 | [docs/DATOS.md](./docs/DATOS.md)                                         | Anatomía real de los tres archivos fuente (PDT, Ejecución, Proyectos BPIN): qué columna se extrae, dónde se persiste, y qué llega a la matriz de relación.                                         |
-| [docs/TRAZABILIDAD.md](./docs/TRAZABILIDAD.md)                           | Estado de cada Criterio de Aceptación por Historia de Usuario (implementado/probado/pendiente), con evidencia.                                                                                     |
-| [docs/ESPECIFICACIONES_TECNICAS.md](./docs/ESPECIFICACIONES_TECNICAS.md) | Contratos técnicos detallados (endpoints, DTOs, reglas de validación).                                                                                                                             |
-| [docs/CASOS_DE_PRUEBA.md](./docs/CASOS_DE_PRUEBA.md)                     | Casos de prueba por Criterio de Aceptación.                                                                                                                                                        |
+| [docs/specs/](./docs/specs/_plantilla.md)                                | Una spec por Historia de Usuario (criterios de aceptación, reglas de negocio, contrato, errores). Plantilla sin specs reales todavía.                                                              |
+| [docs/ESPECIFICACIONES_TECNICAS.md](./docs/ESPECIFICACIONES_TECNICAS.md) | Contrato técnico ya entregado de E02-HU01..04 y E02-HU07; las HU nuevas usan `docs/specs/`.                                                                                                        |
 | [docs/SEGURIDAD.md](./docs/SEGURIDAD.md)                                 | Consideraciones de seguridad (OWASP), manejo de secretos, validación de archivos cargados.                                                                                                         |
 | [docs/DESPLIEGUE.md](./docs/DESPLIEGUE.md)                               | Cómo aplicar migraciones manualmente contra la base de datos de producción (Render).                                                                                                               |
 | [docs/DESIGN_SPEC.md](./docs/DESIGN_SPEC.md)                             | Especificación de estilo visual (tokens, layout, componentes) usada como referencia para el frontend — ver D18/D19 en `docs/DECISIONES.md` para qué parte se adaptó realmente.                     |
+| [docs/archivo/sprint-1/](./docs/archivo/sprint-1/)                       | Documentos históricos del Sprint 1 (plan de trabajo, trazabilidad CA, casos de prueba, convención de Swagger) — no se mantienen.                                                                   |
 
 ## Estado del proyecto
 
-Sprint 1 en curso — módulos de carga (PDT, Ejecución, Proyectos BPIN) y matriz de relación (HU-07) implementados y probados de punta a punta. Autenticación y control de acceso por rol están **deliberadamente fuera de alcance** de este sprint (ver D2 en `docs/DECISIONES.md`).
+Módulos de carga (PDT, Ejecución, Proyectos BPIN) y matriz de relación (HU-07) implementados y probados de punta a punta. Autenticación y control de acceso por rol (`[HU-E01-01]`) ya están implementados con Keycloak — ver D23/D24 en `docs/DECISIONES.md` — con tres roles (`administrador`, `gestor`, `visitante`) y login probado de punta a punta contra un Keycloak real.

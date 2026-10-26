@@ -3,6 +3,16 @@ name: CI
 on:
   pull_request:
     branches: [main, develop]
+    # CORRECCIÓN (revisión de Juan David sobre el PR #154, 2026-10-18): sin
+    # `types`, GitHub solo dispara `pull_request` en opened/synchronize/
+    # reopened. Re-apuntar la base de un PR existente (p.ej. de una rama de
+    # otra HU a `develop`, una vez esa HU se mergeó) es un evento "edited",
+    # que NO estaba en esa lista -- si no hay push nuevo después de
+    # re-apuntar, el PR queda mergeable mostrando solo los checks de Vercel,
+    # sin que CI (lint, pruebas, Sonar, migraciones) haya corrido nunca
+    # sobre ese código. Pasó exactamente eso con el PR #154. Se agrega
+    # `edited` para que un re-apuntado de base también dispare CI.
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main, develop]
 
@@ -72,7 +82,7 @@ jobs:
       # para no bloquear la ejecución local durante el desarrollo.
       - run: python -m pytest --cov-fail-under=70
       - name: Publica el reporte de cobertura para SonarCloud
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cobertura-backend
           path: backend/coverage.xml
@@ -100,7 +110,6 @@ jobs:
           --health-retries 5
     env:
       ENVIRONMENT: test
-      SECRET_KEY: clave-solo-para-ci-no-usar-en-produccion
       DATABASE_URL: postgresql+psycopg://govsync:govsync@localhost:5432/govsync
     steps:
       - uses: actions/checkout@v4
@@ -115,6 +124,41 @@ jobs:
       - run: alembic upgrade head
       - run: alembic downgrade base
       - run: alembic upgrade head
+
+  backend-keycloak:
+    name: Backend — Keycloak arranca correctamente
+    runs-on: ubuntu-latest
+    # [HU-E01-01] / docs/DECISIONES.md D23: smoke test, no prueba de
+    # integración completa todavía. No usa services: porque ese bloque no
+    # admite pasarle el comando start-dev a la imagen de Keycloak — se
+    # levanta con `docker run` directamente. Solo confirma que la imagen,
+    # el puerto y las variables de docker-compose.yml arrancan de verdad en
+    # el runner de GitHub (Linux, distinto al entorno local). No crea
+    # realm/cliente/rol ni valida un token real — eso es una tarjeta
+    # siguiente.
+    steps:
+      - name: Levanta un Keycloak efímero
+        run: |
+          docker run -d --name keycloak-ci \
+            -p 8080:8080 \
+            -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+            -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
+            quay.io/keycloak/keycloak:26.7 start-dev
+      - name: Espera a que Keycloak responda
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/realms/master > /dev/null; then
+              echo "Keycloak respondió tras $((i*2))s."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Keycloak no respondió en 60s."
+          docker logs keycloak-ci
+          exit 1
+      - name: Detiene el contenedor
+        if: always()
+        run: docker rm -f keycloak-ci
 
   migrate-render:
     name: Backend — migra y despliega en Render
@@ -197,10 +241,10 @@ jobs:
         with:
           fetch-depth: 0
       - name: Descarga el reporte de cobertura
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: cobertura-backend
           path: backend
-      - uses: SonarSource/sonarqube-scan-action@ba9859eae8dd6bd29e412f25ddbbef3d032000f4 # v8.2.2
+      - uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

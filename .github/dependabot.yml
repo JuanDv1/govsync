@@ -8,6 +8,10 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
     ignore:
+      # ESLint 10 rompe eslint-plugin-react (su peer llega hasta ^9.7 y la
+      # última versión, 7.37.5, no lo soporta): el lint falla con
+      # "getFilename is not a function". Subir a 10 solo cuando
+      # eslint-plugin-react publique soporte.
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@eslint/js"
@@ -15,6 +19,15 @@ updates:
       # Tailwind 4 cambia el sistema de configuración y rompe los estilos actuales;
       # se migrará de forma planificada.
       - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      # plugin-react 6 exige vite ^8.0.0 como peer dependency; el proyecto
+      # corre sobre vite 7 (no declarado como dependencia directa en ningún
+      # package.json). Sin ese peer satisfecho, npm instala una segunda
+      # copia anidada de Vite 8 (con el bundler Rolldown) en vez de
+      # resolver limpio. Migrar a Vite 8 debe ser su propia tarjeta,
+      # declarando vite explícitamente y validando el dev-server a mano
+      # — no algo que entre colgado de este bump.
+      - dependency-name: "@vitejs/plugin-react"
         update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"

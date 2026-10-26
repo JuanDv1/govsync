@@ -194,3 +194,132 @@ def test_matriz_actual_devuelve_200_con_el_corte_registrado_mas_reciente(cliente
     cuerpo = respuesta.json()
     assert cuerpo["corte_id"] == str(corte_reciente_id)
     assert cuerpo["total_filas"] == 1
+
+
+# --- HU-10: filtros de la matriz ---------------------------------------------
+
+
+def _preparar_corte_filtrable(sesion) -> uuid.UUID:
+    corte_id = _crear_corte(sesion)
+    for tipo in TipoArchivoFuente:
+        _marcar_archivo_cargado(sesion, corte_id, tipo)
+    sesion.add(
+        MetaORM(
+            id=uuid.uuid4(),
+            corte_id=corte_id,
+            cod_indicador_producto="040110500",
+            nombre_producto="Vías pavimentadas",
+            sector="Transporte",
+            es_principal=True,
+        )
+    )
+    sesion.add(
+        MetaORM(
+            id=uuid.uuid4(),
+            corte_id=corte_id,
+            cod_indicador_producto="170202300",
+            nombre_producto="Aulas construidas",
+            sector="Educación",
+            es_principal=True,
+        )
+    )
+    sesion.commit()
+    return corte_id
+
+
+def test_matriz_filtra_por_sector(cliente, sesion):
+    corte_id = _preparar_corte_filtrable(sesion)
+
+    respuesta = cliente.get(f"/api/v1/matriz-relacion/{corte_id}?sector=Transporte")
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert cuerpo["total_filas"] == 1
+    assert cuerpo["filas"][0]["cod_indicador_producto"] == "040110500"
+
+
+def test_matriz_combina_dos_valores_del_mismo_criterio_con_or(cliente, sesion):
+    corte_id = _preparar_corte_filtrable(sesion)
+
+    respuesta = cliente.get(
+        f"/api/v1/matriz-relacion/{corte_id}?sector=Transporte&sector=Educación"
+    )
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["total_filas"] == 2
+
+
+def test_matriz_actual_acepta_los_mismos_filtros(cliente, sesion):
+    corte_id = _crear_corte(sesion, estado=EstadoCorte.REGISTRADO)
+    for tipo in TipoArchivoFuente:
+        _marcar_archivo_cargado(sesion, corte_id, tipo)
+    sesion.add(
+        MetaORM(
+            id=uuid.uuid4(),
+            corte_id=corte_id,
+            cod_indicador_producto="040110500",
+            nombre_producto="Vías pavimentadas",
+            sector="Transporte",
+            es_principal=True,
+        )
+    )
+    sesion.commit()
+
+    respuesta = cliente.get("/api/v1/matriz-relacion/actual?sector=Transporte")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["total_filas"] == 1
+
+
+def test_matriz_incluye_nombre_del_proyecto(cliente, sesion):
+    """CA-17 (absorbido de HU-07): el nombre del proyecto viaja en la
+    respuesta del endpoint, no solo el BPIN."""
+    corte_id = _crear_corte(sesion)
+    for tipo in TipoArchivoFuente:
+        _marcar_archivo_cargado(sesion, corte_id, tipo)
+    sesion.add(
+        MetaORM(
+            id=uuid.uuid4(),
+            corte_id=corte_id,
+            cod_indicador_producto="040110500",
+            nombre_producto="Vías pavimentadas",
+            es_principal=True,
+        )
+    )
+    sesion.commit()
+
+    respuesta = cliente.get(f"/api/v1/matriz-relacion/{corte_id}")
+
+    assert respuesta.status_code == 200
+    assert respuesta.json()["filas"][0]["nombre_proyecto"] is None
+
+
+# --- HU-10/CA-1, CA-3: GET /matriz-relacion/{corte_id}/opciones-filtro -------
+
+
+def test_opciones_filtro_devuelve_404_si_el_corte_no_existe(cliente):
+    respuesta = cliente.get(f"/api/v1/matriz-relacion/{uuid.uuid4()}/opciones-filtro")
+
+    assert respuesta.status_code == 404
+
+
+def test_opciones_filtro_devuelve_409_si_falta_una_fuente(cliente, sesion):
+    corte_id = _crear_corte(sesion)
+    _marcar_archivo_cargado(sesion, corte_id, TipoArchivoFuente.PDT)
+    sesion.commit()
+
+    respuesta = cliente.get(f"/api/v1/matriz-relacion/{corte_id}/opciones-filtro")
+
+    assert respuesta.status_code == 409
+
+
+def test_opciones_filtro_devuelve_los_valores_del_corte(cliente, sesion):
+    corte_id = _preparar_corte_filtrable(sesion)
+
+    respuesta = cliente.get(f"/api/v1/matriz-relacion/{corte_id}/opciones-filtro")
+
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert set(cuerpo["sectores"]) == {"Transporte", "Educación"}
+    assert set(cuerpo["productos"]) == {"Vías pavimentadas", "Aulas construidas"}
+    assert {i["codigo"] for i in cuerpo["indicadores"]} == {"040110500", "170202300"}

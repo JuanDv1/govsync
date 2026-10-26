@@ -110,6 +110,68 @@ def test_copiar_datos_pdt_duplica_meta_y_su_programacion(sesion, repo) -> None:
     assert [m.id for m in metas_origen] == [meta_id]
 
 
+def test_copiar_datos_pdt_copia_todas_las_columnas_de_la_meta(sesion, repo) -> None:
+    """Reproduce el hallazgo de Juan David (2026-10-19): `_copiar_metas`
+    enumeraba a mano 8 de las 19 columnas de datos de `MetaORM` y dejaba las
+    otras 11 en NULL -- las agregadas el 2026-09-23 (migración
+    `122e94509b80`), después de escrita esta función.
+
+    Puebla CADA columna real de la tabla con un valor no nulo y compara
+    columna por columna contra la meta copiada (salvo `id`/`corte_id`, que
+    deben cambiar) -- así un campo agregado a `MetaORM` a futuro que
+    `_copiar_metas` olvide copiar hace fallar esta prueba, en vez de pasar
+    en silencio como pasó con las 11 columnas de 2026-09-23.
+    """
+    origen_id = _crear_corte(sesion, vigencia=2025, estado=EstadoCorte.REGISTRADO)
+    destino_id = _crear_corte(sesion, vigencia=2026)
+
+    meta_id = uuid.uuid4()
+    valores: dict[str, object] = {
+        "cod_indicador_producto": "040110500",
+        "cod_indicador_sistp": "IP-63",
+        "codigo_producto_mga": "0401105",
+        "nombre_producto": "Vías pavimentadas",
+        "unidad_medida": "Kilómetros",
+        "meta_cuatrienio": Decimal("12.5"),
+        "es_principal": True,
+        "bpin_relacionados": "2024000010001",
+        "entidad_territorial": "Santa Rosa (Cauca)",
+        "nombre_plan": "Plan de Desarrollo 2024-2027",
+        "fecha_creacion_plan": date(2024, 5, 30),
+        "linea_estrategica": "Infraestructura",
+        "codigo_sector": "04",
+        "sector": "Transporte",
+        "codigo_programa": "0401",
+        "programa": "Infraestructura vial",
+        "codigo_ods": "09",
+        "ods": "Industria, innovación e infraestructura",
+        "tipo_acumulacion": "Suma",
+    }
+    columnas_tabla = {c.name for c in MetaORM.__table__.columns} - {"id", "corte_id"}
+    # Si este assert falla, `MetaORM` tiene una columna nueva que esta
+    # prueba todavía no puebla -- agrégala a `valores` arriba, no borres el
+    # assert (es justo el guardarraíl que faltó el 2026-09-23).
+    assert columnas_tabla == set(valores), (
+        "Esta prueba no cubre todas las columnas de MetaORM; actualiza "
+        "'valores' con la(s) columna(s) nueva(s)."
+    )
+
+    sesion.add(MetaORM(id=meta_id, corte_id=origen_id, **valores))
+    sesion.flush()
+
+    repo.copiar_datos(origen_id, destino_id, TipoArchivoFuente.PDT)
+
+    nueva_meta = sesion.scalars(select(MetaORM).where(MetaORM.corte_id == destino_id)).one()
+
+    assert nueva_meta.id != meta_id
+    assert nueva_meta.corte_id == destino_id
+    for columna, valor_esperado in valores.items():
+        assert getattr(nueva_meta, columna) == valor_esperado, (
+            f"La columna '{columna}' no se copió: se esperaba {valor_esperado!r}, "
+            f"se obtuvo {getattr(nueva_meta, columna)!r}"
+        )
+
+
 def test_copiar_datos_proyectos_duplica_proyecto_e_indicadores(sesion, repo) -> None:
     # D11: como máximo un BORRADOR en toda la tabla; el origen de una
     # reutilización siempre es REGISTRADO en la práctica (ultimo_registrado).
@@ -573,3 +635,46 @@ def test_reemplazar_proyectos_no_hace_commit(sesion, repo) -> None:
     sesion.rollback()
 
     assert sesion.scalars(select(ProyectoORM)).all() == []
+
+
+def _agregar_meta(sesion, corte_id: uuid.UUID, codigo: str) -> None:
+    sesion.add(
+        MetaORM(
+            id=uuid.uuid4(), corte_id=corte_id, cod_indicador_producto=codigo, es_principal=True
+        )
+    )
+    sesion.flush()
+
+
+def test_listar_codigos_metas_devuelve_solo_los_del_corte_pedido(sesion, repo) -> None:
+    """[E02-HU05][CA07]: cada corte es una fotografía independiente, las
+    metas de otro corte no cuentan."""
+    corte_id = _crear_corte(sesion, vigencia=2025, estado=EstadoCorte.REGISTRADO)
+    otro_id = _crear_corte(sesion, vigencia=2026)
+    _agregar_meta(sesion, corte_id, "040110500")
+    _agregar_meta(sesion, corte_id, "040110600")
+    _agregar_meta(sesion, otro_id, "330105300")
+
+    assert repo.listar_codigos_metas(corte_id) == {"040110500", "040110600"}
+
+
+def test_listar_codigos_metas_de_corte_sin_metas_devuelve_conjunto_vacio(sesion, repo) -> None:
+    corte_id = _crear_corte(sesion)
+
+    assert repo.listar_codigos_metas(corte_id) == set()
+
+
+def test_listar_codigos_metas_conserva_el_codigo_con_cero_inicial_como_texto(sesion, repo) -> None:
+    """CLAUDE.md: el código se guarda como texto, `040110500` no puede volverse 40110500."""
+    corte_id = _crear_corte(sesion)
+    _agregar_meta(sesion, corte_id, "040110500")
+
+    assert repo.listar_codigos_metas(corte_id) == {"040110500"}
+
+
+def test_listar_codigos_metas_colapsa_codigos_repetidos(sesion, repo) -> None:
+    corte_id = _crear_corte(sesion)
+    _agregar_meta(sesion, corte_id, "040110500")
+    _agregar_meta(sesion, corte_id, "040110500")
+
+    assert repo.listar_codigos_metas(corte_id) == {"040110500"}

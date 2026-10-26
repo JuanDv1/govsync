@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 
 # from enum import Enum
 from enum import StrEnum
@@ -90,6 +90,12 @@ class ArchivoFuente:
     filas_reconocidas: int = 0
     reutilizado: bool = False
     corte_origen_id: uuid.UUID | None = None
+    fecha_carga: datetime | None = None
+    """[E02-HU05][CA01]: momento del último reemplazo/carga, tal como lo
+    persiste `ArchivoFuenteORM.fecha_carga`. `None` solo en objetos de dominio
+    construidos a mano (tests, fábricas) antes de pasar por el repositorio —
+    nunca para un `ArchivoFuente` leído de la base de datos.
+    """
     descartes: list[DescarteIndicador] = field(default_factory=list)
     """D14: propagados desde ResultadoLectura.descartes (contratos.py) por
     ServicioCortes._cargar_resultado. `[]` para archivos reutilizados
@@ -113,6 +119,35 @@ class ArchivoFuente:
     deduplicar. `[]` para archivos reutilizados y para PDT/EJECUCION
     (mismo criterio que `descartes`).
     """
+    metas_eliminadas: list[str] = field(default_factory=list)
+    """[E02-HU05][CA07]: códigos de las metas que tenía el corte y que el
+    archivo de reemplazo ya no trae, ordenados. Solo se calcula al
+    reemplazar el PDT del corte actual; `[]` en cualquier otro caso.
+    """
+
+
+@dataclass(slots=True)
+class HistorialReemplazoArchivo:
+    """[E02-HU05][CA06]: registro de auditoría de un reemplazo de archivo del
+    corte actual. Decisión cerrada (fila 3.0 de `03_DECISIONES_SPRINT2.xlsx`,
+    docs/specs/E02-HU05-modificar-archivos-corte-actual.md): el `.xlsx`
+    reemplazado NO se conserva, solo este registro (fuente, nombre del
+    archivo anterior, usuario, fecha/hora). Es un objeto de solo-escritura +
+    lectura de historial: no participa de ninguna regla de negocio de
+    `Corte`, por eso vive aparte en vez de como campo de `ArchivoFuente`.
+    """
+
+    corte_id: uuid.UUID
+    tipo: TipoArchivoFuente
+    nombre_archivo_anterior: str | None
+    nombre_archivo_nuevo: str
+    usuario: str
+    id: uuid.UUID = field(default_factory=uuid.uuid4)
+    fecha: datetime | None = None
+    """`None` al construirlo en la capa de Aplicación: la fecha la asigna la
+    base de datos (`server_default=func.now()`, mismo patrón que
+    `ArchivoFuenteORM.fecha_carga`) para no depender del reloj del proceso
+    Python ni de pasar `hoy`/`ahora` por todas las capas solo para esto."""
 
 
 @dataclass(slots=True)
@@ -209,6 +244,68 @@ class Corte:
         Corte.validar_fecha(fecha_corte, hoy)
         self.vigencia = vigencia
         self.fecha_corte = fecha_corte
+
+    def verificar_modificable(self) -> None:
+        """HU-06/CA-8 (docs del Excel de requisitos, E-02): un corte
+        REGISTRADO ya no admite el flujo de reemplazo "durante creación"
+        (`ServicioCortes.cargar_archivo`). Pasado ese punto, "cargar"/
+        "reemplazar" un archivo es responsabilidad de HU-05 ("Editar
+        archivos" del corte más reciente, con su propio registro de
+        auditoría) -- HU-05 todavía no está implementada; esta regla solo
+        cierra la puerta del lado de HU-06, no sustituye a HU-05.
+
+        Antes de esta regla, `cargar_archivo` no distinguía BORRADOR de
+        REGISTRADO (ver SUPUESTO ya registrado en el docstring de
+        `cargar_archivo`, casos_uso.py) -- un corte ya finalizado podía
+        seguir recibiendo archivos por esta vía sin dejar ningún rastro de
+        auditoría, exactamente lo que CA-8 prohíbe.
+        """
+        if self.estado != EstadoCorte.BORRADOR:
+            raise OperacionNoPermitida(
+                "Este corte ya fue registrado; no se pueden cargar ni "
+                "reemplazar archivos por este flujo. Para corregir un "
+                "archivo de un corte ya registrado use la edición de "
+                "archivos del corte más reciente (HU-05).",
+                detalles={
+                    "motivo": "corte_no_es_borrador",
+                    "estado_actual": self.estado.value,
+                },
+            )
+
+    def verificar_reemplazable(self, es_corte_actual: bool) -> None:
+        """[E02-HU05][CA01, CA05]: solo el corte REGISTRADO más reciente,
+        GLOBAL (sin filtro de vigencia -- mismo criterio que D11 y que
+        `ServicioCortes.obtener_corte_actual`) admite el reemplazo de
+        archivos por este flujo.
+
+        `es_corte_actual` lo calcula la capa de Aplicación (requiere
+        consultar `RepositorioCortes.ultimo_registrado()`, algo que el
+        dominio no puede hacer sin depender de infraestructura) y se pasa
+        ya resuelto -- el dominio solo aplica la regla con el dato en mano,
+        no decide cómo obtenerlo (DIP).
+
+        Dos motivos de rechazo distintos, cada uno con su propio mensaje:
+        - El corte sigue en BORRADOR: ese flujo es [E02-HU06]
+          (`cargar_archivo`/`verificar_modificable`), no este.
+        - El corte YA está REGISTRADO pero no es el más reciente (CA05):
+          un corte registrado después pero con `fecha_corte` anterior NO es
+          el actual y no es editable (nota explícita de CA05 en la spec).
+        """
+        if self.estado != EstadoCorte.REGISTRADO:
+            raise OperacionNoPermitida(
+                "Este corte todavía está en BORRADOR; corríjalo con el flujo "
+                "de creación del corte, no con la edición de archivos del "
+                "corte actual.",
+                detalles={
+                    "motivo": "corte_no_registrado",
+                    "estado_actual": self.estado.value,
+                },
+            )
+        if not es_corte_actual:
+            raise OperacionNoPermitida(
+                "Solo se puede editar el corte más reciente.",
+                detalles={"motivo": "corte_no_es_el_actual"},
+            )
 
     def puede_reutilizar(self, tipo: TipoArchivoFuente) -> bool:
         """HU-01/CA-5, CA-7: solo PDT y PROYECTOS son reutilizables.

@@ -1,3 +1,5 @@
+> Archivado: documento histórico del Sprint 1, no se mantiene.
+
 # Matriz / Plan de Casos de Prueba — GovSync
 
 > **Origen de este documento:** no es un entregable exigido literalmente por la
