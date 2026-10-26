@@ -29,15 +29,12 @@
  *     "Reintentar". La tabla y los demás filtros siguen funcionando.
  *   El código HTTP viaja en `ErrorApi.estado` (api/cliente.js).
  *
- * FOCO AL QUITAR UNA ETIQUETA: el ✕ pulsado desaparece con su etiqueta, así
- * que el foco se mueve ANTES de avisar al padre, dentro del propio manejador
- * (nada de efectos ni de estado): al ✕ de la etiqueta siguiente, o al de la
- * anterior si era la última, o al botón "Filtros" si no queda ninguna. Las
- * etiquetas llevan una `key` estable (`clave:valor`), así que el ✕ vecino
- * sigue montado después de quitar la etiqueta y no pierde el foco. Todos los
- * destinos están siempre visibles: nunca se enfoca algo del panel cerrado.
+ * FOCO AL QUITAR UNA ETIQUETA: lo gestiona `shared/ListaEtiquetasFiltro.jsx`
+ * (compartida con `FiltrosPlanAccion.jsx`): el foco se mueve ANTES de avisar
+ * al padre, al ✕ de la etiqueta siguiente, al de la anterior si era la última,
+ * o al botón "Filtros" si no queda ninguna. Todos los destinos están siempre
+ * visibles: nunca se enfoca algo del panel cerrado.
  */
-import { useRef } from "react";
 
 import {
   CRITERIOS,
@@ -45,7 +42,7 @@ import {
   opcionesParaCriterio,
 } from "../lib/filtros.js";
 import { Cargando, EstadoError } from "./Estados.jsx";
-import EtiquetaFiltro from "./shared/EtiquetaFiltro.jsx";
+import ListaEtiquetasFiltro from "./shared/ListaEtiquetasFiltro.jsx";
 import SelectorConBusqueda from "./shared/SelectorConBusqueda.jsx";
 
 //: Estados HTTP cuyo error ya muestra la matriz del mismo corte.
@@ -57,10 +54,6 @@ function EtiquetasActivas({
   onQuitar,
   refBotonFiltros,
 }) {
-  // ✕ montados, por `clave:valor`. Cada ref de callback se auto-limpia al
-  // desmontarse la etiqueta, así que nunca se enfoca un nodo que ya no está.
-  const botonesQuitar = useRef(new Map());
-
   // El `texto` de la opción (p. ej. "040110500 – Tasa de alfabetización")
   // solo existe si las opciones cargaron; si no, se cae al valor.
   const etiquetas = CRITERIOS.flatMap((criterio) => {
@@ -78,35 +71,12 @@ function EtiquetasActivas({
     }));
   });
 
-  if (etiquetas.length === 0) return null;
-
-  const idDe = (etiqueta) => `${etiqueta.clave}:${etiqueta.valor}`;
-
-  function quitar(indice) {
-    const etiqueta = etiquetas[indice];
-    const vecino = [etiquetas[indice + 1], etiquetas[indice - 1]]
-      .filter(Boolean)
-      .map((candidata) => botonesQuitar.current.get(idDe(candidata)))
-      .find(Boolean);
-    (vecino ?? refBotonFiltros?.current)?.focus();
-    onQuitar(etiqueta.clave, etiqueta.valor);
-  }
-
   return (
-    <ul aria-label="Filtros activos" className="mt-4 flex flex-wrap gap-2">
-      {etiquetas.map((etiqueta, indice) => (
-        <EtiquetaFiltro
-          key={idDe(etiqueta)}
-          texto={`${etiqueta.titulo}: ${etiqueta.texto}`}
-          etiquetaAria={`Quitar filtro ${etiqueta.titulo} ${etiqueta.texto}`}
-          refBoton={(boton) => {
-            if (boton) botonesQuitar.current.set(idDe(etiqueta), boton);
-            else botonesQuitar.current.delete(idDe(etiqueta));
-          }}
-          onQuitar={() => quitar(indice)}
-        />
-      ))}
-    </ul>
+    <ListaEtiquetasFiltro
+      etiquetas={etiquetas}
+      onQuitar={onQuitar}
+      refBotonFiltros={refBotonFiltros}
+    />
   );
 }
 
