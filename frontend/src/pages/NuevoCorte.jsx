@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Check } from "lucide-react";
 import { api } from "../api/cliente.js";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
@@ -9,6 +9,7 @@ import VistaPreviaDescartes from "../components/VistaPreviaDescartes.jsx";
 import Boton from "../components/shared/Boton.jsx";
 import Campo from "../components/shared/Campo.jsx";
 import Card from "../components/shared/Card.jsx";
+import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import SectionHeader from "../components/shared/SectionHeader.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
 
@@ -234,12 +235,9 @@ export default function NuevoCorte() {
           titulo="No tiene permiso para crear ni continuar cortes"
           descripcion="Su rol es de solo lectura: puede consultar los cortes, pero no crearlos ni cargar sus archivos."
           accion={
-            <Link
-              to="/cortes"
-              className="text-campo font-medium text-azul hover:text-navy"
-            >
+            <Boton variante="secundario" to="/cortes">
               ← Volver al histórico
-            </Link>
+            </Boton>
           }
         />
       </section>
@@ -305,16 +303,16 @@ export default function NuevoCorte() {
 
     return (
       <section className="mx-auto max-w-4xl">
-        <header className="mb-5">
-          <h1 className="text-base font-semibold text-gray-800">
-            Cargar archivos del corte
-          </h1>
-          <p className="mt-0.5 text-ayuda text-gray-600">
-            Corte de vigencia {corte.vigencia}, fecha{" "}
-            <span className="font-mono">{corte.fecha_corte}</span> — estado{" "}
-            <span className="font-semibold">{corte.estado}</span>.
-          </p>
-        </header>
+        <EncabezadoPantalla
+          titulo="Cargar archivos del corte"
+          descripcion={
+            <>
+              Corte de vigencia {corte.vigencia}, fecha{" "}
+              <span className="font-mono">{corte.fecha_corte}</span> — estado{" "}
+              <span className="font-semibold">{corte.estado}</span>.
+            </>
+          }
+        />
 
         <Card className="mb-5">
           <SectionHeader>Fuentes obligatorias</SectionHeader>
@@ -408,7 +406,7 @@ export default function NuevoCorte() {
                     estándar. El backend ya lo conserva tal cual
                     (HU-04/CA-2, lectores/proyectos.py), esto solo lo
                     comunica. */}
-                      <p className="carga-de-archivo-nota mt-1 text-ayuda">
+                      <p className="mt-1 text-ayuda text-gray-600">
                         El archivo se conservó tal cual fue cargado, aunque su
                         estructura no sea estándar.
                       </p>
@@ -420,7 +418,10 @@ export default function NuevoCorte() {
                       {resultadoProyectos.codigos.length > 0 && (
                         <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
                           {resultadoProyectos.codigos.map((codigo) => (
-                            <li key={codigo} className="codigo text-campo">
+                            <li
+                              key={codigo}
+                              className="whitespace-nowrap font-mono text-campo"
+                            >
                               {codigo}
                             </li>
                           ))}
@@ -440,7 +441,7 @@ export default function NuevoCorte() {
             </>
           )}
 
-          <div className="flex items-center justify-between border-t border-gray-100 pt-5">
+          <div className="flex items-center justify-between border-t border-gray-200 pt-5">
             {yaRegistrado ? (
               <>
                 <StateBadge
@@ -448,26 +449,23 @@ export default function NuevoCorte() {
                   tono="verde"
                   icono={Check}
                 />
-                <Link
-                  to={`/matriz/${corte.id}`}
-                  className="rounded-sm bg-navy px-4 py-2 text-campo font-semibold text-white transition-colors hover:bg-navy-hover"
-                >
-                  Ver matriz de relación
-                </Link>
+                <Boton to={`/matriz/${corte.id}`}>Ver matriz de relación</Boton>
               </>
             ) : (
               <div className="flex flex-1 flex-col gap-2">
-                <button
-                  type="button"
-                  disabled={!todosCargados || registrando}
+                {/* Sin `motivo`: `Boton` usa el `disabled` nativo (igual que
+                    antes) y el texto de abajo sigue enlazado con
+                    `aria-describedby`. */}
+                <Boton
+                  deshabilitado={!todosCargados || registrando}
                   aria-describedby={
                     todosCargados ? undefined : "fuentes-faltantes"
                   }
                   onClick={manejarRegistro}
-                  className="self-start rounded-sm bg-navy px-4 py-2 text-campo font-semibold text-white transition-colors hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-40"
+                  className="self-start"
                 >
                   Registrar corte
-                </button>
+                </Boton>
                 {!todosCargados && (
                   <p
                     id="fuentes-faltantes"
@@ -489,12 +487,10 @@ export default function NuevoCorte() {
 
   return (
     <section className="mx-auto max-w-4xl">
-      <header className="mb-5">
-        <h1 className="text-base font-semibold text-gray-800">Nuevo corte</h1>
-        <p className="mt-0.5 text-ayuda text-gray-600">
-          Configure los datos del corte para habilitar la carga de archivos.
-        </p>
-      </header>
+      <EncabezadoPantalla
+        titulo="Nuevo corte"
+        descripcion="Configure los datos del corte para habilitar la carga de archivos."
+      />
 
       <Card as="form" onSubmit={manejarEnvio}>
         <SectionHeader>Datos del corte</SectionHeader>

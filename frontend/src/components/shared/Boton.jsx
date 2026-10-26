@@ -39,6 +39,11 @@ const VARIANTES = {
   peligro: "bg-critico text-white hover:bg-red-800",
 };
 
+//: Aspecto completo de la variante secundaria, para lo que se ve como botón
+//: pero no es un `<button>` ni un `Link` (por ejemplo el texto «Seleccionar
+//: archivo» dentro del `<label>` de una zona de carga).
+export const ESTILO_SECUNDARIO = `${BASE} ${VARIANTES.secundario}`;
+
 //: Estado inactivo, igual para las tres variantes.
 const INACTIVO =
   "cursor-not-allowed border-[1.5px] border-dashed border-gray-400 bg-gray-100 text-gray-600";

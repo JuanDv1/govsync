@@ -22,13 +22,15 @@
  * rechaza las escrituras con 403 de todas formas.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 
 import { api } from "../api/cliente.js";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
+import Boton from "../components/shared/Boton.jsx";
 import Card from "../components/shared/Card.jsx";
+import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
+import { TD, TH, fondoDeFila } from "../components/shared/estilosTabla.js";
 import { esCorteActual } from "../lib/corteActual.js";
 
 const TONO_ESTADO_CORTE = {
@@ -71,14 +73,10 @@ export default function Cortes() {
 
   return (
     <section className="mx-auto max-w-4xl">
-      <header className="mb-5">
-        <h1 className="text-base font-semibold text-gray-800">
-          Histórico de cortes
-        </h1>
-        <p className="mt-0.5 text-ayuda text-gray-600">
-          Cortes de seguimiento creados hasta ahora, más reciente primero.
-        </p>
-      </header>
+      <EncabezadoPantalla
+        titulo="Histórico de cortes"
+        descripcion="Cortes de seguimiento creados hasta ahora, más reciente primero."
+      />
 
       {cargando && <Cargando mensaje="Cargando histórico de cortes…" />}
 
@@ -95,29 +93,19 @@ export default function Cortes() {
               : "Todavía no se ha creado ningún corte de seguimiento."
           }
           accion={
-            puedeEscribir ? (
-              <Link
-                to="/cortes/nuevo"
-                className="text-campo font-medium text-azul hover:text-navy"
-              >
-                Crear corte
-              </Link>
-            ) : null
+            puedeEscribir ? <Boton to="/cortes/nuevo">Crear corte</Boton> : null
           }
         />
       )}
 
       {!cargando && !error && cortes && cortes.length > 0 && (
         <Card padding="p-0" className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
+          <table className="w-full border-separate border-spacing-0">
+            <thead>
               <tr>
                 {["Fecha de corte", "Vigencia", "Estado", "Fuentes", ""].map(
                   (titulo) => (
-                    <th
-                      key={titulo}
-                      className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-gray-600"
-                    >
+                    <th key={titulo} scope="col" className={TH}>
                       {titulo}
                     </th>
                   ),
@@ -125,25 +113,23 @@ export default function Cortes() {
               </tr>
             </thead>
             <tbody>
-              {cortes.map((corte) => {
+              {cortes.map((corte, indice) => {
                 const actual = esCorteActual(corte, cortes);
 
                 return (
                   <tr
                     key={corte.id}
-                    className={`border-b border-gray-100 last:border-0 ${
+                    className={
                       actual
                         ? "bg-blue-50 hover:bg-blue-100"
-                        : "hover:bg-gray-50/60"
-                    }`}
+                        : fondoDeFila(indice)
+                    }
                   >
-                    <td className="px-4 py-2.5 font-mono text-campo text-gray-700">
+                    <td className={`${TD} font-mono text-gray-700`}>
                       {corte.fecha_corte}
                     </td>
-                    <td className="px-4 py-2.5 text-campo text-gray-700">
-                      {corte.vigencia}
-                    </td>
-                    <td className="px-4 py-2.5">
+                    <td className={`${TD} text-gray-700`}>{corte.vigencia}</td>
+                    <td className={TD}>
                       <span className="inline-flex items-center gap-1.5">
                         <StateBadge
                           texto={corte.estado}
@@ -154,18 +140,18 @@ export default function Cortes() {
                         {actual && <StateBadge texto="Actual" tono="azul" />}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-campo text-gray-700">
+                    <td className={`${TD} font-mono text-gray-700`}>
                       {corte.archivos?.length ?? 0} de 3
                     </td>
-                    <td className="px-4 py-2.5 text-right">
+                    <td className={`${TD} text-right`}>
                       {corte.estado === "REGISTRADO" ? (
                         <span className="inline-flex items-center gap-3">
-                          <Link
+                          <Boton
+                            variante="secundario"
                             to={`/matriz/${corte.id}`}
-                            className="text-campo font-medium text-azul hover:text-navy"
                           >
                             Ver matriz
-                          </Link>
+                          </Boton>
                           {/* [E02-HU05/CA-1]: "Editar archivos" es el texto
                               literal del criterio de aceptación. Solo el
                               corte actual (el más reciente, global) lo
@@ -175,24 +161,21 @@ export default function Cortes() {
                               con `puedeEscribir` (D24): el visitante sigue
                               viendo "Ver matriz". */}
                           {actual && puedeEscribir && (
-                            <Link
+                            <Boton
+                              variante="secundario"
                               to={`/cortes/${corte.id}/editar`}
-                              className="text-campo font-medium text-azul hover:text-navy"
                             >
                               Editar archivos
-                            </Link>
+                            </Boton>
                           )}
                         </span>
                       ) : puedeEscribir ? (
                         // D24: "Continuar carga" es una acción de escritura
                         // -- mismo criterio que accionDeCorte() usaba antes
                         // de que esta pantalla ganara esCorteActual()/badge.
-                        <Link
-                          to={`/cortes/${corte.id}`}
-                          className="text-campo font-medium text-azul hover:text-navy"
-                        >
+                        <Boton to={`/cortes/${corte.id}`}>
                           Continuar carga
-                        </Link>
+                        </Boton>
                       ) : (
                         <span className="text-ayuda text-gray-600">
                           En borrador

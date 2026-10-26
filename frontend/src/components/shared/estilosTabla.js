@@ -7,9 +7,10 @@
  * - La tabla es `border-separate border-spacing-0`, así que los bordes van en
  *   cada celda (no en la fila). Con `border-collapse` se pierden los bordes de
  *   las columnas fijas al desplazarse.
- * - Las celdas con `sticky` necesitan fondo opaco: en el cuerpo, `bg-inherit`
- *   (heredan el color de su fila, así la alternancia no las deja de otro
- *   color); en el encabezado, `TH` ya lleva fondo.
+ * - Las celdas con `sticky` necesitan fondo opaco: en el cuerpo, la misma
+ *   clase de `fondoDeFila(indice)` que lleva su fila, puesta EXPLÍCITA en la
+ *   celda (no `bg-inherit`: no depende de cómo cada navegador pinte el fondo
+ *   del `tr` bajo una celda `sticky`); en el encabezado, `TH` ya lleva fondo.
  * - Los números y los códigos van en `font-mono`; los montos y porcentajes,
  *   con `whitespace-nowrap` y alineados a la derecha.
  */

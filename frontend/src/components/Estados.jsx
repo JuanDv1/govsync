@@ -61,7 +61,7 @@ export function Vacio({ titulo, descripcion, accion, icono: Icono = Inbox }) {
 }
 
 export function SinCorrespondencia({ texto = "Sin correspondencia" }) {
-  return <span className="estado-sin-correspondencia">{texto}</span>;
+  return <span className="italic text-gray-600">{texto}</span>;
 }
 
 // [UX-03] Se llama `EstadoError` (no `Error`) para no ocultar el `Error`

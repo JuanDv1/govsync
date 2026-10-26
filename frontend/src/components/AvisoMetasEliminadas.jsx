@@ -18,9 +18,13 @@ export default function AvisoMetasEliminadas({ metas }) {
   return (
     <div
       role="status"
-      className="mt-2 flex items-start gap-2 rounded-sm border border-amber-200 bg-amber-50 px-3 py-2.5"
+      className="mt-2 flex items-start gap-2 rounded-control border border-amber-200 bg-amber-50 px-3 py-2.5"
     >
-      <AlertTriangle size={13} className="mt-0.5 shrink-0 text-amber-500" />
+      <AlertTriangle
+        size={16}
+        aria-hidden="true"
+        className="mt-0.5 shrink-0 text-amber-500"
+      />
       <div className="text-campo text-amber-800">
         <p>
           {metas.length === 1
