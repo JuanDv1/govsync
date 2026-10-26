@@ -18,6 +18,7 @@ import MatrizRelacion from "./pages/MatrizRelacion.jsx";
 import PlanAccion from "./pages/PlanAccion.jsx";
 import CompararCortes from "./pages/CompararCortes.jsx";
 import { Vacio } from "./components/Estados.jsx";
+import Card from "./components/shared/Card.jsx";
 import { useAutenticacion } from "./auth/ProveedorAutenticacion.jsx";
 
 /** [HU-E01-01] / D23/D24: exige sesión de Keycloak activa antes de montar
@@ -29,7 +30,7 @@ function RutaProtegida({ children }) {
 
   if (cargando) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-gray-600">
+      <div className="flex min-h-screen items-center justify-center text-campo text-gray-600">
         Verificando sesión…
       </div>
     );
@@ -66,8 +67,8 @@ function RutaConPlanAccion({ children }) {
 
 function Pendiente() {
   return (
-    <section className="mx-auto max-w-2xl rounded-sm border border-gray-200 bg-white p-5">
-      <h1 className="text-base font-semibold text-gray-800">GovSync</h1>
+    <Card as="section" className="mx-auto max-w-2xl">
+      <h1 className="text-cuerpo font-semibold text-gray-800">GovSync</h1>
       <p className="mt-1 text-campo text-gray-600">
         Esqueleto del Sprint 1. Las pantallas se implementan según{" "}
         <code className="font-mono">PLAN-DE-TRABAJO.md</code>.
@@ -81,7 +82,7 @@ function Pendiente() {
           http://localhost:8000/docs
         </a>
       </p>
-    </section>
+    </Card>
   );
 }
 
