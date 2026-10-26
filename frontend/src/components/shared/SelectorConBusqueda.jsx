@@ -41,9 +41,10 @@
  *
  * TAMAÑO (`tamano`): "normal" es el que usa el panel de la matriz: etiqueta
  * de 14px, ayuda de 13px y opciones de 12px. "grande" es para el Plan de
- * Acción [E04-HU02]: textos de 14px, campo de al menos 40px de alto, foco
- * visible, y la lista con `z-30` para quedar por encima del encabezado fijo
- * de la tabla (`z-20`). Solo cambian las clases (`TAMANOS`): el
+ * Acción [E04-HU02]: textos de 14px, campo de al menos 40px de alto y foco
+ * visible. Las dos listas llevan `z-30`: tienen que quedar por encima del
+ * encabezado fijo de la tabla que va después en el DOM (`z-10`, y `z-20` en
+ * las columnas fijas del Plan). Solo cambian las clases (`TAMANOS`): el
  * comportamiento es el mismo.
  */
 import { useEffect, useId, useState } from "react";
@@ -57,7 +58,7 @@ const TAMANOS = {
     campo:
       "min-h-11 w-full rounded-control border-[1.5px] border-borde-control bg-white px-3 text-campo focus:border-azul-accion focus:outline-none focus-visible:ring-2 focus-visible:ring-azul-accion disabled:cursor-not-allowed disabled:opacity-40",
     lista:
-      "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-control border border-gray-200 bg-white py-1 shadow-suave",
+      "absolute z-30 mt-1 max-h-60 w-full overflow-auto rounded-control border border-gray-200 bg-white py-1 shadow-suave",
     opcion:
       "cursor-pointer whitespace-normal break-words px-3 py-1.5 text-campo",
     ayuda: "mt-1 text-ayuda text-gray-600",
