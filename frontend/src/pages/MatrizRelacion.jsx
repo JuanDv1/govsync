@@ -32,7 +32,7 @@
  *    cada elemento de `matriz.filas` se renderiza como una fila independiente,
  *    preservando el resultado entregado por el backend (CA-7).
  *
- * 3. Los códigos se muestran en `font-mono` (monoespaciada, la fuente de `.codigo`): es lo
+ * 3. Los códigos se muestran en `font-mono` (monoespaciada): es lo
  *    que hace visible el cero a la izquierda de 040110500. Nunca `Number()`
  *    ni `parseInt()` sobre `cod_bpin`, `cod_indicador_producto` ni
  *    `cod_indicador_ejecucion`.

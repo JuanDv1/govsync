@@ -1,14 +1,10 @@
 /* GovSync — tokens de diseño y reset.
    TARJETA: [UX-01] Layout base
 
-   Actualizado (docs/DECISIONES.md D19, D20): el equipo adoptó Tailwind —
-   ver esas entradas para el motivo completo y el alcance de cada una. Lo que
-   queda en este archivo son los tokens globales (:root, consumidos también
-   por componentes en Tailwind vía tailwind.config.js) y las clases BEM de lo
-   que todavía no se migró a Tailwind: VistaPreviaDescartes.jsx y
-   `.estado-sin-correspondencia` (Estados.jsx). Cargando, Vacío y Error ya
-   están en Tailwind (refresh visual, Fase 1). Login, NuevoCorte, Cortes y
-   MatrizRelacion también. */
+   Actualizado (docs/DECISIONES.md D19, D20, D35): el equipo adoptó Tailwind;
+   ver esas entradas para el motivo y el alcance. Lo que queda en este archivo
+   son los tokens globales (:root) y el reset base. Todas las pantallas y
+   componentes usan clases de Tailwind (refresh visual, Fases 1 a 5). */
 
 @tailwind base;
 @tailwind components;
@@ -17,27 +13,15 @@
 :root {
   --tinta: #16202c;
   --tinta-suave: #5b6b7c;
-  --borde: #e5e7eb;
   --fondo: #eef1f5;
-  --superficie: #ffffff;
   --primario: #1a3a6b;
-  --primario-oscuro: #2c5282;
-  --interactivo: #2b6cb0;
-  --exito: #15803d;
-  --exito-fondo: #f0fdf4;
-  --alerta: #92400e;
-  --alerta-fondo: #fffbeb;
-  --error: #c53030;
-  --error-fondo: #fdeceb;
-  --radio: 2px;
-  --sombra: 0 1px 3px rgba(22, 32, 44, 0.08);
   color-scheme: light;
 }
 
 /* La raíz respeta la preferencia de tamaño de texto del navegador (16 px por
-   defecto). Antes valía 14 px y `text-sm` medía 12,25 px, `text-xs` 10,5 px y
-   `min-h-10` 35 px: la regla de 14 px de texto y 40 px de control nunca se
-   cumplió. Con el 100 %, la escala de Tailwind queda en 12 / 14 / 18 / 24 px. */
+   defecto). Antes valía 14 px y la escala de Tailwind quedaba por debajo de
+   14 px de texto y 40 px de control. Con el 100 %, la escala queda en
+   12 / 14 / 18 / 24 px (ver `fontSize` en tailwind.config.js). */
 html {
   font-size: 100%;
 }
@@ -82,78 +66,4 @@ textarea::placeholder {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
-}
-
-/* Los códigos van en fuente monoespaciada: hace visible el cero a la
-   izquierda, que es exactamente el dato que no se puede perder. */
-.codigo {
-  font-family: "DM Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  white-space: nowrap;
-}
-
-/* [HU-04][FE-03] Vista previa de descartes (VistaPreviaDescartes.jsx).
-   Prioridad alta (posible código real perdido) usa el token de alerta;
-   prioridad baja (ruido de texto libre) usa un tono neutro para no competir
-   visualmente con lo que sí merece revisión. */
-.vista-previa-descartes {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.vista-previa-descartes-resumen {
-  margin: 0;
-  font-weight: 600;
-  color: var(--alerta);
-}
-
-.vista-previa-descartes-grupo {
-  padding: 0.75rem 1rem;
-  border-radius: var(--radio);
-  border: 1px solid var(--borde);
-}
-
-.vista-previa-descartes-grupo[data-prioridad="alta"] {
-  border-color: var(--alerta);
-  background: var(--alerta-fondo);
-}
-
-.vista-previa-descartes-grupo h3 {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-}
-
-.vista-previa-descartes-grupo ul {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.vista-previa-descartes-grupo li {
-  display: flex;
-  gap: 0.75rem;
-  align-items: baseline;
-}
-
-.vista-previa-descartes-motivo {
-  color: var(--tinta-suave);
-}
-
-/* [HU-04][FE-02]/CA-2: aclara que el archivo se conserva tal cual,
-   aunque su estructura no sea estándar — tono neutro (ni error ni
-   alerta), mismo patrón que .estado-sin-correspondencia: solo texto
-   atenuado, sin caja. */
-.carga-de-archivo-nota {
-  margin: 0;
-  color: var(--tinta-suave);
-}
-
-/* [UX-04] NULL explícito (Estados.jsx::SinCorrespondencia): distinto de una
-   celda vacía ambigua, sin inventar un "N/A". */
-.estado-sin-correspondencia {
-  color: var(--tinta-suave);
-  font-style: italic;
 }
