@@ -24,11 +24,11 @@ proyecta columnas distintas, y el equipo decidió no acoplar un módulo al
 otro para no arriesgar romper HU-07 al tocarla por otra HU.
 
 **Qué se hizo:** se extrajo la parte 100% idéntica (las dos subconsultas-
-puente + la cadena de 4 LEFT JOIN) a `app/shared/persistence/
-cruce_fuentes.py::construir_cruce_fuentes`. Cada módulo sigue eligiendo sus
-propias columnas (se le pasa una función que las construye) y **ninguno
-importa del otro** — se mantiene la razón original de la duplicación,
-solo se elimina el copy-paste real.
+puente + la cadena de 4 LEFT JOIN) a
+`app/shared/persistence/cruce_fuentes.py::construir_cruce_fuentes`. Cada
+módulo sigue eligiendo sus propias columnas (se le pasa una función que
+las construye) y **ninguno importa del otro** — se mantiene la razón
+original de la duplicación, solo se elimina el copy-paste real.
 
 **Por qué esa ubicación:** `tests/test_arquitectura.py` prohíbe SQLAlchemy
 en los archivos hijos directos de `shared/`, pero no en un subpaquete como
@@ -60,8 +60,9 @@ cada caso referenciando el CA que cubre.
 **No se tocó `.github/workflows/ci.yml`:** el job ya invocaba `npm test`
 correctamente, solo le faltaba un script real que ejecutar. Validado en
 un clon limpio (fuera de este dispositivo — ver nota técnica abajo):
-`npm ci --ignore-scripts && npm test`, `npm run lint`, `npm run
-format:check`, los tres limpios, replicando exactamente los jobs del CI.
+`npm ci --ignore-scripts && npm test`, `npm run lint`,
+`npm run format:check`, los tres limpios, replicando exactamente los jobs
+del CI.
 
 **Commit:** `03c2e79` — `test(frontend): agregar Vitest/RTL/MSW y primera
 prueba unitaria real`.
@@ -96,8 +97,8 @@ usuario de prueba en el job `backend-keycloak` (la tarjeta que ese mismo
 job ya señala como pendiente). Mientras no exista, correr k6 contra CI en
 cada PR no es posible sin inventar algo.
 
-**Commit:** `5bc7e94` — `test(perf): agregar script k6 de carga para
-Plan de Accion`.
+**Commit:** `5bc7e94` — `test(perf): agregar script k6 de carga para Plan
+de Accion`.
 
 ---
 
@@ -106,10 +107,11 @@ Plan de Accion`.
 ### 2.1 Capa de aplicación para `plan_accion/api/router.py` — NO IMPLEMENTADO (a propósito)
 
 Mi plan inicial (antes de leer el archivo completo) era extraer una capa
-`application/` para mover la orquestación de `_verificar_fuentes_completas`,
-`_validar_y_ordenar_cortes`, `_comparar_y_filtrar`, etc. **Al leer el
-router encontré que esa decisión YA fue tomada y documentada por el
-equipo**, en el propio docstring del módulo:
+`application/` para mover la orquestación de
+`_verificar_fuentes_completas`, `_validar_y_ordenar_cortes`,
+`_comparar_y_filtrar`, etc. **Al leer el router encontré que esa decisión
+YA fue tomada y documentada por el equipo**, en el propio docstring del
+módulo:
 
 > "ALCANCE Y PATRÓN: igual que `trazabilidad/api/router.py` -- sin capa de
 > `application/` propia [...] Agregar una capa de aplicación aquí
@@ -123,10 +125,10 @@ las instrucciones de este proyecto piden no hacer. **No lo hice.**
 **Para que el equipo decida** (presento ambas alternativas, no recomiendo
 una por encima de la decisión ya tomada sin que el equipo la reabra):
 
-| Alternativa | A favor | En contra |
-|---|---|---|
-| **Mantener sin capa de aplicación** (statu quo, recomendado si nada cambió desde que se decidió) | Es lo que el propio código ya razona: caso de uso simple, de solo lectura, sin transacciones ni orquestación entre repositorios — una clase envolviendo 4 llamadas sin estado es indirección sin beneficio real. | Si el router sigue creciendo (ya tiene 711 líneas, 5 endpoints), el argumento "es simple" puede dejar de sostenerse. |
-| **Extraer una capa de aplicación** | Centraliza las reglas 409/422 de `_validar_y_ordenar_cortes` en un lugar probable por `pytest` sin pasar por FastAPI; coherencia total con el diagrama de 5 capas. | Contradice una decisión ya tomada y razonada por el equipo para este mismo patrón (trazabilidad + plan_accion); el propio proyecto pide no sobreingeniería ("si una solución simple cumple mejor los CA y la arquitectura, prefiera la simple"). |
+| Alternativa                                                                                      | A favor                                                                                                                                                                                                          | En contra                                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Mantener sin capa de aplicación** (statu quo, recomendado si nada cambió desde que se decidió) | Es lo que el propio código ya razona: caso de uso simple, de solo lectura, sin transacciones ni orquestación entre repositorios — una clase envolviendo 4 llamadas sin estado es indirección sin beneficio real. | Si el router sigue creciendo (ya tiene 711 líneas, 5 endpoints), el argumento "es simple" puede dejar de sostenerse.                                                                                                                             |
+| **Extraer una capa de aplicación**                                                               | Centraliza las reglas 409/422 de `_validar_y_ordenar_cortes` en un lugar probable por `pytest` sin pasar por FastAPI; coherencia total con el diagrama de 5 capas.                                               | Contradice una decisión ya tomada y razonada por el equipo para este mismo patrón (trazabilidad + plan_accion); el propio proyecto pide no sobreingeniería ("si una solución simple cumple mejor los CA y la arquitectura, prefiera la simple"). |
 
 **Mi lectura, sin decidir por el equipo:** el router de `plan_accion` (711
 líneas) es casi el doble que el de `trazabilidad` (296 líneas) que
@@ -134,8 +136,7 @@ originó el patrón. Si el equipo cree que ya pasó el punto en el que "es
 simple" deja de ser cierto, vale la pena reabrir la decisión — pero es una
 decisión del equipo, no algo para que yo cambie solo.
 
-### 2.2 Hallazgos de SonarCloud (cognitive complexity, duplicación de
-literales) — NO ABORDADOS en este paso
+### 2.2 Hallazgos de SonarCloud (cognitive complexity, duplicación de literales) — NO ABORDADOS en este paso
 
 Siguen pendientes de la revisión anterior: `agregar_por_meta`
 (`domain/entidades.py:137`, complejidad 17), `domain/comparacion.py:76`
