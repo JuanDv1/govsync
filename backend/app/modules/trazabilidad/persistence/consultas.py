@@ -198,14 +198,8 @@ from decimal import Decimal
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
-from app.modules.cortes.persistence.models import (
-    ContratoORM,
-    MetaORM,
-    ProyectoIndicadorORM,
-    ProyectoORM,
-    RegistroPresupuestalORM,
-    RubroORM,
-)
+from app.modules.cortes.persistence.models import ContratoORM, MetaORM, RubroORM
+from app.shared.persistence.cruce_fuentes import construir_cruce_fuentes
 
 
 @dataclass(frozen=True, slots=True)
@@ -257,16 +251,9 @@ class OpcionesFiltro:
     programas: list[str]
 
 
-#: Tipo Gasto = INVERSIÓN (regla de negocio agregada 2026-09-23, a pedido del
-#: equipo: "ambas reglas son necesarias"). El archivo real puede traer el
-#: valor con o sin tilde ("INVERSION"/"INVERSIÓN") — se comparan las dos
-#: grafías en mayúsculas, mismo criterio de tolerancia que ya usa
-#: `_es_principal`/`_es_ultimo_nivel` en los lectores para Sí/No y True/False.
-_VALORES_TIPO_GASTO_INVERSION = ("INVERSION", "INVERSIÓN")
-
-#: CodigoSectorCcpet != vacío/NA (regla de negocio agregada 2026-09-23, junto
-#: con la de arriba). "NA" se compara en mayúsculas por el mismo motivo.
-_VALORES_SECTOR_INVALIDOS = ("", "NA")
+# _VALORES_TIPO_GASTO_INVERSION y _VALORES_SECTOR_INVALIDOS se unificaron en
+# app/shared/persistence/cruce_fuentes.py (VALORES_TIPO_GASTO_INVERSION /
+# VALORES_SECTOR_INVALIDOS) -- misma regla, ya no duplicada entre módulos.
 
 
 def _construir_consulta_base(
@@ -283,6 +270,13 @@ def _construir_consulta_base(
 ):
     """El cruce de las cuatro fuentes, SIN paginar — compartido entre el
     conteo total y la página pedida (ver `construir_matriz`).
+
+    NOTA (Sprint 3, 2026-10-29): la construcción del JOIN (subconsultas-
+    puente + las 3 reglas invioables) ya NO vive acá -- se delega a
+    `app.shared.persistence.cruce_fuentes.construir_cruce_fuentes`, también
+    usada por `plan_accion/persistence/consultas.py`. Este docstring describe
+    las reglas igual (para quien lea esta función sin saltar al módulo
+    compartido), pero la implementación real está allá.
 
     Regla 1 (subtotales): `RubroORM.ultimo_nivel.is_(True)` en el JOIN, nunca
     después — filtrar después de un LEFT JOIN no cambiaría el resultado de
@@ -314,58 +308,18 @@ def _construir_consulta_base(
     un WHERE `IN` sobre el resultado ya unido. Listas vacías o `None` no
     agregan ninguna condición (equivalente a "sin filtro en ese criterio").
     """
-    proyectos_del_corte = (
-        select(
-            ProyectoIndicadorORM.cod_indicador_producto.label("cod_indicador_producto"),
-            ProyectoORM.bpin.label("bpin"),
-            ProyectoORM.nombre_proyecto.label("nombre_proyecto"),
-        )
-        .join(ProyectoORM, ProyectoORM.id == ProyectoIndicadorORM.proyecto_id)
-        .where(ProyectoORM.corte_id == corte_id)
-        .subquery()
-    )
-
-    # CA-7/[HU-07][BE-02]: deduplicar el PUENTE, no el resultado (Regla 3).
-    puente_rubro_contrato = (
-        select(
-            RegistroPresupuestalORM.rubro_id.label("rubro_id"),
-            RegistroPresupuestalORM.contrato_id.label("contrato_id"),
-        )
-        .distinct()
-        .where(RegistroPresupuestalORM.rubro_id.is_not(None))
-        .subquery()
-    )
-
-    consulta = (
-        select(
+    consulta, proyectos_del_corte, _puente_rubro_contrato = construir_cruce_fuentes(
+        corte_id,
+        lambda pdc, _prc: (
             MetaORM.cod_indicador_producto,
             MetaORM.nombre_producto,
-            proyectos_del_corte.c.bpin.label("cod_bpin"),
-            proyectos_del_corte.c.nombre_proyecto,
+            pdc.c.bpin.label("cod_bpin"),
+            pdc.c.nombre_proyecto,
             RubroORM.cod_indicador_producto.label("cod_indicador_ejecucion"),
             ContratoORM.numero_contrato,
             ContratoORM.objeto.label("descripcion_contrato"),
             RubroORM.apropiacion_definitiva.label("presupuesto_apropiado"),
-        )
-        .where(MetaORM.corte_id == corte_id)
-        .outerjoin(
-            proyectos_del_corte,
-            proyectos_del_corte.c.cod_indicador_producto == MetaORM.cod_indicador_producto,
-        )
-        .outerjoin(
-            RubroORM,
-            (RubroORM.corte_id == corte_id)
-            & (RubroORM.cod_indicador_producto == MetaORM.cod_indicador_producto)
-            & (RubroORM.ultimo_nivel.is_(True))
-            & RubroORM.codigo_sector_ccpet.is_not(None)
-            & (func.upper(RubroORM.codigo_sector_ccpet).notin_(_VALORES_SECTOR_INVALIDOS)),
-        )
-        .outerjoin(puente_rubro_contrato, puente_rubro_contrato.c.rubro_id == RubroORM.id)
-        .outerjoin(
-            ContratoORM,
-            (ContratoORM.id == puente_rubro_contrato.c.contrato_id)
-            & (func.upper(ContratoORM.tipo_gasto).in_(_VALORES_TIPO_GASTO_INVERSION)),
-        )
+        ),
     )
 
     if estado_cruce == "completo":

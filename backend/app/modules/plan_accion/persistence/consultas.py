@@ -8,24 +8,28 @@ CUBRE: HU01-CA01, CA02, CA06, CA09 (carga de datos). La AGREGACIÓN por meta
 Transform en dominio).
 
 =============================================================================
-POR QUÉ UNA CONSULTA INDEPENDIENTE Y NO REUTILIZAR `trazabilidad`
+POR QUÉ YA NO HAY DOS CONSULTAS DUPLICADAS (actualizado 2026-10-29)
 =============================================================================
-`trazabilidad/persistence/consultas.py::_construir_consulta_base` YA resuelve
-el mismo cruce de 4 fuentes con las mismas 3 reglas invioables (ultimo_nivel,
-LEFT JOIN, puente deduplicado). Se decidió NO importarla ni modificarla:
+Hasta el refactor de Sprint 3, este archivo y
+`trazabilidad/persistence/consultas.py` construían el MISMO cruce de 4
+fuentes (mismas 3 reglas invioables: ultimo_nivel, LEFT JOIN, puente
+deduplicado) con dos bloques de código copiados -- la razón documentada
+entonces era que cada HU proyecta columnas distintas sobre ese cruce
+(`sector`/`meta_cuatrienio`/`codigo_rubro`/`obligacion_acumulada` acá;
+`descripcion_contrato`/`nombre_proyecto` en HU-07) y el equipo decidió no
+acoplar un módulo a otro para resolverlo.
 
-  - Modificar ese archivo para esta HU arriesgaría romper HU-07 (ya estable,
-    con pruebas propias, en producción conceptual) por un cambio pensado
-    para otra HU.
-  - Reutilizarla tal cual tampoco sirve: esta HU necesita columnas que
-    HU-07 no trae (`sector`, `meta_cuatrienio` de la meta; `codigo_rubro`
-    real y `obligacion_acumulada` del rubro) y NO necesita otras que HU-07
-    sí trae (`descripcion_contrato`, `nombre_proyecto`).
+Esa razón sigue siendo válida -- lo que cambió es que la parte 100%
+idéntica entre ambos (las dos subconsultas-puente y la cadena de 4 LEFT
+JOIN) se extrajo a `app/shared/persistence/cruce_fuentes.py`
+(`construir_cruce_fuentes`), código explícitamente compartido que NO
+pertenece a ningún módulo. Cada módulo sigue eligiendo sus propias columnas
+(se le pasa una función que las construye) y ninguno importa del otro --
+ver el docstring de `cruce_fuentes.py` para el detalle completo y por qué
+esa ubicación no infringe las reglas de `tests/test_arquitectura.py`.
 
-El costo es una duplicación deliberada y acotada de las 3 reglas del JOIN
-(documentadas en detalle en `trazabilidad/persistence/consultas.py` -- leer
-ese docstring antes de tocar este archivo, son la misma base de datos y las
-mismas reglas de integridad).
+Ya NO hay dos copias de las 3 reglas del JOIN: viven una sola vez en
+`cruce_fuentes.py` (leer ese docstring para el detalle de cada regla).
 
 =============================================================================
 QUÉ CAMBIA RESPECTO A LA CONSULTA DE HU-07
@@ -51,24 +55,14 @@ import uuid
 from dataclasses import dataclass
 from decimal import Decimal
 
-from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.modules.cortes.persistence.models import (
-    ContratoORM,
-    MetaORM,
-    ProyectoIndicadorORM,
-    ProyectoORM,
-    RegistroPresupuestalORM,
-    RubroORM,
-)
+from app.modules.cortes.persistence.models import ContratoORM, MetaORM, RubroORM
+from app.shared.persistence.cruce_fuentes import construir_cruce_fuentes
 
-#: Mismo criterio de tolerancia de grafía que `trazabilidad/persistence/
-#: consultas.py` (Tipo Gasto = INVERSIÓN, con o sin tilde).
-_VALORES_TIPO_GASTO_INVERSION = ("INVERSION", "INVERSIÓN")
-
-#: Mismo criterio que `trazabilidad` para excluir sector CCPET inválido.
-_VALORES_SECTOR_INVALIDOS = ("", "NA")
+# _VALORES_TIPO_GASTO_INVERSION y _VALORES_SECTOR_INVALIDOS se unificaron en
+# app/shared/persistence/cruce_fuentes.py -- misma regla, ya no duplicada
+# entre trazabilidad y plan_accion (ver docstring del módulo).
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,57 +95,19 @@ def construir_filas_plan_accion(sesion: Session, corte_id: uuid.UUID) -> list[Fi
     pequeño) ni filtra; la agregación y el armado de la respuesta ocurren
     en capas superiores.
     """
-    proyectos_del_corte = (
-        select(
-            ProyectoIndicadorORM.cod_indicador_producto.label("cod_indicador_producto"),
-            ProyectoORM.bpin.label("bpin"),
-        )
-        .join(ProyectoORM, ProyectoORM.id == ProyectoIndicadorORM.proyecto_id)
-        .where(ProyectoORM.corte_id == corte_id)
-        .subquery()
-    )
-
-    puente_rubro_contrato = (
-        select(
-            RegistroPresupuestalORM.rubro_id.label("rubro_id"),
-            RegistroPresupuestalORM.contrato_id.label("contrato_id"),
-        )
-        .distinct()
-        .where(RegistroPresupuestalORM.rubro_id.is_not(None))
-        .subquery()
-    )
-
-    consulta = (
-        select(
+    consulta, _proyectos_del_corte, _puente_rubro_contrato = construir_cruce_fuentes(
+        corte_id,
+        lambda pdc, _prc: (
             MetaORM.cod_indicador_producto,
             MetaORM.nombre_producto,
             MetaORM.sector,
             MetaORM.meta_cuatrienio,
-            proyectos_del_corte.c.bpin.label("cod_bpin"),
+            pdc.c.bpin.label("cod_bpin"),
             RubroORM.codigo_rubro_nivel.label("codigo_rubro"),
             RubroORM.apropiacion_definitiva.label("presupuesto_apropiado"),
             RubroORM.obligacion_acumulada.label("ejecucion"),
             ContratoORM.numero_contrato,
-        )
-        .where(MetaORM.corte_id == corte_id)
-        .outerjoin(
-            proyectos_del_corte,
-            proyectos_del_corte.c.cod_indicador_producto == MetaORM.cod_indicador_producto,
-        )
-        .outerjoin(
-            RubroORM,
-            (RubroORM.corte_id == corte_id)
-            & (RubroORM.cod_indicador_producto == MetaORM.cod_indicador_producto)
-            & (RubroORM.ultimo_nivel.is_(True))
-            & RubroORM.codigo_sector_ccpet.is_not(None)
-            & (func.upper(RubroORM.codigo_sector_ccpet).notin_(_VALORES_SECTOR_INVALIDOS)),
-        )
-        .outerjoin(puente_rubro_contrato, puente_rubro_contrato.c.rubro_id == RubroORM.id)
-        .outerjoin(
-            ContratoORM,
-            (ContratoORM.id == puente_rubro_contrato.c.contrato_id)
-            & (func.upper(ContratoORM.tipo_gasto).in_(_VALORES_TIPO_GASTO_INVERSION)),
-        )
+        ),
     )
 
     filas = sesion.execute(consulta).all()
