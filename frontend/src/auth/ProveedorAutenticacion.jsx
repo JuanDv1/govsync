@@ -39,6 +39,7 @@ import {
   tieneSoloRolesSinModulos,
 } from "./roles.js";
 import { rutaDestinoSegura } from "../lib/rutaDestino.js";
+import { useInactividad } from "./useInactividad.js";
 
 const ContextoAutenticacion = createContext(null);
 
@@ -82,6 +83,14 @@ export function ProveedorAutenticacion({ children }) {
       .catch(() => setEstaAutenticado(false))
       .finally(() => setCargando(false));
   }, []);
+
+  // [E-01/HU-01] CA04: tras 30 min sin actividad se cierra la sesión y el
+  // login muestra "Su sesión expiró por inactividad" (`?motivo=inactividad`).
+  useInactividad(estaAutenticado, () =>
+    keycloak.logout({
+      redirectUri: `${window.location.origin}/login?motivo=inactividad`,
+    }),
+  );
 
   // useMemo: el objeto de contexto no debe cambiar en cada render — si no,
   // cada componente que consume useAutenticacion() se re-renderiza de más
