@@ -21,6 +21,8 @@ export default function Login() {
   const location = useLocation();
   // [E-01/HU-01] CA07: `RutaProtegida` deja aquí la ruta que se quiso abrir.
   const destino = rutaDestinoSegura(location.state?.desde);
+  const expiroPorInactividad =
+    new URLSearchParams(location.search).get("motivo") === "inactividad";
 
   return (
     <div className="flex min-h-screen">
@@ -63,6 +65,16 @@ export default function Login() {
             titulo="Iniciar sesión"
             descripcion="Acceso restringido a funcionarios autorizados de la Alcaldía."
           />
+
+          {/* [E-01/HU-01] CA04: llegamos aquí por cierre automático. */}
+          {expiroPorInactividad && (
+            <p
+              role="status"
+              className="mb-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-campo text-amber-800"
+            >
+              Su sesión expiró por inactividad. Inicie sesión de nuevo.
+            </p>
+          )}
 
           {/* Mientras verifica la sesión el botón queda inactivo y su propio
               texto ("Verificando sesión…") es el motivo visible. */}
