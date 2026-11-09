@@ -10,12 +10,17 @@
  * contraseña ni el bloque de "acceso de prueba": ambos asumían que la
  * autenticación no existía todavía (D2/[REF-05]), y ya no es el caso.
  */
+import { useLocation } from "react-router-dom";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
+import { rutaDestinoSegura } from "../lib/rutaDestino.js";
 import Boton from "../components/shared/Boton.jsx";
 import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 
 export default function Login() {
   const { iniciarSesion, cargando } = useAutenticacion();
+  const location = useLocation();
+  // [E-01/HU-01] CA07: `RutaProtegida` deja aquí la ruta que se quiso abrir.
+  const destino = rutaDestinoSegura(location.state?.desde);
 
   return (
     <div className="flex min-h-screen">
@@ -62,7 +67,7 @@ export default function Login() {
           {/* Mientras verifica la sesión el botón queda inactivo y su propio
               texto ("Verificando sesión…") es el motivo visible. */}
           <Boton
-            onClick={iniciarSesion}
+            onClick={() => iniciarSesion(destino)}
             deshabilitado={cargando}
             className="w-full"
           >
