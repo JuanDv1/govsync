@@ -38,12 +38,19 @@ import {
   puedeVerPlanAccion,
   tieneSoloRolesSinModulos,
 } from "./roles.js";
+import { rutaDestinoSegura } from "../lib/rutaDestino.js";
 
 const ContextoAutenticacion = createContext(null);
 
 //: Las listas de roles (D24, D26, D37) viven en `roles.js`, sin React, para
 //: poder probarlas y no repetirlas en cada pantalla. Solo deciden qué se
 //: muestra: el backend rechaza con 403 de todas formas.
+
+//: [E-01/HU-01] CA05: los tres roles de GovSync. `realmAccess.roles` trae
+//: además roles propios de Keycloak (`default-roles-*`, `offline_access`,
+//: `uma_authorization`) que toda cuenta tiene; por eso "sin rol" se decide
+//: contra esta lista y no contra `roles.length`.
+const ROLES_GOVSYNC = new Set(["administrador", "gestor", "visitante"]);
 
 export function ProveedorAutenticacion({ children }) {
   const [cargando, setCargando] = useState(true);
@@ -94,12 +101,17 @@ export function ProveedorAutenticacion({ children }) {
       cargando,
       estaAutenticado,
       usuario,
+      tieneRolAsignado:
+        usuario?.roles?.some((rol) => ROLES_GOVSYNC.has(rol)) ?? false,
       puedeEscribir: puedeEscribir(usuario?.roles),
       puedeVerPlanAccion: puedeVerPlanAccion(usuario?.roles),
       // D37: rol válido pero sin módulos en esta versión (hoy, gestor).
       rolSinModulos: tieneSoloRolesSinModulos(usuario?.roles),
-      iniciarSesion: () =>
-        keycloak.login({ redirectUri: `${window.location.origin}/cortes` }),
+      // [E-01/HU-01] CA07: `destino` es la ruta que la persona quería abrir.
+      iniciarSesion: (destino) =>
+        keycloak.login({
+          redirectUri: `${window.location.origin}${rutaDestinoSegura(destino)}`,
+        }),
       cerrarSesion: () =>
         keycloak.logout({ redirectUri: `${window.location.origin}/login` }),
     };

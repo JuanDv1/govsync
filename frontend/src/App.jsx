@@ -7,7 +7,8 @@
  * muestra un marcador de posición: así `npm run dev` arranca y confirma que la
  * cadena de herramientas funciona, sin fingir que la pantalla ya está hecha.
  */
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import SinRol from "./pages/SinRol.jsx";
 import NuevoCorte from "./pages/NuevoCorte.jsx";
 import Cortes from "./pages/Cortes.jsx";
 import EditarArchivosCorteActual from "./pages/EditarArchivosCorteActual.jsx";
@@ -27,7 +28,9 @@ import { useAutenticacion } from "./auth/ProveedorAutenticacion.jsx";
  * arranca y `keycloak.init()` resuelve — sin esto, un usuario SIN sesión
  * vería un parpadeo de contenido protegido antes del redirect. */
 function RutaProtegida({ children }) {
-  const { cargando, estaAutenticado, rolSinModulos } = useAutenticacion();
+  const { cargando, estaAutenticado, tieneRolAsignado, rolSinModulos } =
+    useAutenticacion();
+  const location = useLocation();
 
   if (cargando) {
     return (
@@ -38,7 +41,19 @@ function RutaProtegida({ children }) {
   }
 
   if (!estaAutenticado) {
-    return <Navigate to="/login" replace />;
+    // [E-01/HU-01] CA07: se recuerda la ruta pedida para volver tras el login.
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ desde: location.pathname + location.search }}
+      />
+    );
+  }
+
+  // [E-01/HU-01] CA05: sesión válida pero sin rol → ningún módulo se monta.
+  if (!tieneRolAsignado) {
+    return <SinRol />;
   }
 
   // [E-01/HU-01] / D37: rol válido pero sin módulos en esta versión (hoy,
