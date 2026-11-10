@@ -35,11 +35,12 @@ CA-3) que expone los valores disponibles por criterio. Mismo criterio de
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from decimal import Decimal
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
 from app.core.dependencias import ServicioCortesDep, SesionDep, UsuarioActualDep
@@ -123,6 +124,61 @@ def _verificar_fuentes_completas(corte: Corte) -> None:
         )
 
 
+@dataclass(frozen=True)
+class ParametrosMatriz:
+    """Paginación y filtros de la matriz, compartidos por `/actual` y
+    `/{corte_id}` (antes cada endpoint repetía los 10 parámetros).
+
+    `estado_cruce`/`busqueda`: filtros de HU-07. `bpin`/
+    `cod_indicador_producto`/`producto`/`numero_contrato`/`sector`/
+    `programa`: filtros de HU-10, cada uno repetible (`?bpin=a&bpin=b`,
+    CA-8: OR dentro del criterio); varios criterios se combinan con AND
+    (CA-9).
+    """
+
+    pagina: int = 1
+    tamano_pagina: int = 50
+    estado_cruce: EstadoCruce | None = None
+    busqueda: str | None = None
+    bpin: Annotated[list[str] | None, Query()] = None
+    cod_indicador_producto: Annotated[list[str] | None, Query()] = None
+    producto: Annotated[list[str] | None, Query()] = None
+    numero_contrato: Annotated[list[str] | None, Query()] = None
+    sector: Annotated[list[str] | None, Query()] = None
+    programa: Annotated[list[str] | None, Query()] = None
+
+
+ParametrosMatrizDep = Annotated[ParametrosMatriz, Depends()]
+
+
+def _responder_matriz(sesion, corte: Corte, parametros: ParametrosMatriz) -> MatrizRespuesta:
+    """Paso común de los dos endpoints de la matriz: exige las tres fuentes
+    (409 si falta alguna), consulta con los filtros y arma la respuesta."""
+    _verificar_fuentes_completas(corte)
+
+    resultado = construir_matriz(
+        sesion,
+        corte.id,
+        parametros.pagina,
+        parametros.tamano_pagina,
+        estado_cruce=parametros.estado_cruce,
+        busqueda=parametros.busqueda,
+        bpin=parametros.bpin,
+        cod_indicador_producto=parametros.cod_indicador_producto,
+        producto=parametros.producto,
+        numero_contrato=parametros.numero_contrato,
+        sector=parametros.sector,
+        programa=parametros.programa,
+    )
+    return MatrizRespuesta(
+        corte_id=corte.id,
+        pagina=resultado.pagina,
+        tamano_pagina=resultado.tamano_pagina,
+        total_filas=resultado.total,
+        filas=[_fila_a_respuesta(fila) for fila in resultado.filas],
+    )
+
+
 # --- Endpoints ---------------------------------------------------------------
 
 # IMPORTANTE: /actual debe registrarse ANTES que /{corte_id} -- FastAPI
@@ -138,60 +194,15 @@ def obtener_matriz_actual(
     servicio: ServicioCortesDep,
     sesion: SesionDep,
     usuario: UsuarioActualDep,
-    pagina: int = 1,
-    tamano_pagina: int = 50,
-    estado_cruce: EstadoCruce | None = None,
-    busqueda: str | None = None,
-    bpin: list[str] | None = Query(None),
-    cod_indicador_producto: list[str] | None = Query(None),
-    producto: list[str] | None = Query(None),
-    numero_contrato: list[str] | None = Query(None),
-    sector: list[str] | None = Query(None),
-    programa: list[str] | None = Query(None),
+    parametros: ParametrosMatrizDep,
 ) -> MatrizRespuesta:
     """HU-07/CA-1: matriz de relación del corte REGISTRADO más reciente,
-    global (sin filtro de vigencia -- mismo criterio que D11 usa para
-    existe_borrador_activo()).
+    global (sin filtro de vigencia).
 
-    404 si no hay ningún corte registrado todavía (`RecursoNoEncontrado`,
-    `ServicioCortes.obtener_corte_actual`, ya mapeado en
-    `app/core/errores.py` -- no se maneja aquí). 409 si al corte más
-    reciente le falta alguna fuente -- mismo criterio que `obtener_matriz`
-    (`/{corte_id}`), deliberadamente duplicado aquí en vez de extraído a
-    un helper compartido, para no tocar ese endpoint ya cerrado.
-
-    `estado_cruce`/`busqueda`: filtros de la matriz (ver
-    `consultas.py::construir_matriz`), agregados 2026-09-23.
-
-    HU-10 (Sprint 2): `bpin`/`cod_indicador_producto`/`producto`/
-    `numero_contrato`/`sector`/`programa` -- cada uno repetible
-    (`?bpin=a&bpin=b`, CA-8: OR dentro del criterio); varios criterios a
-    la vez se combinan con AND (CA-9).
+    404 si no hay ningún corte registrado todavía (lo lanza
+    `ServicioCortes.obtener_corte_actual`); 409 si le falta alguna fuente.
     """
-    corte: Corte = servicio.obtener_corte_actual()
-    _verificar_fuentes_completas(corte)
-
-    resultado = construir_matriz(
-        sesion,
-        corte.id,
-        pagina,
-        tamano_pagina,
-        estado_cruce=estado_cruce,
-        busqueda=busqueda,
-        bpin=bpin,
-        cod_indicador_producto=cod_indicador_producto,
-        producto=producto,
-        numero_contrato=numero_contrato,
-        sector=sector,
-        programa=programa,
-    )
-    return MatrizRespuesta(
-        corte_id=corte.id,
-        pagina=resultado.pagina,
-        tamano_pagina=resultado.tamano_pagina,
-        total_filas=resultado.total,
-        filas=[_fila_a_respuesta(fila) for fila in resultado.filas],
-    )
+    return _responder_matriz(sesion, servicio.obtener_corte_actual(), parametros)
 
 
 @router.get("/{corte_id}/opciones-filtro", response_model=OpcionesFiltroRespuesta)
@@ -241,56 +252,11 @@ def obtener_matriz(
     servicio: ServicioCortesDep,
     sesion: SesionDep,
     usuario: UsuarioActualDep,
-    pagina: int = 1,
-    tamano_pagina: int = 50,
-    estado_cruce: EstadoCruce | None = None,
-    busqueda: str | None = None,
-    bpin: list[str] | None = Query(None),
-    cod_indicador_producto: list[str] | None = Query(None),
-    producto: list[str] | None = Query(None),
-    numero_contrato: list[str] | None = Query(None),
-    sector: list[str] | None = Query(None),
-    programa: list[str] | None = Query(None),
+    parametros: ParametrosMatrizDep,
 ) -> MatrizRespuesta:
-    """HU-07/CA-1: matriz de relación de un corte específico.
+    """HU-07/CA-1 y E02-HU09: matriz de relación de un corte específico.
 
-    404 ya lo lanza `ServicioCortes.obtener_corte` (RecursoNoEncontrado,
-    mapeado en core/errores.py) — no se maneja aquí, mismo patrón que
-    cortes/api/router.py::obtener_corte.
-
-    409 si falta alguna de las tres fuentes: reutiliza
-    `Corte.archivos_faltantes()` (ya existente, HU-01), sin duplicar la
-    regla. `detalles.archivos_faltantes` nombra exactamente qué falta.
-
-    `estado_cruce`/`busqueda`: filtros de la matriz (ver
-    `consultas.py::construir_matriz`), agregados 2026-09-23.
-
-    HU-10 (Sprint 2): `bpin`/`cod_indicador_producto`/`producto`/
-    `numero_contrato`/`sector`/`programa` -- cada uno repetible
-    (`?bpin=a&bpin=b`, CA-8: OR dentro del criterio); varios criterios a
-    la vez se combinan con AND (CA-9).
+    404 si el corte no existe (lo lanza `ServicioCortes.obtener_corte`);
+    409 si le falta alguna de las tres fuentes.
     """
-    corte: Corte = servicio.obtener_corte(corte_id)
-    _verificar_fuentes_completas(corte)
-
-    resultado = construir_matriz(
-        sesion,
-        corte_id,
-        pagina,
-        tamano_pagina,
-        estado_cruce=estado_cruce,
-        busqueda=busqueda,
-        bpin=bpin,
-        cod_indicador_producto=cod_indicador_producto,
-        producto=producto,
-        numero_contrato=numero_contrato,
-        sector=sector,
-        programa=programa,
-    )
-    return MatrizRespuesta(
-        corte_id=corte_id,
-        pagina=resultado.pagina,
-        tamano_pagina=resultado.tamano_pagina,
-        total_filas=resultado.total,
-        filas=[_fila_a_respuesta(fila) for fila in resultado.filas],
-    )
+    return _responder_matriz(sesion, servicio.obtener_corte(corte_id), parametros)
