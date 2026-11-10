@@ -95,6 +95,7 @@ from app.modules.plan_accion.domain.entidades import (
     FilaPlanAccion,
     FiltrosPlanAccion,
     ResumenPlanAccion,
+    RubroDesglose,
     agregar_por_meta,
     calcular_resumen,
     filtrar_plan_accion,
@@ -122,6 +123,25 @@ AccesoPlanAccionDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR,
 # --- DTOs (Pydantic, nunca la entidad de dominio) ---------------------------
 
 
+class ContratoDesgloseRespuesta(BaseModel):
+    """[E04-HU01-CA03] Contrato dentro del desglose de un rubro."""
+
+    numero_contrato: str
+    objeto: str | None
+    valor: Decimal | None
+    valor_pagado: Decimal | None
+
+
+class RubroDesgloseRespuesta(BaseModel):
+    """[E04-HU01-CA03] Rubro de la meta con su monto y sus contratos. La
+    suma de los rubros de una meta es el total de esa meta."""
+
+    codigo_rubro: str
+    presupuesto_definitivo: Decimal | None
+    ejecucion: Decimal | None
+    contratos: list[ContratoDesgloseRespuesta]
+
+
 class FilaPlanAccionRespuesta(BaseModel):
     sector: str | None
     cod_indicador_producto: str
@@ -135,6 +155,10 @@ class FilaPlanAccionRespuesta(BaseModel):
     avance_fisico_pct: None
     avance_financiero_pct: Decimal | None
     estado_cruce: str
+    # [E04-HU01-CA03] Campos nuevos, aditivos: `cod_bpin`, `rubros` y
+    # `contratos` se conservan para no romper al frontend actual.
+    bpins: list[str] = []
+    desglose: list[RubroDesgloseRespuesta] = []
 
 
 class ResumenPlanAccionRespuesta(BaseModel):
@@ -222,6 +246,25 @@ def _fila_a_respuesta(fila: FilaPlanAccion) -> FilaPlanAccionRespuesta:
         avance_fisico_pct=None,
         avance_financiero_pct=fila.avance_financiero_pct,
         estado_cruce=fila.estado_cruce.value,
+        bpins=list(fila.bpins),
+        desglose=[_rubro_a_respuesta(rubro) for rubro in fila.desglose],
+    )
+
+
+def _rubro_a_respuesta(rubro: RubroDesglose) -> RubroDesgloseRespuesta:
+    return RubroDesgloseRespuesta(
+        codigo_rubro=rubro.codigo_rubro,
+        presupuesto_definitivo=rubro.presupuesto_definitivo,
+        ejecucion=rubro.ejecucion,
+        contratos=[
+            ContratoDesgloseRespuesta(
+                numero_contrato=contrato.numero_contrato,
+                objeto=contrato.objeto,
+                valor=contrato.valor,
+                valor_pagado=contrato.valor_pagado,
+            )
+            for contrato in rubro.contratos
+        ],
     )
 
 
@@ -310,6 +353,9 @@ def _construir_filas_agregadas(sesion: SesionDep, corte_id) -> list[FilaPlanAcci
             presupuesto_apropiado=f.presupuesto_apropiado,
             ejecucion=f.ejecucion,
             numero_contrato=f.numero_contrato,
+            objeto_contrato=f.objeto_contrato,
+            valor_contrato=f.valor_contrato,
+            valor_pagado_contrato=f.valor_pagado_contrato,
         )
         for f in filas_crudas
     ]
