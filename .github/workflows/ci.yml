@@ -45,6 +45,25 @@ jobs:
       # instalación (equivalente a --only-binary en pip).
       - run: npm ci --ignore-scripts
       - run: npm test
+      # Cobertura de frontend: SOLO se reporta y se publica como evidencia
+      # (Tabla 4 de la rubrica de Sprint 3, "Cobertura de codigo verificada").
+      # NO hay --coverage.thresholds que falle el build: hoy solo existe una
+      # primera suite real (filtrosPlanAccion.test.js) y la mayoria de
+      # src/ (PlanAccion.jsx, CompararCortes.jsx...) todavia no tiene
+      # pruebas. Forzar aqui un piso como el 70% del backend bloquearia
+      # TODOS los PR de forma inmediata por un numero que no refleja una
+      # regresion real, sino cobertura que aun no se escribio -- DECISION
+      # QUE NO TOME SOLO: cuando el equipo decida sumar mas pruebas de
+      # frontend, el equipo define el umbral real en vitest.config.js
+      # (bloque test.coverage.thresholds) y recien ahi esto debe fallar.
+      - run: npm run test:coverage
+      - name: Publica el reporte de cobertura de frontend
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: cobertura-frontend
+          path: frontend/coverage
+          retention-days: 7
 
   build:
     name: Build
@@ -124,6 +143,47 @@ jobs:
       - run: alembic upgrade head
       - run: alembic downgrade base
       - run: alembic upgrade head
+
+  backend-seguridad:
+    name: Backend — auditoria de dependencias y SAST (bandit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    # NO bloqueante todavia (continue-on-error en los dos pasos de abajo):
+    # es la primera vez que esto corre en CI. DECISION QUE NO TOME SOLA,
+    # la señalo para el equipo: una vez el equipo revise el primer reporte
+    # (ver docs/SEGURIDAD_DEPENDENCIAS.md) y decida que severidad es
+    # aceptable, quitar los continue-on-error convierte esto en un gate
+    # real que bloquea merges -- eso es una decision de equipo, no mia.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      - run: pip install --require-hashes --only-binary ":all:" -r requirements.txt -r requirements-dev.txt
+      - name: Bandit (analisis estatico de seguridad del codigo propio)
+        continue-on-error: true
+        run: bandit -r app -ll -f txt -o bandit-report.txt
+      - name: pip-audit (vulnerabilidades conocidas en dependencias)
+        continue-on-error: true
+        run: |
+          pip-audit -r requirements.txt --format columns | tee pip-audit-runtime.txt
+          pip-audit -r requirements-dev.txt --format columns | tee pip-audit-dev.txt
+      - name: Publica los reportes de seguridad
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: seguridad-backend
+          path: |
+            backend/bandit-report.txt
+            backend/pip-audit-runtime.txt
+            backend/pip-audit-dev.txt
+          retention-days: 30
 
   backend-keycloak:
     name: Backend — Keycloak arranca correctamente
