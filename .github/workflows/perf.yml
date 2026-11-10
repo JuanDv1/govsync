@@ -1,0 +1,56 @@
+name: Pruebas de carga (k6) — manual
+
+# DISPARO SOLO MANUAL (workflow_dispatch), NUNCA en push/PR -- ver
+# backend/tests/perf/README.md ("Por qué no corre automático en cada PR"):
+# los endpoints de plan_accion exigen un JWT real de Keycloak, y el CI de
+# PR todavía no provisiona un realm/usuario de prueba (tarjeta pendiente,
+# ver el job `backend-keycloak` de ci.yml). Automatizarlo sin eso sería
+# fabricar un supuesto de seguridad no verificado. Mientras tanto, quien
+# dispare este workflow debe pegar un token obtenido de un login real.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "URL base del backend a probar (sin /api/v1 al final)"
+        required: true
+        default: "http://localhost:8000"
+      vus:
+        description: "Usuarios virtuales concurrentes"
+        required: false
+        default: "10"
+      duration:
+        description: "Duración de la prueba (p.ej. 30s, 2m)"
+        required: false
+        default: "30s"
+
+jobs:
+  k6-plan-accion:
+    name: k6 — Plan de Acción
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instala k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+      - name: Corre el script contra BASE_URL
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+          VUS: ${{ inputs.vus }}
+          DURATION: ${{ inputs.duration }}
+          # Secreto del repositorio: un JWT de corta duración obtenido a
+          # mano contra Keycloak. NUNCA se genera ni se asume aquí -- ver
+          # el docstring de k6_plan_accion.js.
+          K6_TOKEN: ${{ secrets.K6_PLAN_ACCION_TOKEN }}
+        run: |
+          if [ -z "$K6_TOKEN" ]; then
+            echo "::error::Falta el secreto K6_PLAN_ACCION_TOKEN en el repositorio. Ver backend/tests/perf/README.md."
+            exit 1
+          fi
+          k6 run backend/tests/perf/k6_plan_accion.js
+      - name: Publica el resumen
+        if: always()
+        run: echo "Resultado de k6 arriba -- revisar p95 por endpoint y http_req_failed."
