@@ -99,6 +99,7 @@ from app.modules.plan_accion.domain.entidades import (
     calcular_resumen,
     filtrar_plan_accion,
 )
+from app.modules.plan_accion.domain.riesgo import UMBRAL_RIESGO_PCT, metas_en_riesgo
 from app.modules.plan_accion.persistence.consultas import construir_filas_plan_accion
 from app.modules.plan_accion.persistence.exportacion_excel import (
     MetadatosComparacion,
@@ -152,6 +153,18 @@ class PlanAccionRespuesta(BaseModel):
     fecha_corte: str
     filas: list[FilaPlanAccionRespuesta]
     resumen: ResumenPlanAccionRespuesta
+
+
+class MetasEnRiesgoRespuesta(BaseModel):
+    """[E04-HU07] Metas con avance financiero menor al umbral."""
+
+    corte_id: UUID
+    vigencia: int
+    fecha_corte: str
+    umbral_pct: Decimal
+    filas: list[FilaPlanAccionRespuesta]
+    total_en_riesgo: int
+    metas_sin_presupuesto: int
 
 
 class CorteDisponibleRespuesta(BaseModel):
@@ -382,6 +395,43 @@ def obtener_plan_accion_actual(
             parcial=resumen.parcial,
             sin_informacion=resumen.sin_informacion,
         ),
+    )
+
+
+@router.get(
+    "/riesgo",
+    response_model=MetasEnRiesgoRespuesta,
+    summary="Metas con menos del 50 % de avance financiero",
+    responses={
+        404: {"description": "No hay ningún corte registrado."},
+        409: {"description": "Al corte más reciente le falta alguna fuente."},
+    },
+)
+def obtener_metas_en_riesgo(
+    servicio: ServicioCortesDep,
+    sesion: SesionDep,
+    usuario: AccesoPlanAccionDep,
+) -> MetasEnRiesgoRespuesta:
+    """[E04-HU07] Metas del corte actual con avance financiero
+    estrictamente menor al 50 %, de menor a mayor avance (CA01, CA03,
+    CA05). Las metas sin presupuesto no se listan; se informa cuántas son
+    (CA04). Una lista vacía es el caso de CA07: el mensaje lo pone el
+    frontend.
+
+    Usa el corte registrado más reciente, igual que `/actual`. "Responsable"
+    (CA06) no se devuelve: decisión #14 abierta.
+    """
+    corte, filas, _resumen = _obtener_filas_filtradas(servicio, sesion, FiltrosPlanAccion())
+    resultado = metas_en_riesgo(filas)
+
+    return MetasEnRiesgoRespuesta(
+        corte_id=corte.id,
+        vigencia=corte.vigencia,
+        fecha_corte=corte.fecha_corte.isoformat(),
+        umbral_pct=UMBRAL_RIESGO_PCT,
+        filas=[_fila_a_respuesta(f) for f in resultado.en_riesgo],
+        total_en_riesgo=len(resultado.en_riesgo),
+        metas_sin_presupuesto=resultado.sin_presupuesto,
     )
 
 
