@@ -1994,14 +1994,13 @@ DELETE CASCADE` de la BD), todo lo que se hubiera cargado. Un corte
 
 **Lo leí (verificado en código):** `ultimo_registrado()` solo considera
 cortes REGISTRADO como base de reutilización (`persistence/repositorios.py`);
-el router de `plan_accion` rechaza comparar contra un BORRADOR; el borrado
-caso de uso `descartar_corte` recibe `usuario.correo` del router, igual que
+el router de `plan_accion` rechaza comparar contra un BORRADOR; el caso de
+uso `descartar_corte` recibe `usuario.correo` del router, igual que
 `reemplazar_archivo_corte_actual`.
 
 **Lo supongo (no verificado con la clienta):** que descartar un borrador no
 necesita trazabilidad consultable. Si la clienta o el docente la exigen, el
-paso siguiente
-es una tabla `historial_descarte_corte` (corte descartado, vigencia, fecha,
+paso siguiente es una tabla `historial_descarte_corte` (corte descartado, vigencia, fecha,
 usuario, instante) escrita en la misma transacción del borrado, igual que
 `registrar_historial_reemplazo`.
 
