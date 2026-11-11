@@ -96,6 +96,13 @@ class RepositorioCortes(ABC):
         """
 
     @abstractmethod
+    def eliminar(self, corte_id: uuid.UUID) -> None:
+        """Elimina el corte y, en cascada, todos sus datos (archivos, metas,
+        proyectos, presupuesto, historial). La validación (estado BORRADOR)
+        ya la hizo el dominio (`Corte.verificar_descartable()`).
+        """
+
+    @abstractmethod
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         """[E02-HU05][CA06]: persiste un registro de auditoría de reemplazo.
 

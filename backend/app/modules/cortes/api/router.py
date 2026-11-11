@@ -552,6 +552,24 @@ def corregir_corte(
     return _a_dto(corte, es_corte_actual=False)
 
 
+@router.delete(
+    "/{corte_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+    summary="Descartar un corte en BORRADOR",
+    responses={
+        404: {"description": "El corte no existe."},
+        409: {"description": "El corte no está en BORRADOR (`corte_no_es_borrador`)."},
+    },
+)
+def descartar_corte(corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep) -> None:
+    """Elimina un corte en BORRADOR junto con los datos que ya se hubieran
+    cargado. Permite empezar de nuevo cuando el borrador se creó con una
+    vigencia/fecha equivocada. Un corte REGISTRADO se rechaza con 409.
+    """
+    servicio.descartar_corte(corte_id)
+
+
 @router.post("/{corte_id}/registrar", response_model=CorteRespuesta)
 def registrar_corte(
     corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep

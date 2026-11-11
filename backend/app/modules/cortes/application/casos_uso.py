@@ -429,6 +429,25 @@ class ServicioCortes:
             raise
         return corte
 
+    def descartar_corte(self, corte_id) -> None:
+        """Descarta (elimina) un corte en BORRADOR, para poder empezar de
+        nuevo cuando se creó con una vigencia/fecha equivocada y D11 impide
+        crear otro borrador mientras éste exista.
+
+        Un corte REGISTRADO se rechaza en el dominio
+        (`Corte.verificar_descartable()`).
+        """
+        corte = self._cortes.obtener(corte_id)
+        if corte is None:
+            raise RecursoNoEncontrado(f"No existe un corte con id {corte_id}.")
+        corte.verificar_descartable()
+        try:
+            self._cortes.eliminar(corte_id)
+            self._commit()
+        except Exception:
+            self._rollback()
+            raise
+
     def listar_cortes(self) -> list[Corte]:
         return self._cortes.listar()
 

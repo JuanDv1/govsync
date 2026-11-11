@@ -90,6 +90,9 @@ class RepositorioCortesEnMemoria(RepositorioCortes):
         self._cortes[corte.id].vigencia = corte.vigencia
         self._cortes[corte.id].fecha_corte = corte.fecha_corte
 
+    def eliminar(self, corte_id: uuid.UUID) -> None:
+        self._cortes.pop(corte_id, None)
+
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         if historial.fecha is None:
             historial.fecha = datetime.now(UTC)
@@ -378,6 +381,42 @@ def test_patch_cortes_id_corrige_vigencia_y_fecha_200(cliente):
     assert cuerpo["vigencia"] == 2025
     assert cuerpo["fecha_corte"] == "2026-09-01"
     assert cuerpo["estado"] == "BORRADOR"
+
+
+def test_delete_cortes_id_descarta_borrador_204(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+
+    respuesta = cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.status_code == 204
+    assert cliente.get(f"/api/v1/cortes/{corte_id}").status_code == 404
+
+
+def test_delete_cortes_id_libera_el_cupo_de_borrador(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+    cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    respuesta = cliente.post("/api/v1/cortes", json={"vigencia": 2026, "fecha_corte": "2026-09-08"})
+
+    assert respuesta.status_code == 201
+
+
+def test_delete_cortes_id_inexistente_devuelve_404(cliente):
+    respuesta = cliente.delete(f"/api/v1/cortes/{uuid.uuid4()}")
+
+    assert respuesta.status_code == 404
+
+
+def test_delete_cortes_id_sobre_corte_registrado_devuelve_409(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+    corte = cliente.repo_cortes.obtener(uuid.UUID(corte_id))
+    corte.estado = EstadoCorte.REGISTRADO
+    cliente.repo_cortes.confirmar_registro(corte)
+
+    respuesta = cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.status_code == 409
+    assert respuesta.json()["detalles"]["motivo"] == "corte_no_es_borrador"
 
 
 def test_patch_cortes_id_inexistente_devuelve_404(cliente):
