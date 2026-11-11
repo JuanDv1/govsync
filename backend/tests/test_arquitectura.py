@@ -151,3 +151,36 @@ def test_los_modulos_no_dependen_unos_de_otros_por_persistencia():
                 f"{ruta.relative_to(RAIZ)} importa la persistencia del módulo "
                 f"«{ajeno}»: {nodo.module}"
             )
+
+
+def test_trazabilidad_y_plan_accion_reutilizan_el_cruce_compartido():
+    """Regresión del refactor de Sprint 3 (2026-10-29).
+
+    `trazabilidad/persistence/consultas.py` y
+    `plan_accion/persistence/consultas.py` construían el mismo cruce de 4
+    fuentes con dos bloques de código copiados (dos subconsultas-puente +
+    la misma cadena de 4 LEFT JOIN con las "3 reglas invioables" -- ver
+    `app/shared/persistence/cruce_fuentes.py`). Esta prueba no repite la
+    lógica del cruce: solo garantiza que, si alguien vuelve a necesitar esa
+    cadena de JOIN, la tome de `construir_cruce_fuentes` en vez de
+    copiar/pegar el bloque otra vez en uno de los dos módulos.
+    """
+    archivos = {
+        "trazabilidad": APP / "modules" / "trazabilidad" / "persistence" / "consultas.py",
+        "plan_accion": APP / "modules" / "plan_accion" / "persistence" / "consultas.py",
+    }
+    for nombre, ruta in archivos.items():
+        assert ruta.exists(), f"no se encontró {ruta.relative_to(RAIZ)}"
+        importados = _modulos_importados(ruta)
+        assert "app" in importados, f"{nombre}: se esperaba un import de app.shared.*"
+        arbol = ast.parse(ruta.read_text(encoding="utf-8"), filename=str(ruta))
+        importa_cruce_compartido = any(
+            isinstance(nodo, ast.ImportFrom)
+            and nodo.module == "app.shared.persistence.cruce_fuentes"
+            and any(alias.name == "construir_cruce_fuentes" for alias in nodo.names)
+            for nodo in ast.walk(arbol)
+        )
+        assert importa_cruce_compartido, (
+            f"{ruta.relative_to(RAIZ)} ya no importa "
+            "construir_cruce_fuentes -- ¿volvió la cadena de JOIN duplicada?"
+        )
