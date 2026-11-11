@@ -223,6 +223,25 @@ export const api = {
   obtenerCorte: (id) => solicitar(`/api/v1/cortes/${id}`),
 
   /**
+   * D11. Corrige vigencia y fecha de un corte en BORRADOR
+   * (`PATCH /cortes/{id}`). Mismo contrato que `crearCorte`. 409 si el corte
+   * ya está REGISTRADO (`detalles.motivo: "corte_no_es_borrador"`) o si la
+   * vigencia+fecha ya existe en otro corte; 422 si la fecha es futura.
+   */
+  corregirCorte: (id, vigencia, fechaCorte) =>
+    solicitar(`/api/v1/cortes/${id}`, {
+      metodo: "PATCH",
+      cuerpo: { vigencia, fecha_corte: fechaCorte },
+    }),
+
+  /**
+   * Descarta un corte en BORRADOR con todo lo que se hubiera cargado
+   * (`DELETE /cortes/{id}`, 204 sin cuerpo). 409 si ya está REGISTRADO.
+   */
+  descartarCorte: (id) =>
+    solicitar(`/api/v1/cortes/${id}`, { metodo: "DELETE" }),
+
+  /**
    * HU-01/CA-3, CA-4. Transición BORRADOR -> REGISTRADO.
    *
    * `POST /cortes/{id}/registrar` -- el endpoint ya existe (expuesto sobre
