@@ -392,6 +392,29 @@ def test_delete_cortes_id_descarta_borrador_204(cliente):
     assert cliente.get(f"/api/v1/cortes/{corte_id}").status_code == 404
 
 
+def test_delete_cortes_id_deja_una_linea_de_log_con_el_usuario(cliente, caplog):
+    corte_id = _crear_corte_borrador(cliente)
+
+    with caplog.at_level("INFO", logger="govsync"):
+        cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    linea = next(r.getMessage() for r in caplog.records if "Corte descartado" in r.getMessage())
+    assert f"id={corte_id}" in linea
+    assert f"usuario={USUARIO_DE_PRUEBA.correo}" in linea
+
+
+def test_delete_cortes_id_rechazado_no_deja_log_de_descarte(cliente, caplog):
+    corte_id = _crear_corte_borrador(cliente)
+    corte = cliente.repo_cortes.obtener(uuid.UUID(corte_id))
+    corte.estado = EstadoCorte.REGISTRADO
+    cliente.repo_cortes.confirmar_registro(corte)
+
+    with caplog.at_level("INFO", logger="govsync"):
+        cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    assert not any("Corte descartado" in r.getMessage() for r in caplog.records)
+
+
 def test_delete_cortes_id_libera_el_cupo_de_borrador(cliente):
     corte_id = _crear_corte_borrador(cliente)
     cliente.delete(f"/api/v1/cortes/{corte_id}")

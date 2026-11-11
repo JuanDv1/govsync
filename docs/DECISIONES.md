@@ -1960,7 +1960,7 @@ con las decisiones del equipo.
 
 ---
 
-## D36 · Descartar un corte en BORRADOR: `DELETE /cortes/{id}`, sin tabla de auditoría
+## D36 · Descartar un corte en BORRADOR: `DELETE /cortes/{id}`, auditado solo en el log
 
 **Clasificación:** Registro de tarjeta.
 
@@ -1982,20 +1982,25 @@ DELETE CASCADE` de la BD), todo lo que se hubiera cargado. Un corte
 - `NuevoCorte.jsx` ofrece, mientras el corte está en BORRADOR, "Corregir
   vigencia o fecha" (PATCH existente) y "Descartar borrador" (con
   confirmación).
-- **Sin tabla de auditoría del descarte (PROPUESTA).** Motivo: un BORRADOR
-  todavía no es un dato del histórico; el historial de auditoría de
+- **Auditoría solo en el log de la aplicación, sin tabla.** Al confirmarse
+  el borrado se escribe una línea INFO en el logger `govsync`:
+  `Corte descartado: id=… vigencia=… fecha_corte=… usuario=<correo>`. No se
+  escribe si el borrado se rechaza (409/404) ni si falla. Motivo: un
+  BORRADOR todavía no es un dato del histórico; el historial de auditoría de
   [E02-HU05] (D25) existe para reemplazos sobre el corte REGISTRADO actual.
   Una tabla nueva exigiría una migración (D1) y una decisión sobre qué se
-  guarda (usuario, fecha, vigencia/fecha del corte descartado) que ninguna
-  tarjeta ha pedido.
+  guarda que ninguna tarjeta ha pedido. Límite: el log no se consulta desde
+  la aplicación.
 
 **Lo leí (verificado en código):** `ultimo_registrado()` solo considera
 cortes REGISTRADO como base de reutilización (`persistence/repositorios.py`);
 el router de `plan_accion` rechaza comparar contra un BORRADOR; el borrado
-sin auditoría no deja registro de quién descartó qué.
+caso de uso `descartar_corte` recibe `usuario.correo` del router, igual que
+`reemplazar_archivo_corte_actual`.
 
 **Lo supongo (no verificado con la clienta):** que descartar un borrador no
-necesita trazabilidad. Si la clienta o el docente lo exigen, la alternativa
+necesita trazabilidad consultable. Si la clienta o el docente la exigen, el
+paso siguiente
 es una tabla `historial_descarte_corte` (corte descartado, vigencia, fecha,
 usuario, instante) escrita en la misma transacción del borrado, igual que
 `registrar_historial_reemplazo`.
@@ -2009,8 +2014,8 @@ usuario, instante) escrita en la misma transacción del borrado, igual que
 - Solo corregir con PATCH, sin descartar. Descartada: no cubre abandonar un
   borrador que ya no se quiere.
 
-**Estado:** PROPUESTA — falta que el equipo ratifique la ausencia de
-auditoría (el resto está implementado en la rama
-`bugfix/cortes/corregir-anio-o-descartar-borrador`).
+**Estado:** RATIFICADA — aprobada por Cristhian el 2026-11-10 (opción
+"log de la aplicación"). Reabrible si la clienta o el docente piden
+trazabilidad consultable; entonces se agrega la tabla descrita arriba.
 
 **Registrado:** 2026-11-10, Cristhian (`CrisCamUO`).

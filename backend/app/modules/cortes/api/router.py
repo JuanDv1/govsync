@@ -567,7 +567,7 @@ def descartar_corte(corte_id: UUID, servicio: ServicioCortesDep, usuario: Escrit
     cargado. Permite empezar de nuevo cuando el borrador se creó con una
     vigencia/fecha equivocada. Un corte REGISTRADO se rechaza con 409.
     """
-    servicio.descartar_corte(corte_id)
+    servicio.descartar_corte(corte_id, usuario.correo)
 
 
 @router.post("/{corte_id}/registrar", response_model=CorteRespuesta)
