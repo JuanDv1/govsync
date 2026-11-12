@@ -35,8 +35,6 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass, field
 from datetime import date, datetime
-
-# from enum import Enum
 from enum import StrEnum
 
 from app.shared.codigos import CodigoIndicadorProducto, DescarteIndicador

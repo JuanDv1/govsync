@@ -37,10 +37,23 @@ _MAPA_HTTP: dict[type[GovSyncError], int] = {
 }
 
 
+_CODIGOS_DE_ACCESO_RECHAZADO = (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN)
+
+
 def registrar_manejadores(app: FastAPI) -> None:
     @app.exception_handler(GovSyncError)
-    async def _manejar_error_dominio(_: Request, exc: GovSyncError) -> JSONResponse:
+    async def _manejar_error_dominio(request: Request, exc: GovSyncError) -> JSONResponse:
         codigo_http = _MAPA_HTTP.get(type(exc), status.HTTP_400_BAD_REQUEST)
+        if codigo_http in _CODIGOS_DE_ACCESO_RECHAZADO:
+            # OWASP A09: los intentos de acceso rechazados quedan registrados.
+            # Solo método, ruta y motivo: nunca el token ni datos del usuario.
+            _log.warning(
+                "Acceso rechazado (%s %s) en %s %s",
+                codigo_http,
+                exc.codigo,
+                request.method,
+                request.url.path,
+            )
         return JSONResponse(
             status_code=codigo_http,
             content={
