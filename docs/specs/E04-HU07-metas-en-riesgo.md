@@ -57,10 +57,10 @@ Los de la hoja «HU_E04_07» (E04-HU07-CA01 a CA07), sin cambios.
 
 ## Contrato
 
-- `GET /api/v1/plan-accion/riesgo` — autenticación/permisos:
-  `administrador` o `visitante`. Cada fila agrega `sin_ejecucion_registrada:
-  bool` sobre los campos de `/plan-accion/actual`; ese otro endpoint no
-  cambia y sigue mostrando "--" (D26) para el mismo caso.
+- `GET /api/v1/plan-accion/riesgo` — autenticación/permisos: `administrador`
+  o `visitante`. Cada fila agrega `sin_ejecucion_registrada: bool` sobre
+  los campos de `/plan-accion/actual`; ese otro endpoint no cambia y
+  sigue mostrando "--" (D26) para el mismo caso.
 
 ## Estados y errores
 
