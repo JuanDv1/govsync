@@ -85,7 +85,7 @@ class TestRolVisitante:
         assert respuesta.status_code == 403
         cuerpo = respuesta.json()
         assert cuerpo["codigo"] == "permiso_insuficiente"
-        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador", "gestor"}
+        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador"}
 
     def test_visitante_no_puede_reemplazar_archivo_del_corte_actual(self, cliente) -> None:
         """[E02-HU05][CA09]: la restricción por rol de la ruta de reemplazo
@@ -102,4 +102,4 @@ class TestRolVisitante:
         assert respuesta.status_code == 403
         cuerpo = respuesta.json()
         assert cuerpo["codigo"] == "permiso_insuficiente"
-        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador", "gestor"}
+        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador"}

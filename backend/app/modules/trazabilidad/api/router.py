@@ -43,7 +43,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from app.core.dependencias import ServicioCortesDep, SesionDep, UsuarioActualDep
+from app.core.dependencias import LecturaDep, ServicioCortesDep, SesionDep
 from app.modules.cortes.domain.entidades import Corte, TipoArchivoFuente
 from app.modules.trazabilidad.persistence.consultas import construir_matriz, obtener_opciones_filtro
 from app.shared.errors import OperacionNoPermitida
@@ -193,7 +193,7 @@ def _responder_matriz(sesion, corte: Corte, parametros: ParametrosMatriz) -> Mat
 def obtener_matriz_actual(
     servicio: ServicioCortesDep,
     sesion: SesionDep,
-    usuario: UsuarioActualDep,
+    usuario: LecturaDep,
     parametros: ParametrosMatrizDep,
 ) -> MatrizRespuesta:
     """HU-07/CA-1: matriz de relación del corte REGISTRADO más reciente,
@@ -210,7 +210,7 @@ def obtener_opciones_filtro_endpoint(
     corte_id: UUID,
     servicio: ServicioCortesDep,
     sesion: SesionDep,
-    usuario: UsuarioActualDep,
+    usuario: LecturaDep,
 ) -> OpcionesFiltroRespuesta:
     """HU-10/CA-1, CA-3: valores disponibles para cada criterio de filtro
     del corte -- "las opciones de cada criterio solo incluyen valores que
@@ -218,12 +218,11 @@ def obtener_opciones_filtro_endpoint(
     `obtener_matriz`: sin las tres fuentes cargadas no hay cruce sobre el
     cual calcular opciones.
 
-    `usuario: UsuarioActualDep` (fix [E01-HU02]): era el único endpoint de
-    lectura del módulo sin autenticación -- D24 (docs/DECISIONES.md) exige
-    "autenticado (cualquier rol)" para los cuatro endpoints de lectura de
-    `cortes`/`trazabilidad`, pero esta ruta se agregó después de esa
-    tabla (HU-10, Sprint 2) y quedó fuera por un descuido, no por
-    decisión. Cualquier rol autenticado basta, igual que los otros tres.
+    Autorización: `LecturaDep` (administrador o visitante, D37), igual que
+    los otros endpoints de lectura de `cortes`/`trazabilidad`; el gestor
+    recibe 403. Historia: esta ruta se agregó después de la tabla de D24
+    (HU-10, Sprint 2) y quedó sin autenticación por un descuido; el fix
+    [E01-HU02] la protegió y D37 (2026-11-11) restringió los roles.
 
     CA-3 (autocompletar BPIN/Contrato): no hay un endpoint de autocompletado
     aparte -- ver DECISIÓN TÉCNICA en `consultas.py::obtener_opciones_filtro`.
@@ -251,7 +250,7 @@ def obtener_matriz(
     corte_id: UUID,
     servicio: ServicioCortesDep,
     sesion: SesionDep,
-    usuario: UsuarioActualDep,
+    usuario: LecturaDep,
     parametros: ParametrosMatrizDep,
 ) -> MatrizRespuesta:
     """HU-07/CA-1 y E02-HU09: matriz de relación de un corte específico.

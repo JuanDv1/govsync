@@ -334,7 +334,7 @@ export const api = {
    * `archivo`) — a propósito una ruta distinta de `cargarArchivo`
    * (`POST /cortes/{id}/archivos/{tipo}`), que [E02-HU06] bloquea con 409
    * para cualquier corte Registrado (`Corte.verificar_modificable`). Exige
-   * administrador o gestor.
+   * administrador (D24/D37).
    *
    * Un solo endpoint valida y aplica, y revierte todo si algo falla
    * (Opción B, D25 en docs/DECISIONES.md): no existe un paso de "validar sin
@@ -360,7 +360,7 @@ export const api = {
   /**
    * [E02-HU05/CA-6] Historial de reemplazos de archivos del corte.
    *
-   * `GET /cortes/{corteId}/historial`, abierto a cualquier rol autenticado.
+   * `GET /cortes/{corteId}/historial`, lectura para administrador o visitante (D37).
    * Responde una lista de entradas
    * `{ id, tipo, nombre_archivo_anterior, nombre_archivo_nuevo, usuario, fecha_hora }`;
    * `nombre_archivo_anterior` es `null` si el corte no tenía archivo de esa

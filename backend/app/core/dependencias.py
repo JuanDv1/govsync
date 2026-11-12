@@ -114,6 +114,16 @@ def exigir_roles(*roles: Rol):
     return _dependencia
 
 
+#: D37 (docs/DECISIONES.md, 2026-11-11): roles con al menos un módulo
+#: habilitado en esta versión. `gestor` queda fuera de TODOS los módulos
+#: (su función principal es la Épica 3, fuera del Sprint 3): recibe 403
+#: aunque su token sea válido. Lectura de `cortes`/`trazabilidad` = estos
+#: dos roles; la escritura la restringe cada router (hoy, solo
+#: `administrador`). Cuando la Épica 3 entre, el gestor se agrega a los
+#: endpoints que la necesiten, no aquí de forma global.
+LecturaDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR, Rol.VISITANTE))]
+
+
 #: [HU-02][BE-04]/[HU-03][BE-06]/[HU-04][BE-04]: registro de lectores
 #: disponibles (Strategy). Las tres fuentes (PDT, EJECUCION, PROYECTOS)
 #: tienen lector + carga (`reemplazar_*`) funcionales — ver el docstring de

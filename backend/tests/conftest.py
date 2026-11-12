@@ -37,10 +37,13 @@ from app.modules.identidad.domain.entidades import Rol, Usuario
 XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 #: [HU-E01-02] / D24: usuario de prueba por defecto para las pruebas HTTP
-#: que no se centran en autenticación/autorización. GESTOR porque ya
-#: satisface tanto los endpoints de lectura como los de escritura (D24).
+#: que no se centran en autenticación/autorización. ADMINISTRADOR porque
+#: es el único rol que satisface lectura y escritura (D24, D37: desde el
+#: 2026-11-11 el gestor no tiene módulos habilitados).
 USUARIO_DE_PRUEBA = Usuario(
-    id="usuario-de-prueba", correo="prueba@santarosa.gov.co", roles=frozenset({Rol.GESTOR})
+    id="usuario-de-prueba",
+    correo="prueba@santarosa.gov.co",
+    roles=frozenset({Rol.ADMINISTRADOR}),
 )
 
 # Importa los modelos ORM para que Base.metadata conozca todas las tablas antes

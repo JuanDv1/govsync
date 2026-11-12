@@ -110,11 +110,11 @@ backend only validates tokens against the realm's JWKS, never signs or stores a 
 `VerificadorTokenKeycloak` (persistence, PyJWT + `cryptography`, RS256). `core/dependencias.py`
 exposes `UsuarioActualDep` (authentication only) and `exigir_roles(*roles)` (authorization —
 raises `PermisoInsuficiente`, mapped to 403). Three realm roles: `administrador` (primary
-operational role — uploads/corrects, broad access), `gestor` (reserved for a future
-budget-specific role, not yet defined — currently has the same permissions as `administrador`
-since no card has required splitting them), `visitante` (read-only). D24 maps which endpoints
-need which: reads are open to any authenticated role, writes on `cortes`/`trazabilidad` require
-`administrador`/`gestor`. Login theme at `keycloak/themes/govsync/` mirrors `Login.jsx`'s
+operational role — uploads/corrects, broad access), `gestor` (Supervisor, whose
+work is Épica 3 — out of Sprint 3; since D37 it has **no enabled modules**: 403 on every route,
+and the frontend shows `PantallaSinAcceso` instead of the layout), `visitante` (read-only).
+D24/D37 map which endpoints need which: reads on `cortes`/`trazabilidad` require
+`administrador`/`visitante` (`LecturaDep`), writes on `cortes` require `administrador` only. Login theme at `keycloak/themes/govsync/` mirrors `Login.jsx`'s
 two-column layout. The whole realm (clients, roles, theme selection, brute-force/session policy,
 3 throwaway test users) is provisioned automatically on first boot from
 `keycloak/import/govsync-realm.json` (`--import-realm`, see `docker-compose.yml`) — nothing to

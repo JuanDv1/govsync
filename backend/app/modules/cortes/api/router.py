@@ -63,15 +63,16 @@ from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartException
 
 from app.core.config import Settings, get_settings
-from app.core.dependencias import ServicioCortesDep, UsuarioActualDep, exigir_roles
+from app.core.dependencias import LecturaDep, ServicioCortesDep, exigir_roles
 from app.modules.cortes.domain.entidades import Corte, TipoArchivoFuente
 from app.modules.identidad.domain.entidades import Rol, Usuario
 from app.shared.codigos import CategoriaDescarte
 from app.shared.errors import ArchivoInvalido, RecursoNoEncontrado
 
-#: D24 (docs/DECISIONES.md): los cuatro endpoints de escritura de este
-#: router exigen administrador o gestor — visitante es de solo lectura.
-EscrituraDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR, Rol.GESTOR))]
+#: D24 (docs/DECISIONES.md): los endpoints de escritura de este router
+#: exigen `administrador` — visitante es de solo lectura. D37 (2026-11-11):
+#: `gestor` ya no escribe (no tiene módulos habilitados en esta versión).
+EscrituraDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR))]
 
 router = APIRouter(prefix="/cortes", tags=["Cortes de seguimiento"])
 
@@ -252,7 +253,7 @@ def crear_corte(
 
 
 @router.get("", response_model=list[CorteRespuesta])
-def listar_cortes(servicio: ServicioCortesDep, usuario: UsuarioActualDep) -> list[CorteRespuesta]:
+def listar_cortes(servicio: ServicioCortesDep, usuario: LecturaDep) -> list[CorteRespuesta]:
     """HU-01 / CA-8 (junto con GET /cortes/{id}): histórico de cortes.
 
     [E02-HU05] `id_actual` se calcula UNA sola vez para toda la lista
@@ -266,7 +267,7 @@ def listar_cortes(servicio: ServicioCortesDep, usuario: UsuarioActualDep) -> lis
 
 @router.get("/{corte_id}", response_model=CorteRespuesta)
 def obtener_corte(
-    corte_id: UUID, servicio: ServicioCortesDep, usuario: UsuarioActualDep
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: LecturaDep
 ) -> CorteRespuesta:
     """HU-01 / CA-8 (junto con GET /cortes): detalle de un corte por id.
 
@@ -507,12 +508,12 @@ async def reemplazar_archivo(
     response_model=list[HistorialReemplazoRespuesta],
 )
 def obtener_historial_reemplazos(
-    corte_id: UUID, servicio: ServicioCortesDep, usuario: UsuarioActualDep
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: LecturaDep
 ) -> list[HistorialReemplazoRespuesta]:
     """[E02-HU05][CA06]: historial de auditoría de reemplazos de un corte.
 
-    Lectura -> cualquier rol autenticado (mismo criterio que D24 da a los
-    demás GET de este router); el archivo `.xlsx` reemplazado en sí NO se
+    Lectura -> administrador o visitante (`LecturaDep`, D37; mismo criterio
+    que los demás GET de este router); el archivo `.xlsx` reemplazado en sí NO se
     conserva (decisión cerrada, ver docs/DECISIONES.md D25) -- solo este
     registro.
     """
