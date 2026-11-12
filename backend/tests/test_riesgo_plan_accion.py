@@ -84,7 +84,7 @@ class TestMetasEnRiesgoDominio:
             ]
         )
 
-        assert [m.cod_indicador_producto for m in resultado.en_riesgo] == [
+        assert [m.fila.cod_indicador_producto for m in resultado.en_riesgo] == [
             "000000002",
             "000000001",
             "000000003",
@@ -95,7 +95,7 @@ class TestMetasEnRiesgoDominio:
             [_meta("000000002", "1000", "100"), _meta("000000001", "1000", "100")]
         )
 
-        assert [m.cod_indicador_producto for m in resultado.en_riesgo] == [
+        assert [m.fila.cod_indicador_producto for m in resultado.en_riesgo] == [
             "000000001",
             "000000002",
         ]
@@ -106,11 +106,89 @@ class TestMetasEnRiesgoDominio:
         assert resultado.en_riesgo == ()
         assert resultado.sin_presupuesto == 0
 
-    def test_una_meta_con_presupuesto_pero_sin_dato_de_ejecucion_no_se_clasifica(self):
+
+class TestMetasEnRiesgoSinEjecucionRegistrada:
+    """Decisión del PO (2026-11-11, pendiente de ratificar con la clienta
+    junto con la decisión #8): una meta con presupuesto > 0 pero sin
+    ningún dato de ejecución no se excluye -- cuenta como 0 % y se marca,
+    en vez de desaparecer del reporte sin aviso."""
+
+    def test_meta_con_presupuesto_y_sin_ningun_dato_de_ejecucion_entra_en_cero_y_se_marca(self):
         resultado = metas_en_riesgo([_meta("000000001", "1000", None)])
 
-        assert resultado.en_riesgo == ()
+        (meta,) = resultado.en_riesgo
+        assert meta.avance_financiero_pct == Decimal(0)
+        assert meta.sin_ejecucion_registrada is True
+        # No cuenta como "sin presupuesto" (CA04): sí tiene presupuesto.
         assert resultado.sin_presupuesto == 0
+
+    def test_meta_con_ejecucion_0_real_entra_en_cero_pero_no_se_marca(self):
+        resultado = metas_en_riesgo([_meta("000000001", "1000", "0")])
+
+        (meta,) = resultado.en_riesgo
+        assert meta.avance_financiero_pct == Decimal(0)
+        assert meta.sin_ejecucion_registrada is False
+
+    def test_meta_sin_ejecucion_registrada_queda_primera_por_el_orden_de_ca05(self):
+        """ "Entra en 0 %" según CA05 (menor a mayor) la pone primera de
+        forma natural -- no hace falta una regla de orden aparte."""
+        resultado = metas_en_riesgo(
+            [
+                _meta("000000002", "1000", "10"),
+                _meta("000000001", "1000", None),
+            ]
+        )
+
+        assert [m.fila.cod_indicador_producto for m in resultado.en_riesgo] == [
+            "000000001",
+            "000000002",
+        ]
+
+    def test_meta_sin_presupuesto_sigue_fuera_y_se_cuenta_aparte(self):
+        """La decisión del PO es sobre la EJECUCIÓN, no sobre el
+        presupuesto: CA04 no cambia."""
+        resultado = metas_en_riesgo([_meta("000000001", None, None)])
+
+        assert resultado.en_riesgo == ()
+        assert resultado.sin_presupuesto == 1
+
+    def test_meta_con_un_rubro_vacio_y_otro_con_dato_no_se_marca(self):
+        """`_sumar_opcional` ya trata el vacío de UN rubro como 0 cuando
+        otro rubro de la misma meta sí trae dato: `ejecucion` deja de ser
+        `None` y por lo tanto no se marca. Es el mismo criterio aplicado
+        en dos niveles (dentro de una meta, y entre metas en el reporte
+        de riesgo), no una regla nueva."""
+        (fila,) = agregar_por_meta(
+            [
+                FilaFuenteMeta(
+                    cod_indicador_producto="000000001",
+                    nombre_producto="Meta 1",
+                    sector="Educación",
+                    meta_cuatrienio=None,
+                    cod_bpin=None,
+                    codigo_rubro="R-A",
+                    presupuesto_apropiado=Decimal("500"),
+                    ejecucion=None,
+                    numero_contrato=None,
+                ),
+                FilaFuenteMeta(
+                    cod_indicador_producto="000000001",
+                    nombre_producto="Meta 1",
+                    sector="Educación",
+                    meta_cuatrienio=None,
+                    cod_bpin=None,
+                    codigo_rubro="R-B",
+                    presupuesto_apropiado=Decimal("500"),
+                    ejecucion=Decimal("100"),
+                    numero_contrato=None,
+                ),
+            ]
+        )
+
+        resultado = metas_en_riesgo([fila])
+
+        (meta,) = resultado.en_riesgo
+        assert meta.sin_ejecucion_registrada is False
 
 
 def _corte_registrado(sesion) -> uuid.UUID:
@@ -133,7 +211,7 @@ def _corte_registrado(sesion) -> uuid.UUID:
     return corte_id
 
 
-def _meta_con_rubro(sesion, corte_id, cod: str, presupuesto: str, ejecucion: str) -> None:
+def _meta_con_rubro(sesion, corte_id, cod: str, presupuesto: str, ejecucion: str | None) -> None:
     sesion.add(
         MetaORM(
             id=uuid.uuid4(),
@@ -153,7 +231,7 @@ def _meta_con_rubro(sesion, corte_id, cod: str, presupuesto: str, ejecucion: str
             ultimo_nivel=True,
             codigo_sector_ccpet="22",
             apropiacion_definitiva=Decimal(presupuesto),
-            obligacion_acumulada=Decimal(ejecucion),
+            obligacion_acumulada=None if ejecucion is None else Decimal(ejecucion),
         )
     )
 
@@ -204,3 +282,38 @@ class TestEndpointMetasEnRiesgo:
         cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _GESTOR
 
         assert cliente.get("/api/v1/plan-accion/riesgo").status_code == 403
+
+    def test_meta_sin_ejecucion_registrada_aparece_primera_en_cero_y_marcada(
+        self, cliente, sesion
+    ) -> None:
+        """Decisión del PO (2026-11-11): antes esta meta -- la más
+        riesgosa, con presupuesto y sin ningún dato de ejecución --
+        desaparecía del reporte sin aviso."""
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _VISITANTE
+        corte_id = _corte_registrado(sesion)
+        _meta_con_rubro(sesion, corte_id, "000000001", "1000", "300")
+        _meta_con_rubro(sesion, corte_id, "000000002", "1000", None)
+        sesion.commit()
+
+        cuerpo = cliente.get("/api/v1/plan-accion/riesgo").json()
+
+        assert [f["cod_indicador_producto"] for f in cuerpo["filas"]] == [
+            "000000002",
+            "000000001",
+        ]
+        assert Decimal(cuerpo["filas"][0]["avance_financiero_pct"]) == Decimal(0)
+        assert cuerpo["filas"][0]["sin_ejecucion_registrada"] is True
+        assert cuerpo["filas"][1]["sin_ejecucion_registrada"] is False
+        assert cuerpo["total_en_riesgo"] == 2
+        assert cuerpo["metas_sin_presupuesto"] == 0
+
+    def test_meta_con_ejecucion_0_real_no_se_marca(self, cliente, sesion) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _VISITANTE
+        corte_id = _corte_registrado(sesion)
+        _meta_con_rubro(sesion, corte_id, "000000001", "1000", "0")
+        sesion.commit()
+
+        cuerpo = cliente.get("/api/v1/plan-accion/riesgo").json()
+
+        assert Decimal(cuerpo["filas"][0]["avance_financiero_pct"]) == Decimal(0)
+        assert cuerpo["filas"][0]["sin_ejecucion_registrada"] is False

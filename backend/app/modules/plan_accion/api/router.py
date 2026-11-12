@@ -99,7 +99,11 @@ from app.modules.plan_accion.domain.entidades import (
     calcular_resumen,
     filtrar_plan_accion,
 )
-from app.modules.plan_accion.domain.riesgo import UMBRAL_RIESGO_PCT, metas_en_riesgo
+from app.modules.plan_accion.domain.riesgo import (
+    UMBRAL_RIESGO_PCT,
+    MetaEnRiesgo,
+    metas_en_riesgo,
+)
 from app.modules.plan_accion.persistence.consultas import construir_filas_plan_accion
 from app.modules.plan_accion.persistence.exportacion_excel import (
     MetadatosComparacion,
@@ -155,6 +159,19 @@ class PlanAccionRespuesta(BaseModel):
     resumen: ResumenPlanAccionRespuesta
 
 
+class FilaEnRiesgoRespuesta(FilaPlanAccionRespuesta):
+    """[E04-HU07] Fila de `/riesgo`: mismos campos que
+    `FilaPlanAccionRespuesta`, salvo `avance_financiero_pct`, que aquí
+    nunca es `None`. Una meta con presupuesto y sin ningún dato de
+    ejecución cuenta como 0 % (decisión del PO, 2026-11-11) y se marca con
+    `sin_ejecucion_registrada=True`; esto es exclusivo de esta lista y NO
+    cambia `/plan-accion/actual`, que sigue mostrando "--" (D26, sin
+    cambios) para ese mismo caso -- de ahí el DTO propio en vez de
+    reutilizar `FilaPlanAccionRespuesta`."""
+
+    sin_ejecucion_registrada: bool
+
+
 class MetasEnRiesgoRespuesta(BaseModel):
     """[E04-HU07] Metas con avance financiero menor al umbral."""
 
@@ -162,7 +179,7 @@ class MetasEnRiesgoRespuesta(BaseModel):
     vigencia: int
     fecha_corte: str
     umbral_pct: Decimal
-    filas: list[FilaPlanAccionRespuesta]
+    filas: list[FilaEnRiesgoRespuesta]
     total_en_riesgo: int
     metas_sin_presupuesto: int
 
@@ -236,6 +253,16 @@ def _fila_a_respuesta(fila: FilaPlanAccion) -> FilaPlanAccionRespuesta:
         avance_financiero_pct=fila.avance_financiero_pct,
         estado_cruce=fila.estado_cruce.value,
     )
+
+
+def _meta_en_riesgo_a_respuesta(meta: MetaEnRiesgo) -> FilaEnRiesgoRespuesta:
+    """Reutiliza `_fila_a_respuesta` como única fuente de la conversión
+    entidad->DTO y solo sobrescribe lo que esta lista necesita distinto:
+    `avance_financiero_pct` (nunca `None` aquí, ver `FilaEnRiesgoRespuesta`)
+    y el campo adicional `sin_ejecucion_registrada`."""
+    base = _fila_a_respuesta(meta.fila).model_dump()
+    base["avance_financiero_pct"] = meta.avance_financiero_pct
+    return FilaEnRiesgoRespuesta(**base, sin_ejecucion_registrada=meta.sin_ejecucion_registrada)
 
 
 def _fila_comparacion_a_respuesta(fila: FilaComparacion) -> FilaComparacionRespuesta:
@@ -418,6 +445,11 @@ def obtener_metas_en_riesgo(
     (CA04). Una lista vacía es el caso de CA07: el mensaje lo pone el
     frontend.
 
+    Una meta con presupuesto pero sin ningún dato de ejecución entra en
+    0 % y con `sin_ejecucion_registrada=True` (decisión del PO,
+    2026-11-11, pendiente de ratificar con la clienta junto con la
+    decisión #8 -- ver `domain/riesgo.py`).
+
     Usa el corte registrado más reciente, igual que `/actual`. "Responsable"
     (CA06) no se devuelve: decisión #14 abierta.
     """
@@ -429,7 +461,7 @@ def obtener_metas_en_riesgo(
         vigencia=corte.vigencia,
         fecha_corte=corte.fecha_corte.isoformat(),
         umbral_pct=UMBRAL_RIESGO_PCT,
-        filas=[_fila_a_respuesta(f) for f in resultado.en_riesgo],
+        filas=[_meta_en_riesgo_a_respuesta(m) for m in resultado.en_riesgo],
         total_en_riesgo=len(resultado.en_riesgo),
         metas_sin_presupuesto=resultado.sin_presupuesto,
     )

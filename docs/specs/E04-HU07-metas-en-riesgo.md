@@ -44,12 +44,23 @@ Los de la hoja «HU_E04_07» (E04-HU07-CA01 a CA07), sin cambios.
   mismo cálculo del Plan de Acción ([D26](../DECISIONES.md)); esta HU no
   define qué es "Ejecución" `[VALIDAR: decisión #8]`.
 - Riesgo = avance estrictamente menor a 50 %.
-- Meta sin presupuesto definitivo (vacío o 0): no se calcula ni se lista.
+- Meta sin presupuesto definitivo (vacío o 0): no se calcula ni se lista
+  (CA04).
+- **Meta con presupuesto definitivo > 0 pero sin ningún dato de ejecución:**
+  cuenta como 0 % de avance, entra a la lista (primera, por CA05) y se
+  marca `sin_ejecucion_registrada=true`. Decisión del PO (2026-11-11,
+  pendiente de ratificar con la clienta junto con la decisión #8): el
+  rubro existe y su celda de ejecución está vacía, es decir, no se ha
+  ejecutado nada -- el caso más riesgoso, que antes desaparecía del
+  reporte sin aviso. Una meta con ejecución 0 REAL (dato explícito, no
+  vacío) también entra en 0 % pero no se marca.
 
 ## Contrato
 
 - `GET /api/v1/plan-accion/riesgo` — autenticación/permisos:
-  `administrador` o `visitante`.
+  `administrador` o `visitante`. Cada fila agrega `sin_ejecucion_registrada:
+  bool` sobre los campos de `/plan-accion/actual`; ese otro endpoint no
+  cambia y sigue mostrando "--" (D26) para el mismo caso.
 
 ## Estados y errores
 
@@ -72,5 +83,7 @@ Los de la hoja «HU_E04_07» (E04-HU07-CA01 a CA07), sin cambios.
 - **Ubicación:** vive en el módulo `plan_accion` porque usa su misma
   agregación por meta. Si el equipo prefiere el módulo `alertas` (hoy
   vacío) para HU-05/06/07, es mover un archivo de dominio y un endpoint.
-- **Meta con presupuesto pero sin dato de ejecución:** no se clasifica
-  (no hay % calculable). `[VALIDAR]` si debe tratarse como 0 %.
+- **Meta con presupuesto pero sin dato de ejecución:** cuenta como 0 % y
+  se marca `sin_ejecucion_registrada` -- decisión del PO del 2026-11-11
+  (ver "Reglas de negocio"), pendiente de ratificar con la clienta junto
+  con la decisión #8.
