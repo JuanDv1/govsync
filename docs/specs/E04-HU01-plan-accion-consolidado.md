@@ -65,6 +65,38 @@ INVERSIÓN), `RegistroPresupuestalORM` como puente.
 - `GET /api/v1/plan-accion/actual` — autenticación/permisos:
   `administrador` o `visitante`.
 
+### Desglose de trazabilidad (CA03) — propuesta, pendiente de acordar con FE
+
+Campos **nuevos** en cada fila (aditivos: `cod_bpin`, `rubros` y `contratos`
+se conservan sin cambios para no romper la pantalla actual):
+
+- `bpins: string[]` — todos los BPIN distintos de la meta, ordenados.
+  `cod_bpin` queda como el primero de esa lista (corrige H-027: antes se
+  conservaba solo uno y dependía del orden de las filas).
+- `desglose: Rubro[]` — un elemento por rubro de la meta, ordenado por
+  código:
+  - `codigo_rubro`, `presupuesto_definitivo`, `ejecucion`
+  - `contratos: Contrato[]` — `numero_contrato`, `objeto`, `valor`,
+    `valor_pagado`
+
+Regla que garantiza CA03/CA08: los totales de la meta
+(`presupuesto_definitivo`, `ejecucion`) son la suma de los rubros de
+`desglose`; un rubro cuenta una sola vez aunque tenga varios contratos.
+
+Pendiente (no se inventó):
+
+- **Estado del contrato:** la tarjeta lo pide, pero ninguna de las fuentes
+  cargadas trae ese dato. Se entrega `valor` y `valor_pagado`; definir con
+  la clienta qué es "estado" y de dónde sale.
+- **Relación BPIN → Rubro:** en los datos, BPIN y rubros cuelgan de la meta
+  por separado (ambos por el código de indicador). La cadena
+  "Meta → BPIN → Rubro → Contrato" del CA no se puede armar como jerarquía
+  sin una regla que diga qué rubro pertenece a qué BPIN.
+- **Contrato en varios rubros:** aparece bajo cada rubro con su valor
+  completo. Los valores de contrato no se suman en ningún total.
+- Decisión #24 (regla de agregación) sigue abierta: aquí se expone el
+  detalle de la regla que ya estaba implementada (D26), no una regla nueva.
+
 ## Estados y errores
 
 | Código HTTP | `codigo`                 | Cuándo                                                 |

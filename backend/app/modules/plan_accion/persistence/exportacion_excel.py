@@ -150,7 +150,8 @@ def _escribir_fila(hoja: Worksheet, fila_excel: int, fila: FilaPlanAccion) -> No
         fila.cod_indicador_producto,
         _sanear_texto_celda(fila.nombre_producto),
         fila.meta_programada,
-        fila.cod_bpin,
+        # H-027: todos los BPIN de la meta, no solo el primero.
+        _sanear_texto_celda(", ".join(fila.bpins)) if fila.bpins else fila.cod_bpin,
         _sanear_texto_celda(", ".join(fila.rubros)) if fila.rubros else None,
         fila.presupuesto_definitivo,
         fila.ejecucion,

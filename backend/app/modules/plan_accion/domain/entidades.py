@@ -96,6 +96,36 @@ class FilaFuenteMeta:
     presupuesto_apropiado: Decimal | None
     ejecucion: Decimal | None
     numero_contrato: str | None
+    # [E04-HU01-CA03] Datos del contrato para el desglose. Opcionales y al
+    # final para no romper a quien construye la fila sin ellos.
+    objeto_contrato: str | None = None
+    valor_contrato: Decimal | None = None
+    valor_pagado_contrato: Decimal | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ContratoDesglose:
+    """[E04-HU01-CA03] Un contrato dentro del desglose de un rubro."""
+
+    numero_contrato: str
+    objeto: str | None
+    valor: Decimal | None
+    valor_pagado: Decimal | None
+
+
+@dataclass(frozen=True, slots=True)
+class RubroDesglose:
+    """[E04-HU01-CA03] Un rubro de la meta con su monto y sus contratos.
+
+    La suma de `presupuesto_definitivo`/`ejecucion` de todos los rubros de
+    una meta es exactamente el total de la meta: el detalle y el total
+    salen de los mismos rubros ya deduplicados.
+    """
+
+    codigo_rubro: str
+    presupuesto_definitivo: Decimal | None
+    ejecucion: Decimal | None
+    contratos: tuple[ContratoDesglose, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -120,6 +150,11 @@ class FilaPlanAccion:
     existe."""
     avance_financiero_pct: Decimal | None
     estado_cruce: EstadoCruceMeta
+    bpins: tuple[str, ...] = ()
+    """Todos los BPIN distintos de la meta, ordenados. `cod_bpin` se
+    conserva por compatibilidad y es el primero de esta tupla."""
+    desglose: tuple[RubroDesglose, ...] = ()
+    """[E04-HU01-CA03] Rubros de la meta con su monto y sus contratos."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,70 +170,100 @@ class ResumenPlanAccion:
 
 
 def agregar_por_meta(filas: list[FilaFuenteMeta]) -> list[FilaPlanAccion]:
-    """CA02, CA03, CA05, CA08: agrupa filas crudas (1 por meta×rubro×
-    contrato) en una fila por meta, sin duplicar dinero (CA03/CA08) y con
-    el estado de cruce agregado (CA05).
-
-    Deduplicación explícita por RUBRO antes de sumar (ver docstring del
-    módulo): dos filas de la misma meta con el MISMO `codigo_rubro`
-    aportan el mismo presupuesto/ejecución una sola vez, sin importar
-    cuántos contratos distintos traiga ese rubro.
-    """
+    """CA02, CA03, CA05, CA08: agrupa filas crudas (1 por meta×BPIN×rubro×
+    contrato) en una fila por meta, sin duplicar dinero y con el estado de
+    cruce agregado. El resultado no depende del orden de las filas."""
     por_meta: dict[str, list[FilaFuenteMeta]] = defaultdict(list)
     for fila in filas:
         por_meta[fila.cod_indicador_producto].append(fila)
 
-    resultado: list[FilaPlanAccion] = []
-    for codigo, filas_meta in por_meta.items():
-        primera = filas_meta[0]
-
-        rubros_vistos: dict[str, FilaFuenteMeta] = {}
-        for f in filas_meta:
-            if f.codigo_rubro is not None and f.codigo_rubro not in rubros_vistos:
-                rubros_vistos[f.codigo_rubro] = f
-
-        contratos = tuple(
-            sorted({f.numero_contrato for f in filas_meta if f.numero_contrato is not None})
-        )
-
-        presupuesto_definitivo = _sumar_opcional(
-            f.presupuesto_apropiado for f in rubros_vistos.values()
-        )
-        ejecucion = _sumar_opcional(f.ejecucion for f in rubros_vistos.values())
-
-        tiene_bpin = primera.cod_bpin is not None
-        tiene_ejecucion = bool(rubros_vistos)
-        tiene_contrato = bool(contratos)
-
-        if tiene_bpin and tiene_ejecucion and tiene_contrato:
-            estado = EstadoCruceMeta.COMPLETO
-        elif not tiene_bpin and not tiene_ejecucion and not tiene_contrato:
-            estado = EstadoCruceMeta.SIN_INFORMACION
-        else:
-            estado = EstadoCruceMeta.PARCIAL
-
-        avance_financiero_pct = None
-        if presupuesto_definitivo and presupuesto_definitivo > 0 and ejecucion is not None:
-            avance_financiero_pct = (ejecucion / presupuesto_definitivo) * Decimal(100)
-
-        resultado.append(
-            FilaPlanAccion(
-                cod_indicador_producto=codigo,
-                nombre_producto=primera.nombre_producto,
-                sector=primera.sector,
-                meta_programada=primera.meta_cuatrienio,
-                cod_bpin=primera.cod_bpin,
-                rubros=tuple(sorted(rubros_vistos.keys())),
-                presupuesto_definitivo=presupuesto_definitivo,
-                ejecucion=ejecucion,
-                contratos=contratos,
-                avance_fisico_pct=None,
-                avance_financiero_pct=avance_financiero_pct,
-                estado_cruce=estado,
-            )
-        )
-
+    resultado = [_agregar_una_meta(codigo, filas_meta) for codigo, filas_meta in por_meta.items()]
     return sorted(resultado, key=lambda f: f.cod_indicador_producto)
+
+
+def _agregar_una_meta(codigo: str, filas_meta: list[FilaFuenteMeta]) -> FilaPlanAccion:
+    primera = filas_meta[0]
+    bpins = tuple(sorted({f.cod_bpin for f in filas_meta if f.cod_bpin is not None}))
+    desglose = _desglosar_por_rubro(filas_meta)
+    contratos = tuple(sorted({c.numero_contrato for rubro in desglose for c in rubro.contratos}))
+
+    # Los totales salen del desglose (un rubro = una vez), nunca de las
+    # filas crudas: un rubro con N contratos aparece en N filas.
+    presupuesto_definitivo = _sumar_opcional(r.presupuesto_definitivo for r in desglose)
+    ejecucion = _sumar_opcional(r.ejecucion for r in desglose)
+
+    return FilaPlanAccion(
+        cod_indicador_producto=codigo,
+        nombre_producto=primera.nombre_producto,
+        sector=primera.sector,
+        meta_programada=primera.meta_cuatrienio,
+        cod_bpin=bpins[0] if bpins else None,
+        rubros=tuple(r.codigo_rubro for r in desglose),
+        presupuesto_definitivo=presupuesto_definitivo,
+        ejecucion=ejecucion,
+        contratos=contratos,
+        avance_fisico_pct=None,
+        avance_financiero_pct=_avance_financiero(presupuesto_definitivo, ejecucion),
+        estado_cruce=_estado_de_cruce(
+            tiene_bpin=bool(bpins), tiene_rubro=bool(desglose), tiene_contrato=bool(contratos)
+        ),
+        bpins=bpins,
+        desglose=desglose,
+    )
+
+
+def _desglosar_por_rubro(filas_meta: list[FilaFuenteMeta]) -> tuple[RubroDesglose, ...]:
+    """[E04-HU01-CA03] Un `RubroDesglose` por rubro distinto, ordenados por
+    código, cada uno con sus contratos distintos ordenados por número."""
+    filas_por_rubro: dict[str, list[FilaFuenteMeta]] = defaultdict(list)
+    for fila in filas_meta:
+        if fila.codigo_rubro is not None:
+            filas_por_rubro[fila.codigo_rubro].append(fila)
+
+    return tuple(
+        RubroDesglose(
+            codigo_rubro=codigo_rubro,
+            presupuesto_definitivo=filas_rubro[0].presupuesto_apropiado,
+            ejecucion=filas_rubro[0].ejecucion,
+            contratos=_contratos_distintos(filas_rubro),
+        )
+        for codigo_rubro, filas_rubro in sorted(filas_por_rubro.items())
+    )
+
+
+def _contratos_distintos(filas_rubro: list[FilaFuenteMeta]) -> tuple[ContratoDesglose, ...]:
+    por_numero: dict[str, ContratoDesglose] = {}
+    for fila in filas_rubro:
+        if fila.numero_contrato is not None and fila.numero_contrato not in por_numero:
+            por_numero[fila.numero_contrato] = ContratoDesglose(
+                numero_contrato=fila.numero_contrato,
+                objeto=fila.objeto_contrato,
+                valor=fila.valor_contrato,
+                valor_pagado=fila.valor_pagado_contrato,
+            )
+    return tuple(por_numero[numero] for numero in sorted(por_numero))
+
+
+def _estado_de_cruce(
+    *, tiene_bpin: bool, tiene_rubro: bool, tiene_contrato: bool
+) -> EstadoCruceMeta:
+    """CA05 (definición de D26, pendiente de ratificar: decisiones #9 y
+    DEC-020 sobre si "Completo" exige contrato)."""
+    if tiene_bpin and tiene_rubro and tiene_contrato:
+        return EstadoCruceMeta.COMPLETO
+    if not (tiene_bpin or tiene_rubro or tiene_contrato):
+        return EstadoCruceMeta.SIN_INFORMACION
+    return EstadoCruceMeta.PARCIAL
+
+
+def _avance_financiero(
+    presupuesto_definitivo: Decimal | None, ejecucion: Decimal | None
+) -> Decimal | None:
+    """Ejecución / Presupuesto definitivo × 100. `None` si no hay
+    presupuesto (o es 0) o no hay ejecución: nunca divide por cero."""
+    if not presupuesto_definitivo or presupuesto_definitivo <= 0 or ejecucion is None:
+        return None
+    return (ejecucion / presupuesto_definitivo) * Decimal(100)
 
 
 def _sumar_opcional(valores) -> Decimal | None:
