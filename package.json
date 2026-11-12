@@ -13,7 +13,8 @@
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint frontend/src --no-error-on-unmatched-pattern",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:coverage": "npm run test:coverage --workspace=frontend"
   },
   "repository": {
     "type": "git",

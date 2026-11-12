@@ -3,3 +3,5 @@ pytest-cov==7.1.0
 httpx==0.28.1
 bandit==1.9.4
 ruff==0.16.6
+pip-audit==2.10.1
+certifi==2026.10.19  # PYSEC-2026-4320 en certifi<2026.10.18 (transitiva de pip-audit/httpx)
