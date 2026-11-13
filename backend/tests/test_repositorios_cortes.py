@@ -27,9 +27,18 @@ from app.modules.cortes.domain.entidades import (
 )
 from app.modules.cortes.persistence.models import (
     ArchivoFuenteORM,
+    ContratoORM,
     HistorialReemplazoArchivoORM,
+    MetaORM,
+    ProyectoIndicadorORM,
+    ProyectoORM,
+    RegistroPresupuestalORM,
+    RubroORM,
 )
-from app.modules.cortes.persistence.repositorios import RepositorioCortesSQL
+from app.modules.cortes.persistence.repositorios import (
+    RepositorioCortesSQL,
+    RepositorioDatosCorteSQL,
+)
 from app.shared.errors import RecursoNoEncontrado
 
 
@@ -322,3 +331,74 @@ def test_listar_historial_reemplazos_de_corte_sin_reemplazos_devuelve_vacio(repo
     corte = repo.guardar(Corte(vigencia=2026, fecha_corte=date(2026, 6, 30)))
 
     assert repo.listar_historial_reemplazos(corte.id) == []
+
+
+def test_eliminar_borra_el_corte_y_libera_el_cupo_de_borrador(repo, sesion) -> None:
+    corte = repo.guardar(Corte(vigencia=2026, fecha_corte=date(2026, 6, 30)))
+
+    repo.eliminar(corte.id)
+    sesion.expire_all()
+
+    assert repo.obtener(corte.id) is None
+    assert repo.existe_borrador_activo() is False
+
+
+def test_eliminar_borra_en_cascada_los_datos_hijos_y_respeta_otros_cortes(repo, sesion) -> None:
+    datos = RepositorioDatosCorteSQL(sesion)
+    otro = repo.guardar(Corte(vigencia=2025, fecha_corte=date(2025, 12, 1)))
+    otro.estado = EstadoCorte.REGISTRADO  # D11: un solo BORRADOR a la vez
+    repo.confirmar_registro(otro)
+    descartado = repo.guardar(Corte(vigencia=2026, fecha_corte=date(2026, 6, 30)))
+    for corte in (descartado, otro):
+        repo.registrar_archivo(
+            corte.id,
+            ArchivoFuente(tipo=TipoArchivoFuente.PDT, nombre_archivo="pdt.xlsx"),
+        )
+        repo.registrar_historial_reemplazo(
+            HistorialReemplazoArchivo(
+                corte_id=corte.id,
+                tipo=TipoArchivoFuente.PDT,
+                nombre_archivo_anterior="a.xlsx",
+                nombre_archivo_nuevo="b.xlsx",
+                usuario="u",
+            )
+        )
+        datos.reemplazar_metas(
+            corte.id, [{"cod_indicador_producto": "040110500", "principal": True}]
+        )
+        datos.reemplazar_proyectos(corte.id, [{"bpin": "1", "codigos_indicador": ["040110500"]}])
+        datos.reemplazar_presupuesto(
+            corte.id,
+            [{"codigo_rubro_nivel": "1", "ultimo_nivel": True}],
+            [{"numero_contrato": "C1"}],
+            [{"numero_contrato": "C1", "codigo_rubro_crudo": "1"}],
+        )
+
+    repo.eliminar(descartado.id)
+    sesion.expire_all()
+
+    tablas = (
+        ArchivoFuenteORM,
+        HistorialReemplazoArchivoORM,
+        MetaORM,
+        ProyectoORM,
+        ProyectoIndicadorORM,
+        RubroORM,
+        ContratoORM,
+        RegistroPresupuestalORM,
+    )
+    for tabla in tablas:
+        assert sesion.scalars(select(tabla)).all() != [], f"{tabla.__name__}: se borró de más"
+    for tabla in (
+        ArchivoFuenteORM,
+        HistorialReemplazoArchivoORM,
+        MetaORM,
+        ProyectoORM,
+        RubroORM,
+        ContratoORM,
+    ):
+        filas = sesion.scalars(select(tabla).where(tabla.corte_id == descartado.id)).all()
+        assert filas == [], f"{tabla.__name__}: quedaron filas huérfanas"
+    assert sesion.scalars(select(ProyectoIndicadorORM)).all() != []
+    assert len(sesion.scalars(select(RegistroPresupuestalORM)).all()) == 1
+    assert len(sesion.scalars(select(ProyectoIndicadorORM)).all()) == 1

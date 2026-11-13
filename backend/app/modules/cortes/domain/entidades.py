@@ -243,6 +243,20 @@ class Corte:
         self.vigencia = vigencia
         self.fecha_corte = fecha_corte
 
+    def verificar_descartable(self) -> None:
+        """Descartar un corte solo aplica a BORRADOR: un REGISTRADO ya forma
+        parte del histórico (y puede ser la base de reutilización de
+        cortes posteriores), así que no se elimina por este flujo.
+        """
+        if self.estado != EstadoCorte.BORRADOR:
+            raise OperacionNoPermitida(
+                "Solo un corte en BORRADOR puede descartarse.",
+                detalles={
+                    "motivo": "corte_no_es_borrador",
+                    "estado_actual": self.estado.value,
+                },
+            )
+
     def verificar_modificable(self) -> None:
         """HU-06/CA-8 (docs del Excel de requisitos, E-02): un corte
         REGISTRADO ya no admite el flujo de reemplazo "durante creación"

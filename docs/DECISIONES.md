@@ -415,6 +415,10 @@ original dejó abiertas:
    de reemplazo por tipo (HU-06, `registrar_archivo`), sin relación con
    este PATCH.
 
+**Aclaración (2026-11-10):** corregir vigencia/fecha no era la única salida
+para un borrador equivocado: también se necesita poder descartarlo (ver
+D36, `DELETE /cortes/{id}`).
+
 ---
 
 ## D12 · Límite de tamaño de archivo verificado en el cliente
@@ -1240,6 +1244,10 @@ módulo sin autenticación. Corregido para seguir la misma regla que los
 otros cuatro de lectura: autenticado, cualquier rol. La tabla de arriba
 no se reescribe (quedaría desactualizada respecto al estado en que fue
 ratificada); esta nota deja registrado el hallazgo y la corrección.
+
+**Actualización 2026-11-10 (D36):** `DELETE /cortes/{id}` (descartar un
+borrador) exige `administrador` o `gestor`, igual que los otros endpoints
+de escritura de `cortes`.
 ---
 
 ## D25 · [E02-HU05] Reemplazo de archivos del corte actual: Opción B, y hallazgos resueltos
@@ -1949,3 +1957,64 @@ vigente hasta que lo ratifique.
 
 **Registrado:** 2026-10-25, Juan David (frontend). Actualizado el 2026-10-25
 con las decisiones del equipo.
+
+---
+
+## D36 · Descartar un corte en BORRADOR: `DELETE /cortes/{id}`, auditado solo en el log
+
+**Clasificación:** Registro de tarjeta.
+
+**Hallazgo (2026-11-10, probando el flujo):** al crear un corte con una
+vigencia equivocada (p. ej. un año distinto al del PDT), la carga del PDT se
+rechaza correctamente, pero el corte queda en BORRADOR sin salida: D11
+impide crear otro mientras exista uno, el backend ya tenía
+`PATCH /cortes/{id}` (D11, aclaración 2026-09-19) pero el frontend nunca lo
+consumía, y no existía forma de eliminar un borrador. Es el mismo tipo de
+hueco que D21: backend con la capacidad, sin punto de entrada en la UI.
+
+**Decisión:**
+
+- `DELETE /cortes/{id}` elimina un corte en BORRADOR y, en cascada (`ON
+DELETE CASCADE` de la BD), todo lo que se hubiera cargado. Un corte
+  REGISTRADO se rechaza con 409 (`detalles.motivo: corte_no_es_borrador`):
+  el histórico no se borra por este flujo. Rol: `administrador` o `gestor`
+  (D24).
+- `NuevoCorte.jsx` ofrece, mientras el corte está en BORRADOR, "Corregir
+  vigencia o fecha" (PATCH existente) y "Descartar borrador" (con
+  confirmación).
+- **Auditoría solo en el log de la aplicación, sin tabla.** Al confirmarse
+  el borrado se escribe una línea INFO en el logger `govsync`:
+  `Corte descartado: id=… vigencia=… fecha_corte=… usuario=<correo>`. No se
+  escribe si el borrado se rechaza (409/404) ni si falla. Motivo: un
+  BORRADOR todavía no es un dato del histórico; el historial de auditoría de
+  [E02-HU05] (D25) existe para reemplazos sobre el corte REGISTRADO actual.
+  Una tabla nueva exigiría una migración (D1) y una decisión sobre qué se
+  guarda que ninguna tarjeta ha pedido. Límite: el log no se consulta desde
+  la aplicación.
+
+**Lo leí (verificado en código):** `ultimo_registrado()` solo considera
+cortes REGISTRADO como base de reutilización (`persistence/repositorios.py`);
+el router de `plan_accion` rechaza comparar contra un BORRADOR; el caso de
+uso `descartar_corte` recibe `usuario.correo` del router, igual que
+`reemplazar_archivo_corte_actual`.
+
+**Lo supongo (no verificado con la clienta):** que descartar un borrador no
+necesita trazabilidad consultable. Si la clienta o el docente la exigen, el
+paso siguiente es una tabla `historial_descarte_corte` (corte descartado, vigencia, fecha,
+usuario, instante) escrita en la misma transacción del borrado, igual que
+`registrar_historial_reemplazo`.
+
+**Alternativas consideradas:**
+
+- Marcar el corte como `DESCARTADO` (borrado lógico) en vez de eliminarlo.
+  Descartada por ahora: añade un tercer estado a D7 y obliga a excluirlo en
+  cada consulta; el índice único de D9 (vigencia + fecha) seguiría
+  bloqueando recrear el mismo corte.
+- Solo corregir con PATCH, sin descartar. Descartada: no cubre abandonar un
+  borrador que ya no se quiere.
+
+**Estado:** RATIFICADA — aprobada por Cristhian el 2026-11-10 (opción
+"log de la aplicación"). Reabrible si la clienta o el docente piden
+trazabilidad consultable; entonces se agrega la tabla descrita arriba.
+
+**Registrado:** 2026-11-10, Cristhian (`CrisCamUO`).

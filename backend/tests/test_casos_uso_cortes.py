@@ -80,6 +80,9 @@ class RepositorioCortesEnMemoria(RepositorioCortes):
         self._cortes[corte.id].vigencia = corte.vigencia
         self._cortes[corte.id].fecha_corte = corte.fecha_corte
 
+    def eliminar(self, corte_id: uuid.UUID) -> None:
+        self._cortes.pop(corte_id, None)
+
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         self.historial.append(historial)
 
