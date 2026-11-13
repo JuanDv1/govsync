@@ -110,6 +110,9 @@ class RepositorioDatosCorteEnMemoria(RepositorioDatosCorte):
     def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
         return self.codigos_metas.get(corte_id, set())
 
+    def contar_metas_por_corte(self) -> dict[uuid.UUID, int]:
+        return {}
+
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
         self.codigos_metas[corte_id] = {m["cod_indicador_producto"] for m in metas}
         return len(metas)
