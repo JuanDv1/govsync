@@ -45,7 +45,8 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.modules.cortes.domain.entidades import (
@@ -69,7 +70,7 @@ from app.modules.cortes.persistence.models import (
     RegistroPresupuestalORM,
     RubroORM,
 )
-from app.shared.errors import RecursoNoEncontrado
+from app.shared.errors import OperacionNoPermitida, RecursoNoEncontrado
 
 
 def _archivo_a_dominio(o: ArchivoFuenteORM) -> ArchivoFuente:
@@ -103,6 +104,7 @@ def _a_dominio(o: CorteORM) -> Corte:
         id=o.id,
         estado=o.estado,
         archivos={a.tipo: _archivo_a_dominio(a) for a in o.archivos},
+        es_referencia=o.es_referencia,
     )
 
 
@@ -116,6 +118,7 @@ class RepositorioCortesSQL(RepositorioCortes):
             vigencia=corte.vigencia,
             fecha_corte=corte.fecha_corte,
             estado=corte.estado,
+            es_referencia=corte.es_referencia,
         )
         for archivo in corte.archivos.values():
             orm.archivos.append(
@@ -232,6 +235,43 @@ class RepositorioCortesSQL(RepositorioCortes):
             )
         orm.vigencia = corte.vigencia
         orm.fecha_corte = corte.fecha_corte
+        self._s.flush()
+
+    def confirmar_referencia(self, corte: Corte) -> None:
+        """[E02-HU08][CA04]: ver el contrato en puertos.py.
+
+        El orden importa: primero se quita la marca anterior de la vigencia
+        (y se hace `flush`) y después se pone la nueva; al revés, el índice
+        único parcial rechazaría el estado intermedio con dos marcas.
+        """
+        orm = self._s.get(CorteORM, corte.id)
+        if orm is None:
+            raise RecursoNoEncontrado(
+                f"No existe el corte {corte.id}.",
+                detalles={"motivo": "corte_no_encontrado", "corte_id": str(corte.id)},
+            )
+        try:
+            if corte.es_referencia:
+                self._quitar_otras_referencias(corte)
+            orm.es_referencia = corte.es_referencia
+            self._s.flush()
+        except IntegrityError as exc:
+            raise OperacionNoPermitida(
+                "Otro corte de la misma vigencia se marcó como referencia al mismo "
+                "tiempo. Recargue el histórico e intente de nuevo.",
+                detalles={"motivo": "referencia_en_conflicto", "vigencia": corte.vigencia},
+            ) from exc
+
+    def _quitar_otras_referencias(self, corte: Corte) -> None:
+        self._s.execute(
+            update(CorteORM)
+            .where(
+                CorteORM.vigencia == corte.vigencia,
+                CorteORM.id != corte.id,
+                CorteORM.es_referencia.is_(True),
+            )
+            .values(es_referencia=False)
+        )
         self._s.flush()
 
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:

@@ -80,6 +80,13 @@ class RepositorioCortesEnMemoria(RepositorioCortes):
         self._cortes[corte.id].vigencia = corte.vigencia
         self._cortes[corte.id].fecha_corte = corte.fecha_corte
 
+    def confirmar_referencia(self, corte: Corte) -> None:
+        if corte.es_referencia:
+            for otro in self._cortes.values():
+                if otro.vigencia == corte.vigencia and otro.id != corte.id:
+                    otro.es_referencia = False
+        self._cortes[corte.id].es_referencia = corte.es_referencia
+
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         self.historial.append(historial)
 

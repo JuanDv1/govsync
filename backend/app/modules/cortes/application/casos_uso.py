@@ -429,6 +429,37 @@ class ServicioCortes:
             raise
         return corte
 
+    def marcar_como_referencia(self, corte_id) -> Corte:
+        """[E02-HU08][CA04]: marca el corte como el de referencia de su
+        vigencia. El dominio exige que esté REGISTRADO; el repositorio quita
+        la marca del anterior de la misma vigencia en la misma transacción.
+        Marcar un corte que ya es el de referencia no cambia nada."""
+        corte = self._obtener_o_404(corte_id)
+        corte.marcar_como_referencia()
+        return self._persistir_referencia(corte)
+
+    def desmarcar_referencia(self, corte_id) -> Corte:
+        """[E02-HU08][CA04]: quita la marca. Idempotente: un corte sin marca
+        queda igual."""
+        corte = self._obtener_o_404(corte_id)
+        corte.desmarcar_referencia()
+        return self._persistir_referencia(corte)
+
+    def _obtener_o_404(self, corte_id) -> Corte:
+        corte = self._cortes.obtener(corte_id)
+        if corte is None:
+            raise RecursoNoEncontrado(f"No existe un corte con id {corte_id}.")
+        return corte
+
+    def _persistir_referencia(self, corte: Corte) -> Corte:
+        try:
+            self._cortes.confirmar_referencia(corte)
+            self._commit()
+        except Exception:
+            self._rollback()
+            raise
+        return corte
+
     def listar_cortes(self) -> list[Corte]:
         return self._cortes.listar()
 
