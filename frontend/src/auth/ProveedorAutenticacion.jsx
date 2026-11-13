@@ -33,6 +33,8 @@ import {
 } from "react";
 import keycloak from "./keycloak.js";
 import { establecerProveedorToken } from "../api/cliente.js";
+import { rutaDestinoSegura } from "../lib/rutaDestino.js";
+import { useInactividad } from "./useInactividad.js";
 
 const ContextoAutenticacion = createContext(null);
 
@@ -48,6 +50,12 @@ const ROLES_ESCRITURA = new Set(["administrador", "gestor"]);
 //: `plan_accion/api/router.py`: si allá cambia, cambia aquí. Solo oculta la
 //: UI — el backend ya rechaza con 403 de todas formas.
 const ROLES_PLAN_ACCION = new Set(["administrador", "visitante"]);
+
+//: [E-01/HU-01] CA05: los tres roles de GovSync. `realmAccess.roles` trae
+//: además roles propios de Keycloak (`default-roles-*`, `offline_access`,
+//: `uma_authorization`) que toda cuenta tiene; por eso "sin rol" se decide
+//: contra esta lista y no contra `roles.length`.
+const ROLES_GOVSYNC = new Set(["administrador", "gestor", "visitante"]);
 
 export function ProveedorAutenticacion({ children }) {
   const [cargando, setCargando] = useState(true);
@@ -80,6 +88,14 @@ export function ProveedorAutenticacion({ children }) {
       .finally(() => setCargando(false));
   }, []);
 
+  // [E-01/HU-01] CA04: tras 30 min sin actividad se cierra la sesión y el
+  // login muestra "Su sesión expiró por inactividad" (`?motivo=inactividad`).
+  useInactividad(estaAutenticado, () =>
+    keycloak.logout({
+      redirectUri: `${window.location.origin}/login?motivo=inactividad`,
+    }),
+  );
+
   // useMemo: el objeto de contexto no debe cambiar en cada render — si no,
   // cada componente que consume useAutenticacion() se re-renderiza de más
   // (hallazgo de SonarCloud, javascript:S6481). Depende solo de estado real
@@ -98,12 +114,17 @@ export function ProveedorAutenticacion({ children }) {
       cargando,
       estaAutenticado,
       usuario,
+      tieneRolAsignado:
+        usuario?.roles?.some((rol) => ROLES_GOVSYNC.has(rol)) ?? false,
       puedeEscribir:
         usuario?.roles?.some((rol) => ROLES_ESCRITURA.has(rol)) ?? false,
       puedeVerPlanAccion:
         usuario?.roles?.some((rol) => ROLES_PLAN_ACCION.has(rol)) ?? false,
-      iniciarSesion: () =>
-        keycloak.login({ redirectUri: `${window.location.origin}/cortes` }),
+      // [E-01/HU-01] CA07: `destino` es la ruta que la persona quería abrir.
+      iniciarSesion: (destino) =>
+        keycloak.login({
+          redirectUri: `${window.location.origin}${rutaDestinoSegura(destino)}`,
+        }),
       cerrarSesion: () =>
         keycloak.logout({ redirectUri: `${window.location.origin}/login` }),
     };
