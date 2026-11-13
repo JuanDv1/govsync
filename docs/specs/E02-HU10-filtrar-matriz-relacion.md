@@ -41,9 +41,10 @@ confirmó el 2026-10-16 (D30).
 Administradora (según la historia). Sin restricción de rol definida en el
 Excel para esta HU.
 
-Lectura para cualquier rol autenticado (D24): `GET /matriz-relacion/{corte_id}`,
+Lectura para `administrador` o `visitante` (D24/D37; antes de D37, cualquier
+rol autenticado): `GET /matriz-relacion/{corte_id}`,
 `GET /matriz-relacion/actual` y `GET /matriz-relacion/{corte_id}/opciones-filtro`
-exigen sesión (E01-HU02, #150).
+exigen sesión (E01-HU02, #150); el `gestor` recibe 403.
 
 ## Criterios de aceptación
 

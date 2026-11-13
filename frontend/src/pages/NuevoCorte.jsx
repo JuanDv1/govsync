@@ -50,7 +50,7 @@ const TONO_ESTADO_FUENTE = {
  * directo al paso 2 con el corte ya existente. `Cortes.jsx` enlaza aquí para
  * cualquier corte en BORRADOR.
  *
- * ROL: solo `administrador` y `gestor` (`puedeEscribir`, D24) usan esta
+ * ROL: solo `administrador` (`puedeEscribir`, D24/D37) usa esta
  * pantalla, en las dos rutas. Cualquier otro rol (el `visitante`, de solo
  * lectura) ve un aviso de permiso y no dispara ninguna petición. Es solo UI:
  * el backend ya responde 403 de todas formas.

@@ -1240,6 +1240,11 @@ módulo sin autenticación. Corregido para seguir la misma regla que los
 otros cuatro de lectura: autenticado, cualquier rol. La tabla de arriba
 no se reescribe (quedaría desactualizada respecto al estado en que fue
 ratificada); esta nota deja registrado el hallazgo y la corrección.
+
+**Actualización 2026-11-11 (D37):** el `gestor` deja de tener permisos en
+`cortes`/`trazabilidad`. Escritura: solo `administrador`. Lectura:
+`administrador` o `visitante` (`LecturaDep`), ya no "cualquier rol". La
+tabla de arriba no se reescribe, por el mismo motivo que la nota anterior.
 ---
 
 ## D25 · [E02-HU05] Reemplazo de archivos del corte actual: Opción B, y hallazgos resueltos
@@ -1949,3 +1954,54 @@ vigente hasta que lo ratifique.
 
 **Registrado:** 2026-10-25, Juan David (frontend). Actualizado el 2026-10-25
 con las decisiones del equipo.
+
+---
+
+## D37 · El rol `gestor` no tiene módulos habilitados en esta versión
+
+**Clasificación:** Decisión de alcance y seguridad (afecta a D24 y D26).
+
+> Numeración: D36 la usa el PR #208 (descartar un borrador), todavía sin
+> fusionar. Si ese PR no se fusiona, esta decisión conserva el número D37.
+
+**Contexto:** el `gestor` (Supervisor) existe en Keycloak, pero su función
+principal es la Épica 3 (avance físico), que quedó fuera del Sprint 3
+(Planning 2026-10-28). Hasta hoy D24 le daba los mismos permisos que a
+`administrador` en `cortes` (crear, cargar, corregir, reemplazar y registrar
+cortes) y lectura de `cortes`/`trazabilidad`; D26 ya lo excluía del Plan de
+Acción. En el frontend no tenía vista inicial definida.
+
+**Decisión (PO, 2026-11-11):**
+
+- El `gestor` recibe **403 en todas las rutas** de la API, de lectura y de
+  escritura. Lectura de `cortes`/`trazabilidad`: `LecturaDep`
+  (`administrador` o `visitante`, en `core/dependencias.py`). Escritura de
+  `cortes`: `EscrituraDep` = solo `administrador`.
+- En el frontend, `RutaProtegida` muestra `PantallaSinAcceso` ("Su rol no
+  tiene módulos habilitados en esta versión") en lugar de todo el layout,
+  también al entrar por URL directa. No se monta ningún módulo ni se hace
+  ninguna petición.
+- Una cuenta con `gestor` **y** otro rol con módulos entra normalmente con
+  los permisos de ese otro rol.
+- Una cuenta **sin** rol de GovSync sigue siendo E-01/HU-01 CA05 (otro
+  mensaje, PR #203); `PantallaSinAcceso` es genérica para que esa pantalla
+  la reutilice.
+
+**Motivo:** ocultar las pantallas no basta: con solo el cambio de frontend,
+un `gestor` seguía pudiendo crear y reemplazar cortes llamando a la API.
+
+**Verificación:** `tests/test_gestor_sin_modulos_todas_las_rutas.py` lee las
+rutas del esquema OpenAPI (igual que la prueba de CA05), así que un
+endpoint nuevo que deje entrar al gestor hace fallar la prueba.
+
+**Pendiente / reabrir:**
+
+- Cuando la Épica 3 entre, el `gestor` se agrega a los endpoints que la
+  necesiten (no de forma global) y sale de `ROLES_SIN_MODULOS`
+  (`frontend/src/auth/roles.js`).
+- Registrar en el levantamiento: contradice el CA01 de HU_E01_01 v3.0
+  ("Supervisor → Metas de su sector") mientras la Épica 3 no exista.
+
+**Estado:** RATIFICADA por el PO el 2026-11-11.
+
+**Registrado:** 2026-11-11.

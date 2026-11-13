@@ -117,6 +117,9 @@ router = APIRouter(prefix="/plan-accion", tags=["Plan de Accion"])
 #: que `EscrituraDep` en `cortes/api/router.py`: se envuelve en
 #: `Annotated[Usuario, Depends(...)]`, nunca se asigna la dependencia "pelada"
 #: (FastAPI/Pydantic necesitan el tipo explícito para resolver el esquema).
+#: Hoy coincide A PROPÓSITO con `LecturaDep` (core/dependencias.py, D37),
+#: pero sale de otra decisión (D26) y puede cambiar por otro motivo: por eso
+#: no se reutiliza.
 AccesoPlanAccionDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR, Rol.VISITANTE))]
 
 

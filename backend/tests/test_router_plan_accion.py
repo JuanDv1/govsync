@@ -7,8 +7,8 @@ registrado), CA10 (restricción de rol -- D26, PENDIENTE DE RATIFICAR).
 
 Mismo patrón que `test_router_trazabilidad.py`: sin dobles, SQL real contra
 SQLite en memoria vía `cliente`/`sesion` de conftest.py. El rol por defecto
-del fixture `cliente` es GESTOR (ver conftest.py) -- como D26 NO le da
-acceso a este endpoint, cada prueba que SÍ espera 200 sobreescribe
+del fixture `cliente` es ADMINISTRADOR desde D37 (antes GESTOR, ver
+conftest.py); las pruebas siguen sobreescribiendo
 `obtener_usuario_actual` con un usuario administrador o visitante (mismo
 mecanismo que `test_autorizacion_rutas.py::TestRolVisitante`).
 """
@@ -91,7 +91,7 @@ class TestRestriccionDeRolCA10:
         assert respuesta.status_code == 401
 
     def test_gestor_no_tiene_acceso(self, cliente) -> None:
-        # El fixture `cliente` ya usa GESTOR por defecto (conftest.py).
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _GESTOR
         respuesta = cliente.get("/api/v1/plan-accion/actual")
 
         assert respuesta.status_code == 403
