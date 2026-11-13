@@ -136,6 +136,16 @@ class CorteRespuesta(BaseModel):
     por definición, sin necesidad de consultar nada)."""
 
 
+class CorteHistoricoRespuesta(CorteRespuesta):
+    """[E02-HU08][CA03] Una fila de GET /cortes (histórico). DTO propio para
+    no cambiar la forma de las demás respuestas que devuelven un corte
+    (POST, PATCH, registrar, detalle), que no calculan el conteo."""
+
+    cantidad_metas: int | None
+    """Metas distintas del corte (la misma población del Plan de Acción).
+    `None` si el corte está en BORRADOR: el frontend muestra "—", no 0."""
+
+
 class DescarteRespuesta(BaseModel):
     """D14 (docs/DECISIONES.md): un fragmento de indicador descartado, con
     `categoria` para que la vista previa de [HU-04][FE-03] priorice
@@ -252,16 +262,26 @@ def crear_corte(
     return _a_dto(corte, es_corte_actual=False)
 
 
-@router.get("", response_model=list[CorteRespuesta])
-def listar_cortes(servicio: ServicioCortesDep, usuario: LecturaDep) -> list[CorteRespuesta]:
+@router.get("", response_model=list[CorteHistoricoRespuesta])
+def listar_cortes(
+    servicio: ServicioCortesDep, usuario: LecturaDep
+) -> list[CorteHistoricoRespuesta]:
     """HU-01 / CA-8 (junto con GET /cortes/{id}): histórico de cortes.
 
     [E02-HU05] `id_actual` se calcula UNA sola vez para toda la lista
     (no un `obtener_corte_actual()` por fila) -- ver `_id_corte_actual`.
+
+    [E02-HU08][CA03] `cantidad_metas`: ver
+    `ServicioCortes.listar_cortes_con_cantidad_metas` (un conteo agrupado
+    para todo el histórico; `None` para un BORRADOR).
     """
     id_actual = _id_corte_actual(servicio)
     return [
-        _a_dto(corte, es_corte_actual=(corte.id == id_actual)) for corte in servicio.listar_cortes()
+        CorteHistoricoRespuesta(
+            **_a_dto(corte, es_corte_actual=(corte.id == id_actual)).model_dump(),
+            cantidad_metas=cantidad,
+        )
+        for corte, cantidad in servicio.listar_cortes_con_cantidad_metas()
     ]
 
 
