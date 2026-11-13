@@ -92,6 +92,11 @@ class CorteORM(Base):
     fecha_creacion: Mapped[datetime] = mapped_column(
         sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
     )
+    # [E02-HU08][CA04] Corte de referencia de su vigencia (ver el índice
+    # `ux_corte_referencia_por_vigencia` abajo).
+    es_referencia: Mapped[bool] = mapped_column(
+        sa.Boolean, nullable=False, default=False, server_default=sa.false()
+    )
 
     archivos: Mapped[list[ArchivoFuenteORM]] = relationship(
         back_populates="corte",
@@ -118,6 +123,16 @@ class CorteORM(Base):
             "vigencia",
             "fecha_corte",
             unique=True,
+        ),
+        # [E02-HU08][CA04]: a lo sumo un corte de referencia por vigencia.
+        # Respaldo de BD de `confirmar_referencia` (repositorios.py) contra
+        # dos marcas simultáneas, mismo criterio que `ux_corte_borrador_unico`.
+        sa.Index(
+            "ux_corte_referencia_por_vigencia",
+            "vigencia",
+            unique=True,
+            postgresql_where=sa.text("es_referencia"),
+            sqlite_where=sa.text("es_referencia"),
         ),
     )
 
