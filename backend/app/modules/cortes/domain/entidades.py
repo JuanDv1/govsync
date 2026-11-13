@@ -157,6 +157,24 @@ class Corte:
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     estado: EstadoCorte = EstadoCorte.BORRADOR
     archivos: dict[TipoArchivoFuente, ArchivoFuente] = field(default_factory=dict)
+    es_referencia: bool = False
+    """[E02-HU08][CA04] Corte de referencia de su vigencia (la "estrella").
+    A lo sumo uno por vigencia: lo garantiza el repositorio al marcar
+    (`confirmar_referencia`) y, como respaldo, un índice único parcial."""
+
+    def marcar_como_referencia(self) -> None:
+        """[E02-HU08][CA04]: solo un corte REGISTRADO (finalizado) puede ser
+        el de referencia; un BORRADOR todavía puede cambiar."""
+        if self.estado != EstadoCorte.REGISTRADO:
+            raise OperacionNoPermitida(
+                "Solo un corte registrado puede marcarse como corte de referencia.",
+                detalles={"motivo": "corte_no_registrado", "estado_actual": self.estado.value},
+            )
+        self.es_referencia = True
+
+    def desmarcar_referencia(self) -> None:
+        """[E02-HU08][CA04]: quitar la marca siempre se permite (idempotente)."""
+        self.es_referencia = False
 
     @staticmethod
     def validar_fecha(fecha_corte: date, hoy: date) -> None:
