@@ -50,6 +50,7 @@ from app.modules.cortes.application.validacion_archivos import (
 from app.modules.cortes.domain.entidades import (
     ArchivoFuente,
     Corte,
+    EstadoCorte,
     HistorialReemplazoArchivo,
     TipoArchivoFuente,
 )
@@ -431,6 +432,21 @@ class ServicioCortes:
 
     def listar_cortes(self) -> list[Corte]:
         return self._cortes.listar()
+
+    def listar_cortes_con_cantidad_metas(self) -> list[tuple[Corte, int | None]]:
+        """[E02-HU08][CA03]: histórico de cortes con la cantidad de metas de
+        cada uno. Dos consultas en total sin importar cuántos cortes haya
+        (la lista y un conteo agrupado), nunca una por corte.
+
+        Regla (decisión del PO del 2026-11-11, tarjeta HU08-CA03): un corte
+        que aún no está finalizado (BORRADOR) no tiene cantidad -> `None`,
+        que el frontend muestra como "—" (no 0: sus metas pueden cambiar
+        todavía). Un corte REGISTRADO sin metas -> 0."""
+        conteos = self._datos.contar_metas_por_corte()
+        return [
+            (corte, conteos.get(corte.id, 0) if corte.estado is EstadoCorte.REGISTRADO else None)
+            for corte in self._cortes.listar()
+        ]
 
     def obtener_corte(self, corte_id) -> Corte:
         """[HU-01][FE-01] GET /cortes/{id}: detalle de un corte.

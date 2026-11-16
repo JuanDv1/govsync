@@ -45,7 +45,7 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, distinct, func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.modules.cortes.domain.entidades import (
@@ -270,6 +270,18 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
     def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
         consulta = select(MetaORM.cod_indicador_producto).where(MetaORM.corte_id == corte_id)
         return set(self._s.scalars(consulta))
+
+    def contar_metas_por_corte(self) -> dict[uuid.UUID, int]:
+        """[E02-HU08][CA03]: una sola consulta agrupada, apoyada en el índice
+        `ix_meta_cruce (corte_id, cod_indicador_producto)`. `DISTINCT` porque
+        la tabla `meta` no tiene unicidad por (corte, código): el Plan de
+        Acción agrupa por código, así que el conteo también."""
+        consulta = select(
+            MetaORM.corte_id, func.count(distinct(MetaORM.cod_indicador_producto))
+        ).group_by(MetaORM.corte_id)
+        # `.all()` antes de `dict()`: un Result de SQLAlchemy expone `keys()`
+        # y `dict()` lo trataría como un mapeo en vez de como pares.
+        return dict(self._s.execute(consulta).tuples().all())
 
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
         """[HU-02][BE-04]: reemplazo total de las metas del corte.

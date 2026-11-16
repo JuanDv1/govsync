@@ -139,6 +139,16 @@ class RepositorioDatosCorte(ABC):
         que el corte tiene hoy cargadas (`set()` si no tiene ninguna)."""
 
     @abstractmethod
+    def contar_metas_por_corte(self) -> dict[uuid.UUID, int]:
+        """[E02-HU08][CA03]: cantidad de metas DISTINTAS (por código de
+        indicador de producto) de cada corte, en UNA sola consulta agrupada
+        para todo el histórico (nunca una consulta por corte).
+
+        Es la misma población que el Plan de Acción agrega por meta
+        (`agregar_por_meta`): todas las metas del corte, sin filtrar. Un
+        corte sin metas no aparece en el diccionario."""
+
+    @abstractmethod
     def copiar_datos(
         self, origen_id: uuid.UUID, destino_id: uuid.UUID, tipo: TipoArchivoFuente
     ) -> int:
