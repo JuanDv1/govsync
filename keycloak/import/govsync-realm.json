@@ -38,9 +38,9 @@
   "permanentLockout": false,
   "maxTemporaryLockouts": 0,
   "bruteForceStrategy": "MULTIPLE",
-  "maxFailureWaitSeconds": 900,
+  "maxFailureWaitSeconds": 300,
   "minimumQuickLoginWaitSeconds": 60,
-  "waitIncrementSeconds": 900,
+  "waitIncrementSeconds": 300,
   "quickLoginCheckMilliSeconds": 1000,
   "maxDeltaTimeSeconds": 43200,
   "failureFactor": 3,
@@ -1146,7 +1146,9 @@
       }
     ]
   },
-  "internationalizationEnabled": false,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["es"],
+  "defaultLocale": "es",
   "authenticationFlows": [
     {
       "id": "e7519521-ed6b-4e59-89e0-e43c4123d3a2",

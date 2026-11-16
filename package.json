@@ -14,7 +14,8 @@
     "lint": "eslint frontend/src --no-error-on-unmatched-pattern",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:coverage": "npm run test:coverage --workspace=frontend"
+    "test:coverage": "npm run test:coverage --workspace=frontend",
+    "build:tema-keycloak": "npm run build:tema-keycloak --workspace=frontend"
   },
   "repository": {
     "type": "git",

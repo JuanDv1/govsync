@@ -1170,7 +1170,9 @@ cerrada sin resolverlos:**
 - **HU01-CA03/CA04** (bloqueo 3 intentos/15 min; expiración por
   inactividad de 30 min): ya no dependen de configuración manual —
   resuelto junto con el punto siguiente (provisión automática del
-  realm).
+  realm). _Actualización 2026-11-16 (PO): el bloqueo pasa a 5 min y el
+  aviso al usuario es un bloqueo visual por navegador; ver
+  `docs/SEGURIDAD.md` ("sesión del usuario")._
 
 **Actualización (2026-10-13) — el realm ya no se configura a mano:**
 `keycloak/import/govsync-realm.json` (exportado del realm que se había
