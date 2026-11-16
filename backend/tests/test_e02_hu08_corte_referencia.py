@@ -208,6 +208,25 @@ class TestEndpoints:
     def test_corte_inexistente_devuelve_404(self, cliente_admin) -> None:
         assert cliente_admin.put(f"/api/v1/cortes/{uuid.uuid4()}/referencia").status_code == 404
 
+    def test_desmarcar_un_corte_inexistente_devuelve_404(self, cliente_admin) -> None:
+        respuesta = cliente_admin.delete(f"/api/v1/cortes/{uuid.uuid4()}/referencia")
+
+        assert respuesta.status_code == 404
+
+    def test_desmarcar_un_borrador_es_idempotente_y_responde_200(
+        self, cliente_admin, sesion
+    ) -> None:
+        """Quitar la marca siempre se permite (docstring de `desmarcar_referencia`):
+        un BORRADOR nunca está marcado, así que queda igual y no hay 409."""
+        corte_id = _corte(sesion, estado=EstadoCorte.BORRADOR)
+        sesion.commit()
+
+        respuesta = cliente_admin.delete(f"/api/v1/cortes/{corte_id}/referencia")
+
+        assert respuesta.status_code == 200
+        assert respuesta.json()["es_referencia"] is False
+        assert _marcados(sesion) == set()
+
     @pytest.mark.parametrize("usuario", [_VISITANTE, _GESTOR], ids=["visitante", "gestor"])
     @pytest.mark.parametrize("metodo", ["put", "delete"])
     def test_ca04_solo_la_administradora_marca_o_desmarca(
