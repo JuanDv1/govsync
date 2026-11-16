@@ -585,6 +585,15 @@ class TestEndpoint:
         assert cliente.get(_url(corte)).status_code == 200
 
     @pytest.mark.parametrize("sufijo", ["", "/exportar"])
+    def test_sin_token_responde_401(self, cliente, sesion, corte, sufijo) -> None:
+        sesion.commit()
+        cliente.app.dependency_overrides.pop(obtener_usuario_actual)
+
+        respuesta = cliente.get(_url(corte, sufijo))
+
+        assert respuesta.status_code == 401
+
+    @pytest.mark.parametrize("sufijo", ["", "/exportar"])
     def test_el_gestor_no_tiene_acceso_d37(self, cliente, sesion, corte, sufijo) -> None:
         sesion.commit()
         cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _GESTOR

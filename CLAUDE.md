@@ -92,9 +92,10 @@ between indicators, budget execution, and BPIN projects), `identidad` (Keycloak 
 verification and the `Rol`/`Usuario` domain types — see Architecture above), `plan_accion` (E04
 Plan de Acción: consolidated view, filters, Excel export and comparison between two cortes, served
 under `/plan-accion`; `api/`, `domain/` and `persistence/` only — no `application/` layer and no
-frontend yet). `alertas/` and
-`avance_fisico/` exist as empty module directories (`.gitkeep` only, no code) — placeholders for
-future épicas, not stubs to fill in without a card. Shared kernel: `app/shared/codigos.py`
+frontend yet), `alertas` (E04-HU05: unrelated-records report between the sources, served under
+`/registros-no-relacionados`; `api/`, `domain/` and `persistence/` only, read-only, no new tables).
+`avance_fisico/` exists as an empty module directory (`.gitkeep` only, no code) — a placeholder for
+a future épica, not a stub to fill in without a card. Shared kernel: `app/shared/codigos.py`
 (the `CodigoIndicadorProducto` value object — the 9-digit key that joins all four data sources;
 **always store as text, never as int**, since real codes like `040110500` start with a leading
 zero) and `app/shared/errors.py` (`GovSyncError` hierarchy — domain exceptions in Spanish, no

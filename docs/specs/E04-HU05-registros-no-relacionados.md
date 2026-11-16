@@ -145,6 +145,7 @@ SQLite y en PostgreSQL 16 (mismos resultados), el 2026-11-12:
 Reporte de no relacionados del mismo corte: 189 filas (Plan Indicativo
 181, Presupuestal 8, BPIN 0): `meta_sin_proyecto` 77 (= 144 − 67),
 `meta_sin_ejecucion` 25 (= 144 − 119), `meta_sin_contrato` 79,
-`contrato_bpin_no_existe_en_plantilla` 7, `rubro_indicador_no_existe_en_pdt`
+`contrato_bpin_no_existe_en_plantilla` 7; los demás motivos presupuestales
+suman 1 fila (8 − 7) y los de BPIN, 0.
 
-1. La consulta tarda ~56 ms (mediana de 10 corridas, PostgreSQL local).
+La consulta tarda ~56 ms (mediana de 10 corridas, PostgreSQL local).
