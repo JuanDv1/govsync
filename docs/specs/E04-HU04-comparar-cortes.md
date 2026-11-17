@@ -8,7 +8,7 @@
 ## Origen
 
 Hoja `HU_E04_04` del Excel de levantamiento de requisitos
-(`GovSync_Levantamiento_Requisitos_v2_2_Sprint2.xlsx`).
+(`GovSync_Levantamiento_Requisitos_v3_0_Sprint3.xlsx`).
 
 ## Historia
 

@@ -14,7 +14,7 @@
 ## Origen
 
 Hoja del Excel de levantamiento de requisitos correspondiente a esta HU
-(`docs/requisitos/GovSync_Levantamiento_Requisitos_v2_2_Sprint2.xlsx`, hoja
+(`docs/requisitos/GovSync_Levantamiento_Requisitos_v3_0_Sprint3.xlsx`, hoja
 «[nombre de la hoja]»). Esta spec se construye a partir de esa hoja,
 resolviendo sus marcas `[VALIDAR]`, sin inventar requisitos que no estén ahí.
 

@@ -70,8 +70,17 @@ para los tres — **solo para desarrollo local, nunca producción**):
 | `visitante.prueba`     | `visitante`     |
 
 Si `datos_keycloak` ya tenía un realm `govsync` de una corrida anterior, la importación no se
-repite ni lo sobreescribe — para forzarla de nuevo: `docker compose down && docker volume rm
-govsync_datos_keycloak && docker compose up -d`.
+repite ni lo sobreescribe. Para forzarla de nuevo sin detener Postgres (`docker compose down`
+detendría también la base de datos):
+
+```bash
+docker compose stop keycloak
+docker compose rm -f keycloak
+docker volume rm govsync_datos_keycloak
+docker compose up -d
+```
+
+Esto borra los usuarios y la configuración de Keycloak, no los datos de Postgres.
 
 > **Cambios en `govsync-realm.json` y volúmenes existentes.** Lo importado en la primera
 > arrancada no se actualiza solo. Volver a importar con `docker volume rm` **borra** los

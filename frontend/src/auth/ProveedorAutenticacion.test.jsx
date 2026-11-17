@@ -52,10 +52,12 @@ function Sonda() {
     puedeVerPlanAccion,
     usuario,
     loginReciente,
+    estaAutenticado,
   } = valor;
   if (cargando) return <p>cargando</p>;
   return (
     <ul>
+      <li>estaAutenticado={String(estaAutenticado)}</li>
       <li>motivoSinAcceso={String(motivoSinAcceso)}</li>
       <li>vistaInicial={String(vistaInicial)}</li>
       <li>puedeEscribir={String(puedeEscribir)}</li>
@@ -225,6 +227,42 @@ describe("ProveedorAutenticacion: inicio de sesión (CA07)", () => {
     await renderizarConRoles(["visitante"]);
 
     expect(window.sessionStorage.getItem("govsync.loginReciente")).toBeNull();
+  });
+});
+
+describe("ProveedorAutenticacion: renovación del token", () => {
+  beforeEach(() => {
+    keycloakSimulado.updateToken.mockReset();
+    keycloakSimulado.clearToken.mockReset();
+  });
+
+  it("si el refresco falla, borra el token y la UI deja de estar autenticada", async () => {
+    keycloakSimulado.updateToken.mockRejectedValue(
+      new Error("sesión caducada"),
+    );
+    await renderizarConRoles(["administrador"]);
+    expect(screen.getByText("estaAutenticado=true")).toBeInTheDocument();
+
+    await act(async () => {
+      keycloakSimulado.onTokenExpired();
+    });
+
+    expect(keycloakSimulado.updateToken).toHaveBeenCalledWith(30);
+    expect(keycloakSimulado.clearToken).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("estaAutenticado=false")).toBeInTheDocument();
+    expect(screen.getByText("vistaInicial=null")).toBeInTheDocument();
+  });
+
+  it("si el refresco funciona, la sesión sigue y no se borra el token", async () => {
+    keycloakSimulado.updateToken.mockResolvedValue(true);
+    await renderizarConRoles(["administrador"]);
+
+    await act(async () => {
+      keycloakSimulado.onTokenExpired();
+    });
+
+    expect(keycloakSimulado.clearToken).not.toHaveBeenCalled();
+    expect(screen.getByText("estaAutenticado=true")).toBeInTheDocument();
   });
 });
 
