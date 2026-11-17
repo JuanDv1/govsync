@@ -39,12 +39,22 @@ export class ErrorApi extends Error {
     this.detalles = detalles ?? {};
   }
 }
-async function solicitar(ruta, { metodo = "GET", cuerpo, archivo } = {}) {
+/**
+ * `publico: true` ([E-01/HU-01]) es para los endpoints sin autenticación
+ * (`/api/v1/publico/...`): NO adjunta `Authorization`, aunque haya sesión, y
+ * pide `credentials: "omit"` para que el navegador tampoco mande cookies. Es
+ * una decisión por llamada, nunca por la ruta: quien escribe el método del
+ * `api` la toma a propósito.
+ */
+async function solicitar(
+  ruta,
+  { metodo = "GET", cuerpo, archivo, publico = false } = {},
+) {
   const headers = {
     Accept: "application/json",
   };
 
-  const token = obtenerToken();
+  const token = publico ? null : obtenerToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -53,6 +63,7 @@ async function solicitar(ruta, { metodo = "GET", cuerpo, archivo } = {}) {
     method: metodo,
     headers,
   };
+  if (publico) opciones.credentials = "omit";
 
   if (archivo) {
     const formulario = new FormData();
@@ -423,6 +434,20 @@ export const api = {
    * `busqueda` y `cod_indicador_producto` (E04-HU02), que esta función no usa.
    */
   planAccionActual: () => solicitar("/api/v1/plan-accion/actual"),
+
+  /**
+   * [E-01/HU-01] `GET /api/v1/publico/plan-accion/actual`: el Plan de Acción
+   * del corte actual SIN autenticación ni `Authorization` (ver `solicitar`,
+   * `publico`). Misma forma que `planAccionActual`, salvo que el
+   * `desglose` de cada fila trae por contrato solo `numero_contrato` (sin
+   * `objeto`, `valor` ni `valor_pagado`). La pantalla no usa `desglose`.
+   *
+   * Errores (`ErrorApi`): 404 (ningún corte REGISTRADO); 409 (al corte
+   * actual le falta una fuente); 429 (límite de consultas por tiempo);
+   * `error_red` si no hubo conexión.
+   */
+  planAccionPublicoActual: () =>
+    solicitar("/api/v1/publico/plan-accion/actual", { publico: true }),
 
   /**
    * [E04-HU03] `GET /api/v1/plan-accion/exportar`: el Plan de Acción como

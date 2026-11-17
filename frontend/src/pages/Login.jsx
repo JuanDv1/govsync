@@ -9,6 +9,10 @@
  * (`keycloak/themes/govsync/`). Por eso ya no hay campos de correo/
  * contraseña ni el bloque de "acceso de prueba": ambos asumían que la
  * autenticación no existía todavía (D2/[REF-05]), y ya no es el caso.
+ *
+ * [E-01/HU-01] "Ingresar como visitante" NO inicia sesión: es un enlace a la
+ * consulta pública `/publico/plan-accion` (sin credenciales; ver
+ * `PlanAccionPublico.jsx`).
  */
 import { useLocation } from "react-router-dom";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
@@ -78,13 +82,25 @@ export default function Login() {
 
           {/* Mientras verifica la sesión el botón queda inactivo y su propio
               texto ("Verificando sesión…") es el motivo visible. */}
-          <Boton
-            onClick={() => iniciarSesion(destino)}
-            deshabilitado={cargando}
-            className="w-full"
-          >
-            {cargando ? "Verificando sesión…" : "Ingresar"}
-          </Boton>
+          <div className="flex flex-col gap-3">
+            <Boton
+              onClick={() => iniciarSesion(destino)}
+              deshabilitado={cargando}
+              className="w-full"
+            >
+              {cargando ? "Verificando sesión…" : "Ingresar"}
+            </Boton>
+
+            {/* [E-01/HU-01] Consulta pública, sin credenciales. No depende de
+                `cargando`: no usa la sesión de Keycloak. */}
+            <Boton
+              variante="secundario"
+              to="/publico/plan-accion"
+              className="w-full"
+            >
+              Ingresar como visitante
+            </Boton>
+          </div>
         </div>
       </div>
     </div>

@@ -5,6 +5,7 @@
  */
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import PantallaSinAcceso from "./PantallaSinAcceso.jsx";
 
@@ -17,10 +18,12 @@ vi.mock("../../auth/ProveedorAutenticacion.jsx", () => ({
 describe("PantallaSinAcceso", () => {
   it("muestra el mensaje como alerta y cierra la sesión con el botón", async () => {
     render(
-      <PantallaSinAcceso
-        titulo="Su rol no tiene módulos habilitados en esta versión"
-        descripcion="Contacte a la administradora."
-      />,
+      <MemoryRouter>
+        <PantallaSinAcceso
+          titulo="Su rol no tiene módulos habilitados en esta versión"
+          descripcion="Contacte a la administradora."
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole("alert")).toHaveTextContent(
@@ -38,5 +41,19 @@ describe("PantallaSinAcceso", () => {
     );
 
     expect(cerrarSesion).toHaveBeenCalledTimes(1);
+  });
+
+  it("ofrece consultar el Plan de Acción como visitante", () => {
+    render(
+      <MemoryRouter>
+        <PantallaSinAcceso titulo="Sin acceso" descripcion="Contacte." />
+      </MemoryRouter>,
+    );
+
+    expect(
+      screen.getByRole("link", {
+        name: "Consultar el Plan de Acción como visitante",
+      }),
+    ).toHaveAttribute("href", "/publico/plan-accion");
   });
 });

@@ -167,6 +167,74 @@ describe("RutaProtegida con cuenta sin rol (CA05)", () => {
   });
 });
 
+describe("Enlace a la consulta pública en las pantallas sin acceso", () => {
+  it.each([
+    ["cuenta sin rol", ["default-roles-govsync"]],
+    ["gestor sin módulos", ["gestor"]],
+  ])("%s ve 'Consultar el Plan de Acción como visitante'", (_caso, roles) => {
+    rolesActuales = roles;
+
+    renderizarEn("/cortes");
+
+    expect(
+      screen.getByRole("link", {
+        name: "Consultar el Plan de Acción como visitante",
+      }),
+    ).toHaveAttribute("href", "/publico/plan-accion");
+  });
+
+  it("las cuentas con módulos no ven el enlace", () => {
+    rolesActuales = ["administrador"];
+
+    renderizarEn("/cortes");
+
+    expect(
+      screen.queryByRole("link", {
+        name: "Consultar el Plan de Acción como visitante",
+      }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("Ruta pública /publico/plan-accion (fuera de RutaProtegida)", () => {
+  it.each([
+    ["gestor", ["gestor"]],
+    ["cuenta sin rol", []],
+    ["visitante", ["visitante"]],
+  ])(
+    "con %s no muestra el aviso de sin acceso y pide solo el endpoint público",
+    (_caso, roles) => {
+      rolesActuales = roles;
+
+      renderizarEn("/publico/plan-accion");
+
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+      expect(llamadasApi).toHaveBeenCalledTimes(1);
+      expect(llamadasApi).toHaveBeenCalledWith("planAccionPublicoActual");
+    },
+  );
+
+  it("sin sesión no redirige a /login", () => {
+    estaAutenticadoActual = false;
+
+    renderizarEn("/publico/plan-accion");
+
+    expect(screen.getByTestId("ubicacion")).toHaveTextContent(
+      "/publico/plan-accion",
+    );
+    expect(llamadasApi).toHaveBeenCalledWith("planAccionPublicoActual");
+  });
+
+  it("control: /plan-accion sin sesión SÍ redirige a /login", () => {
+    estaAutenticadoActual = false;
+
+    renderizarEn("/plan-accion");
+
+    expect(screen.getByTestId("ubicacion")).toHaveTextContent("/login");
+  });
+});
+
 describe("Vista inicial por rol (CA01)", () => {
   it("administrador entra en /cortes", () => {
     rolesActuales = ["administrador"];

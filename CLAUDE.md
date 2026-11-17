@@ -176,11 +176,29 @@ generic confirmation dialog, `[E02-HU05]`), `pages/` holds route-level screens (
 `Cortes.jsx`, `MatrizRelacion.jsx`, `EditarArchivosCorteActual.jsx`, `Login.jsx` — redirects to
 Keycloak on click, no longer a form) wired into `App.jsx`'s router (`/login`, `/` → initial view, `/cortes`,
 `/cortes/nuevo`, `/cortes/:corteId`, `/cortes/:corteId/editar`, `/matriz/:corteId?`); every route
-except `/login` is wrapped in `RutaProtegida`, which redirects to `/login` without an active session.
+except `/login` and `/publico/plan-accion` (see below) is wrapped in `RutaProtegida`, which redirects to `/login` without an active session.
 `lib/` holds pure helpers without React: `rutaDestino.js` (`rutaDestinoSegura`, the only
 post-login destinations accepted), `filtros.js` (matrix filter logic, `[E02-HU10]`),
 `corteActual.js` (the single "is this the current corte?" criterion) and `formato.js` (amounts and
 dates).
+
+Public access without credentials (`[E-01/HU-01]`, PO 2026-11-16, `docs/DECISIONES.md` D38, frontend half; the backend is
+`GET /api/v1/publico/plan-accion/actual`, same DTO as `/plan-accion/actual` minus `objeto`, `valor`
+and `valor_pagado` of the `desglose` contracts): `Login.jsx` has "Ingresar como visitante" next to
+"Ingresar" and `PantallaSinAcceso.jsx` (no-role account and `gestor`) links "Consultar el Plan de
+Acción como visitante", both to `/publico/plan-accion`. That route is OUTSIDE `RutaProtegida` and
+renders `pages/PlanAccionPublico.jsx` (brand header + "Iniciar sesión" → `/login`, no module menu,
+never reads the session), which mounts the SAME `PlanAccion.jsx` with `publico`: it calls
+`api.planAccionPublicoActual`, hides "Exportar a Excel" and "Comparar cortes", skips
+`cortesDisponibles` (needs a session), drops the "detalle del contrato se agregará" note, and in
+errors shows no backend `detalles` (409 → fixed text; 429 → "Demasiadas consultas, intente en un
+momento"; any other error → fixed generic text, never the backend's `mensaje`/`codigo`). Filters
+stay in the browser. `ProveedorAutenticacion` still wraps this route (Keycloak `check-sso` runs
+there; the page does not wait for it) — not yet tried in a browser with Keycloak down or with an
+open session. `api/cliente.js` `solicitar(ruta, { publico: true })` is
+the only way to skip the token: it sends no `Authorization` even with a session and uses
+`credentials: "omit"`; any new public endpoint must opt in the same way, and authenticated ones
+never do. An account with a role keeps using `/plan-accion` (with login).
 
 ## Where things live
 
