@@ -2107,7 +2107,7 @@ municipal (Ley 1712 de 2014, ver `docs/SEGURIDAD.md`).
    60 peticiones por 60 s por cliente (`PUBLICO_LIMITE_PETICIONES`,
    `PUBLICO_VENTANA_SEGUNDOS`). Respuesta 429 con el sobre
    `{codigo: "limite_peticiones_excedido", mensaje, detalles:
-   {reintentar_en_segundos}}` y cabecera `Retry-After`.
+{reintentar_en_segundos}}` y cabecera `Retry-After`.
 5. **IP del cliente:** `PUBLICO_PROXIES_CONFIABLES` (por defecto 0 = IP del
    socket). Con N = se toma la entrada N contando desde la derecha de
    `X-Forwarded-For`; nunca se confía en más entradas que las configuradas.
