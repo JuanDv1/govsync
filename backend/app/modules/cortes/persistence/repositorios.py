@@ -237,6 +237,16 @@ class RepositorioCortesSQL(RepositorioCortes):
         orm.fecha_corte = corte.fecha_corte
         self._s.flush()
 
+    def eliminar(self, corte_id: uuid.UUID) -> None:
+        """Borra el corte; `ON DELETE CASCADE` limpia las tablas hijas.
+
+        Se usa `delete()` a nivel de SQL (no `session.delete(orm)`) para que
+        la cascada la resuelva la BD en una sola sentencia, igual que
+        `reemplazar_metas`/`reemplazar_proyectos`.
+        """
+        self._s.execute(delete(CorteORM).where(CorteORM.id == corte_id))
+        self._s.flush()
+
     def confirmar_referencia(self, corte: Corte) -> None:
         """[E02-HU08][CA04]: ver el contrato en puertos.py.
 
