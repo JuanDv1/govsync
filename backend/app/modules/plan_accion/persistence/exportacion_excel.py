@@ -32,29 +32,13 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from app.modules.plan_accion.domain.comparacion import FilaComparacion, PresenciaMeta
 from app.modules.plan_accion.domain.entidades import FilaPlanAccion, ResumenPlanAccion
+from app.shared.persistence.excel_seguro import sanear_texto_celda
 
-#: [SEGURIDAD] Hallazgo preexistente señalado en la revisión de Juan David
-#: sobre el PR #154 (2026-10-18), no introducido por HU-04: `sector`,
-#: `nombre_producto` y los textos unidos de `rubros`/`contratos` vienen tal
-#: cual del Excel que sube la administradora (HU-02/HU-03/HU-04, ver
-#: `ingesta/persistence/lectores`) y se escriben directo a la celda. Un
-#: texto que empiece por "=", "+", "-" o "@" (o tab/CR) puede interpretarse
-#: como fórmula al abrir el archivo en algunas hojas de cálculo ("inyección
-#: de fórmulas"/CSV injection, OWASP). El origen es un archivo que sube la
-#: propia administradora autenticada (no un tercero no confiable), así que
-#: el riesgo es bajo -- pero el mismo mensaje de riesgo bajo no justifica
-#: dejarlo sin mitigar cuando la mitigación es gratis. Se antepone una
-#: comilla simple: Excel la trata como texto literal (nunca como fórmula),
-#: al costo de que la comilla quede visible en la celda -- mismo criterio
-#: que recomienda OWASP, documentado aquí para que no se lea como un bug
-#: nuevo si alguien lo nota al abrir el archivo.
-_PREFIJOS_DE_FORMULA = ("=", "+", "-", "@", "\t", "\r")
-
-
-def _sanear_texto_celda(valor: str | None) -> str | None:
-    if valor and valor.startswith(_PREFIJOS_DE_FORMULA):
-        return f"'{valor}"
-    return valor
+#: [SEGURIDAD] Protección contra inyección de fórmulas (revisión de Juan
+#: David sobre el PR #154, 2026-10-18). Vive en
+#: `app/shared/persistence/excel_seguro.py` desde [E-04/HU-05], que también
+#: exporta textos de los archivos cargados; aquí se conserva el nombre.
+_sanear_texto_celda = sanear_texto_celda
 
 
 #: CA03: "filas alternas" -- relleno de las filas de datos pares (1-indexado
