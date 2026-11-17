@@ -16,9 +16,9 @@
  * D24 (docs/DECISIONES.md): "Crear corte" (estado vacío), "Continuar
  * carga" (fila en BORRADOR, corte que no es el actual) y "Editar archivos"
  * (corte actual REGISTRADO) solo se muestran si `puedeEscribir`
- * (administrador/gestor) — son acciones de escritura, igual que el "Nuevo
+ * (solo administrador, D24/D37) — son acciones de escritura, igual que el "Nuevo
  * corte" que `Disposicion.jsx` ya oculta para `visitante`. "Ver matriz" y la
- * etiqueta "Actual" los ven los tres roles. Es solo UI: el backend ya
+ * etiqueta "Actual" los ven administrador y visitante. Es solo UI: el backend ya
  * rechaza las escrituras con 403 de todas formas.
  */
 import { useCallback, useEffect, useState } from "react";

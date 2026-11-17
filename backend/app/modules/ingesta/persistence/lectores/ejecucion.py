@@ -227,14 +227,18 @@ def _localizar_fila_encabezado_por_alias(
     trae una. Se prueba cada alias por separado (semántica OR) y se usa el
     primero que encuentre.
     """
-    ultimo_error: ArchivoInvalido | None = None
-    for candidato in alias:
+    if not alias:
+        raise ValueError("Se necesita al menos un alias de columna para buscar el encabezado.")
+
+    *primeros, ultimo = alias
+    for candidato in primeros:
         try:
             return _comun.localizar_fila_encabezado(contenido, hoja, (candidato,))
-        except ArchivoInvalido as exc:
-            ultimo_error = exc
-    assert ultimo_error is not None
-    raise ultimo_error
+        except ArchivoInvalido:
+            continue
+    # El último alias se busca sin capturar: si tampoco está, su
+    # `ArchivoInvalido` es el error que ve el usuario.
+    return _comun.localizar_fila_encabezado(contenido, hoja, (ultimo,))
 
 
 def _leer_pestana(

@@ -4,12 +4,12 @@
  * TARJETA: [UX-01] Layout base, enrutamiento y cliente HTTP
  *
  * Adaptado de DESIGN_SPEC.md §4.1. RBAC parcial: "Nuevo corte" solo se
- * muestra si `puedeEscribir` (D24 — administrador/gestor), igual que
+ * muestra si `puedeEscribir` (D24/D37 — solo administrador), igual que
  * `Cortes.jsx` oculta "Crear corte"/"Continuar carga" para `visitante`. Es
  * solo UI — el backend ya rechaza con 403 de todas formas (`exigir_roles`
  * en `core/dependencias.py`), esto evita ofrecer una acción que de todos
- * modos fallaría. "Matriz"/"Cortes" siguen visibles para los 3 roles
- * (D24: lectura abierta). "Plan de Acción" solo se muestra si
+ * modos fallaría. "Matriz"/"Cortes" los ven administrador y visitante
+ * (D37: el gestor no llega a este layout, ve `PantallaSinAcceso`). "Plan de Acción" solo se muestra si
  * `puedeVerPlanAccion` (administrador/visitante, D26 — `gestor` no).
  * "Cerrar sesión" llama a `useAutenticacion().cerrarSesion()` (termina la
  * sesión de Keycloak).

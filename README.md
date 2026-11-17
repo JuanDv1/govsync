@@ -101,7 +101,7 @@ Abre `http://localhost:5173` → te recibe `Login.jsx`; el botón "Ingresar" red
 entra con cualquiera de los usuarios de prueba de la tabla del paso 3. Ya autenticado, la app parte
 en el histórico de cortes
 (`/cortes`); desde ahí se crea un corte nuevo (`/cortes/nuevo`, solo visible para
-`administrador`/`gestor`), se cargan los tres archivos, se registra, y se navega a su matriz de
+`administrador`), se cargan los tres archivos, se registra, y se navega a su matriz de
 relación (`/matriz/:corteId`).
 
 ### Apagar todo

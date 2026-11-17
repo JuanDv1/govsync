@@ -82,6 +82,9 @@ class FilaPlanAccionCruda:
     presupuesto_apropiado: Decimal | None
     ejecucion: Decimal | None
     numero_contrato: str | None
+    objeto_contrato: str | None
+    valor_contrato: Decimal | None
+    valor_pagado_contrato: Decimal | None
 
 
 def construir_filas_plan_accion(sesion: Session, corte_id: uuid.UUID) -> list[FilaPlanAccionCruda]:
@@ -107,6 +110,10 @@ def construir_filas_plan_accion(sesion: Session, corte_id: uuid.UUID) -> list[Fi
             RubroORM.apropiacion_definitiva.label("presupuesto_apropiado"),
             RubroORM.obligacion_acumulada.label("ejecucion"),
             ContratoORM.numero_contrato,
+            # [E04-HU01-CA03] Datos del contrato para el desglose.
+            ContratoORM.objeto.label("objeto_contrato"),
+            ContratoORM.valor_contrato,
+            ContratoORM.valor_pagado.label("valor_pagado_contrato"),
         ),
     )
 
@@ -122,6 +129,9 @@ def construir_filas_plan_accion(sesion: Session, corte_id: uuid.UUID) -> list[Fi
             presupuesto_apropiado=f.presupuesto_apropiado,
             ejecucion=f.ejecucion,
             numero_contrato=f.numero_contrato,
+            objeto_contrato=f.objeto_contrato,
+            valor_contrato=f.valor_contrato,
+            valor_pagado_contrato=f.valor_pagado_contrato,
         )
         for f in filas
     ]

@@ -83,6 +83,13 @@ class RepositorioCortesEnMemoria(RepositorioCortes):
     def eliminar(self, corte_id: uuid.UUID) -> None:
         self._cortes.pop(corte_id, None)
 
+    def confirmar_referencia(self, corte: Corte) -> None:
+        if corte.es_referencia:
+            for otro in self._cortes.values():
+                if otro.vigencia == corte.vigencia and otro.id != corte.id:
+                    otro.es_referencia = False
+        self._cortes[corte.id].es_referencia = corte.es_referencia
+
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         self.historial.append(historial)
 
@@ -109,6 +116,9 @@ class RepositorioDatosCorteEnMemoria(RepositorioDatosCorte):
 
     def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
         return self.codigos_metas
+
+    def contar_metas_por_corte(self) -> dict[uuid.UUID, int]:
+        return {}
 
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
         self.llamadas_reemplazar_metas.append((corte_id, metas))

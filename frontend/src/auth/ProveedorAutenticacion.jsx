@@ -33,21 +33,17 @@ import {
 } from "react";
 import keycloak from "./keycloak.js";
 import { establecerProveedorToken } from "../api/cliente.js";
+import {
+  puedeEscribir,
+  puedeVerPlanAccion,
+  tieneSoloRolesSinModulos,
+} from "./roles.js";
 
 const ContextoAutenticacion = createContext(null);
 
-//: D24 (docs/DECISIONES.md): mismos dos roles que `exigir_roles(Rol.ADMINISTRADOR,
-//: Rol.GESTOR)` exige en el backend para escribir — `visitante` queda fuera.
-//: Esto solo oculta la UI (el backend ya rechaza con 403 de todas formas);
-//: centralizado aquí para no repetir la lista de roles en cada pantalla.
-const ROLES_ESCRITURA = new Set(["administrador", "gestor"]);
-
-//: D26 punto 4 (docs/DECISIONES.md): el Plan de Acción lo consultan
-//: `administrador` y `visitante`; `gestor` queda fuera a propósito, hasta que
-//: se ratifique esa decisión. Espeja `AccesoPlanAccionDep` en
-//: `plan_accion/api/router.py`: si allá cambia, cambia aquí. Solo oculta la
-//: UI — el backend ya rechaza con 403 de todas formas.
-const ROLES_PLAN_ACCION = new Set(["administrador", "visitante"]);
+//: Las listas de roles (D24, D26, D37) viven en `roles.js`, sin React, para
+//: poder probarlas y no repetirlas en cada pantalla. Solo deciden qué se
+//: muestra: el backend rechaza con 403 de todas formas.
 
 export function ProveedorAutenticacion({ children }) {
   const [cargando, setCargando] = useState(true);
@@ -98,10 +94,10 @@ export function ProveedorAutenticacion({ children }) {
       cargando,
       estaAutenticado,
       usuario,
-      puedeEscribir:
-        usuario?.roles?.some((rol) => ROLES_ESCRITURA.has(rol)) ?? false,
-      puedeVerPlanAccion:
-        usuario?.roles?.some((rol) => ROLES_PLAN_ACCION.has(rol)) ?? false,
+      puedeEscribir: puedeEscribir(usuario?.roles),
+      puedeVerPlanAccion: puedeVerPlanAccion(usuario?.roles),
+      // D37: rol válido pero sin módulos en esta versión (hoy, gestor).
+      rolSinModulos: tieneSoloRolesSinModulos(usuario?.roles),
       iniciarSesion: () =>
         keycloak.login({ redirectUri: `${window.location.origin}/cortes` }),
       cerrarSesion: () =>

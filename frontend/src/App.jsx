@@ -19,6 +19,7 @@ import PlanAccion from "./pages/PlanAccion.jsx";
 import CompararCortes from "./pages/CompararCortes.jsx";
 import { Vacio } from "./components/Estados.jsx";
 import Card from "./components/shared/Card.jsx";
+import PantallaSinAcceso from "./components/shared/PantallaSinAcceso.jsx";
 import { useAutenticacion } from "./auth/ProveedorAutenticacion.jsx";
 
 /** [HU-E01-01] / D23/D24: exige sesión de Keycloak activa antes de montar
@@ -26,7 +27,7 @@ import { useAutenticacion } from "./auth/ProveedorAutenticacion.jsx";
  * arranca y `keycloak.init()` resuelve — sin esto, un usuario SIN sesión
  * vería un parpadeo de contenido protegido antes del redirect. */
 function RutaProtegida({ children }) {
-  const { cargando, estaAutenticado } = useAutenticacion();
+  const { cargando, estaAutenticado, rolSinModulos } = useAutenticacion();
 
   if (cargando) {
     return (
@@ -38,6 +39,19 @@ function RutaProtegida({ children }) {
 
   if (!estaAutenticado) {
     return <Navigate to="/login" replace />;
+  }
+
+  // [E-01/HU-01] / D37: rol válido pero sin módulos en esta versión (hoy,
+  // gestor). Reemplaza TODO el layout, también al entrar por URL directa a
+  // cualquier ruta interna: no se monta ningún módulo ni se dispara ninguna
+  // petición. El backend responde 403 a ese rol de todas formas.
+  if (rolSinModulos) {
+    return (
+      <PantallaSinAcceso
+        titulo="Su rol no tiene módulos habilitados en esta versión"
+        descripcion="Su cuenta está activa, pero su rol todavía no tiene funciones disponibles en GovSync. Si necesita acceso, contacte a la administradora."
+      />
+    );
   }
 
   return children;

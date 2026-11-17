@@ -9,6 +9,7 @@ de dominio, igual criterio que `test_dominio_plan_accion.py`.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -138,6 +139,15 @@ class TestConstruirLibroExcel:
         fila = [c.value for c in hoja[8]]
         assert fila[5] == "r1, r2"
         assert fila[8] == "c1, c2"
+
+    def test_todos_los_bpin_de_la_meta_se_unen_con_coma_h027(self):
+        fila_con_dos_bpin = replace(_fila(), bpins=("AAA", "BBB"), cod_bpin="AAA")
+        libro = construir_libro_excel(
+            [fila_con_dos_bpin], ResumenPlanAccion(1, 1, 0, 0), _metadatos()
+        )
+        hoja = self._cargar_hoja(libro)
+
+        assert [c.value for c in hoja[8]][4] == "AAA, BBB"
 
     def test_avance_fisico_siempre_vacio_ca_e03_pendiente(self):
         libro = construir_libro_excel([_fila()], ResumenPlanAccion(1, 1, 0, 0), _metadatos())
