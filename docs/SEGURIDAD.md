@@ -16,6 +16,77 @@ proyecto).
 | Autorización                | Verificado | `exigir_roles()` (`core/dependencias.py`) protege todos los endpoints de `cortes`/`trazabilidad` (D24, D37): escritura solo `administrador`; lectura `administrador`/`visitante` (`LecturaDep`); `visitante` recibe 403 `permiso_insuficiente` con `roles_requeridos` al escribir. Desde D37 (2026-11-11) `gestor` recibe 403 en **todas** las rutas (`test_gestor_sin_modulos_todas_las_rutas.py`). Probado con `pytest` (`test_autorizacion_rutas.py`) y confirmado manualmente contra Keycloak real, antes de D37: token de `visitante` → 403 en `POST /cortes`, 200 en `GET /cortes`                                                                                                                                                                                                |
 | Datos sensibles encriptados | Verificado | Los datos son información pública municipal (Ley 1712 de 2014, transparencia y acceso a la información pública). En tránsito viajan por HTTPS (Vercel para el frontend, Render para la API). Los secretos viven en GitHub Secrets y en las variables de entorno de Render, nunca en el repositorio. La base de datos de Render está cifrada en reposo por el proveedor                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
+## Específico de GovSync — sesión del usuario (`[E-01/HU-01]`)
+
+Decisiones del PO del 2026-11-16. La autenticación es de Keycloak (D23); esto
+documenta lo que la interfaz y el realm hacen alrededor de la sesión.
+
+- **Inactividad (CA04, 30 min).** `frontend/src/auth/useInactividad.js` cuenta
+  solo input real (mouse, teclado, scroll, toque); la renovación del token y las
+  peticiones en segundo plano no cuentan. Al vencer llama a `keycloak.logout`, que
+  cierra la sesión SSO de **todas** las pestañas, así que la última actividad se
+  comparte entre pestañas en `localStorage` (`govsync.ultimaActividad`, solo una
+  hora, sin datos de la persona) y el cierre ocurre por la inactividad de todas.
+  Una hora compartida en el futuro o inválida se ignora. Sin `localStorage` cae a la
+  actividad de la pestaña. Si el cierre falla se reintenta en la siguiente revisión.
+  Es un control **del cliente**: con una pestaña abierta, la renovación del token
+  renueva también la inactividad SSO de Keycloak (`ssoSessionIdleTimeout` = 1800 s en
+  el realm), así que ese límite del servidor solo aplica si no hay renovaciones (lo
+  supongo por el comportamiento estándar de Keycloak; no se midió).
+- **Marca de login reciente (CA07).** `sessionStorage` (`govsync.loginReciente` =
+  `"1"`) cruza la redirección a Keycloak para saber, al volver, si hay que validar
+  la URL pedida contra el rol. Se lee y se borra en la primera carga. Solo decide
+  adónde se navega: la autorización real sigue siendo el backend (403).
+- **Destino tras el login (CA07).** `rutaDestinoSegura` acepta únicamente rutas
+  internas (una sola `/`, sin `\`, sin caracteres de control, no `/login`); el
+  `redirectUri` siempre se arma con `window.location.origin`, y el client de
+  Keycloak solo acepta `http://localhost:5173/*`.
+- **Bloqueo por intentos (CA03, cambia la decisión #22).** El bloqueo REAL es del
+  servidor y es por usuario: en el realm (`keycloak/import/govsync-realm.json`)
+  `bruteForceProtected`, `failureFactor` 3, `waitIncrementSeconds` y
+  `maxFailureWaitSeconds` 300 (5 min), bloqueo temporal (`permanentLockout` false).
+  No se usa el mensaje de bloqueo de Keycloak, porque distinguiría una cuenta que
+  existe de una que no; el texto sigue siendo "Usuario o contraseña incorrectos".
+  Encima hay un contador **por navegador** (`localStorage`, clave
+  `govsync.loginIntentos`, en `keycloak/themes/govsync/login/resources/js/limite-intentos.js`)
+  que no mira qué usuario se escribió: al 3.er fallo deshabilita usuario, contraseña y
+  botón y muestra "Límite de intentos alcanzado. Espere 5 minutos para volver a
+  intentarlo." con cuenta regresiva; se rehabilita solo. **Es solo experiencia de
+  uso, no un control de seguridad**: se salta borrando el almacenamiento del
+  navegador y el servidor sigue contando igual. Como el tema es de otro origen que la
+  aplicación, no ve si un ingreso salió bien: infiere el éxito cuando la página de
+  login vuelve a cargar tras un envío sin error de credenciales.
+  La marca de envío vive en `sessionStorage` (propia de la pestaña), así que abrir el
+  login en otra pestaña no reinicia el contador. Límites conocidos, aceptados con la
+  Opción A: las ventanas del navegador y del servidor no coinciden (al rehabilitarse el
+  formulario, una cuenta que el servidor sigue teniendo bloqueada seguirá respondiendo
+  "Usuario o contraseña incorrectos", incluso con la clave correcta), y tres intentos
+  con usuarios distintos bloquean el formulario sin afectar al servidor.
+- **Fuentes del login.** El tema carga Inter y DM Mono desde Google Fonts, igual que
+  `frontend/index.html`: eso envía la IP del navegador a un tercero en la pantalla de
+  autenticación. Decisión del PO (2026-11-16): como el frontend también las carga
+  desde Google, el tema se queda igual; autoalojarlas en ambos es una tarjeta aparte.
+- **Reinicio del contador por navegador (decisión del PO).** Si tras un envío la página
+  de login vuelve a cargar SIN error de credenciales, el contador se reinicia. Es
+  deliberado: el tema y la aplicación son de orígenes distintos, así que el tema no
+  puede saber si el ingreso salió bien; la única señal es que el login no volvió con
+  error. Reiniciar en ese caso evita bloquear a quien sí entró (por ejemplo, tras
+  cerrar sesión), y un reinicio indebido no resta seguridad porque el bloqueo real es
+  del servidor, por usuario. Lo fija la prueba "una página sin error de credenciales
+  tras un envío reinicia" (`frontend/src/tema-keycloak/contratoTema.test.js`).
+- **Mensaje de credenciales inválidas (CA02).** `Usuario o contraseña incorrectos`,
+  el mismo para usuario inexistente y contraseña incorrecta (no revela qué usuarios
+  existen). Sale de `keycloak/themes/govsync/login/messages/messages_es.properties`
+  con `es` como idioma por defecto del realm.
+- **Contraseña (CA09, decisión #23).** La contraseña la gestiona Keycloak con hash
+  seguro; la app nunca la almacena. El campo es `type="password"`
+  (`keycloak/themes/govsync/login/login.ftl`) y el realm usa `sslRequired:
+"external"` (HTTPS obligatorio fuera de localhost).
+- **Importante:** el realm solo se importa la primera vez que Keycloak arranca sobre
+  un volumen nuevo (`datos_keycloak`). Los cambios de `govsync-realm.json`
+  (p. ej. el idioma del CA02) **no** llegan a un volumen que ya tiene el realm; ver
+  el README para aplicarlos sin perder datos.
+
 ## Específico de GovSync — validación de archivos cargados (`[SEC-03]`)
 
 Esta sección sigue siendo sobre la carga de archivos Excel, no sobre login

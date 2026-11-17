@@ -10,7 +10,8 @@
     "lint": "eslint src",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "build:tema-keycloak": "tailwindcss -c tailwind.tema-keycloak.config.js -i src/estilos.css -o ../keycloak/themes/govsync/login/resources/css/govsync.css --minify"
   },
   "dependencies": {
     "keycloak-js": "^26.2.5",

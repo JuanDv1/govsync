@@ -1,3 +1,5 @@
 node_modules
 backend
 .claude
+# CSS generado por `npm run build:tema-keycloak` (minificado; no se formatea a mano)
+keycloak/themes/govsync/login/resources/css/govsync.css

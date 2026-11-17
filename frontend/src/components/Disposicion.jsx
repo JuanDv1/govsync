@@ -11,6 +11,8 @@
  * modos fallaría. "Matriz"/"Cortes" los ven administrador y visitante
  * (D37: el gestor no llega a este layout, ve `PantallaSinAcceso`). "Plan de Acción" solo se muestra si
  * `puedeVerPlanAccion` (administrador/visitante, D26 — `gestor` no).
+ * El encabezado muestra nombre y rol del usuario ([E-01/HU-01] CA01); el logo
+ * lleva a la vista inicial del rol.
  * "Cerrar sesión" llama a `useAutenticacion().cerrarSesion()` (termina la
  * sesión de Keycloak).
  */
@@ -39,14 +41,19 @@ const enlaceClase = ({ isActive }) =>
   }`;
 
 export default function Disposicion() {
-  const { cerrarSesion, puedeEscribir, puedeVerPlanAccion } =
-    useAutenticacion();
+  const {
+    cerrarSesion,
+    puedeEscribir,
+    puedeVerPlanAccion,
+    usuario,
+    vistaInicial,
+  } = useAutenticacion();
 
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-52 shrink-0 flex-col bg-navy">
         <NavLink
-          to="/cortes"
+          to={vistaInicial ?? "/cortes"}
           className="border-b border-white/10 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
         >
           <div className="text-lg font-bold tracking-[0.1em] text-white">
@@ -100,7 +107,19 @@ export default function Disposicion() {
           ensanchaba todo el panel y la página mostraba una segunda barra de
           scroll horizontal. Con él, cada tabla usa solo su propio scroll. */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="h-11 shrink-0 border-b border-gray-200 bg-white" />
+        {/* [E-01/HU-01] CA01: nombre y rol (en palabras) de quien tiene la
+            sesión abierta. Se lee del token, no es un dato del backend. */}
+        <header className="flex h-11 shrink-0 items-center justify-end gap-2 border-b border-gray-200 bg-white px-5 text-campo">
+          {usuario?.nombre && (
+            <span className="font-medium text-gray-800">{usuario.nombre}</span>
+          )}
+          {usuario?.nombre && usuario?.rol && (
+            <span aria-hidden="true" className="text-gray-400">
+              ·
+            </span>
+          )}
+          {usuario?.rol && <span className="text-gray-600">{usuario.rol}</span>}
+        </header>
 
         <main className="flex-1 overflow-auto bg-fondo-pagina p-5">
           <Outlet />
