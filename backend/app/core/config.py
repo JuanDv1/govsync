@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     # archivo queda almacenado y puede abrirlo un humano después.
     allowed_upload_suffixes: str = ".xlsx"
 
+    # Documentación interactiva (/docs, /redoc, /openapi.json). Sin token, expone
+    # el mapa completo de la API (rutas, parámetros, esquemas). En producción
+    # queda apagada salvo que se active expresamente; en local y en pruebas
+    # sigue disponible.
+    docs_api_en_produccion: bool = False
+
     # --- Rutas públicas sin token (D38) ----------------------------------
     # Límite de peticiones por cliente para el prefijo /api/v1/publico. Es en
     # memoria y POR PROCESO (con N procesos el tope real es N veces mayor).
