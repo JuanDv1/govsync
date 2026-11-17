@@ -74,6 +74,7 @@ from app.shared.errors import ArchivoInvalido, RecursoNoEncontrado
 #: `gestor` ya no escribe (no tiene módulos habilitados en esta versión).
 EscrituraDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR))]
 
+
 router = APIRouter(prefix="/cortes", tags=["Cortes de seguimiento"])
 
 
@@ -134,6 +135,9 @@ class CorteRespuesta(BaseModel):
     GLOBAL, sin filtro de vigencia) -- ver `_id_corte_actual` más abajo.
     Un corte en BORRADOR es SIEMPRE `False` (nunca puede ser "el actual"
     por definición, sin necesidad de consultar nada)."""
+    es_referencia: bool
+    """[E02-HU08][CA04] Corte de referencia de su vigencia (la estrella del
+    histórico). A lo sumo uno por vigencia."""
 
 
 class CorteHistoricoRespuesta(CorteRespuesta):
@@ -229,6 +233,7 @@ def _a_dto(corte: Corte, *, es_corte_actual: bool) -> CorteRespuesta:
         fecha_corte=corte.fecha_corte,
         estado=corte.estado.value,
         es_corte_actual=es_corte_actual,
+        es_referencia=corte.es_referencia,
         archivos=[
             ArchivoFuenteRespuesta(
                 tipo=archivo.tipo.value,
@@ -573,6 +578,24 @@ def corregir_corte(
     return _a_dto(corte, es_corte_actual=False)
 
 
+@router.delete(
+    "/{corte_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+    summary="Descartar un corte en BORRADOR",
+    responses={
+        404: {"description": "El corte no existe."},
+        409: {"description": "El corte no está en BORRADOR (`corte_no_es_borrador`)."},
+    },
+)
+def descartar_corte(corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep) -> None:
+    """Elimina un corte en BORRADOR junto con los datos que ya se hubieran
+    cargado. Permite empezar de nuevo cuando el borrador se creó con una
+    vigencia/fecha equivocada. Un corte REGISTRADO se rechaza con 409.
+    """
+    servicio.descartar_corte(corte_id, usuario.correo)
+
+
 @router.post("/{corte_id}/registrar", response_model=CorteRespuesta)
 def registrar_corte(
     corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep
@@ -590,4 +613,39 @@ def registrar_corte(
     no se asume `False`.
     """
     corte = servicio.registrar_corte(corte_id)
+    return _a_dto(corte, es_corte_actual=(corte.id == _id_corte_actual(servicio)))
+
+
+@router.put(
+    "/{corte_id}/referencia",
+    response_model=CorteRespuesta,
+    summary="Marcar el corte como referencia de su vigencia",
+    responses={
+        404: {"description": "El corte no existe."},
+        409: {"description": "El corte no está registrado, o hubo una marca simultánea."},
+    },
+)
+def marcar_corte_referencia(
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep
+) -> CorteRespuesta:
+    """[E02-HU08][CA04]: marca el corte como el de referencia de su vigencia.
+    Si otro corte de la misma vigencia lo era, pierde la marca ("mover la
+    estrella"). Solo cortes REGISTRADOS. `PUT` porque es idempotente:
+    marcar dos veces deja el mismo estado. Solo la administradora
+    (`EscrituraDep`, D37), como pide la tarjeta."""
+    corte = servicio.marcar_como_referencia(corte_id)
+    return _a_dto(corte, es_corte_actual=(corte.id == _id_corte_actual(servicio)))
+
+
+@router.delete(
+    "/{corte_id}/referencia",
+    response_model=CorteRespuesta,
+    summary="Quitar la marca de referencia del corte",
+    responses={404: {"description": "El corte no existe."}},
+)
+def desmarcar_corte_referencia(
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep
+) -> CorteRespuesta:
+    """[E02-HU08][CA04]: quita la marca de referencia. Idempotente."""
+    corte = servicio.desmarcar_referencia(corte_id)
     return _a_dto(corte, es_corte_actual=(corte.id == _id_corte_actual(servicio)))

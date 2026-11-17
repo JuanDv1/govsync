@@ -96,6 +96,24 @@ class RepositorioCortes(ABC):
         """
 
     @abstractmethod
+    def eliminar(self, corte_id: uuid.UUID) -> None:
+        """Elimina el corte y, en cascada, todos sus datos (archivos, metas,
+        proyectos, presupuesto, historial). La validación (estado BORRADOR)
+        ya la hizo el dominio (`Corte.verificar_descartable()`).
+        """
+
+    @abstractmethod
+    def confirmar_referencia(self, corte: Corte) -> None:
+        """[E02-HU08][CA04]: persiste `corte.es_referencia`.
+
+        Si el corte queda marcado, quita la marca del corte de referencia
+        anterior de la MISMA vigencia en la misma transacción ("marcar otro
+        corte de la vigencia mueve la estrella"). Si otra petición marcó otro
+        corte de esa vigencia al mismo tiempo, lanza `OperacionNoPermitida`
+        (409) en vez de dejar pasar el error crudo del índice único.
+        """
+
+    @abstractmethod
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         """[E02-HU05][CA06]: persiste un registro de auditoría de reemplazo.
 

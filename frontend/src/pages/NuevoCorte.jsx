@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Check } from "lucide-react";
 import { api } from "../api/cliente.js";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
@@ -10,6 +10,7 @@ import Boton from "../components/shared/Boton.jsx";
 import Campo from "../components/shared/Campo.jsx";
 import Card from "../components/shared/Card.jsx";
 import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
+import ModalConfirmacion from "../components/shared/ModalConfirmacion.jsx";
 import SectionHeader from "../components/shared/SectionHeader.jsx";
 import StateBadge from "../components/shared/StateBadge.jsx";
 
@@ -88,6 +89,7 @@ const TONO_ESTADO_FUENTE = {
 
 export default function NuevoCorte() {
   const { corteId } = useParams();
+  const navegar = useNavigate();
   const { puedeEscribir } = useAutenticacion();
   const [vigencia, setVigencia] = useState("");
   const [fechaCorte, setFechaCorte] = useState("");
@@ -111,6 +113,17 @@ export default function NuevoCorte() {
   const [errorEjecucion, setErrorEjecucion] = useState(null);
   const [registrando, setRegistrando] = useState(false);
   const [errorRegistro, setErrorRegistro] = useState(null);
+  // Corregir vigencia/fecha o descartar un borrador (D11): sin esto, un
+  // corte creado con un dato equivocado quedaba atascado, porque D11 solo
+  // permite un BORRADOR a la vez.
+  const [corrigiendo, setCorrigiendo] = useState(false);
+  const [vigenciaCorregida, setVigenciaCorregida] = useState("");
+  const [fechaCorregida, setFechaCorregida] = useState("");
+  const [guardandoCorreccion, setGuardandoCorreccion] = useState(false);
+  const [errorCorreccion, setErrorCorreccion] = useState(null);
+  const [confirmandoDescarte, setConfirmandoDescarte] = useState(false);
+  const [descartando, setDescartando] = useState(false);
+  const [errorDescarte, setErrorDescarte] = useState(null);
   const hoy = new Date();
   const fechaMaxima = [
     hoy.getFullYear(),
@@ -225,6 +238,46 @@ export default function NuevoCorte() {
     }
   }
 
+  function iniciarCorreccion() {
+    setVigenciaCorregida(String(corte.vigencia));
+    setFechaCorregida(corte.fecha_corte);
+    setErrorCorreccion(null);
+    setCorrigiendo(true);
+  }
+
+  async function guardarCorreccion(evento) {
+    evento.preventDefault();
+    setErrorCorreccion(null);
+    setGuardandoCorreccion(true);
+    try {
+      const corteCorregido = await api.corregirCorte(
+        corte.id,
+        Number(vigenciaCorregida),
+        fechaCorregida,
+      );
+      // `archivos` se conserva: el PATCH solo devuelve vigencia/fecha.
+      setCorte((anterior) => ({ ...anterior, ...corteCorregido }));
+      setCorrigiendo(false);
+    } catch (errorApi) {
+      setErrorCorreccion(errorApi);
+    } finally {
+      setGuardandoCorreccion(false);
+    }
+  }
+
+  async function confirmarDescarte() {
+    setErrorDescarte(null);
+    setDescartando(true);
+    try {
+      await api.descartarCorte(corte.id);
+      navegar("/cortes");
+    } catch (errorApi) {
+      setErrorDescarte(errorApi);
+      setConfirmandoDescarte(false);
+      setDescartando(false);
+    }
+  }
+
   // Va antes que cualquier otro estado. Con el efecto de arriba saltado,
   // `claveCorteCargado` nunca se llena y `cargandoCorte` quedaría en `true`:
   // de ir después, `/cortes/:corteId` se quedaría en "Cargando corte…".
@@ -313,6 +366,75 @@ export default function NuevoCorte() {
             </>
           }
         />
+
+        {!yaRegistrado && (
+          <Card className="mb-5">
+            <SectionHeader>Datos del corte</SectionHeader>
+            {corrigiendo ? (
+              <form onSubmit={guardarCorreccion}>
+                <div className="grid grid-cols-3 gap-4">
+                  <Campo
+                    etiqueta="Vigencia"
+                    id="vigencia-corregida"
+                    name="vigenciaCorregida"
+                    type="number"
+                    min={2000}
+                    max={2100}
+                    value={vigenciaCorregida}
+                    onChange={(evento) =>
+                      setVigenciaCorregida(evento.target.value)
+                    }
+                    required
+                  />
+                  <Campo
+                    etiqueta="Fecha del corte"
+                    id="fecha-corregida"
+                    name="fechaCorregida"
+                    type="date"
+                    max={fechaMaxima}
+                    value={fechaCorregida}
+                    onChange={(evento) => {
+                      const nuevaFecha = evento.target.value;
+                      if (nuevaFecha <= fechaMaxima) {
+                        setFechaCorregida(nuevaFecha);
+                      }
+                    }}
+                    required
+                    className="font-mono"
+                  />
+                  <div className="flex items-end gap-2">
+                    <Boton type="submit" deshabilitado={guardandoCorreccion}>
+                      Guardar
+                    </Boton>
+                    <Boton
+                      variante="secundario"
+                      onClick={() => setCorrigiendo(false)}
+                      deshabilitado={guardandoCorreccion}
+                    >
+                      Cancelar
+                    </Boton>
+                  </div>
+                </div>
+                {guardandoCorreccion && <Cargando mensaje="Guardando…" />}
+                <EstadoError error={errorCorreccion} />
+              </form>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <Boton variante="secundario" onClick={iniciarCorreccion}>
+                  Corregir vigencia o fecha
+                </Boton>
+                <Boton
+                  variante="peligro"
+                  onClick={() => setConfirmandoDescarte(true)}
+                  deshabilitado={descartando}
+                >
+                  Descartar borrador
+                </Boton>
+              </div>
+            )}
+            <EstadoError error={errorDescarte} />
+          </Card>
+        )}
 
         <Card className="mb-5">
           <SectionHeader>Fuentes obligatorias</SectionHeader>
@@ -481,6 +603,16 @@ export default function NuevoCorte() {
             )}
           </div>
         </div>
+
+        {confirmandoDescarte && (
+          <ModalConfirmacion
+            titulo="Descartar borrador"
+            mensaje="Se eliminará este corte junto con los archivos que haya cargado. Luego podrá crear uno nuevo. Esta acción no se puede deshacer."
+            textoConfirmar="Descartar"
+            onConfirmar={confirmarDescarte}
+            onCancelar={() => setConfirmandoDescarte(false)}
+          />
+        )}
       </section>
     );
   }
