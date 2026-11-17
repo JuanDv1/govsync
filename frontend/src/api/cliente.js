@@ -450,6 +450,18 @@ export const api = {
     solicitar("/api/v1/publico/plan-accion/actual", { publico: true }),
 
   /**
+   * [E04-HU07] `GET /api/v1/plan-accion/riesgo`: metas del corte actual con
+   * menos del 50 % de avance financiero, de menor a mayor %. Cada fila trae
+   * los campos del Plan de Acción más `sin_ejecucion_registrada`; la
+   * respuesta suma `total_en_riesgo`, `metas_sin_presupuesto` (no se listan,
+   * CA04) y `umbral_pct`. El % lo calcula el backend; aquí no se recalcula.
+   *
+   * Errores (`ErrorApi`): 404 (ningún corte REGISTRADO); 409 (al corte actual
+   * le falta una fuente); 403 (rol sin acceso).
+   */
+  metasEnRiesgo: () => solicitar("/api/v1/plan-accion/riesgo"),
+
+  /**
    * [E04-HU03] `GET /api/v1/plan-accion/exportar`: el Plan de Acción como
    * `.xlsx`. `consulta` es el query string de los filtros
    * (`consultaDeFiltros`, lib/filtrosPlanAccion.js; `""` exporta todo): los
