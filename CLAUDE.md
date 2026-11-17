@@ -145,7 +145,7 @@ An invalid file is rejected **in full** — never partial data.
 
 Frontend (`frontend/src/`): `api/cliente.js` is the shared HTTP client (`[UX-01]`), implemented —
 `solicitar()` and the `api` methods (`crearCorte`, `listarCortes`, `obtenerCorte`, `registrarCorte`,
-`cargarArchivo`, `matriz`, `opcionesFiltro`, `reemplazarArchivoCorteActual`, `historialCorte`) are
+`cargarArchivo`, `matriz`, `opcionesFiltro`, `reemplazarArchivoCorteActual`, `historialCorte`, `corregirCorte`, `descartarCorte`) are
 wired to the backend, and it attaches `Authorization: Bearer` from
 whatever `establecerProveedorToken()` last set (called once by `ProveedorAutenticacion.jsx`). It
 preserves `error.detalles` from failed requests (carries `columnas_faltantes`, `pestanas_faltantes`,

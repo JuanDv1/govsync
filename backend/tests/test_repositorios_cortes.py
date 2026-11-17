@@ -12,6 +12,7 @@ parcial) las verifica el job de CI que aplica la migración.
 
 from __future__ import annotations
 
+import uuid
 from datetime import date, datetime
 
 import pytest
@@ -39,7 +40,7 @@ from app.modules.cortes.persistence.repositorios import (
     RepositorioCortesSQL,
     RepositorioDatosCorteSQL,
 )
-from app.shared.errors import RecursoNoEncontrado
+from app.shared.errors import OperacionNoPermitida, RecursoNoEncontrado
 
 
 @pytest.fixture()
@@ -402,3 +403,24 @@ def test_eliminar_borra_en_cascada_los_datos_hijos_y_respeta_otros_cortes(repo, 
     assert sesion.scalars(select(ProyectoIndicadorORM)).all() != []
     assert len(sesion.scalars(select(RegistroPresupuestalORM)).all()) == 1
     assert len(sesion.scalars(select(ProyectoIndicadorORM)).all()) == 1
+
+
+def test_eliminar_no_borra_un_corte_registrado_y_lanza_409(repo, sesion) -> None:
+    """Carrera con `registrar`: el dominio vio BORRADOR, pero el DELETE
+    SQL debe volver a filtrar por estado y no tocar un REGISTRADO."""
+    corte = repo.guardar(Corte(vigencia=2026, fecha_corte=date(2026, 6, 30)))
+    corte.estado = EstadoCorte.REGISTRADO
+    repo.confirmar_registro(corte)
+
+    with pytest.raises(OperacionNoPermitida) as exc:
+        repo.eliminar(corte.id)
+
+    assert exc.value.detalles["motivo"] == "corte_no_es_borrador"
+    assert exc.value.detalles["estado_actual"] == "REGISTRADO"
+    sesion.expire_all()
+    assert repo.obtener(corte.id) is not None
+
+
+def test_eliminar_corte_inexistente_lanza_no_encontrado(repo) -> None:
+    with pytest.raises(RecursoNoEncontrado):
+        repo.eliminar(uuid.uuid4())
