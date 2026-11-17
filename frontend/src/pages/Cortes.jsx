@@ -20,8 +20,20 @@
  * corte" que `Disposicion.jsx` ya oculta para `visitante`. "Ver matriz" y la
  * etiqueta "Actual" los ven administrador y visitante. Es solo UI: el backend ya
  * rechaza las escrituras con 403 de todas formas.
+ *
+ * [E02-HU08/CA03] Columna "Metas": `cantidad_metas` viene del backend
+ * (`null` en BORRADOR → "—", nunca 0; un REGISTRADO sin metas muestra 0).
+ * Esta pantalla no calcula el número.
+ *
+ * [E02-HU08/CA04] Estrella del corte de referencia (uno por vigencia). La ven
+ * todos los roles con acceso; "Marcar/Quitar referencia" solo con
+ * `puedeEscribir` y solo en cortes REGISTRADOS. Tras un PUT/DELETE exitoso se
+ * recarga la lista (sin pantalla de carga): el backend mueve la marca dentro
+ * de la vigencia y el cliente no lo replica, así nunca hay dos estrellas. Un
+ * error (404/409) se muestra y la lista queda como estaba.
  */
-import { useCallback, useEffect, useState } from "react";
+import { Star } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "../api/cliente.js";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
@@ -71,8 +83,44 @@ export default function Cortes() {
 
   const reintentar = useCallback(() => setIntento((n) => n + 1), []);
 
+  // [E02-HU08/CA04] `enCurso` (ref) corta el doble clic de forma síncrona: el
+  // estado `idEnCurso` solo deshabilita los botones en el siguiente render.
+  const enCurso = useRef(false);
+  const [idEnCurso, setIdEnCurso] = useState(null);
+  const [errorReferencia, setErrorReferencia] = useState(null);
+
+  async function cambiarReferencia(corte) {
+    if (enCurso.current) return;
+    enCurso.current = true;
+    setIdEnCurso(corte.id);
+    setErrorReferencia(null);
+    try {
+      if (corte.es_referencia) {
+        await api.desmarcarCorteReferencia(corte.id);
+      } else {
+        await api.marcarCorteReferencia(corte.id);
+      }
+    } catch (errorApi) {
+      setErrorReferencia(errorApi);
+      enCurso.current = false;
+      setIdEnCurso(null);
+      return;
+    }
+    try {
+      const datos = await api.listarCortes();
+      setResultado({ clave: intento, datos, error: null });
+    } catch (errorApi) {
+      // La marca se aplicó pero no se pudo releer: mostrar la lista vieja
+      // podría dejar dos estrellas en una vigencia.
+      setResultado({ clave: intento, datos: null, error: errorApi });
+    } finally {
+      enCurso.current = false;
+      setIdEnCurso(null);
+    }
+  }
+
   return (
-    <section className="mx-auto max-w-4xl">
+    <section className="mx-auto max-w-5xl">
       <EncabezadoPantalla
         titulo="Histórico de cortes"
         descripcion="Cortes de seguimiento creados hasta ahora, más reciente primero."
@@ -98,18 +146,35 @@ export default function Cortes() {
         />
       )}
 
+      {!cargando && !error && errorReferencia && (
+        <div className="mb-4">
+          <EstadoError
+            error={errorReferencia}
+            onReintentar={() => {
+              setErrorReferencia(null);
+              reintentar();
+            }}
+          />
+        </div>
+      )}
+
       {!cargando && !error && cortes && cortes.length > 0 && (
         <Card padding="p-0" className="overflow-x-auto">
           <table className="w-full border-separate border-spacing-0">
             <thead>
               <tr>
-                {["Fecha de corte", "Vigencia", "Estado", "Fuentes", ""].map(
-                  (titulo) => (
-                    <th key={titulo} scope="col" className={TH}>
-                      {titulo}
-                    </th>
-                  ),
-                )}
+                {[
+                  "Fecha de corte",
+                  "Vigencia",
+                  "Estado",
+                  "Fuentes",
+                  "Metas",
+                  "",
+                ].map((titulo) => (
+                  <th key={titulo} scope="col" className={TH}>
+                    {titulo}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -138,10 +203,40 @@ export default function Cortes() {
                         {/* [E02-HU05] Etiqueta "Actual" — mismo criterio que
                             habilita el botón "Editar" de la última columna. */}
                         {actual && <StateBadge texto="Actual" tono="azul" />}
+                        {/* [E02-HU08/CA04] Estrella: ícono + texto, no solo
+                            color. El texto completo es para lectores de
+                            pantalla; a la vista, "Referencia". */}
+                        {corte.es_referencia && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-ayuda font-semibold text-amber-900">
+                            <Star
+                              size={14}
+                              aria-hidden="true"
+                              className="fill-amber-500 text-amber-600"
+                            />
+                            <span className="sr-only">
+                              Corte de referencia de la vigencia{" "}
+                              {corte.vigencia}
+                            </span>
+                            <span aria-hidden="true">Referencia</span>
+                          </span>
+                        )}
                       </span>
                     </td>
                     <td className={`${TD} font-mono text-gray-700`}>
                       {corte.archivos?.length ?? 0} de 3
+                    </td>
+                    <td className={`${TD} font-mono text-gray-700`}>
+                      {/* [E02-HU08/CA03] `null` = BORRADOR: "—", nunca 0. */}
+                      {corte.cantidad_metas == null ? (
+                        <>
+                          <span aria-hidden="true">—</span>
+                          <span className="sr-only">
+                            Sin cantidad: el corte está en borrador
+                          </span>
+                        </>
+                      ) : (
+                        corte.cantidad_metas
+                      )}
                     </td>
                     <td className={`${TD} text-right`}>
                       {corte.estado === "REGISTRADO" ? (
@@ -160,6 +255,23 @@ export default function Cortes() {
                               con respaldo por posición solo si falta). Solo
                               con `puedeEscribir` (D24): el visitante sigue
                               viendo "Ver matriz". */}
+                          {puedeEscribir && (
+                            <Boton
+                              variante="secundario"
+                              icono={Star}
+                              deshabilitado={idEnCurso !== null}
+                              aria-label={`${
+                                corte.es_referencia
+                                  ? "Quitar referencia"
+                                  : "Marcar referencia"
+                              }, corte del ${corte.fecha_corte}`}
+                              onClick={() => cambiarReferencia(corte)}
+                            >
+                              {corte.es_referencia
+                                ? "Quitar referencia"
+                                : "Marcar referencia"}
+                            </Boton>
+                          )}
                           {actual && puedeEscribir && (
                             <Boton
                               variante="secundario"

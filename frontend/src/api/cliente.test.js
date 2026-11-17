@@ -90,3 +90,40 @@ describe("api.planAccionPublicoActual", () => {
     });
   });
 });
+
+describe("api.marcarCorteReferencia / desmarcarCorteReferencia", () => {
+  it("marcar: PUT a /referencia con el token", async () => {
+    responder(200, { id: "c1", es_referencia: true });
+
+    await api.marcarCorteReferencia("c1");
+
+    const [url, opciones] = fetchSimulado.mock.calls[0];
+    expect(url.endsWith("/api/v1/cortes/c1/referencia")).toBe(true);
+    expect(opciones.method).toBe("PUT");
+    expect(opciones.headers.Authorization).toBe("Bearer token-secreto");
+  });
+
+  it("desmarcar: DELETE a /referencia y devuelve el corte", async () => {
+    responder(200, { id: "c1", es_referencia: false });
+
+    const corte = await api.desmarcarCorteReferencia("c1");
+
+    const [url, opciones] = fetchSimulado.mock.calls[0];
+    expect(url.endsWith("/api/v1/cortes/c1/referencia")).toBe(true);
+    expect(opciones.method).toBe("DELETE");
+    expect(corte.es_referencia).toBe(false);
+  });
+
+  it.each([404, 409])(
+    "el %i llega como ErrorApi con sus detalles",
+    async (estado) => {
+      responder(estado, { codigo: "x", mensaje: "texto", detalles: { a: 1 } });
+
+      await expect(api.marcarCorteReferencia("c1")).rejects.toMatchObject({
+        name: "ErrorApi",
+        estado,
+        detalles: { a: 1 },
+      });
+    },
+  );
+});
