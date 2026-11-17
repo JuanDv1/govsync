@@ -238,13 +238,35 @@ class RepositorioCortesSQL(RepositorioCortes):
         self._s.flush()
 
     def eliminar(self, corte_id: uuid.UUID) -> None:
-        """Borra el corte; `ON DELETE CASCADE` limpia las tablas hijas.
+        """Borra el corte solo si sigue en BORRADOR; `ON DELETE CASCADE`
+        limpia las tablas hijas.
 
         Se usa `delete()` a nivel de SQL (no `session.delete(orm)`) para que
         la cascada la resuelva la BD en una sola sentencia, igual que
-        `reemplazar_metas`/`reemplazar_proyectos`.
+        `reemplazar_metas`/`reemplazar_proyectos`. El filtro por estado
+        evita borrar un REGISTRADO si otra sesión lo registró entre la
+        validación del dominio y este DELETE; con `rowcount == 0` se
+        distingue si dejó de existir (404) o ya no es BORRADOR (409).
         """
-        self._s.execute(delete(CorteORM).where(CorteORM.id == corte_id))
+        resultado = self._s.execute(
+            delete(CorteORM).where(CorteORM.id == corte_id, CorteORM.estado == EstadoCorte.BORRADOR)
+        )
+        if resultado.rowcount == 0:
+            estado_actual = self._s.execute(
+                select(CorteORM.estado).where(CorteORM.id == corte_id)
+            ).scalar_one_or_none()
+            if estado_actual is None:
+                raise RecursoNoEncontrado(
+                    f"No existe el corte {corte_id} que se intenta descartar.",
+                    detalles={"motivo": "corte_no_encontrado", "corte_id": str(corte_id)},
+                )
+            raise OperacionNoPermitida(
+                "Solo un corte en BORRADOR puede descartarse.",
+                detalles={
+                    "motivo": "corte_no_es_borrador",
+                    "estado_actual": estado_actual.value,
+                },
+            )
         self._s.flush()
 
     def confirmar_referencia(self, corte: Corte) -> None:

@@ -98,8 +98,11 @@ class RepositorioCortes(ABC):
     @abstractmethod
     def eliminar(self, corte_id: uuid.UUID) -> None:
         """Elimina el corte y, en cascada, todos sus datos (archivos, metas,
-        proyectos, presupuesto, historial). La validación (estado BORRADOR)
-        ya la hizo el dominio (`Corte.verificar_descartable()`).
+        proyectos, presupuesto, historial). El dominio ya validó el estado
+        (`Corte.verificar_descartable()`), pero la implementación debe
+        re-verificarlo en el propio DELETE (carrera con `registrar`):
+        `RecursoNoEncontrado` si ya no existe, `OperacionNoPermitida`
+        (`corte_no_es_borrador`) si dejó de ser BORRADOR.
         """
 
     @abstractmethod
