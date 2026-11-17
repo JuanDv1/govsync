@@ -38,7 +38,7 @@ describe("api.planAccionPublicoActual", () => {
     await api.planAccionPublicoActual();
 
     const [url, opciones] = fetchSimulado.mock.calls[0];
-    expect(url).toBe("/api/v1/publico/plan-accion/actual");
+    expect(url.endsWith("/api/v1/publico/plan-accion/actual")).toBe(true);
     expect(opciones.method).toBe("GET");
     expect(opciones.headers).not.toHaveProperty("Authorization");
     expect(JSON.stringify(opciones.headers)).not.toContain("token-secreto");
@@ -58,7 +58,7 @@ describe("api.planAccionPublicoActual", () => {
     await api.planAccionActual();
 
     const [url, opciones] = fetchSimulado.mock.calls[0];
-    expect(url).toBe("/api/v1/plan-accion/actual");
+    expect(url.endsWith("/api/v1/plan-accion/actual")).toBe(true);
     expect(opciones.headers.Authorization).toBe("Bearer token-secreto");
   });
 

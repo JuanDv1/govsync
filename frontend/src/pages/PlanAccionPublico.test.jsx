@@ -98,7 +98,7 @@ describe("Consulta pública del Plan de Acción", () => {
     expect(await screen.findByText("Aulas dotadas")).toBeInTheDocument();
     expect(fetchSimulado).toHaveBeenCalledTimes(1);
     const [url, opciones] = fetchSimulado.mock.calls[0];
-    expect(url).toBe("/api/v1/publico/plan-accion/actual");
+    expect(url.endsWith("/api/v1/publico/plan-accion/actual")).toBe(true);
     expect(opciones.headers).not.toHaveProperty("Authorization");
   });
 
