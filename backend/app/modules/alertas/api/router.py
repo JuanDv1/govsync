@@ -89,6 +89,19 @@ class RegistrosNoRelacionadosRespuesta(BaseModel):
     filas: list[RegistroNoRelacionadoRespuesta]
 
 
+class OpcionFiltroRespuesta(BaseModel):
+    valor: str
+    etiqueta: str
+
+
+class OpcionesFiltroNoRelacionadosRespuesta(BaseModel):
+    """CA03/CA04: el catálogo cerrado con sus etiquetas, para que el frontend
+    arme los filtros sin duplicar ni traducir nada por su cuenta."""
+
+    fuentes: list[OpcionFiltroRespuesta]
+    motivos: list[OpcionFiltroRespuesta]
+
+
 def _a_respuesta(registro: RegistroNoRelacionado) -> RegistroNoRelacionadoRespuesta:
     return RegistroNoRelacionadoRespuesta(
         fuente=registro.fuente,
@@ -150,6 +163,24 @@ MotivoQuery = Annotated[
 
 
 # --- Endpoints --------------------------------------------------------------
+
+
+@router.get(
+    "/opciones-filtro",
+    response_model=OpcionesFiltroNoRelacionadosRespuesta,
+    summary="Catálogo de fuentes y motivos para los filtros",
+)
+def obtener_opciones_filtro(usuario: AccesoAlertasDep) -> OpcionesFiltroNoRelacionadosRespuesta:
+    """No depende del corte: el catálogo es cerrado (`Fuente`, `Motivo`). Va
+    ANTES de `/{corte_id}`: si no, "opciones-filtro" se leería como un id."""
+    return OpcionesFiltroNoRelacionadosRespuesta(
+        fuentes=[
+            OpcionFiltroRespuesta(valor=f.value, etiqueta=ETIQUETAS_FUENTE[f]) for f in Fuente
+        ],
+        motivos=[
+            OpcionFiltroRespuesta(valor=m.value, etiqueta=ETIQUETAS_MOTIVO[m]) for m in Motivo
+        ],
+    )
 
 
 @router.get(
