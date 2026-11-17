@@ -17,6 +17,7 @@ import Login from "./pages/Login.jsx";
 import Disposicion from "./components/Disposicion.jsx";
 import MatrizRelacion from "./pages/MatrizRelacion.jsx";
 import PlanAccion from "./pages/PlanAccion.jsx";
+import PlanAccionPublico from "./pages/PlanAccionPublico.jsx";
 import CompararCortes from "./pages/CompararCortes.jsx";
 import { Vacio } from "./components/Estados.jsx";
 import Card from "./components/shared/Card.jsx";
@@ -152,6 +153,11 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+
+      {/* [E-01/HU-01] Consulta pública del Plan de Acción: FUERA de
+          `RutaProtegida` a propósito. Sin sesión, sin menú de módulos y sin
+          `Authorization`; el endpoint del backend es público. */}
+      <Route path="/publico/plan-accion" element={<PlanAccionPublico />} />
 
       <Route
         element={
