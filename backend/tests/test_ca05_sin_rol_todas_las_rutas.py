@@ -25,7 +25,9 @@ from app.core.dependencias import obtener_verificador_token
 from app.main import crear_app
 from app.modules.identidad.domain.entidades import Usuario
 
-RUTAS_PUBLICAS = {"/health", "/api/v1/salud"}
+# La ruta pública (D38) se lista POR NOMBRE: un endpoint nuevo bajo /publico no
+# queda exento por prefijo, hay que agregarlo aquí a propósito.
+RUTAS_PUBLICAS = {"/health", "/api/v1/salud", "/api/v1/publico/plan-accion/actual"}
 PARAMETROS_DE_RUTA = {
     "{corte_id}": str(uuid.uuid4()),
     "{tipo}": "PDT",

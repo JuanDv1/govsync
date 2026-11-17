@@ -60,6 +60,16 @@ def test_hay_rutas_que_verificar() -> None:
     assert len(_rutas_protegidas()) >= 10
 
 
+def test_la_ruta_publica_queda_excluida_de_la_regla_del_gestor(sesion) -> None:
+    """D38: la ruta pública no mira el rol, así que el gestor no recibe 403 ahí
+    (igual que cualquier anónimo). Se excluye POR NOMBRE, no por prefijo."""
+    publica = "/api/v1/publico/plan-accion/actual"
+
+    assert ("GET", publica) not in _rutas_protegidas()
+    respuesta = _pedir(sesion, (Rol.GESTOR,), "GET", publica)
+    assert respuesta.status_code != 403, respuesta.text
+
+
 @pytest.mark.parametrize(("metodo", "ruta"), _rutas_protegidas())
 def test_gestor_recibe_403_en_toda_ruta(sesion, metodo: str, ruta: str) -> None:
     respuesta = _pedir(sesion, (Rol.GESTOR,), metodo, ruta)

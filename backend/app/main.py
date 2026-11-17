@@ -17,9 +17,11 @@ from starlette.middleware.body_limit import RequestBodyLimitMiddleware
 
 from app.core.config import get_settings
 from app.core.errores import registrar_manejadores
+from app.core.limite_peticiones import LimitePeticionesPublicas
 from app.modules.alertas.api.router import router as router_alertas
 from app.modules.cortes.api.router import router as router_cortes
 from app.modules.plan_accion.api.router import router as router_plan_accion
+from app.modules.plan_accion.api.router_publico import router as router_plan_accion_publico
 from app.modules.trazabilidad.api.router import router as router_trazabilidad
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -27,6 +29,13 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 
 def crear_app() -> FastAPI:
     settings = get_settings()
+    if settings.environment == "production" and settings.publico_proxies_confiables == 0:
+        # D38: tras el proxy de Render todos los visitantes compartirían un
+        # solo contador. Solo es válido en local.
+        logging.getLogger("govsync").warning(
+            "PUBLICO_PROXIES_CONFIABLES=0 en producción: el límite de las rutas "
+            "públicas usa la IP del proxy. Ver docs/DECISIONES.md D38."
+        )
     app = FastAPI(
         title="GovSync API",
         version="0.1.0",
@@ -49,6 +58,17 @@ def crear_app() -> FastAPI:
     # otra mitad del diseño.
     app.add_middleware(RequestBodyLimitMiddleware, max_body_size=settings.max_upload_bytes)
 
+    # [D38] Límite de peticiones SOLO del prefijo /api/v1/publico (rutas sin
+    # token). Se registra antes que CORS para quedar por dentro de él: su 429
+    # debe salir con cabeceras CORS, igual que el 413 de arriba.
+    app.add_middleware(
+        LimitePeticionesPublicas,
+        limite=settings.publico_limite_peticiones,
+        ventana_segundos=settings.publico_ventana_segundos,
+        proxies_confiables=settings.publico_proxies_confiables,
+        max_clientes=settings.publico_max_clientes,
+    )
+
     # CORS restringido a los orígenes declarados; nunca '*' con credenciales.
     # Debe ser el ÚLTIMO add_middleware: en Starlette el último agregado es el
     # más externo. Si RequestBodyLimitMiddleware quedara por fuera, su 413 saldría
@@ -68,6 +88,8 @@ def crear_app() -> FastAPI:
     app.include_router(router_trazabilidad, prefix="/api/v1")
     app.include_router(router_plan_accion, prefix="/api/v1")
     app.include_router(router_alertas, prefix="/api/v1")
+    # [D38] Único router sin autenticación; ver router_publico.py.
+    app.include_router(router_plan_accion_publico, prefix="/api/v1")
 
     @app.get("/health", tags=["Operación"], summary="Verificación de estado para despliegue")
     def health() -> dict[str, str]:
