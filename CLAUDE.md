@@ -127,6 +127,17 @@ configure by hand; only applies the first time Keycloak starts on a fresh `datos
 never overwrites an existing realm. CI only has a smoke test (`backend-keycloak` job: confirms the
 container boots on the runner) — no real-token integration test yet.
 
+Public route without credentials (`[E01-HU01]`, D38): `GET /api/v1/publico/plan-accion/actual`
+(`plan_accion/api/router_publico.py`) is the ONLY data route that answers without a token — same
+corte and same 404/409 as `/plan-accion/actual`, but with its own DTO (never inherited from the
+protected one; no `objeto`/`valor`/`valor_pagado` of contracts in `desglose`) and a key whitelist in
+`tests/test_router_publico_plan_accion.py`. Everything under `/api/v1/publico` is rate-limited by
+`core/limite_peticiones.py` (ASGI middleware, in memory, per process; `PUBLICO_LIMITE_PETICIONES`,
+`PUBLICO_VENTANA_SEGUNDOS`, `PUBLICO_PROXIES_CONFIABLES`, `PUBLICO_MAX_CLIENTES`; 429
+`limite_peticiones_excedido`). A new public route must be added BY NAME to `RUTAS_PUBLICAS` in
+`test_ca05_sin_rol_todas_las_rutas.py` — never exempt a prefix. The Keycloak `visitante` role is
+kept (read-only with a session). The frontend side of the card is not done yet.
+
 File upload rules (`[SEC-03]`, enforced in `cortes/application/casos_uso.py`, not in the API
 layer): only `.xlsx`, size checked before reading into memory, filename sanitized against path
 traversal, macro-enabled `.xlsm` rejected outright, required sheets validated before processing.

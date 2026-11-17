@@ -40,6 +40,19 @@ class Settings(BaseSettings):
     # archivo queda almacenado y puede abrirlo un humano después.
     allowed_upload_suffixes: str = ".xlsx"
 
+    # --- Rutas públicas sin token (D38) ----------------------------------
+    # Límite de peticiones por cliente para el prefijo /api/v1/publico. Es en
+    # memoria y POR PROCESO (con N procesos el tope real es N veces mayor).
+    publico_limite_peticiones: int = Field(default=60, ge=1)
+    publico_ventana_segundos: int = Field(default=60, ge=1)
+    # Cuántos proxies de confianza hay delante de la app. 0 = se usa la IP del
+    # socket; N = se toma la entrada N contando desde la DERECHA de
+    # X-Forwarded-For (la que agregó el proxy de confianza más cercano a la
+    # app que ve al cliente). Nunca se confía en más entradas que estas.
+    publico_proxies_confiables: int = Field(default=0, ge=0, le=10)
+    # Tope de clientes distintos que el límite recuerda a la vez (memoria acotada).
+    publico_max_clientes: int = Field(default=10_000, ge=100)
+
     # NOTA: la gestión de usuarios (altas, roles) vive en Keycloak, no aquí
     # ([HU-E01-01] / D23) — por eso no hay `seed_admin_email` ni
     # `seed_admin_password`: esa cuenta semilla se crea en el realm de

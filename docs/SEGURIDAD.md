@@ -13,7 +13,7 @@ proyecto).
 | XSS (Cross-Site Scripting)  | Verificado | Auditado 2026-09-18: React escapa por defecto; `grep -rn "dangerouslySetInnerHTML" frontend/src/` no encuentra ningún uso en todo el frontend                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | CSRF                        | N/A        | La API sigue sin usar cookies de sesión: desde `[HU-E01-01]` (D23) el token viaja en el header `Authorization: Bearer`, que un sitio de terceros no puede fijar automáticamente en una petición cross-site (a diferencia de una cookie) — CSRF clásico no aplica. Reemplaza la justificación anterior ("no hay autenticación en Sprint 1"), obsoleta desde que se implementó Keycloak                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Autenticación               | Verificado | Keycloak (OIDC, Authorization Code + PKCE) — `[HU-E01-01]`, D23/D24 en `docs/DECISIONES.md`. El backend nunca firma ni almacena contraseñas: `VerificadorTokenKeycloak` (`identidad/persistence/keycloak.py`) valida cada token contra el JWKS real del realm (RS256), con `issuer`/`audience` exigidos. Probado con `pytest` (`test_keycloak.py`, llaves RSA en memoria) y manualmente de punta a punta contra un Keycloak real (2026-10-09/10): login por navegador para `administrador`/`gestor` y `visitante`; sin token → 401 `credenciales_invalidas`                                                                                                                                                                                                                             |
-| Autorización                | Verificado | `exigir_roles()` (`core/dependencias.py`) protege todos los endpoints de `cortes`/`trazabilidad` (D24, D37): escritura solo `administrador`; lectura `administrador`/`visitante` (`LecturaDep`); `visitante` recibe 403 `permiso_insuficiente` con `roles_requeridos` al escribir. Desde D37 (2026-11-11) `gestor` recibe 403 en **todas** las rutas (`test_gestor_sin_modulos_todas_las_rutas.py`). Probado con `pytest` (`test_autorizacion_rutas.py`) y confirmado manualmente contra Keycloak real, antes de D37: token de `visitante` → 403 en `POST /cortes`, 200 en `GET /cortes`                                                                                                                                                                                                |
+| Autorización                | Verificado | `exigir_roles()` (`core/dependencias.py`) protege todos los endpoints de `cortes`/`trazabilidad` (D24, D37): escritura solo `administrador`; lectura `administrador`/`visitante` (`LecturaDep`); `visitante` recibe 403 `permiso_insuficiente` con `roles_requeridos` al escribir. Excepción única y explícita: el Plan de Acción público (D38, sección "Rutas públicas sin token"). Desde D37 (2026-11-11) `gestor` recibe 403 en **todas** las rutas (`test_gestor_sin_modulos_todas_las_rutas.py`). Probado con `pytest` (`test_autorizacion_rutas.py`) y confirmado manualmente contra Keycloak real, antes de D37: token de `visitante` → 403 en `POST /cortes`, 200 en `GET /cortes`                                                                                              |
 | Datos sensibles encriptados | Verificado | Los datos son información pública municipal (Ley 1712 de 2014, transparencia y acceso a la información pública). En tránsito viajan por HTTPS (Vercel para el frontend, Render para la API). Los secretos viven en GitHub Secrets y en las variables de entorno de Render, nunca en el repositorio. La base de datos de Render está cifrada en reposo por el proveedor                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## Específico de GovSync — sesión del usuario (`[E-01/HU-01]`)
@@ -202,6 +202,54 @@ Evidencia: `test_validacion_archivos.py` (16 pruebas), 170 passed en local
       por `CORS_ORIGINS` (por defecto solo `http://localhost:5173` en desarrollo)
 - [ ] Confirmar el dominio real de producción cuando `[DEV-07]` despliegue
       (hoy solo se verificó el valor de desarrollo local)
+
+## Rutas públicas sin token y límite de peticiones (D38)
+
+- [x] Única ruta de datos sin autenticación: `GET /api/v1/publico/plan-accion/actual`
+      (`plan_accion/api/router_publico.py`). Todas las demás rutas, salvo
+      `/health` y `/api/v1/salud`, siguen respondiendo 401 sin token; la prueba
+      `tests/test_router_publico_plan_accion.py` lo comprueba leyendo las rutas
+      del OpenAPI, y la ruta pública está listada POR NOMBRE en
+      `RUTAS_PUBLICAS` (`test_ca05_sin_rol_todas_las_rutas.py`).
+- [x] Datos expuestos con lista blanca de claves y DTO propio: en el desglose
+      solo `numero_contrato`, sin `objeto`, `valor` ni `valor_pagado`.
+- [x] Nunca públicos: escritura, Gestión de Cortes, matriz, historial,
+      registros no relacionados, exportación y comparación.
+- [x] Límite de peticiones solo para el prefijo `/api/v1/publico`
+      (`core/limite_peticiones.py`, OWASP A04/A05): 60 por 60 s por cliente
+      por defecto; 429 con el sobre de `errores.py`, `Retry-After` y
+      `detalles.reintentar_en_segundos`. Va dentro del CORS, así que el 429
+      lleva cabeceras CORS.
+- [x] Memoria acotada: máximo `PUBLICO_MAX_CLIENTES` (10 000) clientes
+      recordados; se descartan primero los vencidos y luego los más antiguos.
+- [x] IP del cliente: `PUBLICO_PROXIES_CONFIABLES` (0 = IP del socket).
+      `X-Forwarded-For` solo se lee con valor mayor que 0, contando desde la
+      derecha, y nunca más entradas que las configuradas; entradas inválidas
+      caen a la IP del socket. IPv6 agrupada por `/64`.
+- [ ] **El límite es por proceso**: con N procesos el tope real por cliente es
+      N veces el configurado (hoy el Dockerfile arranca uno solo). Si se
+      activan varios procesos, hay que pasar a un almacén compartido.
+- [ ] **SUPUESTO a verificar en el despliegue (tarjeta [DEV]):** que Render
+      agregue la IP del cliente como última entrada de `X-Forwarded-For` y que
+      `PUBLICO_PROXIES_CONFIABLES=1` sea el valor correcto. Un valor mayor al
+      real permite falsificar la IP; uno menor hace que todos compartan
+      contador.
+- [ ] Ventana fija: permite una ráfaga de hasta 2x el límite al cambiar de
+      ventana. Aceptado por simplicidad.
+- [ ] **`PUBLICO_PROXIES_CONFIABLES` > 0 exige que el backend NO sea
+      alcanzable directamente**: si un cliente llega al puerto sin pasar por el
+      proxy, controla la entrada N de `X-Forwarded-For` y puede evadir el
+      límite o suplantar la IP de otro cliente (verificado por el Agente 3).
+      Solo el proxy debe poder llegar al puerto de la app.
+- [ ] **uvicorn reescribe la IP del socket desde `X-Forwarded-For`** cuando la
+      IP del socket está en `FORWARDED_ALLOW_IPS` (por defecto `127.0.0.1`).
+      Nunca usar `FORWARDED_ALLOW_IPS="*"`: con 0 proxies configurados el
+      límite dejaría de ser confiable sin avisar.
+- [x] `root_path`: el prefijo público se compara sin el `root_path`, así que
+      `--root-path` no desactiva el límite (`test_limite_peticiones.py`).
+- [ ] Un atacante con muchas IP puede expulsar contadores inundando
+      `PUBLICO_MAX_CLIENTES` (compromiso aceptado, ver D38); no hay métrica ni
+      alarma de expulsiones.
 
 ## Hallazgos de SonarCloud — Sprint 1
 

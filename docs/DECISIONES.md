@@ -2073,3 +2073,104 @@ endpoint nuevo que deje entrar al gestor hace fallar la prueba.
 **Estado:** RATIFICADA por el PO el 2026-11-11.
 
 **Registrado:** 2026-11-11.
+
+---
+
+## D38 · Plan de Acción público sin credenciales (`/api/v1/publico/plan-accion/actual`)
+
+**Clasificación:** Decisión de alcance y seguridad (afecta a D24, D26 y D37).
+
+> Numeración: D36 la reserva el PR #208 (descartar un borrador), todavía sin
+> fusionar; por eso esta decisión usa D38.
+
+**Contexto:** E-01/HU-01 pide que un visitante vea el Plan de Acción sin
+iniciar sesión. Hasta hoy toda la API exigía token y rol (D24, D26, D37),
+salvo `/health` y `/api/v1/salud`. Los datos son información pública
+municipal (Ley 1712 de 2014, ver `docs/SEGURIDAD.md`).
+
+**Decisión (PO, tarjeta de Trello `xWZexNPp`, parte backend):**
+
+1. **Variante A: endpoints públicos aparte.** Prefijo
+   `/api/v1/publico/plan-accion`, solo `GET`, sin token. Los
+   `/api/v1/plan-accion/*` siguen exigiendo rol y no se modificaron.
+2. **Un solo endpoint:** `GET /api/v1/publico/plan-accion/actual` (corte
+   REGISTRADO más reciente; mismos 404 y 409 que `/plan-accion/actual`).
+   Sin exportar ni comparar.
+3. **DTO público propio**, independiente del protegido (no hereda de él): misma
+   forma que `/plan-accion/actual` (`corte_id`, `vigencia`, `fecha_corte`,
+   `filas`, `resumen`; `bpins`, `rubros`, `cod_bpin`, números de contrato), pero
+   en `desglose[].contratos[]` solo `numero_contrato`: sin `objeto`, `valor` ni
+   `valor_pagado`. Una lista blanca de claves en las pruebas evita que un campo
+   nuevo del DTO protegido se publique por accidente.
+4. **Límite de peticiones solo para el prefijo público**: middleware ASGI propio
+   en memoria (`core/limite_peticiones.py`), sin dependencia nueva. Por defecto
+   60 peticiones por 60 s por cliente (`PUBLICO_LIMITE_PETICIONES`,
+   `PUBLICO_VENTANA_SEGUNDOS`). Respuesta 429 con el sobre
+   `{codigo: "limite_peticiones_excedido", mensaje, detalles:
+{reintentar_en_segundos}}` y cabecera `Retry-After`.
+5. **IP del cliente:** `PUBLICO_PROXIES_CONFIABLES` (por defecto 0 = IP del
+   socket). Con N = se toma la entrada N contando desde la derecha de
+   `X-Forwarded-For`; nunca se confía en más entradas que las configuradas.
+6. **Nunca es público:** escritura, Gestión de Cortes, matriz, historial,
+   registros no relacionados (HU-05), exportación y comparación.
+7. El rol `visitante` de Keycloak **no se borra**: sigue siendo el rol de
+   lectura con sesión iniciada.
+
+**Alternativas del límite (descartadas):** dependencia nueva (`slowapi`):
+no resuelve varios procesos y agrega cadena de suministro; almacén compartido
+(Redis/Postgres): solo se justifica si se activan varios procesos.
+
+**Decisiones técnicas del Agente 1 (no del PO):**
+
+- Ventana fija (permite una ráfaga de hasta 2x el límite al cambiar de
+  ventana) por simplicidad de memoria O(1) por cliente.
+- Memoria acotada (`PUBLICO_MAX_CLIENTES`, 10 000): al llenarse se descartan
+  primero los contadores vencidos y luego los más antiguos. Se prefiere relajar
+  el límite a rechazar clientes nuevos, que dejaría sin servicio a todos ante
+  un atacante con muchas IP.
+- IPv6 se agrupa por `/64`; una IPv4 mapeada en IPv6 cuenta como IPv4.
+- Se limita todo el prefijo `/api/v1/publico`, existan o no las rutas (también
+  los 404).
+- La ruta pública se agrega POR NOMBRE a `RUTAS_PUBLICAS` de
+  `test_ca05_sin_rol_todas_las_rutas.py`; así un endpoint nuevo bajo
+  `/publico` no queda exento por prefijo y hay que decidirlo a propósito.
+
+**Limitaciones conocidas:**
+
+- El límite es **por proceso**: con N procesos el tope real por cliente es N
+  veces el configurado. Hoy el Dockerfile arranca un solo `uvicorn`.
+- **SUPUESTO a verificar en el despliegue (tarjeta [DEV]):** que en Render el
+  proxy agregue la IP del cliente como última entrada de `X-Forwarded-For` y
+  que baste `PUBLICO_PROXIES_CONFIABLES=1`. Con un valor mayor al real, el
+  cliente puede falsificar su IP; con uno menor, todos comparten la IP del
+  proxy y comparten el mismo contador.
+
+**Verificación:** `tests/test_router_publico_plan_accion.py` (200 sin token,
+lista blanca, sin datos del contrato, 404/409, parámetros ignorados, una sola
+ruta pública, y 401 sin token en las demás rutas leídas del OpenAPI),
+`tests/test_limite_peticiones.py` (429, `X-Forwarded-For` con 0 y 1 proxy,
+IPv6, memoria acotada) y las excepciones explícitas en
+`test_ca05_sin_rol_todas_las_rutas.py` y
+`test_gestor_sin_modulos_todas_las_rutas.py`.
+
+**Pendiente:** parte frontend de la tarjeta (pantalla pública y entrada sin
+login); verificar el supuesto de proxies en Render.
+
+**Estado:** DECIDIDA por el PO (decisiones 1 a 7 y valores del límite);
+detalles técnicos pendientes de revisión del equipo en el PR.
+
+**Registrado:** 2026-11-16.
+
+**Riesgos conocidos (revisión del Agente 2):**
+
+- Sin caché: cada petición pública ejecuta el pipeline completo del corte. El
+  corte REGISTRADO no cambia, así que una caché en memoria por `corte.id` con
+  TTL corto es la mejora natural; queda fuera de este PR. Mientras tanto el
+  límite por cliente es la única defensa y un atacante con muchas IP la
+  multiplica.
+- `PUBLICO_PROXIES_CONFIABLES=0` en producción hace que todos compartan un
+  contador (auto-bloqueo); el arranque registra un WARNING en ese caso.
+  Debe fijarse en el despliegue (tarjeta [DEV]).
+- Todo el prefijo cuenta, también los 404 y la redirección 307 por barra final.
+- `router_publico.py` importa `_obtener_filas_filtradas` (privado de
+  `router.py`); renombrarlo toca el router protegido y se difiere.
