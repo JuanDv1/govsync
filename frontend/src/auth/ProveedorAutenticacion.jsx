@@ -69,7 +69,13 @@ export function ProveedorAutenticacion({ children }) {
 
     keycloak.onAuthLogout = () => setEstaAutenticado(false);
     keycloak.onTokenExpired = () => {
-      keycloak.updateToken(30).catch(() => keycloak.clearToken());
+      // Si no se puede renovar, la sesión ya no sirve: además de borrar el
+      // token, se baja `estaAutenticado` para que `RutaProtegida` lleve al login
+      // en vez de dejar la pantalla abierta con peticiones que fallarán.
+      keycloak.updateToken(30).catch(() => {
+        keycloak.clearToken();
+        setEstaAutenticado(false);
+      });
     };
 
     keycloak

@@ -119,7 +119,7 @@ D24/D37 map which endpoints need which: reads on `cortes`/`trazabilidad` require
 tokens and classes — `.ftl` templates use the same Tailwind classes as `Login.jsx`/`Boton.jsx`/
 `Campo.jsx`, and `resources/css/govsync.css` is GENERATED with the frontend's `tailwind.config.js`
 (`npm run build:tema-keycloak`, versioned; rerun it after changing any `.ftl` or a token — a Vitest
-test in `frontend/src/tema-keycloak/` fails if the CSS is stale). The 3-attempt notice (CA03,
+test in `frontend/src/tema-keycloak/` fails if a class used by the templates is missing from the CSS). The 3-attempt notice (CA03,
 browser-only UX, not a security control) is `resources/js/limite-intentos.js`. The whole realm (clients, roles, theme selection, brute-force/session policy,
 3 throwaway test users) is provisioned automatically on first boot from
 `keycloak/import/govsync-realm.json` (`--import-realm`, see `docker-compose.yml`) — nothing to

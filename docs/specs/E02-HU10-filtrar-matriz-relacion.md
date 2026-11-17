@@ -3,7 +3,7 @@
 **Estado de la Specification:** Borrador
 
 > Mientras esté en `Borrador`, la fuente de requisitos vigente de esta HU es
-> su hoja del Excel (`docs/requisitos/GovSync_Levantamiento_Requisitos_v2_2_Sprint2.xlsx`,
+> su hoja del Excel (`docs/requisitos/GovSync_Levantamiento_Requisitos_v3_0_Sprint3.xlsx`,
 > hoja `HU_E02_10`). El estado de avance de la tarjeta vive únicamente en
 > Trello. Spec retroactiva (2026-10-05): el backend ya está en `develop`
 > (PR #131). Respuestas del PO del 2026-10-16 aplicadas (ver D30 a D34 en

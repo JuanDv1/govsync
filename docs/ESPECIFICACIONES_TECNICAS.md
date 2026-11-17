@@ -13,7 +13,7 @@ documento: su contrato vive en `docs/specs/` (una spec por HU) y en el
 OpenAPI que genera FastAPI.
 
 **Fuente de esta especificación, en orden:** los Criterios de Aceptación
-aprobados en `docs/requisitos/GovSync_Levantamiento_Requisitos_v2_2_Sprint2.xlsx`,
+aprobados en `docs/requisitos/GovSync_Levantamiento_Requisitos_v3_0_Sprint3.xlsx`,
 las Reglas de negocio y
 Decisiones de Diseño en `claude/Sprint1_Decisiones_de_Diseno.md` (D1–D14), y
 el código-esqueleto ya existente en el repositorio (routers, `casos_uso.py`,

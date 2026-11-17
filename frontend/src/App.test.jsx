@@ -11,7 +11,7 @@
  * espía: así se comprueba que, para las cuentas sin acceso, ninguna pantalla
  * se monta ni dispara una petición, entre por donde entre.
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App.jsx";
@@ -21,14 +21,16 @@ const MENSAJE_SIN_MODULOS =
 const MENSAJE_SIN_ROL = "Su cuenta no tiene un rol asignado";
 let rolesActuales = [];
 let loginRecienteActual = false;
+let estaAutenticadoActual = true;
 const finalizarLoginReciente = vi.fn();
+const iniciarSesion = vi.fn();
 
 vi.mock("./auth/ProveedorAutenticacion.jsx", async () => {
   const roles = await import("./auth/roles.js");
   return {
     useAutenticacion: () => ({
       cargando: false,
-      estaAutenticado: true,
+      estaAutenticado: estaAutenticadoActual,
       usuario: {
         nombre: "Ana Pérez",
         correo: null,
@@ -41,7 +43,7 @@ vi.mock("./auth/ProveedorAutenticacion.jsx", async () => {
       vistaInicial: roles.vistaInicial(rolesActuales),
       loginReciente: loginRecienteActual,
       finalizarLoginReciente,
-      iniciarSesion: vi.fn(),
+      iniciarSesion,
       cerrarSesion: vi.fn(),
     }),
   };
@@ -65,8 +67,8 @@ vi.mock("./api/cliente.js", () => ({
 }));
 
 function Ubicacion() {
-  const { pathname } = useLocation();
-  return <output data-testid="ubicacion">{pathname}</output>;
+  const { pathname, search } = useLocation();
+  return <output data-testid="ubicacion">{pathname + search}</output>;
 }
 
 function renderizarEn(ruta) {
@@ -81,11 +83,13 @@ function renderizarEn(ruta) {
 beforeEach(() => {
   llamadasApi.mockClear();
   finalizarLoginReciente.mockClear();
+  iniciarSesion.mockClear();
 });
 
 afterEach(() => {
   rolesActuales = [];
   loginRecienteActual = false;
+  estaAutenticadoActual = true;
 });
 
 describe("RutaProtegida con rol sin módulos (gestor, D37)", () => {
@@ -195,6 +199,46 @@ describe("Vista inicial por rol (CA01)", () => {
 
     expect(screen.getByRole("alert")).toHaveTextContent(MENSAJE_SIN_MODULOS);
     expect(screen.getByTestId("ubicacion")).toHaveTextContent(/^\/$/);
+  });
+});
+
+describe("URL completa tras el login (CA07)", () => {
+  const URL_PEDIDA = "/plan-accion/comparar?vigencia=2026";
+
+  it("sin sesión, el login recibe la ruta CON sus parámetros y al volver se conservan", () => {
+    // 1) Sin sesión, la persona escribe la URL con `?vigencia=2026`.
+    estaAutenticadoActual = false;
+    rolesActuales = [];
+    const primera = renderizarEn(URL_PEDIDA);
+    expect(screen.getByTestId("ubicacion")).toHaveTextContent("/login");
+
+    // 2) En el login, "Ingresar" le pasa a Keycloak la ruta completa.
+    fireEvent.click(screen.getByRole("button", { name: "Ingresar" }));
+    expect(iniciarSesion).toHaveBeenCalledTimes(1);
+    const destino = iniciarSesion.mock.calls[0][0];
+    expect(destino).toBe(URL_PEDIDA);
+    primera.unmount();
+
+    // 3) Keycloak devuelve a esa URL; el rol visitante puede abrirla.
+    estaAutenticadoActual = true;
+    rolesActuales = ["visitante"];
+    loginRecienteActual = true;
+    renderizarEn(destino);
+
+    expect(screen.getByTestId("ubicacion")).toHaveTextContent(
+      "/plan-accion/comparar?vigencia=2026",
+    );
+  });
+
+  it("si el rol no puede abrir la URL, va a la vista inicial sin los parámetros", () => {
+    rolesActuales = ["visitante"];
+    loginRecienteActual = true;
+
+    renderizarEn("/cortes/nuevo?corte=9");
+
+    expect(screen.getByTestId("ubicacion")).toHaveTextContent(
+      /^\/plan-accion$/,
+    );
   });
 });
 
