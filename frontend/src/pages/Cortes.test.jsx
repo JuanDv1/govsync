@@ -78,6 +78,34 @@ function filaDe(fecha) {
   return screen.getByText(fecha).closest("tr");
 }
 
+function botonDe(fecha, nombre) {
+  return within(filaDe(fecha)).getByRole("button", { name: nombre });
+}
+
+// Monta la pantalla, espera la tabla y devuelve el usuario simulado.
+async function abrirHistorico() {
+  const usuario = userEvent.setup();
+  renderizar();
+  await screen.findByText("2026-10-22");
+  return usuario;
+}
+
+// Lo que devolvería GET /cortes tras mover o quitar la marca de 2026.
+function listaConReferencia(idReferencia) {
+  return [
+    corte("a", {
+      fecha_corte: "2026-10-22",
+      es_corte_actual: true,
+      es_referencia: idReferencia === "a",
+    }),
+    corte("b", {
+      fecha_corte: "2026-09-01",
+      es_referencia: idReferencia === "b",
+    }),
+    listaBase()[2],
+  ];
+}
+
 const ESTRELLA_2026 = "Corte de referencia de la vigencia 2026";
 const ESTRELLA_2025 = "Corte de referencia de la vigencia 2025";
 
@@ -139,16 +167,8 @@ describe("estrella de referencia (CA04): visibilidad y permisos", () => {
     renderizar();
     await screen.findByText("2026-10-22");
 
-    expect(
-      within(filaDe("2026-10-22")).getByRole("button", {
-        name: /Marcar referencia/,
-      }),
-    ).toBeInTheDocument();
-    expect(
-      within(filaDe("2026-09-01")).getByRole("button", {
-        name: /Quitar referencia/,
-      }),
-    ).toBeInTheDocument();
+    expect(botonDe("2026-10-22", /Marcar referencia/)).toBeInTheDocument();
+    expect(botonDe("2026-09-01", /Quitar referencia/)).toBeInTheDocument();
   });
 
   it("no ofrece la acción en un BORRADOR", async () => {
@@ -172,26 +192,12 @@ describe("estrella de referencia (CA04): marcar y quitar", () => {
   it("al marcar otro corte la estrella se mueve dentro de su vigencia y no toca otra", async () => {
     // El backend mueve la marca; el simulador lo reproduce en la recarga.
     apiSimulada.marcarCorteReferencia.mockImplementation(async () => {
-      apiSimulada.listarCortes.mockResolvedValue([
-        corte("a", {
-          fecha_corte: "2026-10-22",
-          es_corte_actual: true,
-          es_referencia: true,
-        }),
-        corte("b", { fecha_corte: "2026-09-01", es_referencia: false }),
-        listaBase()[2],
-      ]);
+      apiSimulada.listarCortes.mockResolvedValue(listaConReferencia("a"));
       return {};
     });
-    const usuario = userEvent.setup();
-    renderizar();
-    await screen.findByText("2026-10-22");
+    const usuario = await abrirHistorico();
 
-    await usuario.click(
-      within(filaDe("2026-10-22")).getByRole("button", {
-        name: /Marcar referencia/,
-      }),
-    );
+    await usuario.click(botonDe("2026-10-22", /Marcar referencia/));
 
     await waitFor(() =>
       expect(
@@ -211,22 +217,12 @@ describe("estrella de referencia (CA04): marcar y quitar", () => {
 
   it("Quitar referencia llama al DELETE y recarga la lista", async () => {
     apiSimulada.desmarcarCorteReferencia.mockImplementation(async () => {
-      apiSimulada.listarCortes.mockResolvedValue([
-        corte("a", { fecha_corte: "2026-10-22", es_corte_actual: true }),
-        corte("b", { fecha_corte: "2026-09-01" }),
-        listaBase()[2],
-      ]);
+      apiSimulada.listarCortes.mockResolvedValue(listaConReferencia(null));
       return {};
     });
-    const usuario = userEvent.setup();
-    renderizar();
-    await screen.findByText("2026-10-22");
+    const usuario = await abrirHistorico();
 
-    await usuario.click(
-      within(filaDe("2026-09-01")).getByRole("button", {
-        name: /Quitar referencia/,
-      }),
-    );
+    await usuario.click(botonDe("2026-09-01", /Quitar referencia/));
 
     await waitFor(() =>
       expect(screen.queryByText(ESTRELLA_2026)).not.toBeInTheDocument(),
@@ -243,15 +239,9 @@ describe("estrella de referencia (CA04): marcar y quitar", () => {
         detalles: { estado: "BORRADOR" },
       }),
     );
-    const usuario = userEvent.setup();
-    renderizar();
-    await screen.findByText("2026-10-22");
+    const usuario = await abrirHistorico();
 
-    await usuario.click(
-      within(filaDe("2026-10-22")).getByRole("button", {
-        name: /Marcar referencia/,
-      }),
-    );
+    await usuario.click(botonDe("2026-10-22", /Marcar referencia/));
 
     const alerta = await screen.findByRole("alert");
     expect(alerta).toHaveTextContent("El corte no está registrado.");
@@ -265,11 +255,7 @@ describe("estrella de referencia (CA04): marcar y quitar", () => {
       within(filaDe("2026-10-22")).queryByText(ESTRELLA_2026),
     ).not.toBeInTheDocument();
     // El botón vuelve a estar disponible.
-    expect(
-      within(filaDe("2026-10-22")).getByRole("button", {
-        name: /Marcar referencia/,
-      }),
-    ).toBeEnabled();
+    expect(botonDe("2026-10-22", /Marcar referencia/)).toBeEnabled();
   });
 
   it("un 404 también se muestra con EstadoError", async () => {
@@ -279,15 +265,9 @@ describe("estrella de referencia (CA04): marcar y quitar", () => {
         codigo: "recurso_no_encontrado",
       }),
     );
-    const usuario = userEvent.setup();
-    renderizar();
-    await screen.findByText("2026-10-22");
+    const usuario = await abrirHistorico();
 
-    await usuario.click(
-      within(filaDe("2026-09-01")).getByRole("button", {
-        name: /Quitar referencia/,
-      }),
-    );
+    await usuario.click(botonDe("2026-09-01", /Quitar referencia/));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "No existe el corte.",
@@ -299,12 +279,8 @@ describe("estrella de referencia (CA04): marcar y quitar", () => {
     apiSimulada.marcarCorteReferencia.mockImplementation(
       () => new Promise((resolve) => (resolver = resolve)),
     );
-    const usuario = userEvent.setup();
-    renderizar();
-    await screen.findByText("2026-10-22");
-    const boton = within(filaDe("2026-10-22")).getByRole("button", {
-      name: /Marcar referencia/,
-    });
+    const usuario = await abrirHistorico();
+    const boton = botonDe("2026-10-22", /Marcar referencia/);
 
     await usuario.dblClick(boton);
 
@@ -317,20 +293,14 @@ describe("estrella de referencia (CA04): marcar y quitar", () => {
 
   it("si la recarga posterior falla, no deja una lista vieja con posibles dos estrellas", async () => {
     apiSimulada.marcarCorteReferencia.mockResolvedValue({});
-    const usuario = userEvent.setup();
-    renderizar();
-    await screen.findByText("2026-10-22");
+    const usuario = await abrirHistorico();
     apiSimulada.listarCortes.mockRejectedValue(
       new ErrorApi("No se pudo conectar con el servidor.", {
         codigo: "error_red",
       }),
     );
 
-    await usuario.click(
-      within(filaDe("2026-10-22")).getByRole("button", {
-        name: /Marcar referencia/,
-      }),
-    );
+    await usuario.click(botonDe("2026-10-22", /Marcar referencia/));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "No se pudo conectar con el servidor.",
