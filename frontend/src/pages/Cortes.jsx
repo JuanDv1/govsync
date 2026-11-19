@@ -100,8 +100,8 @@ export default function Cortes() {
       } else {
         await api.marcarCorteReferencia(corte.id);
       }
-    } catch (errorApi) {
-      setErrorReferencia(errorApi);
+    } catch (error_) {
+      setErrorReferencia(error_);
       enCurso.current = false;
       setIdEnCurso(null);
       return;
@@ -109,10 +109,10 @@ export default function Cortes() {
     try {
       const datos = await api.listarCortes();
       setResultado({ clave: intento, datos, error: null });
-    } catch (errorApi) {
+    } catch (error_) {
       // La marca se aplicó pero no se pudo releer: mostrar la lista vieja
       // podría dejar dos estrellas en una vigencia.
-      setResultado({ clave: intento, datos: null, error: errorApi });
+      setResultado({ clave: intento, datos: null, error: error_ });
     } finally {
       enCurso.current = false;
       setIdEnCurso(null);

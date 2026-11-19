@@ -20,16 +20,11 @@ const { apiSimulada, estadoAutenticacion } = vi.hoisted(() => ({
   estadoAutenticacion: { puedeEscribir: true },
 }));
 
-vi.mock("../api/cliente.js", () => ({
+// Solo se simula `api`; `ErrorApi` es la clase real, para que los errores de
+// las pruebas tengan exactamente la forma que produce el cliente.
+vi.mock("../api/cliente.js", async (importarOriginal) => ({
+  ...(await importarOriginal()),
   api: apiSimulada,
-  ErrorApi: class ErrorApi extends Error {
-    constructor(mensaje, { estado, codigo, detalles } = {}) {
-      super(mensaje);
-      this.estado = estado;
-      this.codigo = codigo;
-      this.detalles = detalles ?? {};
-    }
-  },
 }));
 vi.mock("../auth/ProveedorAutenticacion.jsx", () => ({
   useAutenticacion: () => estadoAutenticacion,
