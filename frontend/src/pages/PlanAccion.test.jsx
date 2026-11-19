@@ -31,50 +31,8 @@ vi.mock("../lib/descarga.js", async (importarOriginal) => ({
 }));
 
 import { ErrorApi } from "../api/cliente.js";
+import { PLAN } from "../test/fixturesPlanAccion.js";
 import PlanAccion from "./PlanAccion.jsx";
-
-function fila(sobreescribir) {
-  return {
-    sector: "Transporte",
-    cod_indicador_producto: "040110500",
-    nombre_producto: "Vías pavimentadas mantenidas",
-    meta_programada: "10.00",
-    cod_bpin: "2024190010001",
-    rubros: ["2.3.2.02.02.009"],
-    presupuesto_definitivo: "1000.00",
-    ejecucion: "500.00",
-    contratos: ["CT-001"],
-    avance_fisico_pct: null,
-    avance_financiero_pct: "50.00",
-    estado_cruce: "completo",
-    bpins: ["2024190010001"],
-    desglose: [
-      {
-        codigo_rubro: "2.3.2.02.02.009",
-        presupuesto_definitivo: "1000.00",
-        ejecucion: "500.00",
-        contratos: [{ numero_contrato: "CT-001" }],
-      },
-    ],
-    ...sobreescribir,
-  };
-}
-
-const PLAN = {
-  corte_id: "c1",
-  vigencia: 2026,
-  fecha_corte: "2026-10-31",
-  filas: [
-    fila({}),
-    fila({
-      sector: "Educación",
-      cod_indicador_producto: "220100100",
-      nombre_producto: "Aulas dotadas",
-      estado_cruce: "parcial",
-    }),
-  ],
-  resumen: { total: 2, completo: 1, parcial: 1, sin_informacion: 0 },
-};
 
 function renderizar() {
   return render(
@@ -82,6 +40,19 @@ function renderizar() {
       <PlanAccion />
     </MemoryRouter>,
   );
+}
+
+// Abre el panel de filtros y marca un estado de cruce.
+async function filtrarPorEstado(usuario, estado) {
+  await usuario.click(screen.getByRole("button", { name: /^Filtros/ }));
+  await usuario.click(screen.getByRole("checkbox", { name: estado }));
+}
+
+const botonExportar = () =>
+  screen.getByRole("button", { name: "Exportar a Excel" });
+
+async function exportar(usuario) {
+  await usuario.click(botonExportar());
 }
 
 async function abrirPlan(plan = PLAN) {
@@ -166,10 +137,7 @@ describe("Plan de Acción con sesión", () => {
   it("[E04-HU02/CA07] un filtro sin coincidencias muestra el aviso y 'Limpiar filtros' restaura todo", async () => {
     const usuario = await abrirPlan();
 
-    await usuario.click(screen.getByRole("button", { name: /^Filtros/ }));
-    await usuario.click(
-      screen.getByRole("checkbox", { name: "Sin información" }),
-    );
+    await filtrarPorEstado(usuario, "Sin información");
 
     expect(
       await screen.findByText(
@@ -191,8 +159,7 @@ describe("Plan de Acción con sesión", () => {
   it("[E04-HU02] el filtro por estado deja solo las metas de ese estado", async () => {
     const usuario = await abrirPlan();
 
-    await usuario.click(screen.getByRole("button", { name: /^Filtros/ }));
-    await usuario.click(screen.getByRole("checkbox", { name: "Parcial" }));
+    await filtrarPorEstado(usuario, "Parcial");
 
     expect(screen.getByText("Mostrando 1 de 2 metas")).toBeInTheDocument();
     const tabla = screen.getByRole("table");
@@ -210,9 +177,7 @@ describe("Plan de Acción con sesión", () => {
     });
     const usuario = await abrirPlan();
 
-    await usuario.click(
-      screen.getByRole("button", { name: "Exportar a Excel" }),
-    );
+    await exportar(usuario);
 
     expect(
       await screen.findByText("Descarga lista: plan_accion_2026.xlsx"),
@@ -230,30 +195,21 @@ describe("Plan de Acción con sesión", () => {
     );
     const usuario = await abrirPlan();
 
-    await usuario.click(
-      screen.getByRole("button", { name: "Exportar a Excel" }),
-    );
+    await exportar(usuario);
 
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     expect(guardarArchivoSimulado).not.toHaveBeenCalled();
     await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Exportar a Excel" }),
-      ).not.toHaveAttribute("aria-busy", "true"),
+      expect(botonExportar()).not.toHaveAttribute("aria-busy", "true"),
     );
   });
 
   it("[E04-HU03/CA07] sin metas visibles el botón de exportar está deshabilitado", async () => {
     const usuario = await abrirPlan();
 
-    await usuario.click(screen.getByRole("button", { name: /^Filtros/ }));
-    await usuario.click(
-      screen.getByRole("checkbox", { name: "Sin información" }),
-    );
+    await filtrarPorEstado(usuario, "Sin información");
 
-    expect(
-      screen.getByRole("button", { name: "Exportar a Excel" }),
-    ).toBeDisabled();
+    expect(botonExportar()).toBeDisabled();
     expect(apiSimulada.exportarPlanAccion).not.toHaveBeenCalled();
   });
 });
