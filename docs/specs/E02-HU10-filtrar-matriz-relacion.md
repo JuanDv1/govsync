@@ -3,7 +3,7 @@
 **Estado de la Specification:** Borrador
 
 > Mientras esté en `Borrador`, la fuente de requisitos vigente de esta HU es
-> su hoja del Excel (`docs/requisitos/GovSync_Levantamiento_Requisitos_v2_2_Sprint2.xlsx`,
+> su hoja del Excel (`docs/requisitos/GovSync_Levantamiento_Requisitos_v3_0_Sprint3.xlsx`,
 > hoja `HU_E02_10`). El estado de avance de la tarjeta vive únicamente en
 > Trello. Spec retroactiva (2026-10-05): el backend ya está en `develop`
 > (PR #131). Respuestas del PO del 2026-10-16 aplicadas (ver D30 a D34 en
@@ -41,9 +41,10 @@ confirmó el 2026-10-16 (D30).
 Administradora (según la historia). Sin restricción de rol definida en el
 Excel para esta HU.
 
-Lectura para cualquier rol autenticado (D24): `GET /matriz-relacion/{corte_id}`,
+Lectura para `administrador` o `visitante` (D24/D37; antes de D37, cualquier
+rol autenticado): `GET /matriz-relacion/{corte_id}`,
 `GET /matriz-relacion/actual` y `GET /matriz-relacion/{corte_id}/opciones-filtro`
-exigen sesión (E01-HU02, #150).
+exigen sesión (E01-HU02, #150); el `gestor` recibe 403.
 
 ## Criterios de aceptación
 

@@ -9,13 +9,24 @@
  * (`keycloak/themes/govsync/`). Por eso ya no hay campos de correo/
  * contraseña ni el bloque de "acceso de prueba": ambos asumían que la
  * autenticación no existía todavía (D2/[REF-05]), y ya no es el caso.
+ *
+ * [E-01/HU-01] "Ingresar como visitante" NO inicia sesión: es un enlace a la
+ * consulta pública `/publico/plan-accion` (sin credenciales; ver
+ * `PlanAccionPublico.jsx`).
  */
+import { useLocation } from "react-router-dom";
 import { useAutenticacion } from "../auth/ProveedorAutenticacion.jsx";
+import { rutaDestinoSegura } from "../lib/rutaDestino.js";
 import Boton from "../components/shared/Boton.jsx";
 import EncabezadoPantalla from "../components/shared/EncabezadoPantalla.jsx";
 
 export default function Login() {
   const { iniciarSesion, cargando } = useAutenticacion();
+  const location = useLocation();
+  // [E-01/HU-01] CA07: `RutaProtegida` deja aquí la ruta que se quiso abrir.
+  const destino = rutaDestinoSegura(location.state?.desde);
+  const expiroPorInactividad =
+    new URLSearchParams(location.search).get("motivo") === "inactividad";
 
   return (
     <div className="flex min-h-screen">
@@ -59,15 +70,37 @@ export default function Login() {
             descripcion="Acceso restringido a funcionarios autorizados de la Alcaldía."
           />
 
+          {/* [E-01/HU-01] CA04: llegamos aquí por cierre automático. */}
+          {expiroPorInactividad && (
+            <p
+              role="status"
+              className="mb-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-campo text-amber-800"
+            >
+              Su sesión expiró por inactividad. Inicie sesión de nuevo.
+            </p>
+          )}
+
           {/* Mientras verifica la sesión el botón queda inactivo y su propio
               texto ("Verificando sesión…") es el motivo visible. */}
-          <Boton
-            onClick={iniciarSesion}
-            deshabilitado={cargando}
-            className="w-full"
-          >
-            {cargando ? "Verificando sesión…" : "Ingresar"}
-          </Boton>
+          <div className="flex flex-col gap-3">
+            <Boton
+              onClick={() => iniciarSesion(destino)}
+              deshabilitado={cargando}
+              className="w-full"
+            >
+              {cargando ? "Verificando sesión…" : "Ingresar"}
+            </Boton>
+
+            {/* [E-01/HU-01] Consulta pública, sin credenciales. No depende de
+                `cargando`: no usa la sesión de Keycloak. */}
+            <Boton
+              variante="secundario"
+              to="/publico/plan-accion"
+              className="w-full"
+            >
+              Ingresar como visitante
+            </Boton>
+          </div>
         </div>
       </div>
     </div>

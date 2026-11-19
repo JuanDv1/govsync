@@ -13,8 +13,80 @@ proyecto).
 | XSS (Cross-Site Scripting)  | Verificado | Auditado 2026-09-18: React escapa por defecto; `grep -rn "dangerouslySetInnerHTML" frontend/src/` no encuentra ningún uso en todo el frontend                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | CSRF                        | N/A        | La API sigue sin usar cookies de sesión: desde `[HU-E01-01]` (D23) el token viaja en el header `Authorization: Bearer`, que un sitio de terceros no puede fijar automáticamente en una petición cross-site (a diferencia de una cookie) — CSRF clásico no aplica. Reemplaza la justificación anterior ("no hay autenticación en Sprint 1"), obsoleta desde que se implementó Keycloak                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Autenticación               | Verificado | Keycloak (OIDC, Authorization Code + PKCE) — `[HU-E01-01]`, D23/D24 en `docs/DECISIONES.md`. El backend nunca firma ni almacena contraseñas: `VerificadorTokenKeycloak` (`identidad/persistence/keycloak.py`) valida cada token contra el JWKS real del realm (RS256), con `issuer`/`audience` exigidos. Probado con `pytest` (`test_keycloak.py`, llaves RSA en memoria) y manualmente de punta a punta contra un Keycloak real (2026-10-09/10): login por navegador para `administrador`/`gestor` y `visitante`; sin token → 401 `credenciales_invalidas`                                                                                                                                                                                                                             |
-| Autorización                | Verificado | `exigir_roles()` (`core/dependencias.py`) protege los endpoints de escritura de `cortes`/`trazabilidad` (D24): solo `administrador`/`gestor` pasan, `visitante` recibe 403 `permiso_insuficiente` con `roles_requeridos`. Probado con `pytest` (`test_autorizacion_rutas.py`) y confirmado manualmente contra Keycloak real: token de `visitante` → 403 en `POST /cortes`, 200 en `GET /cortes`                                                                                                                                                                                                                                                                                                                                                                                         |
+| Autorización                | Verificado | `exigir_roles()` (`core/dependencias.py`) protege todos los endpoints de `cortes`/`trazabilidad` (D24, D37): escritura solo `administrador`; lectura `administrador`/`visitante` (`LecturaDep`); `visitante` recibe 403 `permiso_insuficiente` con `roles_requeridos` al escribir. Excepción única y explícita: el Plan de Acción público (D38, sección "Rutas públicas sin token"). Desde D37 (2026-11-11) `gestor` recibe 403 en **todas** las rutas (`test_gestor_sin_modulos_todas_las_rutas.py`). Probado con `pytest` (`test_autorizacion_rutas.py`) y confirmado manualmente contra Keycloak real, antes de D37: token de `visitante` → 403 en `POST /cortes`, 200 en `GET /cortes`                                                                                              |
 | Datos sensibles encriptados | Verificado | Los datos son información pública municipal (Ley 1712 de 2014, transparencia y acceso a la información pública). En tránsito viajan por HTTPS (Vercel para el frontend, Render para la API). Los secretos viven en GitHub Secrets y en las variables de entorno de Render, nunca en el repositorio. La base de datos de Render está cifrada en reposo por el proveedor                                                                                                                                                                                                                                                                                                                                                                                                                  |
+
+## Específico de GovSync — sesión del usuario (`[E-01/HU-01]`)
+
+Decisiones del PO del 2026-11-16. La autenticación es de Keycloak (D23); esto
+documenta lo que la interfaz y el realm hacen alrededor de la sesión.
+
+- **Inactividad (CA04, 30 min).** `frontend/src/auth/useInactividad.js` cuenta
+  solo input real (mouse, teclado, scroll, toque); la renovación del token y las
+  peticiones en segundo plano no cuentan. Al vencer llama a `keycloak.logout`, que
+  cierra la sesión SSO de **todas** las pestañas, así que la última actividad se
+  comparte entre pestañas en `localStorage` (`govsync.ultimaActividad`, solo una
+  hora, sin datos de la persona) y el cierre ocurre por la inactividad de todas.
+  Una hora compartida en el futuro o inválida se ignora. Sin `localStorage` cae a la
+  actividad de la pestaña. Si el cierre falla se reintenta en la siguiente revisión.
+  Es un control **del cliente**: con una pestaña abierta, la renovación del token
+  renueva también la inactividad SSO de Keycloak (`ssoSessionIdleTimeout` = 1800 s en
+  el realm), así que ese límite del servidor solo aplica si no hay renovaciones (lo
+  supongo por el comportamiento estándar de Keycloak; no se midió).
+- **Marca de login reciente (CA07).** `sessionStorage` (`govsync.loginReciente` =
+  `"1"`) cruza la redirección a Keycloak para saber, al volver, si hay que validar
+  la URL pedida contra el rol. Se lee y se borra en la primera carga. Solo decide
+  adónde se navega: la autorización real sigue siendo el backend (403).
+- **Destino tras el login (CA07).** `rutaDestinoSegura` acepta únicamente rutas
+  internas (una sola `/`, sin `\`, sin caracteres de control, no `/login`); el
+  `redirectUri` siempre se arma con `window.location.origin`, y el client de
+  Keycloak solo acepta la URL del frontend (`GOVSYNC_FRONTEND_URL`, por defecto
+  `http://localhost:5173`; en producción la de Vercel, ver D39).
+- **Bloqueo por intentos (CA03, cambia la decisión #22).** El bloqueo REAL es del
+  servidor y es por usuario: en el realm (`keycloak/import/govsync-realm.json`)
+  `bruteForceProtected`, `failureFactor` 3, `waitIncrementSeconds` y
+  `maxFailureWaitSeconds` 300 (5 min), bloqueo temporal (`permanentLockout` false).
+  No se usa el mensaje de bloqueo de Keycloak, porque distinguiría una cuenta que
+  existe de una que no; el texto sigue siendo "Usuario o contraseña incorrectos".
+  Encima hay un contador **por navegador** (`localStorage`, clave
+  `govsync.loginIntentos`, en `keycloak/themes/govsync/login/resources/js/limite-intentos.js`)
+  que no mira qué usuario se escribió: al 3.er fallo deshabilita usuario, contraseña y
+  botón y muestra "Límite de intentos alcanzado. Espere 5 minutos para volver a
+  intentarlo." con cuenta regresiva; se rehabilita solo. **Es solo experiencia de
+  uso, no un control de seguridad**: se salta borrando el almacenamiento del
+  navegador y el servidor sigue contando igual. Como el tema es de otro origen que la
+  aplicación, no ve si un ingreso salió bien: infiere el éxito cuando la página de
+  login vuelve a cargar tras un envío sin error de credenciales.
+  La marca de envío vive en `sessionStorage` (propia de la pestaña), así que abrir el
+  login en otra pestaña no reinicia el contador. Límites conocidos, aceptados con la
+  Opción A: las ventanas del navegador y del servidor no coinciden (al rehabilitarse el
+  formulario, una cuenta que el servidor sigue teniendo bloqueada seguirá respondiendo
+  "Usuario o contraseña incorrectos", incluso con la clave correcta), y tres intentos
+  con usuarios distintos bloquean el formulario sin afectar al servidor.
+- **Fuentes del login.** El tema carga Inter y DM Mono desde Google Fonts, igual que
+  `frontend/index.html`: eso envía la IP del navegador a un tercero en la pantalla de
+  autenticación. Decisión del PO (2026-11-16): como el frontend también las carga
+  desde Google, el tema se queda igual; autoalojarlas en ambos es una tarjeta aparte.
+- **Reinicio del contador por navegador (decisión del PO).** Si tras un envío la página
+  de login vuelve a cargar SIN error de credenciales, el contador se reinicia. Es
+  deliberado: el tema y la aplicación son de orígenes distintos, así que el tema no
+  puede saber si el ingreso salió bien; la única señal es que el login no volvió con
+  error. Reiniciar en ese caso evita bloquear a quien sí entró (por ejemplo, tras
+  cerrar sesión), y un reinicio indebido no resta seguridad porque el bloqueo real es
+  del servidor, por usuario. Lo fija la prueba "una página sin error de credenciales
+  tras un envío reinicia" (`frontend/src/tema-keycloak/contratoTema.test.js`).
+- **Mensaje de credenciales inválidas (CA02).** `Usuario o contraseña incorrectos`,
+  el mismo para usuario inexistente y contraseña incorrecta (no revela qué usuarios
+  existen). Sale de `keycloak/themes/govsync/login/messages/messages_es.properties`
+  con `es` como idioma por defecto del realm.
+- **Contraseña (CA09, decisión #23).** La contraseña la gestiona Keycloak con hash
+  seguro; la app nunca la almacena. El campo es `type="password"`
+  (`keycloak/themes/govsync/login/login.ftl`) y el realm usa `sslRequired:
+"external"` (HTTPS obligatorio fuera de localhost).
+- **Importante:** el realm solo se importa la primera vez que Keycloak arranca sobre
+  un volumen nuevo (`datos_keycloak`). Los cambios de `govsync-realm.json`
+  (p. ej. el idioma del CA02) **no** llegan a un volumen que ya tiene el realm; ver
+  el README para aplicarlos sin perder datos.
 
 ## Específico de GovSync — validación de archivos cargados (`[SEC-03]`)
 
@@ -131,6 +203,104 @@ Evidencia: `test_validacion_archivos.py` (16 pruebas), 170 passed en local
       por `CORS_ORIGINS` (por defecto solo `http://localhost:5173` en desarrollo)
 - [ ] Confirmar el dominio real de producción cuando `[DEV-07]` despliegue
       (hoy solo se verificó el valor de desarrollo local)
+
+## Keycloak en producción (D39)
+
+Decisiones del PO tras la revisión del despliegue en Render
+(`docs/DESPLIEGUE.md` §"Keycloak en Render"):
+
+- **Contraseñas de los usuarios de prueba por variable.** El realm las lee de
+  `GOVSYNC_CLAVE_ADMINISTRADOR`/`_GESTOR`/`_VISITANTE`; sin variable queda la
+  clave local pública (`GovSync2026!`). En Render las 3 son **obligatorias** y la
+  imagen lo impone (falla cerrada): `keycloak/entrypoint.sh` aborta el arranque
+  (código 1, mensaje con el nombre de la variable, sin imprimir valores) si con
+  `KC_HOSTNAME` definido falta o está vacía alguna, o vale `GovSync2026!`; igual
+  con `KC_BOOTSTRAP_ADMIN_PASSWORD` ausente o con la de local. Nunca se
+  versionan valores reales.
+- **Sin password grant.** `directAccessGrantsEnabled` es `false` en los dos
+  clientes: todo inicio de sesión pasa por Authorization Code + PKCE. Lo fija
+  `despliegueKeycloak.test.js`.
+- **Redirecciones sin comodines abiertos.** Solo `${GOVSYNC_FRONTEND_URL}/*`
+  (host exacto); nunca `*`. Una variable mal escrita rompe el login pero no abre
+  redirecciones a otros hosts.
+- **Issuer validado al arrancar.** En producción `KEYCLOAK_ISSUER` debe empezar
+  por `https://` (si no, el backend no arranca) y la barra final se normaliza
+  (`config.py`, `tests/test_config_keycloak_issuer.py`).
+- **Riesgo aceptado: la consola `/admin` es pública** (misma URL que el login).
+  Solo la protege la contraseña del administrador de `master`, que debe ser
+  fuerte y única, definida por `KC_BOOTSTRAP_ADMIN_PASSWORD` y nunca la de local
+  (`admin`). Mitigaciones no aplicadas: `KC_HOSTNAME_ADMIN` o un proxy delante.
+- **Proxy:** `KC_PROXY_HEADERS=xforwarded` + `KC_HTTP_ENABLED=true` solo son
+  seguros si Render sobrescribe `X-Forwarded-*` (el login con https funciona en
+  Render, verificado 2026-11-18; la sobrescritura no se probó con cabeceras
+  falsificadas: **[CONFIRMAR]**); por eso no
+  están fijados en la imagen.
+
+## Rutas públicas sin token y límite de peticiones (D38)
+
+- [x] Única ruta de datos sin autenticación: `GET /api/v1/publico/plan-accion/actual`
+      (`plan_accion/api/router_publico.py`). Todas las demás rutas, salvo
+      `/health` y `/api/v1/salud`, siguen respondiendo 401 sin token; la prueba
+      `tests/test_router_publico_plan_accion.py` lo comprueba leyendo las rutas
+      del OpenAPI, y la ruta pública está listada POR NOMBRE en
+      `RUTAS_PUBLICAS` (`test_ca05_sin_rol_todas_las_rutas.py`).
+- [x] Datos expuestos con lista blanca de claves y DTO propio: en el desglose
+      solo `numero_contrato`, sin `objeto`, `valor` ni `valor_pagado`.
+- [x] Nunca públicos: escritura, Gestión de Cortes, matriz, historial,
+      registros no relacionados, exportación y comparación.
+- [x] Límite de peticiones solo para el prefijo `/api/v1/publico`
+      (`core/limite_peticiones.py`, OWASP A04/A05): 60 por 60 s por cliente
+      por defecto; 429 con el sobre de `errores.py`, `Retry-After` y
+      `detalles.reintentar_en_segundos`. Va dentro del CORS, así que el 429
+      lleva cabeceras CORS.
+- [x] Memoria acotada: máximo `PUBLICO_MAX_CLIENTES` (10 000) clientes
+      recordados; se descartan primero los vencidos y luego los más antiguos.
+- [x] IP del cliente: `PUBLICO_PROXIES_CONFIABLES` (0 = IP del socket).
+      `X-Forwarded-For` solo se lee con valor mayor que 0, contando desde la
+      derecha, y nunca más entradas que las configuradas; entradas inválidas
+      caen a la IP del socket. IPv6 agrupada por `/64`.
+- [ ] **El límite es por proceso**: con N procesos el tope real por cliente es
+      N veces el configurado (hoy el Dockerfile arranca uno solo). Si se
+      activan varios procesos, hay que pasar a un almacén compartido.
+- [x] La documentación interactiva (`/docs`, `/redoc`, `/openapi.json`) no se
+      sirve en producción (`ENVIRONMENT=production`), salvo
+      `DOCS_API_EN_PRODUCCION=true` (hallazgo de QA, 2026-11-17;
+      `test_docs_api_en_produccion.py`).
+- [ ] **ALERTA sobre el supuesto siguiente (QA, 2026-11-17):** un reporte de la
+      comunidad de Render indica que su proxy AGREGA su propia IP al final de
+      `X-Forwarded-For`, de modo que la del cliente sería la penúltima entrada
+      y no la última ([hilo](https://community.render.com/t/accessing-client-ips-in-a-node-express-app/36282);
+      no es documentación oficial). Si es así, `PUBLICO_PROXIES_CONFIABLES=1`
+      haría que todos compartan el contador (la IP del proxy) y el valor
+      correcto sería 2. No se cambió el valor por defecto: hay que medirlo en
+      el servicio real (ver el procedimiento en el ítem siguiente).
+- [ ] **SUPUESTO a verificar en el despliegue (tarjeta [DEV]):** que Render
+      agregue la IP del cliente como última entrada de `X-Forwarded-For` y que
+      `PUBLICO_PROXIES_CONFIABLES=1` sea el valor correcto. Un valor mayor al
+      real permite falsificar la IP; uno menor hace que todos compartan
+      contador.
+      **Cómo verificarlo:** con el límite en `PUBLICO_LIMITE_PETICIONES=3`,
+      pedir 4 veces `/api/v1/publico/plan-accion/actual` desde dos redes
+      distintas (por ejemplo, el computador y el celular con datos móviles). Si
+      la red B recibe 429 por las peticiones de la red A, el valor es menor al
+      real; si una red puede evadir el 429 enviando `X-Forwarded-For` falso,
+      es mayor. Restaurar el límite en 60 después.
+- [ ] Ventana fija: permite una ráfaga de hasta 2x el límite al cambiar de
+      ventana. Aceptado por simplicidad.
+- [ ] **`PUBLICO_PROXIES_CONFIABLES` > 0 exige que el backend NO sea
+      alcanzable directamente**: si un cliente llega al puerto sin pasar por el
+      proxy, controla la entrada N de `X-Forwarded-For` y puede evadir el
+      límite o suplantar la IP de otro cliente (verificado por el Agente 3).
+      Solo el proxy debe poder llegar al puerto de la app.
+- [ ] **uvicorn reescribe la IP del socket desde `X-Forwarded-For`** cuando la
+      IP del socket está en `FORWARDED_ALLOW_IPS` (por defecto `127.0.0.1`).
+      Nunca usar `FORWARDED_ALLOW_IPS="*"`: con 0 proxies configurados el
+      límite dejaría de ser confiable sin avisar.
+- [x] `root_path`: el prefijo público se compara sin el `root_path`, así que
+      `--root-path` no desactiva el límite (`test_limite_peticiones.py`).
+- [ ] Un atacante con muchas IP puede expulsar contadores inundando
+      `PUBLICO_MAX_CLIENTES` (compromiso aceptado, ver D38); no hay métrica ni
+      alarma de expulsiones.
 
 ## Hallazgos de SonarCloud — Sprint 1
 

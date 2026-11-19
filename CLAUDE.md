@@ -92,9 +92,10 @@ between indicators, budget execution, and BPIN projects), `identidad` (Keycloak 
 verification and the `Rol`/`Usuario` domain types — see Architecture above), `plan_accion` (E04
 Plan de Acción: consolidated view, filters, Excel export and comparison between two cortes, served
 under `/plan-accion`; `api/`, `domain/` and `persistence/` only — no `application/` layer and no
-frontend yet). `alertas/` and
-`avance_fisico/` exist as empty module directories (`.gitkeep` only, no code) — placeholders for
-future épicas, not stubs to fill in without a card. Shared kernel: `app/shared/codigos.py`
+frontend yet), `alertas` (E04-HU05: unrelated-records report between the sources, served under
+`/registros-no-relacionados`; `api/`, `domain/` and `persistence/` only, read-only, no new tables).
+`avance_fisico/` exists as an empty module directory (`.gitkeep` only, no code) — a placeholder for
+a future épica, not a stub to fill in without a card. Shared kernel: `app/shared/codigos.py`
 (the `CodigoIndicadorProducto` value object — the 9-digit key that joins all four data sources;
 **always store as text, never as int**, since real codes like `040110500` start with a leading
 zero) and `app/shared/errors.py` (`GovSyncError` hierarchy — domain exceptions in Spanish, no
@@ -110,17 +111,32 @@ backend only validates tokens against the realm's JWKS, never signs or stores a 
 `VerificadorTokenKeycloak` (persistence, PyJWT + `cryptography`, RS256). `core/dependencias.py`
 exposes `UsuarioActualDep` (authentication only) and `exigir_roles(*roles)` (authorization —
 raises `PermisoInsuficiente`, mapped to 403). Three realm roles: `administrador` (primary
-operational role — uploads/corrects, broad access), `gestor` (reserved for a future
-budget-specific role, not yet defined — currently has the same permissions as `administrador`
-since no card has required splitting them), `visitante` (read-only). D24 maps which endpoints
-need which: reads are open to any authenticated role, writes on `cortes`/`trazabilidad` require
-`administrador`/`gestor`. Login theme at `keycloak/themes/govsync/` mirrors `Login.jsx`'s
-two-column layout. The whole realm (clients, roles, theme selection, brute-force/session policy,
+operational role — uploads/corrects, broad access), `gestor` (Supervisor, whose
+work is Épica 3 — out of Sprint 3; since D37 it has **no enabled modules**: 403 on every route,
+and the frontend shows `PantallaSinAcceso` instead of the layout), `visitante` (read-only).
+D24/D37 map which endpoints need which: reads on `cortes`/`trazabilidad` require
+`administrador`/`visitante` (`LecturaDep`), writes on `cortes` require `administrador` only. Login theme at `keycloak/themes/govsync/` no longer "imitates" `Login.jsx`: it shares its
+tokens and classes — `.ftl` templates use the same Tailwind classes as `Login.jsx`/`Boton.jsx`/
+`Campo.jsx`, and `resources/css/govsync.css` is GENERATED with the frontend's `tailwind.config.js`
+(`npm run build:tema-keycloak`, versioned; rerun it after changing any `.ftl` or a token — a Vitest
+test in `frontend/src/tema-keycloak/` fails if a class used by the templates is missing from the CSS). The 3-attempt notice (CA03,
+browser-only UX, not a security control) is `resources/js/limite-intentos.js`. The whole realm (clients, roles, theme selection, brute-force/session policy,
 3 throwaway test users) is provisioned automatically on first boot from
 `keycloak/import/govsync-realm.json` (`--import-realm`, see `docker-compose.yml`) — nothing to
 configure by hand; only applies the first time Keycloak starts on a fresh `datos_keycloak` volume,
 never overwrites an existing realm. CI only has a smoke test (`backend-keycloak` job: confirms the
 container boots on the runner) — no real-token integration test yet.
+
+Public route without credentials (`[E01-HU01]`, D38): `GET /api/v1/publico/plan-accion/actual`
+(`plan_accion/api/router_publico.py`) is the ONLY data route that answers without a token — same
+corte and same 404/409 as `/plan-accion/actual`, but with its own DTO (never inherited from the
+protected one; no `objeto`/`valor`/`valor_pagado` of contracts in `desglose`) and a key whitelist in
+`tests/test_router_publico_plan_accion.py`. Everything under `/api/v1/publico` is rate-limited by
+`core/limite_peticiones.py` (ASGI middleware, in memory, per process; `PUBLICO_LIMITE_PETICIONES`,
+`PUBLICO_VENTANA_SEGUNDOS`, `PUBLICO_PROXIES_CONFIABLES`, `PUBLICO_MAX_CLIENTES`; 429
+`limite_peticiones_excedido`). A new public route must be added BY NAME to `RUTAS_PUBLICAS` in
+`test_ca05_sin_rol_todas_las_rutas.py` — never exempt a prefix. The Keycloak `visitante` role is
+kept (read-only with a session). The frontend side of the card is not done yet.
 
 File upload rules (`[SEC-03]`, enforced in `cortes/application/casos_uso.py`, not in the API
 layer): only `.xlsx`, size checked before reading into memory, filename sanitized against path
@@ -129,7 +145,7 @@ An invalid file is rejected **in full** — never partial data.
 
 Frontend (`frontend/src/`): `api/cliente.js` is the shared HTTP client (`[UX-01]`), implemented —
 `solicitar()` and the `api` methods (`crearCorte`, `listarCortes`, `obtenerCorte`, `registrarCorte`,
-`cargarArchivo`, `matriz`, `opcionesFiltro`, `reemplazarArchivoCorteActual`, `historialCorte`) are
+`cargarArchivo`, `matriz`, `opcionesFiltro`, `reemplazarArchivoCorteActual`, `historialCorte`, `corregirCorte`, `descartarCorte`, `marcarCorteReferencia`, `desmarcarCorteReferencia`) are
 wired to the backend, and it attaches `Authorization: Bearer` from
 whatever `establecerProveedorToken()` last set (called once by `ProveedorAutenticacion.jsx`). It
 preserves `error.detalles` from failed requests (carries `columnas_faltantes`, `pestanas_faltantes`,
@@ -137,21 +153,52 @@ preserves `error.detalles` from failed requests (carries `columnas_faltantes`, `
 `ErrorApi` models this shape. `auth/` (`[HU-E01-01]`) holds `keycloak.js` (the single `Keycloak`
 instance) and `ProveedorAutenticacion.jsx` (initializes it once — with silent-check-sso via
 `public/silent-check-sso.html`, so a page reload doesn't lose an active session — and exposes
-`usuario`/`estaAutenticado`/`puedeEscribir`/`iniciarSesion`/`cerrarSesion` through
-`useAutenticacion()`). `components/` holds shared UI (`Estados.jsx` for loading/error/empty states,
+`usuario` (with `nombre` and `rol` in words, e.g. "Administradora")/`estaAutenticado`/
+`puedeEscribir`/`motivoSinAcceso`/`vistaInicial`/`iniciarSesion`/`cerrarSesion` through
+`useAutenticacion()`). `motivoSinAcceso` is the single signal for an account that cannot use any
+module: `"sin_rol"` (no GovSync role, CA05) | `"rol_sin_modulos"` (only `gestor`, D37) | `null`;
+`RutaProtegida` picks `PantallaSinAcceso` from it (there is no `SinRol.jsx` anymore). The role
+rules live in `auth/roles.js` (no React: `motivoSinAcceso`, `vistaInicial`, `etiquetaRol`,
+`puedeAbrirRuta`). Initial view per role (CA01, PO 2026-11-16): `/` redirects to `vistaInicial` —
+administrador → `/cortes`, visitante → `/plan-accion`, gestor → `PantallaSinAcceso`. After login
+(CA07) the original URL is kept only if the role may open it (`puedeAbrirRuta`, decided with the
+one-shot `loginReciente` flag from `auth/loginReciente.js`); otherwise it goes to `vistaInicial`;
+with an already open session a URL without permission still shows the module's notice
+(E04-HU01/CA10). `auth/useInactividad.js` closes the session after 30 min without input (CA04),
+sharing the last activity across tabs through `localStorage`. `components/` holds shared UI (`Estados.jsx` for loading/error/empty states,
 `EstadoError` implemented; `CargaDeArchivo.jsx`, implemented drag-and-drop upload control shared by
-the three source-file uploads, `[UX-02]`; `Disposicion.jsx`, the sidebar shell — hides "Nuevo
-corte" unless `puedeEscribir`, same role gate `Cortes.jsx` applies to "Crear corte"/"Continuar
+the three source-file uploads, `[UX-02]`; `shared/PantallaSinAcceso.jsx`, the full-screen "no
+access" notice (D37, CA05); `Disposicion.jsx`, the sidebar shell with the user's name and role in
+its header — hides "Nuevo corte" unless `puedeEscribir`, same role gate `Cortes.jsx` applies to "Crear corte"/"Continuar
 carga"; `FiltrosMatriz.jsx` and `shared/SelectorConBusqueda.jsx`, the matrix filter panel with its
 active tags and the accessible combobox it uses, `[E02-HU10]`; `shared/ModalConfirmacion.jsx`, a
 generic confirmation dialog, `[E02-HU05]`), `pages/` holds route-level screens (`NuevoCorte.jsx`,
-`Cortes.jsx`, `MatrizRelacion.jsx`, `EditarArchivosCorteActual.jsx`, `Login.jsx` — redirects to
-Keycloak on click, no longer a form) wired into `App.jsx`'s router (`/login`, `/cortes`,
+`Cortes.jsx` (histórico with the "Metas" column and the per-vigencia reference star, E02-HU08 CA03/CA04), `MatrizRelacion.jsx`, `EditarArchivosCorteActual.jsx`, `Login.jsx` — redirects to
+Keycloak on click, no longer a form) wired into `App.jsx`'s router (`/login`, `/` → initial view, `/cortes`,
 `/cortes/nuevo`, `/cortes/:corteId`, `/cortes/:corteId/editar`, `/matriz/:corteId?`); every route
-except `/login` is wrapped in `RutaProtegida`, which redirects to `/login` without an active session.
-`lib/` holds pure helpers without React: `filtros.js` (matrix filter logic, `[E02-HU10]`),
+except `/login` and `/publico/plan-accion` (see below) is wrapped in `RutaProtegida`, which redirects to `/login` without an active session.
+`lib/` holds pure helpers without React: `rutaDestino.js` (`rutaDestinoSegura`, the only
+post-login destinations accepted), `filtros.js` (matrix filter logic, `[E02-HU10]`),
 `corteActual.js` (the single "is this the current corte?" criterion) and `formato.js` (amounts and
 dates).
+
+Public access without credentials (`[E-01/HU-01]`, PO 2026-11-16, `docs/DECISIONES.md` D38, frontend half; the backend is
+`GET /api/v1/publico/plan-accion/actual`, same DTO as `/plan-accion/actual` minus `objeto`, `valor`
+and `valor_pagado` of the `desglose` contracts): `Login.jsx` has "Ingresar como visitante" next to
+"Ingresar" and `PantallaSinAcceso.jsx` (no-role account and `gestor`) links "Consultar el Plan de
+Acción como visitante", both to `/publico/plan-accion`. That route is OUTSIDE `RutaProtegida` and
+renders `pages/PlanAccionPublico.jsx` (brand header + "Iniciar sesión" → `/login`, no module menu,
+never reads the session), which mounts the SAME `PlanAccion.jsx` with `publico`: it calls
+`api.planAccionPublicoActual`, hides "Exportar a Excel" and "Comparar cortes", skips
+`cortesDisponibles` (needs a session), drops the "detalle del contrato se agregará" note, and in
+errors shows no backend `detalles` (409 → fixed text; 429 → "Demasiadas consultas, intente en un
+momento"; any other error → fixed generic text, never the backend's `mensaje`/`codigo`). Filters
+stay in the browser. `ProveedorAutenticacion` still wraps this route (Keycloak `check-sso` runs
+there; the page does not wait for it) — not yet tried in a browser with Keycloak down or with an
+open session. `api/cliente.js` `solicitar(ruta, { publico: true })` is
+the only way to skip the token: it sends no `Authorization` even with a session and uses
+`credentials: "omit"`; any new public endpoint must opt in the same way, and authenticated ones
+never do. An account with a role keeps using `/plan-accion` (with login).
 
 ## Where things live
 
@@ -179,8 +226,9 @@ dates).
 - Real shape of the three source Excel files: [docs/DATOS.md](docs/DATOS.md).
 - Security/OWASP: [docs/SEGURIDAD.md](docs/SEGURIDAD.md). Deployment: [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 - Keycloak login theme source: `keycloak/themes/govsync/` (mounted read-only into the `keycloak`
-  service by `docker-compose.yml`). Production hosting for Keycloak is an open decision (D23) —
-  local-only for now.
+  service by `docker-compose.yml`). In production Keycloak runs on Render from `keycloak/Dockerfile`
+  (D39, [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md) §"Keycloak en Render"; pending validation with a real
+  deploy); `docker-compose.yml` is local-only.
 - Sprint 1 historical docs (plan, CA traceability, test cases) no longer maintained:
   `docs/archivo/sprint-1/`.
 

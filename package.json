@@ -13,7 +13,9 @@
     "test": "npm run test --workspaces --if-present",
     "lint": "eslint frontend/src --no-error-on-unmatched-pattern",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:coverage": "npm run test:coverage --workspace=frontend",
+    "build:tema-keycloak": "npm run build:tema-keycloak --workspace=frontend"
   },
   "repository": {
     "type": "git",
@@ -27,7 +29,7 @@
     "eslint": "9.7.0",
     "eslint-plugin-react": "^7.37.0",
     "eslint-plugin-react-hooks": "^7.0.0",
-    "globals": "^17.13.0",
+    "globals": "^17.14.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10"
@@ -46,6 +48,6 @@
     ]
   },
   "dependencies": {
-    "tar": "^7.5.22"
+    "tar": "^7.5.23"
   }
 }

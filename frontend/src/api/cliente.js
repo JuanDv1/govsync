@@ -39,12 +39,22 @@ export class ErrorApi extends Error {
     this.detalles = detalles ?? {};
   }
 }
-async function solicitar(ruta, { metodo = "GET", cuerpo, archivo } = {}) {
+/**
+ * `publico: true` ([E-01/HU-01]) es para los endpoints sin autenticación
+ * (`/api/v1/publico/...`): NO adjunta `Authorization`, aunque haya sesión, y
+ * pide `credentials: "omit"` para que el navegador tampoco mande cookies. Es
+ * una decisión por llamada, nunca por la ruta: quien escribe el método del
+ * `api` la toma a propósito.
+ */
+async function solicitar(
+  ruta,
+  { metodo = "GET", cuerpo, archivo, publico = false } = {},
+) {
   const headers = {
     Accept: "application/json",
   };
 
-  const token = obtenerToken();
+  const token = publico ? null : obtenerToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -53,6 +63,7 @@ async function solicitar(ruta, { metodo = "GET", cuerpo, archivo } = {}) {
     method: metodo,
     headers,
   };
+  if (publico) opciones.credentials = "omit";
 
   if (archivo) {
     const formulario = new FormData();
@@ -193,6 +204,19 @@ async function descargarExcel(ruta) {
   };
 }
 
+// [E04-HU05] Arma el query string de registros no relacionados: cada valor de
+// `fuente` y `motivo` es un parámetro repetido; `extra` lleva la paginación.
+function consultaNoRelacionados(filtros, extra = {}) {
+  const parametros = new URLSearchParams();
+  for (const [clave, valor] of Object.entries(extra)) {
+    parametros.set(clave, String(valor));
+  }
+  for (const clave of ["fuente", "motivo"]) {
+    for (const valor of filtros?.[clave] ?? []) parametros.append(clave, valor);
+  }
+  return parametros.toString();
+}
+
 export const api = {
   /**
    * HU-01/CA-1, CA-2. Crea un corte en estado BORRADOR.
@@ -208,8 +232,30 @@ export const api = {
       cuerpo: { vigencia, fecha_corte: fechaCorte },
     }),
 
-  /** HU-01/CA-8. Histórico completo de cortes. */
+  /**
+   * HU-01/CA-8. Histórico completo de cortes.
+   *
+   * [E02-HU08] Cada corte trae además `cantidad_metas` (`number | null`:
+   * `null` si está en BORRADOR) y `es_referencia` (`boolean`).
+   */
   listarCortes: () => solicitar("/api/v1/cortes"),
+
+  /**
+   * [E02-HU08/CA04] `PUT /cortes/{id}/referencia`: marca el corte como el de
+   * referencia de su vigencia; si otro de la misma vigencia lo era, el
+   * backend le quita la marca. Responde con el corte marcado (no con la
+   * lista: quien llama debe recargar). Solo administrador. 404 si no existe;
+   * 409 si no está REGISTRADO o hubo una marca simultánea.
+   */
+  marcarCorteReferencia: (id) =>
+    solicitar(`/api/v1/cortes/${id}/referencia`, { metodo: "PUT" }),
+
+  /**
+   * [E02-HU08/CA04] `DELETE /cortes/{id}/referencia`: quita la marca
+   * (idempotente). Responde con el corte, no con 204. Solo administrador.
+   */
+  desmarcarCorteReferencia: (id) =>
+    solicitar(`/api/v1/cortes/${id}/referencia`, { metodo: "DELETE" }),
 
   /**
    * HU-01/CA-8. Detalle de un corte. Un id inexistente devuelve 404 con
@@ -221,6 +267,25 @@ export const api = {
    * cargó cada fuente.
    */
   obtenerCorte: (id) => solicitar(`/api/v1/cortes/${id}`),
+
+  /**
+   * D11. Corrige vigencia y fecha de un corte en BORRADOR
+   * (`PATCH /cortes/{id}`). Mismo contrato que `crearCorte`. 409 si el corte
+   * ya está REGISTRADO (`detalles.motivo: "corte_no_es_borrador"`) o si la
+   * vigencia+fecha ya existe en otro corte; 422 si la fecha es futura.
+   */
+  corregirCorte: (id, vigencia, fechaCorte) =>
+    solicitar(`/api/v1/cortes/${id}`, {
+      metodo: "PATCH",
+      cuerpo: { vigencia, fecha_corte: fechaCorte },
+    }),
+
+  /**
+   * Descarta un corte en BORRADOR con todo lo que se hubiera cargado
+   * (`DELETE /cortes/{id}`, 204 sin cuerpo). 409 si ya está REGISTRADO.
+   */
+  descartarCorte: (id) =>
+    solicitar(`/api/v1/cortes/${id}`, { metodo: "DELETE" }),
 
   /**
    * HU-01/CA-3, CA-4. Transición BORRADOR -> REGISTRADO.
@@ -334,7 +399,7 @@ export const api = {
    * `archivo`) — a propósito una ruta distinta de `cargarArchivo`
    * (`POST /cortes/{id}/archivos/{tipo}`), que [E02-HU06] bloquea con 409
    * para cualquier corte Registrado (`Corte.verificar_modificable`). Exige
-   * administrador o gestor.
+   * administrador (D24/D37).
    *
    * Un solo endpoint valida y aplica, y revierte todo si algo falla
    * (Opción B, D25 en docs/DECISIONES.md): no existe un paso de "validar sin
@@ -360,7 +425,7 @@ export const api = {
   /**
    * [E02-HU05/CA-6] Historial de reemplazos de archivos del corte.
    *
-   * `GET /cortes/{corteId}/historial`, abierto a cualquier rol autenticado.
+   * `GET /cortes/{corteId}/historial`, lectura para administrador o visitante (D37).
    * Responde una lista de entradas
    * `{ id, tipo, nombre_archivo_anterior, nombre_archivo_nuevo, usuario, fecha_hora }`;
    * `nombre_archivo_anterior` es `null` si el corte no tenía archivo de esa
@@ -404,6 +469,71 @@ export const api = {
    * `busqueda` y `cod_indicador_producto` (E04-HU02), que esta función no usa.
    */
   planAccionActual: () => solicitar("/api/v1/plan-accion/actual"),
+
+  /**
+   * [E-01/HU-01] `GET /api/v1/publico/plan-accion/actual`: el Plan de Acción
+   * del corte actual SIN autenticación ni `Authorization` (ver `solicitar`,
+   * `publico`). Misma forma que `planAccionActual`, salvo que el
+   * `desglose` de cada fila trae por contrato solo `numero_contrato` (sin
+   * `objeto`, `valor` ni `valor_pagado`). La pantalla no usa `desglose`.
+   *
+   * Errores (`ErrorApi`): 404 (ningún corte REGISTRADO); 409 (al corte
+   * actual le falta una fuente); 429 (límite de consultas por tiempo);
+   * `error_red` si no hubo conexión.
+   */
+  planAccionPublicoActual: () =>
+    solicitar("/api/v1/publico/plan-accion/actual", { publico: true }),
+
+  /**
+   * [E04-HU07] `GET /api/v1/plan-accion/riesgo`: metas del corte actual con
+   * menos del 50 % de avance financiero, de menor a mayor %. Cada fila trae
+   * los campos del Plan de Acción más `sin_ejecucion_registrada`; la
+   * respuesta suma `total_en_riesgo`, `metas_sin_presupuesto` (no se listan,
+   * CA04) y `umbral_pct`. El % lo calcula el backend; aquí no se recalcula.
+   *
+   * Errores (`ErrorApi`): 404 (ningún corte REGISTRADO); 409 (al corte actual
+   * le falta una fuente); 403 (rol sin acceso).
+   */
+  metasEnRiesgo: () => solicitar("/api/v1/plan-accion/riesgo"),
+
+  /**
+   * [E04-HU05] `GET /api/v1/registros-no-relacionados/opciones-filtro`: el
+   * catálogo cerrado `{ fuentes, motivos }` (cada uno `{ valor, etiqueta }`).
+   * Las etiquetas las entrega el backend; el frontend no las duplica.
+   */
+  opcionesNoRelacionados: () =>
+    solicitar("/api/v1/registros-no-relacionados/opciones-filtro"),
+
+  /**
+   * [E04-HU05] `GET /api/v1/registros-no-relacionados/{corteId}`: registros
+   * que no pudieron relacionarse en el cruce, paginados. `filtros` =
+   * `{ fuente: [...], motivo: [...] }`; cada valor viaja como query param
+   * repetido (OR dentro del criterio, AND entre criterios; lo resuelve el
+   * backend). La respuesta trae `total` y `conteos_por_fuente` con los filtros
+   * ya aplicados: no se recalculan aquí.
+   *
+   * Errores (`ErrorApi`): 404 (corte inexistente); 409 (corte en BORRADOR o
+   * sin todas las fuentes); 403 (rol sin acceso); 422 (parámetro inválido).
+   */
+  registrosNoRelacionados: (
+    corteId,
+    filtros = {},
+    pagina = 1,
+    tamanoPagina = 50,
+  ) =>
+    solicitar(
+      `/api/v1/registros-no-relacionados/${encodeURIComponent(corteId)}?${consultaNoRelacionados(filtros, { pagina, tamano_pagina: tamanoPagina })}`,
+    ),
+
+  /**
+   * [E04-HU05] `GET /api/v1/registros-no-relacionados/{corteId}/exportar`: el
+   * mismo resultado en Excel con los mismos filtros y sin paginar. Devuelve
+   * `{ blob, nombre }` (ver `descargarExcel`).
+   */
+  exportarNoRelacionados: (corteId, filtros = {}) =>
+    descargarExcel(
+      `/api/v1/registros-no-relacionados/${encodeURIComponent(corteId)}/exportar?${consultaNoRelacionados(filtros)}`,
+    ),
 
   /**
    * [E04-HU03] `GET /api/v1/plan-accion/exportar`: el Plan de Acción como

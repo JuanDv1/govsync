@@ -7,7 +7,8 @@
  * muestra un marcador de posición: así `npm run dev` arranca y confirma que la
  * cadena de herramientas funciona, sin fingir que la pantalla ya está hecha.
  */
-import { Navigate, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import NuevoCorte from "./pages/NuevoCorte.jsx";
 import Cortes from "./pages/Cortes.jsx";
 import EditarArchivosCorteActual from "./pages/EditarArchivosCorteActual.jsx";
@@ -16,17 +17,38 @@ import Login from "./pages/Login.jsx";
 import Disposicion from "./components/Disposicion.jsx";
 import MatrizRelacion from "./pages/MatrizRelacion.jsx";
 import PlanAccion from "./pages/PlanAccion.jsx";
+import PlanAccionPublico from "./pages/PlanAccionPublico.jsx";
 import CompararCortes from "./pages/CompararCortes.jsx";
+import MetasEnRiesgo from "./pages/MetasEnRiesgo.jsx";
+import RegistrosNoRelacionados from "./pages/RegistrosNoRelacionados.jsx";
 import { Vacio } from "./components/Estados.jsx";
 import Card from "./components/shared/Card.jsx";
+import PantallaSinAcceso from "./components/shared/PantallaSinAcceso.jsx";
 import { useAutenticacion } from "./auth/ProveedorAutenticacion.jsx";
+import { puedeAbrirRuta } from "./auth/roles.js";
 
 /** [HU-E01-01] / D23/D24: exige sesión de Keycloak activa antes de montar
  * las rutas que envuelve. `cargando` cubre la ventana entre que la app
  * arranca y `keycloak.init()` resuelve — sin esto, un usuario SIN sesión
  * vería un parpadeo de contenido protegido antes del redirect. */
 function RutaProtegida({ children }) {
-  const { cargando, estaAutenticado } = useAutenticacion();
+  const {
+    cargando,
+    estaAutenticado,
+    usuario,
+    motivoSinAcceso,
+    vistaInicial,
+    loginReciente,
+    finalizarLoginReciente,
+  } = useAutenticacion();
+  const location = useLocation();
+
+  // CA07: la marca vale para una sola carga; al consumirla, navegar después
+  // (links, "/" → vista inicial) no vuelve a redirigir. Se consume solo cuando
+  // `cargando` ya es false: es entonces cuando el render la usa para decidir.
+  useEffect(() => {
+    if (loginReciente && !cargando) finalizarLoginReciente();
+  }, [loginReciente, cargando, finalizarLoginReciente]);
 
   if (cargando) {
     return (
@@ -37,7 +59,43 @@ function RutaProtegida({ children }) {
   }
 
   if (!estaAutenticado) {
-    return <Navigate to="/login" replace />;
+    // [E-01/HU-01] CA07: se recuerda la ruta pedida para volver tras el login.
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ desde: location.pathname + location.search }}
+      />
+    );
+  }
+
+  // [E-01/HU-01] CA05 / D37: sesión válida que no puede usar ningún módulo.
+  // Reemplaza TODO el layout, también al entrar por URL directa a cualquier
+  // ruta interna: no se monta ningún módulo ni se dispara ninguna petición. El
+  // backend responde 403 a esas cuentas de todas formas.
+  if (motivoSinAcceso === "sin_rol") {
+    return (
+      <PantallaSinAcceso
+        titulo="Su cuenta no tiene un rol asignado"
+        descripcion="Contacte a la administradora"
+      />
+    );
+  }
+  if (motivoSinAcceso === "rol_sin_modulos") {
+    return (
+      <PantallaSinAcceso
+        titulo="Su rol no tiene módulos habilitados en esta versión"
+        descripcion="Su cuenta está activa, pero su rol todavía no tiene funciones disponibles en GovSync. Si necesita acceso, contacte a la administradora."
+      />
+    );
+  }
+
+  // [E-01/HU-01] CA07: recién iniciada la sesión, la URL original solo se
+  // respeta si el rol tiene permiso; si no, va a su vista inicial (CA01).
+  // Con la sesión ya abierta, una URL sin permiso sigue mostrando el aviso del
+  // módulo (E04-HU01/CA10).
+  if (loginReciente && !puedeAbrirRuta(location.pathname, usuario.roles)) {
+    return <Navigate to={vistaInicial} replace />;
   }
 
   return children;
@@ -63,6 +121,13 @@ function RutaConPlanAccion({ children }) {
   }
 
   return children;
+}
+
+/** [E-01/HU-01] CA01: "/" lleva a la vista inicial del rol. Va dentro de
+ * `RutaProtegida`, así que aquí el rol ya tiene al menos un módulo. */
+function VistaInicial() {
+  const { vistaInicial } = useAutenticacion();
+  return <Navigate to={vistaInicial} replace />;
 }
 
 function Pendiente() {
@@ -91,6 +156,11 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
 
+      {/* [E-01/HU-01] Consulta pública del Plan de Acción: FUERA de
+          `RutaProtegida` a propósito. Sin sesión, sin menú de módulos y sin
+          `Authorization`; el endpoint del backend es público. */}
+      <Route path="/publico/plan-accion" element={<PlanAccionPublico />} />
+
       <Route
         element={
           <RutaProtegida>
@@ -98,6 +168,7 @@ export default function App() {
           </RutaProtegida>
         }
       >
+        <Route path="/" element={<VistaInicial />} />
         <Route path="/cortes" element={<Cortes />} />
         <Route path="/cortes/nuevo" element={<NuevoCorte />} />
         {/* Reanudar un corte en BORRADOR — ver docstring de NuevoCorte.jsx.
@@ -130,6 +201,25 @@ export default function App() {
               <CompararCortes />
             </RutaConPlanAccion>
           }
+        />
+        {/* [E04-HU07] Metas con menos del 50 % de avance financiero; mismo
+            permiso que el Plan de Acción (la ruta ya cae en
+            `RUTA_PLAN_ACCION` de `auth/roles.js`). */}
+        <Route
+          path="/plan-accion/riesgo"
+          element={
+            <RutaConPlanAccion>
+              <MetasEnRiesgo />
+            </RutaConPlanAccion>
+          }
+        />
+        {/* [E-04/HU-05] Registros no relacionados del cruce. Ruta protegida,
+            sin la tarjeta de "solo Plan de Acción": el backend permite
+            administrador y visitante, los mismos que pasan `RutaProtegida`.
+            Sin `:corteId` usa el corte actual. */}
+        <Route
+          path="/registros-no-relacionados/:corteId?"
+          element={<RegistrosNoRelacionados />}
         />
         <Route path="*" element={<Pendiente />} />
       </Route>

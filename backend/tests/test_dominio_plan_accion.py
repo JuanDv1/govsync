@@ -32,6 +32,9 @@ def _fila(
     presupuesto=None,
     ejecucion=None,
     contrato=None,
+    objeto_contrato=None,
+    valor_contrato=None,
+    valor_pagado_contrato=None,
 ) -> FilaFuenteMeta:
     return FilaFuenteMeta(
         cod_indicador_producto=cod,
@@ -43,6 +46,9 @@ def _fila(
         presupuesto_apropiado=presupuesto,
         ejecucion=ejecucion,
         numero_contrato=contrato,
+        objeto_contrato=objeto_contrato,
+        valor_contrato=valor_contrato,
+        valor_pagado_contrato=valor_pagado_contrato,
     )
 
 
@@ -189,6 +195,151 @@ class TestAgregarPorMetaEstadoCruce:
         resultado = agregar_por_meta(filas)
 
         assert resultado[0].estado_cruce == EstadoCruceMeta.PARCIAL
+
+
+class TestAgregarPorMetaVariosBpin:
+    """H-027 (QA Sprint 2): una meta asociada a varios proyectos BPIN debe
+    conservarlos todos. Antes solo quedaba el de la primera fila cruda, y
+    cuál era dependía del orden en que llegaran las filas."""
+
+    def test_conserva_todos_los_bpin_distintos_de_la_meta(self):
+        filas = [_fila(cod_bpin="AAA"), _fila(cod_bpin="BBB"), _fila(cod_bpin="AAA")]
+
+        (meta,) = agregar_por_meta(filas)
+
+        assert meta.bpins == ("AAA", "BBB")
+
+    def test_el_resultado_no_depende_del_orden_de_las_filas(self):
+        en_un_orden = agregar_por_meta([_fila(cod_bpin="AAA"), _fila(cod_bpin="BBB")])
+        en_el_otro = agregar_por_meta([_fila(cod_bpin="BBB"), _fila(cod_bpin="AAA")])
+
+        assert en_un_orden == en_el_otro
+
+    def test_cod_bpin_se_mantiene_por_compatibilidad_y_es_el_primero(self):
+        (meta,) = agregar_por_meta([_fila(cod_bpin="BBB"), _fila(cod_bpin="AAA")])
+
+        assert meta.cod_bpin == "AAA"
+
+    def test_meta_sin_bpin_tiene_lista_vacia_y_cod_bpin_none(self):
+        (meta,) = agregar_por_meta([_fila(cod_bpin=None)])
+
+        assert meta.bpins == ()
+        assert meta.cod_bpin is None
+
+    def test_el_estado_de_cruce_ve_el_bpin_aunque_no_venga_en_la_primera_fila(self):
+        """Antes el estado solo miraba la primera fila: una meta con BPIN en
+        la segunda fila quedaba como si no tuviera proyecto."""
+        filas = [
+            _fila(cod_bpin=None, codigo_rubro="R1", presupuesto=Decimal("10"), contrato="C1"),
+            _fila(cod_bpin="AAA", codigo_rubro="R1", presupuesto=Decimal("10"), contrato="C1"),
+        ]
+
+        (meta,) = agregar_por_meta(filas)
+
+        assert meta.estado_cruce == EstadoCruceMeta.COMPLETO
+
+
+class TestAgregarPorMetaDesglose:
+    """E04-HU01-CA03: cadena Meta -> Rubro -> Contrato con todos sus
+    elementos, sin duplicar valores en los totales."""
+
+    def test_cada_rubro_trae_su_monto_y_sus_contratos(self):
+        filas = [
+            _fila(
+                codigo_rubro="R1",
+                presupuesto=Decimal("1000"),
+                ejecucion=Decimal("400"),
+                contrato="C1",
+                objeto_contrato="Mantenimiento vial",
+                valor_contrato=Decimal("300"),
+                valor_pagado_contrato=Decimal("100"),
+            ),
+            _fila(
+                codigo_rubro="R1",
+                presupuesto=Decimal("1000"),
+                ejecucion=Decimal("400"),
+                contrato="C2",
+                objeto_contrato="Interventoría",
+                valor_contrato=Decimal("50"),
+            ),
+            _fila(codigo_rubro="R2", presupuesto=Decimal("500"), ejecucion=Decimal("0")),
+        ]
+
+        (meta,) = agregar_por_meta(filas)
+
+        r1, r2 = meta.desglose
+        assert (r1.codigo_rubro, r1.presupuesto_definitivo, r1.ejecucion) == (
+            "R1",
+            Decimal("1000"),
+            Decimal("400"),
+        )
+        assert [c.numero_contrato for c in r1.contratos] == ["C1", "C2"]
+        assert r1.contratos[0].objeto == "Mantenimiento vial"
+        assert r1.contratos[0].valor == Decimal("300")
+        assert r1.contratos[0].valor_pagado == Decimal("100")
+        assert r1.contratos[1].valor_pagado is None
+        assert (r2.codigo_rubro, r2.contratos) == ("R2", ())
+
+    def test_la_suma_del_desglose_coincide_con_los_totales_de_la_meta(self):
+        """La garantía de CA03/CA08: el detalle nunca contradice el total."""
+        filas = [
+            _fila(
+                codigo_rubro="R1",
+                presupuesto=Decimal("1000"),
+                ejecucion=Decimal("400"),
+                contrato="C1",
+            ),
+            _fila(
+                codigo_rubro="R1",
+                presupuesto=Decimal("1000"),
+                ejecucion=Decimal("400"),
+                contrato="C2",
+            ),
+            _fila(
+                codigo_rubro="R2",
+                presupuesto=Decimal("500"),
+                ejecucion=Decimal("50"),
+                contrato="C1",
+            ),
+        ]
+
+        (meta,) = agregar_por_meta(filas)
+
+        assert sum(r.presupuesto_definitivo for r in meta.desglose) == meta.presupuesto_definitivo
+        assert sum(r.ejecucion for r in meta.desglose) == meta.ejecucion
+        assert meta.presupuesto_definitivo == Decimal("1500")
+
+    def test_un_contrato_repetido_en_filas_por_varios_bpin_aparece_una_sola_vez(self):
+        """Fan-out BPIN x contrato: 2 BPIN y 1 contrato producen 2 filas
+        crudas con el mismo contrato; en el desglose es uno solo."""
+        filas = [
+            _fila(cod_bpin="AAA", codigo_rubro="R1", presupuesto=Decimal("10"), contrato="C1"),
+            _fila(cod_bpin="BBB", codigo_rubro="R1", presupuesto=Decimal("10"), contrato="C1"),
+        ]
+
+        (meta,) = agregar_por_meta(filas)
+
+        assert len(meta.desglose) == 1
+        assert [c.numero_contrato for c in meta.desglose[0].contratos] == ["C1"]
+        assert meta.presupuesto_definitivo == Decimal("10")
+
+    def test_meta_sin_rubros_tiene_desglose_vacio(self):
+        (meta,) = agregar_por_meta([_fila()])
+
+        assert meta.desglose == ()
+
+    def test_las_listas_planas_siguen_coincidiendo_con_el_desglose(self):
+        """`rubros` y `contratos` (contrato anterior de la API) se conservan
+        y son coherentes con el desglose nuevo."""
+        filas = [
+            _fila(codigo_rubro="R2", presupuesto=Decimal("1"), contrato="C9"),
+            _fila(codigo_rubro="R1", presupuesto=Decimal("1"), contrato="C1"),
+        ]
+
+        (meta,) = agregar_por_meta(filas)
+
+        assert meta.rubros == tuple(r.codigo_rubro for r in meta.desglose) == ("R1", "R2")
+        assert meta.contratos == ("C1", "C9")
 
 
 class TestCalcularResumen:

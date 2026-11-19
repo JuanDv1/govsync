@@ -45,7 +45,8 @@ import uuid
 from datetime import UTC, date, datetime
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, distinct, func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.modules.cortes.domain.entidades import (
@@ -69,7 +70,7 @@ from app.modules.cortes.persistence.models import (
     RegistroPresupuestalORM,
     RubroORM,
 )
-from app.shared.errors import RecursoNoEncontrado
+from app.shared.errors import OperacionNoPermitida, RecursoNoEncontrado
 
 
 def _archivo_a_dominio(o: ArchivoFuenteORM) -> ArchivoFuente:
@@ -103,6 +104,7 @@ def _a_dominio(o: CorteORM) -> Corte:
         id=o.id,
         estado=o.estado,
         archivos={a.tipo: _archivo_a_dominio(a) for a in o.archivos},
+        es_referencia=o.es_referencia,
     )
 
 
@@ -116,6 +118,7 @@ class RepositorioCortesSQL(RepositorioCortes):
             vigencia=corte.vigencia,
             fecha_corte=corte.fecha_corte,
             estado=corte.estado,
+            es_referencia=corte.es_referencia,
         )
         for archivo in corte.archivos.values():
             orm.archivos.append(
@@ -234,6 +237,75 @@ class RepositorioCortesSQL(RepositorioCortes):
         orm.fecha_corte = corte.fecha_corte
         self._s.flush()
 
+    def eliminar(self, corte_id: uuid.UUID) -> None:
+        """Borra el corte solo si sigue en BORRADOR; `ON DELETE CASCADE`
+        limpia las tablas hijas.
+
+        Se usa `delete()` a nivel de SQL (no `session.delete(orm)`) para que
+        la cascada la resuelva la BD en una sola sentencia, igual que
+        `reemplazar_metas`/`reemplazar_proyectos`. El filtro por estado
+        evita borrar un REGISTRADO si otra sesión lo registró entre la
+        validación del dominio y este DELETE; con `rowcount == 0` se
+        distingue si dejó de existir (404) o ya no es BORRADOR (409).
+        """
+        resultado = self._s.execute(
+            delete(CorteORM).where(CorteORM.id == corte_id, CorteORM.estado == EstadoCorte.BORRADOR)
+        )
+        if resultado.rowcount == 0:
+            estado_actual = self._s.execute(
+                select(CorteORM.estado).where(CorteORM.id == corte_id)
+            ).scalar_one_or_none()
+            if estado_actual is None:
+                raise RecursoNoEncontrado(
+                    f"No existe el corte {corte_id} que se intenta descartar.",
+                    detalles={"motivo": "corte_no_encontrado", "corte_id": str(corte_id)},
+                )
+            raise OperacionNoPermitida(
+                "Solo un corte en BORRADOR puede descartarse.",
+                detalles={
+                    "motivo": "corte_no_es_borrador",
+                    "estado_actual": estado_actual.value,
+                },
+            )
+        self._s.flush()
+
+    def confirmar_referencia(self, corte: Corte) -> None:
+        """[E02-HU08][CA04]: ver el contrato en puertos.py.
+
+        El orden importa: primero se quita la marca anterior de la vigencia
+        (y se hace `flush`) y después se pone la nueva; al revés, el índice
+        único parcial rechazaría el estado intermedio con dos marcas.
+        """
+        orm = self._s.get(CorteORM, corte.id)
+        if orm is None:
+            raise RecursoNoEncontrado(
+                f"No existe el corte {corte.id}.",
+                detalles={"motivo": "corte_no_encontrado", "corte_id": str(corte.id)},
+            )
+        try:
+            if corte.es_referencia:
+                self._quitar_otras_referencias(corte)
+            orm.es_referencia = corte.es_referencia
+            self._s.flush()
+        except IntegrityError as exc:
+            raise OperacionNoPermitida(
+                "Otro corte de la misma vigencia se marcó como referencia al mismo "
+                "tiempo. Recargue el histórico e intente de nuevo.",
+                detalles={"motivo": "referencia_en_conflicto", "vigencia": corte.vigencia},
+            ) from exc
+
+    def _quitar_otras_referencias(self, corte: Corte) -> None:
+        self._s.execute(
+            update(CorteORM)
+            .where(
+                CorteORM.vigencia == corte.vigencia,
+                CorteORM.id != corte.id,
+                CorteORM.es_referencia.is_(True),
+            )
+            .values(es_referencia=False)
+        )
+        self._s.flush()
+
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         self._s.add(
             HistorialReemplazoArchivoORM(
@@ -270,6 +342,18 @@ class RepositorioDatosCorteSQL(RepositorioDatosCorte):
     def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
         consulta = select(MetaORM.cod_indicador_producto).where(MetaORM.corte_id == corte_id)
         return set(self._s.scalars(consulta))
+
+    def contar_metas_por_corte(self) -> dict[uuid.UUID, int]:
+        """[E02-HU08][CA03]: una sola consulta agrupada, apoyada en el índice
+        `ix_meta_cruce (corte_id, cod_indicador_producto)`. `DISTINCT` porque
+        la tabla `meta` no tiene unicidad por (corte, código): el Plan de
+        Acción agrupa por código, así que el conteo también."""
+        consulta = select(
+            MetaORM.corte_id, func.count(distinct(MetaORM.cod_indicador_producto))
+        ).group_by(MetaORM.corte_id)
+        # `.all()` antes de `dict()`: un Result de SQLAlchemy expone `keys()`
+        # y `dict()` lo trataría como un mapeo en vez de como pares.
+        return dict(self._s.execute(consulta).tuples().all())
 
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
         """[HU-02][BE-04]: reemplazo total de las metas del corte.

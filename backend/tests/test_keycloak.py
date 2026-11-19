@@ -148,3 +148,54 @@ class TestTokenInvalido:
 
         with pytest.raises(CredencialesInvalidas):
             verificador.verificar(token)
+
+
+class TestClaimDeRolesMalformado:
+    """Hallazgo de la prueba de QA de E-01/HU-01 CA05 (2026-11-12): un
+    `realm_access` con una forma que Keycloak nunca emite hacía fallar el
+    verificador con AttributeError/TypeError (500 en la API). Debe
+    rechazarse como token no válido (401), igual que un token sin
+    `sub`/`email`. Que el claim FALTE sigue siendo legítimo (sin roles)."""
+
+    @pytest.mark.parametrize(
+        "realm_access",
+        [
+            None,
+            "administrador",
+            ["administrador"],
+            {"roles": None},
+            {"roles": "administrador"},
+            {"roles": [{"nombre": "administrador"}]},
+            {"roles": ["administrador", 7]},
+        ],
+        ids=[
+            "realm_access-nulo",
+            "realm_access-texto",
+            "realm_access-lista",
+            "roles-nulo",
+            "roles-texto",
+            "roles-con-objeto",
+            "roles-con-numero",
+        ],
+    )
+    def test_forma_inesperada_lanza_credenciales_invalidas(self, llaves_rsa, realm_access) -> None:
+        verificador = _verificador(llaves_rsa)
+        token = _firmar(llaves_rsa, _claims_base(realm_access=realm_access))
+
+        with pytest.raises(CredencialesInvalidas):
+            verificador.verificar(token)
+
+    def test_sin_el_claim_realm_access_queda_sin_roles(self, llaves_rsa) -> None:
+        verificador = _verificador(llaves_rsa)
+        claims = _claims_base()
+        del claims["realm_access"]
+
+        usuario = verificador.verificar(_firmar(llaves_rsa, claims))
+
+        assert usuario.roles == frozenset()
+
+    def test_realm_access_sin_la_clave_roles_queda_sin_roles(self, llaves_rsa) -> None:
+        verificador = _verificador(llaves_rsa)
+        token = _firmar(llaves_rsa, _claims_base(realm_access={}))
+
+        assert verificador.verificar(token).roles == frozenset()

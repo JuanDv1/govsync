@@ -48,8 +48,8 @@
  *         "conservar avances físicos" sigue `[VALIDAR]` en la spec,
  *         bloqueada por una decisión de negocio abierta y sin módulo de
  *         avance físico.
- *   CA-9  (restricción por rol): solo `administrador` y `gestor`
- *         (`puedeEscribir`, D24) ven "Editar archivos" en `Cortes.jsx` y esta
+ *   CA-9  (restricción por rol): solo `administrador`
+ *         (`puedeEscribir`, D24/D37) ven "Editar archivos" en `Cortes.jsx` y esta
  *         pantalla. Cualquier otro rol (el `visitante`, de solo lectura) ve un
  *         aviso de permiso y no dispara ninguna petición. Es solo UI: el
  *         backend ya responde 403 de todas formas.

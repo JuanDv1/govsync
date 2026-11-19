@@ -63,15 +63,17 @@ from starlette.datastructures import UploadFile
 from starlette.formparsers import MultiPartException
 
 from app.core.config import Settings, get_settings
-from app.core.dependencias import ServicioCortesDep, UsuarioActualDep, exigir_roles
+from app.core.dependencias import LecturaDep, ServicioCortesDep, exigir_roles
 from app.modules.cortes.domain.entidades import Corte, TipoArchivoFuente
 from app.modules.identidad.domain.entidades import Rol, Usuario
 from app.shared.codigos import CategoriaDescarte
 from app.shared.errors import ArchivoInvalido, RecursoNoEncontrado
 
-#: D24 (docs/DECISIONES.md): los cuatro endpoints de escritura de este
-#: router exigen administrador o gestor — visitante es de solo lectura.
-EscrituraDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR, Rol.GESTOR))]
+#: D24 (docs/DECISIONES.md): los endpoints de escritura de este router
+#: exigen `administrador` — visitante es de solo lectura. D37 (2026-11-11):
+#: `gestor` ya no escribe (no tiene módulos habilitados en esta versión).
+EscrituraDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR))]
+
 
 router = APIRouter(prefix="/cortes", tags=["Cortes de seguimiento"])
 
@@ -133,6 +135,19 @@ class CorteRespuesta(BaseModel):
     GLOBAL, sin filtro de vigencia) -- ver `_id_corte_actual` más abajo.
     Un corte en BORRADOR es SIEMPRE `False` (nunca puede ser "el actual"
     por definición, sin necesidad de consultar nada)."""
+    es_referencia: bool
+    """[E02-HU08][CA04] Corte de referencia de su vigencia (la estrella del
+    histórico). A lo sumo uno por vigencia."""
+
+
+class CorteHistoricoRespuesta(CorteRespuesta):
+    """[E02-HU08][CA03] Una fila de GET /cortes (histórico). DTO propio para
+    no cambiar la forma de las demás respuestas que devuelven un corte
+    (POST, PATCH, registrar, detalle), que no calculan el conteo."""
+
+    cantidad_metas: int | None
+    """Metas distintas del corte (la misma población del Plan de Acción).
+    `None` si el corte está en BORRADOR: el frontend muestra "—", no 0."""
 
 
 class DescarteRespuesta(BaseModel):
@@ -218,6 +233,7 @@ def _a_dto(corte: Corte, *, es_corte_actual: bool) -> CorteRespuesta:
         fecha_corte=corte.fecha_corte,
         estado=corte.estado.value,
         es_corte_actual=es_corte_actual,
+        es_referencia=corte.es_referencia,
         archivos=[
             ArchivoFuenteRespuesta(
                 tipo=archivo.tipo.value,
@@ -251,22 +267,32 @@ def crear_corte(
     return _a_dto(corte, es_corte_actual=False)
 
 
-@router.get("", response_model=list[CorteRespuesta])
-def listar_cortes(servicio: ServicioCortesDep, usuario: UsuarioActualDep) -> list[CorteRespuesta]:
+@router.get("", response_model=list[CorteHistoricoRespuesta])
+def listar_cortes(
+    servicio: ServicioCortesDep, usuario: LecturaDep
+) -> list[CorteHistoricoRespuesta]:
     """HU-01 / CA-8 (junto con GET /cortes/{id}): histórico de cortes.
 
     [E02-HU05] `id_actual` se calcula UNA sola vez para toda la lista
     (no un `obtener_corte_actual()` por fila) -- ver `_id_corte_actual`.
+
+    [E02-HU08][CA03] `cantidad_metas`: ver
+    `ServicioCortes.listar_cortes_con_cantidad_metas` (un conteo agrupado
+    para todo el histórico; `None` para un BORRADOR).
     """
     id_actual = _id_corte_actual(servicio)
     return [
-        _a_dto(corte, es_corte_actual=(corte.id == id_actual)) for corte in servicio.listar_cortes()
+        CorteHistoricoRespuesta(
+            **_a_dto(corte, es_corte_actual=(corte.id == id_actual)).model_dump(),
+            cantidad_metas=cantidad,
+        )
+        for corte, cantidad in servicio.listar_cortes_con_cantidad_metas()
     ]
 
 
 @router.get("/{corte_id}", response_model=CorteRespuesta)
 def obtener_corte(
-    corte_id: UUID, servicio: ServicioCortesDep, usuario: UsuarioActualDep
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: LecturaDep
 ) -> CorteRespuesta:
     """HU-01 / CA-8 (junto con GET /cortes): detalle de un corte por id.
 
@@ -507,12 +533,12 @@ async def reemplazar_archivo(
     response_model=list[HistorialReemplazoRespuesta],
 )
 def obtener_historial_reemplazos(
-    corte_id: UUID, servicio: ServicioCortesDep, usuario: UsuarioActualDep
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: LecturaDep
 ) -> list[HistorialReemplazoRespuesta]:
     """[E02-HU05][CA06]: historial de auditoría de reemplazos de un corte.
 
-    Lectura -> cualquier rol autenticado (mismo criterio que D24 da a los
-    demás GET de este router); el archivo `.xlsx` reemplazado en sí NO se
+    Lectura -> administrador o visitante (`LecturaDep`, D37; mismo criterio
+    que los demás GET de este router); el archivo `.xlsx` reemplazado en sí NO se
     conserva (decisión cerrada, ver docs/DECISIONES.md D25) -- solo este
     registro.
     """
@@ -552,6 +578,24 @@ def corregir_corte(
     return _a_dto(corte, es_corte_actual=False)
 
 
+@router.delete(
+    "/{corte_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
+    summary="Descartar un corte en BORRADOR",
+    responses={
+        404: {"description": "El corte no existe."},
+        409: {"description": "El corte no está en BORRADOR (`corte_no_es_borrador`)."},
+    },
+)
+def descartar_corte(corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep) -> None:
+    """Elimina un corte en BORRADOR junto con los datos que ya se hubieran
+    cargado. Permite empezar de nuevo cuando el borrador se creó con una
+    vigencia/fecha equivocada. Un corte REGISTRADO se rechaza con 409.
+    """
+    servicio.descartar_corte(corte_id, usuario.correo)
+
+
 @router.post("/{corte_id}/registrar", response_model=CorteRespuesta)
 def registrar_corte(
     corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep
@@ -569,4 +613,39 @@ def registrar_corte(
     no se asume `False`.
     """
     corte = servicio.registrar_corte(corte_id)
+    return _a_dto(corte, es_corte_actual=(corte.id == _id_corte_actual(servicio)))
+
+
+@router.put(
+    "/{corte_id}/referencia",
+    response_model=CorteRespuesta,
+    summary="Marcar el corte como referencia de su vigencia",
+    responses={
+        404: {"description": "El corte no existe."},
+        409: {"description": "El corte no está registrado, o hubo una marca simultánea."},
+    },
+)
+def marcar_corte_referencia(
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep
+) -> CorteRespuesta:
+    """[E02-HU08][CA04]: marca el corte como el de referencia de su vigencia.
+    Si otro corte de la misma vigencia lo era, pierde la marca ("mover la
+    estrella"). Solo cortes REGISTRADOS. `PUT` porque es idempotente:
+    marcar dos veces deja el mismo estado. Solo la administradora
+    (`EscrituraDep`, D37), como pide la tarjeta."""
+    corte = servicio.marcar_como_referencia(corte_id)
+    return _a_dto(corte, es_corte_actual=(corte.id == _id_corte_actual(servicio)))
+
+
+@router.delete(
+    "/{corte_id}/referencia",
+    response_model=CorteRespuesta,
+    summary="Quitar la marca de referencia del corte",
+    responses={404: {"description": "El corte no existe."}},
+)
+def desmarcar_corte_referencia(
+    corte_id: UUID, servicio: ServicioCortesDep, usuario: EscrituraDep
+) -> CorteRespuesta:
+    """[E02-HU08][CA04]: quita la marca de referencia. Idempotente."""
+    corte = servicio.desmarcar_referencia(corte_id)
     return _a_dto(corte, es_corte_actual=(corte.id == _id_corte_actual(servicio)))

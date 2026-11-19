@@ -80,6 +80,16 @@ class RepositorioCortesEnMemoria(RepositorioCortes):
         self._cortes[corte.id].vigencia = corte.vigencia
         self._cortes[corte.id].fecha_corte = corte.fecha_corte
 
+    def eliminar(self, corte_id: uuid.UUID) -> None:
+        self._cortes.pop(corte_id, None)
+
+    def confirmar_referencia(self, corte: Corte) -> None:
+        if corte.es_referencia:
+            for otro in self._cortes.values():
+                if otro.vigencia == corte.vigencia and otro.id != corte.id:
+                    otro.es_referencia = False
+        self._cortes[corte.id].es_referencia = corte.es_referencia
+
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         self.historial.append(historial)
 
@@ -106,6 +116,9 @@ class RepositorioDatosCorteEnMemoria(RepositorioDatosCorte):
 
     def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
         return self.codigos_metas
+
+    def contar_metas_por_corte(self) -> dict[uuid.UUID, int]:
+        return {}
 
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
         self.llamadas_reemplazar_metas.append((corte_id, metas))
@@ -400,6 +413,93 @@ class TestCorregirCorte:
             servicio.corregir_corte(corte.id, vigencia=2025, fecha_corte=date(2026, 9, 1))
 
         assert servicio.llamadas["rollback"] == 1
+
+
+class TestDescartarCorte:
+    """D36: descartar (borrado fisico) un corte en BORRADOR."""
+
+    def test_descarta_un_borrador_confirma_y_deja_log_con_el_usuario(self, servicio, caplog):
+        corte = servicio.crear_corte(vigencia=2026, fecha_corte=date(2026, 9, 8))
+        commits_previos = servicio.llamadas["commit"]
+
+        with caplog.at_level("INFO", logger="govsync"):
+            servicio.descartar_corte(corte.id, "admin@santarosa.gov.co")
+
+        assert servicio._cortes.obtener(corte.id) is None
+        assert servicio.llamadas["commit"] == commits_previos + 1
+        assert servicio.llamadas["rollback"] == 0
+        linea = next(r.getMessage() for r in caplog.records if "Corte descartado" in r.getMessage())
+        assert f"id={corte.id}" in linea
+        assert "vigencia=2026" in linea
+        assert "fecha_corte=2026-09-08" in linea
+        assert "usuario=admin@santarosa.gov.co" in linea
+
+    def test_corte_inexistente_lanza_no_encontrado_sin_log_ni_commit(self, servicio, caplog):
+        commits_previos = servicio.llamadas["commit"]
+
+        with caplog.at_level("INFO", logger="govsync"), pytest.raises(RecursoNoEncontrado):
+            servicio.descartar_corte(uuid.uuid4(), "admin@santarosa.gov.co")
+
+        assert servicio.llamadas["commit"] == commits_previos
+        assert not any("Corte descartado" in r.getMessage() for r in caplog.records)
+
+    def test_rechaza_un_corte_registrado_sin_borrarlo_ni_loguear(self, servicio, caplog):
+        corte = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2026, fecha_corte=date(2026, 9, 8)
+        )
+        commits_previos = servicio.llamadas["commit"]
+
+        with caplog.at_level("INFO", logger="govsync"), pytest.raises(OperacionNoPermitida) as exc:
+            servicio.descartar_corte(corte.id, "admin@santarosa.gov.co")
+
+        assert exc.value.detalles["motivo"] == "corte_no_es_borrador"
+        assert servicio._cortes.obtener(corte.id) is not None
+        assert servicio.llamadas["commit"] == commits_previos
+        assert not any("Corte descartado" in r.getMessage() for r in caplog.records)
+
+    def test_no_toca_a_los_demas_cortes(self, servicio):
+        registrado = _crear_corte_registrado_con_archivos(
+            servicio, vigencia=2025, fecha_corte=date(2025, 12, 1)
+        )
+        borrador = servicio.crear_corte(vigencia=2026, fecha_corte=date(2026, 9, 8))
+
+        servicio.descartar_corte(borrador.id, "admin@santarosa.gov.co")
+
+        assert servicio._cortes.obtener(registrado.id) is not None
+        assert servicio._cortes.obtener(borrador.id) is None
+
+    def test_si_falla_el_borrado_revierte_y_no_deja_log(self, servicio, caplog):
+        corte = servicio.crear_corte(vigencia=2026, fecha_corte=date(2026, 9, 8))
+
+        def _eliminar_que_falla(_corte_id):
+            raise RuntimeError("fallo simulado de la base de datos")
+
+        servicio._cortes.eliminar = _eliminar_que_falla
+
+        with caplog.at_level("INFO", logger="govsync"), pytest.raises(RuntimeError):
+            servicio.descartar_corte(corte.id, "admin@santarosa.gov.co")
+
+        assert servicio.llamadas["rollback"] == 1
+        assert not any("Corte descartado" in r.getMessage() for r in caplog.records)
+
+    def test_si_el_repositorio_detecta_la_carrera_con_registrar_revierte(self, servicio, caplog):
+        """El dominio vio BORRADOR pero el DELETE SQL ya no lo encuentra
+        en ese estado: el 409 del repositorio se propaga con rollback."""
+        corte = servicio.crear_corte(vigencia=2026, fecha_corte=date(2026, 9, 8))
+
+        def _eliminar_con_carrera(_corte_id):
+            raise OperacionNoPermitida(
+                "Solo un corte en BORRADOR puede descartarse.",
+                detalles={"motivo": "corte_no_es_borrador", "estado_actual": "REGISTRADO"},
+            )
+
+        servicio._cortes.eliminar = _eliminar_con_carrera
+
+        with caplog.at_level("INFO", logger="govsync"), pytest.raises(OperacionNoPermitida):
+            servicio.descartar_corte(corte.id, "admin@santarosa.gov.co")
+
+        assert servicio.llamadas["rollback"] == 1
+        assert not any("Corte descartado" in r.getMessage() for r in caplog.records)
 
 
 class _LectorFalso:

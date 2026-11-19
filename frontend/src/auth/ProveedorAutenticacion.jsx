@@ -25,6 +25,7 @@
  */
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -33,25 +34,28 @@ import {
 } from "react";
 import keycloak from "./keycloak.js";
 import { establecerProveedorToken } from "../api/cliente.js";
+import {
+  etiquetaRol,
+  motivoSinAcceso,
+  puedeEscribir,
+  puedeVerPlanAccion,
+  vistaInicial,
+} from "./roles.js";
+import { rutaDestinoSegura } from "../lib/rutaDestino.js";
+import { consumirLoginReciente, marcarLoginReciente } from "./loginReciente.js";
+import { useInactividad } from "./useInactividad.js";
 
 const ContextoAutenticacion = createContext(null);
 
-//: D24 (docs/DECISIONES.md): mismos dos roles que `exigir_roles(Rol.ADMINISTRADOR,
-//: Rol.GESTOR)` exige en el backend para escribir — `visitante` queda fuera.
-//: Esto solo oculta la UI (el backend ya rechaza con 403 de todas formas);
-//: centralizado aquí para no repetir la lista de roles en cada pantalla.
-const ROLES_ESCRITURA = new Set(["administrador", "gestor"]);
-
-//: D26 punto 4 (docs/DECISIONES.md): el Plan de Acción lo consultan
-//: `administrador` y `visitante`; `gestor` queda fuera a propósito, hasta que
-//: se ratifique esa decisión. Espeja `AccesoPlanAccionDep` en
-//: `plan_accion/api/router.py`: si allá cambia, cambia aquí. Solo oculta la
-//: UI — el backend ya rechaza con 403 de todas formas.
-const ROLES_PLAN_ACCION = new Set(["administrador", "visitante"]);
+//: Las reglas de rol (D24, D26, D37, CA01, CA05, CA07) viven en `roles.js`, sin
+//: React, para poder probarlas y no repetirlas en cada pantalla. Solo deciden
+//: qué se muestra: el backend rechaza con 403 de todas formas.
 
 export function ProveedorAutenticacion({ children }) {
   const [cargando, setCargando] = useState(true);
   const [estaAutenticado, setEstaAutenticado] = useState(false);
+  // [E-01/HU-01] CA07: true solo en la carga posterior a iniciar sesión.
+  const [loginReciente, setLoginReciente] = useState(false);
   const yaInicializado = useRef(false);
 
   useEffect(() => {
@@ -65,7 +69,13 @@ export function ProveedorAutenticacion({ children }) {
 
     keycloak.onAuthLogout = () => setEstaAutenticado(false);
     keycloak.onTokenExpired = () => {
-      keycloak.updateToken(30).catch(() => keycloak.clearToken());
+      // Si no se puede renovar, la sesión ya no sirve: además de borrar el
+      // token, se baja `estaAutenticado` para que `RutaProtegida` lleve al login
+      // en vez de dejar la pantalla abierta con peticiones que fallarán.
+      keycloak.updateToken(30).catch(() => {
+        keycloak.clearToken();
+        setEstaAutenticado(false);
+      });
     };
 
     keycloak
@@ -75,10 +85,26 @@ export function ProveedorAutenticacion({ children }) {
         onLoad: "check-sso",
         silentCheckSsoRedirectUri: `${window.location.origin}/silent-check-sso.html`,
       })
-      .then((autenticado) => setEstaAutenticado(autenticado))
-      .catch(() => setEstaAutenticado(false))
+      .then((autenticado) => {
+        setEstaAutenticado(autenticado);
+        setLoginReciente(consumirLoginReciente() && autenticado);
+      })
+      .catch(() => {
+        consumirLoginReciente();
+        setEstaAutenticado(false);
+      })
       .finally(() => setCargando(false));
   }, []);
+
+  // [E-01/HU-01] CA04: tras 30 min sin actividad se cierra la sesión y el
+  // login muestra "Su sesión expiró por inactividad" (`?motivo=inactividad`).
+  useInactividad(estaAutenticado, () =>
+    keycloak.logout({
+      redirectUri: `${window.location.origin}/login?motivo=inactividad`,
+    }),
+  );
+
+  const finalizarLoginReciente = useCallback(() => setLoginReciente(false), []);
 
   // useMemo: el objeto de contexto no debe cambiar en cada render — si no,
   // cada componente que consume useAutenticacion() se re-renderiza de más
@@ -86,11 +112,18 @@ export function ProveedorAutenticacion({ children }) {
   // (cargando/estaAutenticado); keycloak.tokenParsed/realmAccess no son
   // estado de React, pero solo cambian junto con estaAutenticado.
   const valor = useMemo(() => {
+    const roles = keycloak.realmAccess?.roles ?? [];
     const usuario = estaAutenticado
       ? {
-          nombre: keycloak.tokenParsed?.preferred_username ?? null,
+          // `name` es el nombre completo; si la cuenta no lo tiene, el usuario.
+          nombre:
+            keycloak.tokenParsed?.name ??
+            keycloak.tokenParsed?.preferred_username ??
+            null,
           correo: keycloak.tokenParsed?.email ?? null,
-          roles: keycloak.realmAccess?.roles ?? [],
+          roles,
+          // CA01: el rol en palabras para el encabezado, no el código.
+          rol: etiquetaRol(roles),
         }
       : null;
 
@@ -98,16 +131,26 @@ export function ProveedorAutenticacion({ children }) {
       cargando,
       estaAutenticado,
       usuario,
-      puedeEscribir:
-        usuario?.roles?.some((rol) => ROLES_ESCRITURA.has(rol)) ?? false,
-      puedeVerPlanAccion:
-        usuario?.roles?.some((rol) => ROLES_PLAN_ACCION.has(rol)) ?? false,
-      iniciarSesion: () =>
-        keycloak.login({ redirectUri: `${window.location.origin}/cortes` }),
+      puedeEscribir: puedeEscribir(usuario?.roles),
+      puedeVerPlanAccion: puedeVerPlanAccion(usuario?.roles),
+      // CA05 + D37: `"sin_rol"` | `"rol_sin_modulos"` | `null` (puede entrar).
+      motivoSinAcceso: usuario ? motivoSinAcceso(usuario.roles) : null,
+      // CA01: ruta a la que lleva "/" según el rol (`null` sin módulos).
+      vistaInicial: usuario ? vistaInicial(usuario.roles) : null,
+      loginReciente,
+      finalizarLoginReciente,
+      // CA07: `destino` es la ruta que la persona quería abrir; sin destino,
+      // "/" lleva a la vista inicial de su rol (CA01).
+      iniciarSesion: (destino) => {
+        marcarLoginReciente();
+        return keycloak.login({
+          redirectUri: `${window.location.origin}${rutaDestinoSegura(destino)}`,
+        });
+      },
       cerrarSesion: () =>
         keycloak.logout({ redirectUri: `${window.location.origin}/login` }),
     };
-  }, [cargando, estaAutenticado]);
+  }, [cargando, estaAutenticado, loginReciente, finalizarLoginReciente]);
 
   return (
     <ContextoAutenticacion.Provider value={valor}>

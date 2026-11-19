@@ -3,7 +3,7 @@
 **Estado de la Specification:** Borrador
 
 > Mientras esté en `Borrador`, la fuente de requisitos vigente de esta HU es
-> su hoja del Excel (`docs/requisitos/GovSync_Levantamiento_Requisitos_v2_2_Sprint2.xlsx`,
+> su hoja del Excel (`docs/requisitos/GovSync_Levantamiento_Requisitos_v3_0_Sprint3.xlsx`,
 > hoja `HU_E02_05`). El estado de avance de la tarjeta vive únicamente en
 > Trello, no en este documento. Hay `[VALIDAR]` abiertos en varios apartados
 > (ver el documento); impiden pasar a `Aprobada`.

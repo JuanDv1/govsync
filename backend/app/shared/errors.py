@@ -52,3 +52,11 @@ class ArchivoInvalido(GovSyncError):
     """
 
     codigo = "archivo_invalido"
+
+
+class LimiteDePeticionesExcedido(GovSyncError):
+    """Un cliente anónimo superó el límite de peticiones de las rutas
+    públicas (D38). HTTP 429; `detalles.reintentar_en_segundos` indica cuándo
+    se libera su ventana."""
+
+    codigo = "limite_peticiones_excedido"

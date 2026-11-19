@@ -95,9 +95,15 @@ from app.modules.plan_accion.domain.entidades import (
     FilaPlanAccion,
     FiltrosPlanAccion,
     ResumenPlanAccion,
+    RubroDesglose,
     agregar_por_meta,
     calcular_resumen,
     filtrar_plan_accion,
+)
+from app.modules.plan_accion.domain.riesgo import (
+    UMBRAL_RIESGO_PCT,
+    MetaEnRiesgo,
+    metas_en_riesgo,
 )
 from app.modules.plan_accion.persistence.consultas import construir_filas_plan_accion
 from app.modules.plan_accion.persistence.exportacion_excel import (
@@ -116,10 +122,32 @@ router = APIRouter(prefix="/plan-accion", tags=["Plan de Accion"])
 #: que `EscrituraDep` en `cortes/api/router.py`: se envuelve en
 #: `Annotated[Usuario, Depends(...)]`, nunca se asigna la dependencia "pelada"
 #: (FastAPI/Pydantic necesitan el tipo explícito para resolver el esquema).
+#: Hoy coincide A PROPÓSITO con `LecturaDep` (core/dependencias.py, D37),
+#: pero sale de otra decisión (D26) y puede cambiar por otro motivo: por eso
+#: no se reutiliza.
 AccesoPlanAccionDep = Annotated[Usuario, Depends(exigir_roles(Rol.ADMINISTRADOR, Rol.VISITANTE))]
 
 
 # --- DTOs (Pydantic, nunca la entidad de dominio) ---------------------------
+
+
+class ContratoDesgloseRespuesta(BaseModel):
+    """[E04-HU01-CA03] Contrato dentro del desglose de un rubro."""
+
+    numero_contrato: str
+    objeto: str | None
+    valor: Decimal | None
+    valor_pagado: Decimal | None
+
+
+class RubroDesgloseRespuesta(BaseModel):
+    """[E04-HU01-CA03] Rubro de la meta con su monto y sus contratos. La
+    suma de los rubros de una meta es el total de esa meta."""
+
+    codigo_rubro: str
+    presupuesto_definitivo: Decimal | None
+    ejecucion: Decimal | None
+    contratos: list[ContratoDesgloseRespuesta]
 
 
 class FilaPlanAccionRespuesta(BaseModel):
@@ -135,6 +163,10 @@ class FilaPlanAccionRespuesta(BaseModel):
     avance_fisico_pct: None
     avance_financiero_pct: Decimal | None
     estado_cruce: str
+    # [E04-HU01-CA03] Campos nuevos, aditivos: `cod_bpin`, `rubros` y
+    # `contratos` se conservan para no romper al frontend actual.
+    bpins: list[str] = []
+    desglose: list[RubroDesgloseRespuesta] = []
 
 
 class ResumenPlanAccionRespuesta(BaseModel):
@@ -152,6 +184,31 @@ class PlanAccionRespuesta(BaseModel):
     fecha_corte: str
     filas: list[FilaPlanAccionRespuesta]
     resumen: ResumenPlanAccionRespuesta
+
+
+class FilaEnRiesgoRespuesta(FilaPlanAccionRespuesta):
+    """[E04-HU07] Fila de `/riesgo`: mismos campos que
+    `FilaPlanAccionRespuesta`, salvo `avance_financiero_pct`, que aquí
+    nunca es `None`. Una meta con presupuesto y sin ningún dato de
+    ejecución cuenta como 0 % (decisión del PO, 2026-11-11) y se marca con
+    `sin_ejecucion_registrada=True`; esto es exclusivo de esta lista y NO
+    cambia `/plan-accion/actual`, que sigue mostrando "--" (D26, sin
+    cambios) para ese mismo caso -- de ahí el DTO propio en vez de
+    reutilizar `FilaPlanAccionRespuesta`."""
+
+    sin_ejecucion_registrada: bool
+
+
+class MetasEnRiesgoRespuesta(BaseModel):
+    """[E04-HU07] Metas con avance financiero menor al umbral."""
+
+    corte_id: UUID
+    vigencia: int
+    fecha_corte: str
+    umbral_pct: Decimal
+    filas: list[FilaEnRiesgoRespuesta]
+    total_en_riesgo: int
+    metas_sin_presupuesto: int
 
 
 class CorteDisponibleRespuesta(BaseModel):
@@ -222,7 +279,36 @@ def _fila_a_respuesta(fila: FilaPlanAccion) -> FilaPlanAccionRespuesta:
         avance_fisico_pct=None,
         avance_financiero_pct=fila.avance_financiero_pct,
         estado_cruce=fila.estado_cruce.value,
+        bpins=list(fila.bpins),
+        desglose=[_rubro_a_respuesta(rubro) for rubro in fila.desglose],
     )
+
+
+def _rubro_a_respuesta(rubro: RubroDesglose) -> RubroDesgloseRespuesta:
+    return RubroDesgloseRespuesta(
+        codigo_rubro=rubro.codigo_rubro,
+        presupuesto_definitivo=rubro.presupuesto_definitivo,
+        ejecucion=rubro.ejecucion,
+        contratos=[
+            ContratoDesgloseRespuesta(
+                numero_contrato=contrato.numero_contrato,
+                objeto=contrato.objeto,
+                valor=contrato.valor,
+                valor_pagado=contrato.valor_pagado,
+            )
+            for contrato in rubro.contratos
+        ],
+    )
+
+
+def _meta_en_riesgo_a_respuesta(meta: MetaEnRiesgo) -> FilaEnRiesgoRespuesta:
+    """Reutiliza `_fila_a_respuesta` como única fuente de la conversión
+    entidad->DTO y solo sobrescribe lo que esta lista necesita distinto:
+    `avance_financiero_pct` (nunca `None` aquí, ver `FilaEnRiesgoRespuesta`)
+    y el campo adicional `sin_ejecucion_registrada`."""
+    base = _fila_a_respuesta(meta.fila).model_dump()
+    base["avance_financiero_pct"] = meta.avance_financiero_pct
+    return FilaEnRiesgoRespuesta(**base, sin_ejecucion_registrada=meta.sin_ejecucion_registrada)
 
 
 def _fila_comparacion_a_respuesta(fila: FilaComparacion) -> FilaComparacionRespuesta:
@@ -310,6 +396,9 @@ def _construir_filas_agregadas(sesion: SesionDep, corte_id) -> list[FilaPlanAcci
             presupuesto_apropiado=f.presupuesto_apropiado,
             ejecucion=f.ejecucion,
             numero_contrato=f.numero_contrato,
+            objeto_contrato=f.objeto_contrato,
+            valor_contrato=f.valor_contrato,
+            valor_pagado_contrato=f.valor_pagado_contrato,
         )
         for f in filas_crudas
     ]
@@ -382,6 +471,48 @@ def obtener_plan_accion_actual(
             parcial=resumen.parcial,
             sin_informacion=resumen.sin_informacion,
         ),
+    )
+
+
+@router.get(
+    "/riesgo",
+    response_model=MetasEnRiesgoRespuesta,
+    summary="Metas con menos del 50 % de avance financiero",
+    responses={
+        404: {"description": "No hay ningún corte registrado."},
+        409: {"description": "Al corte más reciente le falta alguna fuente."},
+    },
+)
+def obtener_metas_en_riesgo(
+    servicio: ServicioCortesDep,
+    sesion: SesionDep,
+    usuario: AccesoPlanAccionDep,
+) -> MetasEnRiesgoRespuesta:
+    """[E04-HU07] Metas del corte actual con avance financiero
+    estrictamente menor al 50 %, de menor a mayor avance (CA01, CA03,
+    CA05). Las metas sin presupuesto no se listan; se informa cuántas son
+    (CA04). Una lista vacía es el caso de CA07: el mensaje lo pone el
+    frontend.
+
+    Una meta con presupuesto pero sin ningún dato de ejecución entra en
+    0 % y con `sin_ejecucion_registrada=True` (decisión del PO,
+    2026-11-11, pendiente de ratificar con la clienta junto con la
+    decisión #8 -- ver `domain/riesgo.py`).
+
+    Usa el corte registrado más reciente, igual que `/actual`. "Responsable"
+    (CA06) no se devuelve: decisión #14 abierta.
+    """
+    corte, filas, _resumen = _obtener_filas_filtradas(servicio, sesion, FiltrosPlanAccion())
+    resultado = metas_en_riesgo(filas)
+
+    return MetasEnRiesgoRespuesta(
+        corte_id=corte.id,
+        vigencia=corte.vigencia,
+        fecha_corte=corte.fecha_corte.isoformat(),
+        umbral_pct=UMBRAL_RIESGO_PCT,
+        filas=[_meta_en_riesgo_a_respuesta(m) for m in resultado.en_riesgo],
+        total_en_riesgo=len(resultado.en_riesgo),
+        metas_sin_presupuesto=resultado.sin_presupuesto,
     )
 
 

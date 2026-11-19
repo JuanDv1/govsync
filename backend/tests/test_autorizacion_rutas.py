@@ -85,7 +85,7 @@ class TestRolVisitante:
         assert respuesta.status_code == 403
         cuerpo = respuesta.json()
         assert cuerpo["codigo"] == "permiso_insuficiente"
-        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador", "gestor"}
+        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador"}
 
     def test_visitante_no_puede_reemplazar_archivo_del_corte_actual(self, cliente) -> None:
         """[E02-HU05][CA09]: la restricción por rol de la ruta de reemplazo
@@ -102,4 +102,26 @@ class TestRolVisitante:
         assert respuesta.status_code == 403
         cuerpo = respuesta.json()
         assert cuerpo["codigo"] == "permiso_insuficiente"
-        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador", "gestor"}
+        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador"}
+
+    def test_visitante_no_puede_descartar_un_corte(self, cliente) -> None:
+        """D36: el descarte es borrado fisico; solo `administrador`."""
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _USUARIO_VISITANTE
+
+        respuesta = cliente.delete(f"/api/v1/cortes/{uuid.uuid4()}")
+
+        assert respuesta.status_code == 403
+        cuerpo = respuesta.json()
+        assert cuerpo["codigo"] == "permiso_insuficiente"
+        assert set(cuerpo["detalles"]["roles_requeridos"]) == {"administrador"}
+
+    def test_visitante_no_puede_corregir_un_corte(self, cliente) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _USUARIO_VISITANTE
+
+        respuesta = cliente.patch(
+            f"/api/v1/cortes/{uuid.uuid4()}",
+            json={"vigencia": 2026, "fecha_corte": "2026-09-08"},
+        )
+
+        assert respuesta.status_code == 403
+        assert respuesta.json()["codigo"] == "permiso_insuficiente"

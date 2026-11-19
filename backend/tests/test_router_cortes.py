@@ -90,6 +90,16 @@ class RepositorioCortesEnMemoria(RepositorioCortes):
         self._cortes[corte.id].vigencia = corte.vigencia
         self._cortes[corte.id].fecha_corte = corte.fecha_corte
 
+    def eliminar(self, corte_id: uuid.UUID) -> None:
+        self._cortes.pop(corte_id, None)
+
+    def confirmar_referencia(self, corte: Corte) -> None:
+        if corte.es_referencia:
+            for otro in self._cortes.values():
+                if otro.vigencia == corte.vigencia and otro.id != corte.id:
+                    otro.es_referencia = False
+        self._cortes[corte.id].es_referencia = corte.es_referencia
+
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         if historial.fecha is None:
             historial.fecha = datetime.now(UTC)
@@ -109,6 +119,9 @@ class RepositorioDatosCorteEnMemoria(RepositorioDatosCorte):
 
     def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
         return self.codigos_metas.get(corte_id, set())
+
+    def contar_metas_por_corte(self) -> dict[uuid.UUID, int]:
+        return {}
 
     def reemplazar_metas(self, corte_id: uuid.UUID, metas: list[dict[str, Any]]) -> int:
         self.codigos_metas[corte_id] = {m["cod_indicador_producto"] for m in metas}
@@ -378,6 +391,65 @@ def test_patch_cortes_id_corrige_vigencia_y_fecha_200(cliente):
     assert cuerpo["vigencia"] == 2025
     assert cuerpo["fecha_corte"] == "2026-09-01"
     assert cuerpo["estado"] == "BORRADOR"
+
+
+def test_delete_cortes_id_descarta_borrador_204(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+
+    respuesta = cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.status_code == 204
+    assert cliente.get(f"/api/v1/cortes/{corte_id}").status_code == 404
+
+
+def test_delete_cortes_id_deja_una_linea_de_log_con_el_usuario(cliente, caplog):
+    corte_id = _crear_corte_borrador(cliente)
+
+    with caplog.at_level("INFO", logger="govsync"):
+        cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    linea = next(r.getMessage() for r in caplog.records if "Corte descartado" in r.getMessage())
+    assert f"id={corte_id}" in linea
+    assert f"usuario={USUARIO_DE_PRUEBA.correo}" in linea
+
+
+def test_delete_cortes_id_rechazado_no_deja_log_de_descarte(cliente, caplog):
+    corte_id = _crear_corte_borrador(cliente)
+    corte = cliente.repo_cortes.obtener(uuid.UUID(corte_id))
+    corte.estado = EstadoCorte.REGISTRADO
+    cliente.repo_cortes.confirmar_registro(corte)
+
+    with caplog.at_level("INFO", logger="govsync"):
+        cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    assert not any("Corte descartado" in r.getMessage() for r in caplog.records)
+
+
+def test_delete_cortes_id_libera_el_cupo_de_borrador(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+    cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    respuesta = cliente.post("/api/v1/cortes", json={"vigencia": 2026, "fecha_corte": "2026-09-08"})
+
+    assert respuesta.status_code == 201
+
+
+def test_delete_cortes_id_inexistente_devuelve_404(cliente):
+    respuesta = cliente.delete(f"/api/v1/cortes/{uuid.uuid4()}")
+
+    assert respuesta.status_code == 404
+
+
+def test_delete_cortes_id_sobre_corte_registrado_devuelve_409(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+    corte = cliente.repo_cortes.obtener(uuid.UUID(corte_id))
+    corte.estado = EstadoCorte.REGISTRADO
+    cliente.repo_cortes.confirmar_registro(corte)
+
+    respuesta = cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.status_code == 409
+    assert respuesta.json()["detalles"]["motivo"] == "corte_no_es_borrador"
 
 
 def test_patch_cortes_id_inexistente_devuelve_404(cliente):
@@ -968,3 +1040,74 @@ def test_carga_normal_de_pdt_devuelve_metas_eliminadas_vacio_ca07(cliente_con_le
 
     assert respuesta.status_code == 201
     assert respuesta.json()["metas_eliminadas"] == []
+
+
+# --- D36: seguridad del descarte ------------------------------------------
+
+
+def test_delete_cortes_id_con_id_que_no_es_uuid_devuelve_422(cliente):
+    """El id de ruta se valida como UUID: nada de texto libre hacia la BD."""
+    for malo in ("no-es-uuid", "1", "1%27%20OR%20%271%27=%271"):
+        respuesta = cliente.delete(f"/api/v1/cortes/{malo}")
+
+        assert respuesta.status_code == 422, malo
+
+
+def test_delete_cortes_id_dos_veces_la_segunda_devuelve_404_sin_segundo_log(cliente, caplog):
+    corte_id = _crear_corte_borrador(cliente)
+
+    with caplog.at_level("INFO", logger="govsync"):
+        primera = cliente.delete(f"/api/v1/cortes/{corte_id}")
+        segunda = cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    assert primera.status_code == 204
+    assert segunda.status_code == 404
+    lineas = [r for r in caplog.records if "Corte descartado" in r.getMessage()]
+    assert len(lineas) == 1
+
+
+def test_delete_cortes_id_inexistente_no_deja_log_de_descarte(cliente, caplog):
+    with caplog.at_level("INFO", logger="govsync"):
+        cliente.delete(f"/api/v1/cortes/{uuid.uuid4()}")
+
+    assert not any("Corte descartado" in r.getMessage() for r in caplog.records)
+
+
+def test_delete_cortes_id_respuesta_204_no_trae_cuerpo(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+
+    respuesta = cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.status_code == 204
+    assert respuesta.content == b""
+
+
+def test_delete_cortes_id_409_no_expone_internos_y_conserva_el_corte(cliente):
+    corte_id = _crear_corte_borrador(cliente)
+    corte = cliente.repo_cortes.obtener(uuid.UUID(corte_id))
+    corte.estado = EstadoCorte.REGISTRADO
+    cliente.repo_cortes.confirmar_registro(corte)
+
+    respuesta = cliente.delete(f"/api/v1/cortes/{corte_id}")
+
+    assert respuesta.status_code == 409
+    cuerpo = respuesta.json()
+    assert cuerpo["detalles"]["motivo"] == "corte_no_es_borrador"
+    texto = respuesta.text.lower()
+    assert "traceback" not in texto
+    assert "sqlalchemy" not in texto
+    # El corte REGISTRADO sigue consultable: no se borro nada.
+    assert cliente.get(f"/api/v1/cortes/{corte_id}").status_code == 200
+
+
+def test_delete_cortes_id_no_borra_otros_cortes(cliente):
+    registrado_id = _crear_corte_borrador(cliente)
+    corte = cliente.repo_cortes.obtener(uuid.UUID(registrado_id))
+    corte.estado = EstadoCorte.REGISTRADO
+    cliente.repo_cortes.confirmar_registro(corte)
+    borrador = cliente.post("/api/v1/cortes", json={"vigencia": 2026, "fecha_corte": "2026-09-01"})
+    assert borrador.status_code == 201
+
+    cliente.delete(f"/api/v1/cortes/{borrador.json()['id']}")
+
+    assert cliente.get(f"/api/v1/cortes/{registrado_id}").status_code == 200

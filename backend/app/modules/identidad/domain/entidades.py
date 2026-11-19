@@ -48,7 +48,7 @@ class Rol(StrEnum):
     """Los tres roles de E-01 (D23, docs/DECISIONES.md)."""
 
     ADMINISTRADOR = "administrador"  # gestión completa
-    GESTOR = "gestor"  # sube/corrige cortes y archivos
+    GESTOR = "gestor"  # Supervisor (Épica 3); D37: sin módulos en esta versión
     VISITANTE = "visitante"  # solo lectura
 
 

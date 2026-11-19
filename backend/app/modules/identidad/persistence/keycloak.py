@@ -76,7 +76,25 @@ class VerificadorTokenKeycloak(VerificadorToken):
                 "El token de Keycloak no tiene los claims esperados (sub/email)."
             )
 
-        roles_crudos = claims.get("realm_access", {}).get("roles", [])
-        roles = frozenset(Rol(r) for r in roles_crudos if r in _ROLES_VALIDOS)
+        roles = frozenset(Rol(r) for r in _roles_del_realm(claims) if r in _ROLES_VALIDOS)
 
         return Usuario(id=sub, correo=correo, roles=roles)
+
+
+def _roles_del_realm(claims: dict) -> list[str]:
+    """Lee `realm_access.roles` validando su forma.
+
+    Que el claim falte es legítimo (Keycloak lo omite si al cliente le
+    quitan el scope `roles`): la cuenta queda sin roles y E-01/HU-01 CA05 la
+    rechaza con 403. Que exista con otra forma no lo es: antes producía un
+    500 (AttributeError/TypeError); ahora se rechaza como token no válido,
+    igual que un token sin `sub`/`email`.
+    """
+    realm_access = claims.get("realm_access", {})
+    if not isinstance(realm_access, dict):
+        raise CredencialesInvalidas("El claim realm_access del token no tiene la forma esperada.")
+
+    roles = realm_access.get("roles", [])
+    if not isinstance(roles, list) or not all(isinstance(r, str) for r in roles):
+        raise CredencialesInvalidas("El claim realm_access.roles no tiene la forma esperada.")
+    return roles

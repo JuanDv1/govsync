@@ -415,6 +415,10 @@ original dejó abiertas:
    de reemplazo por tipo (HU-06, `registrar_archivo`), sin relación con
    este PATCH.
 
+**Aclaración (2026-11-10):** corregir vigencia/fecha no era la única salida
+para un borrador equivocado: también se necesita poder descartarlo (ver
+D36, `DELETE /cortes/{id}`).
+
 ---
 
 ## D12 · Límite de tamaño de archivo verificado en el cliente
@@ -1079,6 +1083,9 @@ elegir Keycloak.
   despliegue en producción todavía pendiente (Keycloak propio vs
   gestionado).
 
+**Nota (2026-11-18):** el punto 1 (dónde corre Keycloak en producción) queda
+resuelto por **D39** (Render, Web Service Docker).
+
 **Las 4 preguntas pendientes, resueltas (2026-10-02):**
 
 1. **Infraestructura:** solo local por ahora (`docker-compose.yml`), sin
@@ -1170,7 +1177,9 @@ cerrada sin resolverlos:**
 - **HU01-CA03/CA04** (bloqueo 3 intentos/15 min; expiración por
   inactividad de 30 min): ya no dependen de configuración manual —
   resuelto junto con el punto siguiente (provisión automática del
-  realm).
+  realm). _Actualización 2026-11-16 (PO): el bloqueo pasa a 5 min y el
+  aviso al usuario es un bloqueo visual por navegador; ver
+  `docs/SEGURIDAD.md` ("sesión del usuario")._
 
 **Actualización (2026-10-13) — el realm ya no se configura a mano:**
 `keycloak/import/govsync-realm.json` (exportado del realm que se había
@@ -1240,6 +1249,15 @@ módulo sin autenticación. Corregido para seguir la misma regla que los
 otros cuatro de lectura: autenticado, cualquier rol. La tabla de arriba
 no se reescribe (quedaría desactualizada respecto al estado en que fue
 ratificada); esta nota deja registrado el hallazgo y la corrección.
+
+**Actualización 2026-11-10 (D36):** `DELETE /cortes/{id}` (descartar un
+borrador) sigue la regla de escritura de los demás endpoints de
+`cortes`: hoy solo `administrador`, por la actualización siguiente (D37).
+
+**Actualización 2026-11-11 (D37):** el `gestor` deja de tener permisos en
+`cortes`/`trazabilidad`. Escritura: solo `administrador`. Lectura:
+`administrador` o `visitante` (`LecturaDep`), ya no "cualquier rol". La
+tabla de arriba no se reescribe, por el mismo motivo que la nota anterior.
 ---
 
 ## D25 · [E02-HU05] Reemplazo de archivos del corte actual: Opción B, y hallazgos resueltos
@@ -1949,3 +1967,252 @@ vigente hasta que lo ratifique.
 
 **Registrado:** 2026-10-25, Juan David (frontend). Actualizado el 2026-10-25
 con las decisiones del equipo.
+
+---
+
+## D36 · Descartar un corte en BORRADOR: `DELETE /cortes/{id}`, auditado solo en el log
+
+**Clasificación:** Registro de tarjeta.
+
+**Hallazgo (2026-11-10, probando el flujo):** al crear un corte con una
+vigencia equivocada (p. ej. un año distinto al del PDT), la carga del PDT se
+rechaza correctamente, pero el corte queda en BORRADOR sin salida: D11
+impide crear otro mientras exista uno, el backend ya tenía
+`PATCH /cortes/{id}` (D11, aclaración 2026-09-19) pero el frontend nunca lo
+consumía, y no existía forma de eliminar un borrador. Es el mismo tipo de
+hueco que D21: backend con la capacidad, sin punto de entrada en la UI.
+
+**Decisión:**
+
+- `DELETE /cortes/{id}` elimina un corte en BORRADOR y, en cascada (`ON
+DELETE CASCADE` de la BD), todo lo que se hubiera cargado. Un corte
+  REGISTRADO se rechaza con 409 (`detalles.motivo: corte_no_es_borrador`):
+  el histórico no se borra por este flujo. Rol: solo
+  `administrador` (D24, actualizada por D37).
+- `NuevoCorte.jsx` ofrece, mientras el corte está en BORRADOR, "Corregir
+  vigencia o fecha" (PATCH existente) y "Descartar borrador" (con
+  confirmación).
+- **Auditoría solo en el log de la aplicación, sin tabla.** Al confirmarse
+  el borrado se escribe una línea INFO en el logger `govsync`:
+  `Corte descartado: id=… vigencia=… fecha_corte=… usuario=<correo>`. No se
+  escribe si el borrado se rechaza (409/404) ni si falla. Motivo: un
+  BORRADOR todavía no es un dato del histórico; el historial de auditoría de
+  [E02-HU05] (D25) existe para reemplazos sobre el corte REGISTRADO actual.
+  Una tabla nueva exigiría una migración (D1) y una decisión sobre qué se
+  guarda que ninguna tarjeta ha pedido. Límite: el log no se consulta desde
+  la aplicación.
+
+**Lo leí (verificado en código):** `ultimo_registrado()` solo considera
+cortes REGISTRADO como base de reutilización (`persistence/repositorios.py`);
+el router de `plan_accion` rechaza comparar contra un BORRADOR; el caso de
+uso `descartar_corte` recibe `usuario.correo` del router, igual que
+`reemplazar_archivo_corte_actual`.
+
+**Lo supongo (no verificado con la clienta):** que descartar un borrador no
+necesita trazabilidad consultable. Si la clienta o el docente la exigen, el
+paso siguiente es una tabla `historial_descarte_corte` (corte descartado, vigencia, fecha,
+usuario, instante) escrita en la misma transacción del borrado, igual que
+`registrar_historial_reemplazo`.
+
+**Alternativas consideradas:**
+
+- Marcar el corte como `DESCARTADO` (borrado lógico) en vez de eliminarlo.
+  Descartada por ahora: añade un tercer estado a D7 y obliga a excluirlo en
+  cada consulta; el índice único de D9 (vigencia + fecha) seguiría
+  bloqueando recrear el mismo corte.
+- Solo corregir con PATCH, sin descartar. Descartada: no cubre abandonar un
+  borrador que ya no se quiere.
+
+**Estado:** RATIFICADA — aprobada por Cristhian el 2026-11-10 (opción
+"log de la aplicación"). Reabrible si la clienta o el docente piden
+trazabilidad consultable; entonces se agrega la tabla descrita arriba.
+
+**Registrado:** 2026-11-10, Cristhian (`CrisCamUO`).
+
+---
+
+## D37 · El rol `gestor` no tiene módulos habilitados en esta versión
+
+**Clasificación:** Decisión de alcance y seguridad (afecta a D24 y D26).
+
+**Contexto:** el `gestor` (Supervisor) existe en Keycloak, pero su función
+principal es la Épica 3 (avance físico), que quedó fuera del Sprint 3
+(Planning 2026-10-28). Hasta hoy D24 le daba los mismos permisos que a
+`administrador` en `cortes` (crear, cargar, corregir, reemplazar y registrar
+cortes) y lectura de `cortes`/`trazabilidad`; D26 ya lo excluía del Plan de
+Acción. En el frontend no tenía vista inicial definida.
+
+**Decisión (PO, 2026-11-11):**
+
+- El `gestor` recibe **403 en todas las rutas** de la API, de lectura y de
+  escritura. Lectura de `cortes`/`trazabilidad`: `LecturaDep`
+  (`administrador` o `visitante`, en `core/dependencias.py`). Escritura de
+  `cortes`: `EscrituraDep` = solo `administrador`.
+- En el frontend, `RutaProtegida` muestra `PantallaSinAcceso` ("Su rol no
+  tiene módulos habilitados en esta versión") en lugar de todo el layout,
+  también al entrar por URL directa. No se monta ningún módulo ni se hace
+  ninguna petición.
+- Una cuenta con `gestor` **y** otro rol con módulos entra normalmente con
+  los permisos de ese otro rol.
+- Una cuenta **sin** rol de GovSync sigue siendo E-01/HU-01 CA05 (otro
+  mensaje, PR #203); `PantallaSinAcceso` es genérica para que esa pantalla
+  la reutilice.
+
+**Motivo:** ocultar las pantallas no basta: con solo el cambio de frontend,
+un `gestor` seguía pudiendo crear y reemplazar cortes llamando a la API.
+
+**Verificación:** `tests/test_gestor_sin_modulos_todas_las_rutas.py` lee las
+rutas del esquema OpenAPI (igual que la prueba de CA05), así que un
+endpoint nuevo que deje entrar al gestor hace fallar la prueba.
+
+**Pendiente / reabrir:**
+
+- Cuando la Épica 3 entre, el `gestor` se agrega a los endpoints que la
+  necesiten (no de forma global) y sale de `ROLES_SIN_MODULOS`
+  (`frontend/src/auth/roles.js`).
+- Registrar en el levantamiento: contradice el CA01 de HU_E01_01 v3.0
+  ("Supervisor → Metas de su sector") mientras la Épica 3 no exista.
+
+**Estado:** RATIFICADA por el PO el 2026-11-11.
+
+**Registrado:** 2026-11-11.
+
+---
+
+## D38 · Plan de Acción público sin credenciales (`/api/v1/publico/plan-accion/actual`)
+
+**Clasificación:** Decisión de alcance y seguridad (afecta a D24, D26 y D37).
+
+> Numeración: D36 la reserva el PR #208 (descartar un borrador), todavía sin
+> fusionar; por eso esta decisión usa D38.
+
+**Contexto:** E-01/HU-01 pide que un visitante vea el Plan de Acción sin
+iniciar sesión. Hasta hoy toda la API exigía token y rol (D24, D26, D37),
+salvo `/health` y `/api/v1/salud`. Los datos son información pública
+municipal (Ley 1712 de 2014, ver `docs/SEGURIDAD.md`).
+
+**Decisión (PO, tarjeta de Trello `xWZexNPp`, parte backend):**
+
+1. **Variante A: endpoints públicos aparte.** Prefijo
+   `/api/v1/publico/plan-accion`, solo `GET`, sin token. Los
+   `/api/v1/plan-accion/*` siguen exigiendo rol y no se modificaron.
+2. **Un solo endpoint:** `GET /api/v1/publico/plan-accion/actual` (corte
+   REGISTRADO más reciente; mismos 404 y 409 que `/plan-accion/actual`).
+   Sin exportar ni comparar.
+3. **DTO público propio**, independiente del protegido (no hereda de él): misma
+   forma que `/plan-accion/actual` (`corte_id`, `vigencia`, `fecha_corte`,
+   `filas`, `resumen`; `bpins`, `rubros`, `cod_bpin`, números de contrato), pero
+   en `desglose[].contratos[]` solo `numero_contrato`: sin `objeto`, `valor` ni
+   `valor_pagado`. Una lista blanca de claves en las pruebas evita que un campo
+   nuevo del DTO protegido se publique por accidente.
+4. **Límite de peticiones solo para el prefijo público**: middleware ASGI propio
+   en memoria (`core/limite_peticiones.py`), sin dependencia nueva. Por defecto
+   60 peticiones por 60 s por cliente (`PUBLICO_LIMITE_PETICIONES`,
+   `PUBLICO_VENTANA_SEGUNDOS`). Respuesta 429 con el sobre
+   `{codigo: "limite_peticiones_excedido", mensaje, detalles:
+{reintentar_en_segundos}}` y cabecera `Retry-After`.
+5. **IP del cliente:** `PUBLICO_PROXIES_CONFIABLES` (por defecto 0 = IP del
+   socket). Con N = se toma la entrada N contando desde la derecha de
+   `X-Forwarded-For`; nunca se confía en más entradas que las configuradas.
+6. **Nunca es público:** escritura, Gestión de Cortes, matriz, historial,
+   registros no relacionados (HU-05), exportación y comparación.
+7. El rol `visitante` de Keycloak **no se borra**: sigue siendo el rol de
+   lectura con sesión iniciada.
+
+**Alternativas del límite (descartadas):** dependencia nueva (`slowapi`):
+no resuelve varios procesos y agrega cadena de suministro; almacén compartido
+(Redis/Postgres): solo se justifica si se activan varios procesos.
+
+**Decisiones técnicas del Agente 1 (no del PO):**
+
+- Ventana fija (permite una ráfaga de hasta 2x el límite al cambiar de
+  ventana) por simplicidad de memoria O(1) por cliente.
+- Memoria acotada (`PUBLICO_MAX_CLIENTES`, 10 000): al llenarse se descartan
+  primero los contadores vencidos y luego los más antiguos. Se prefiere relajar
+  el límite a rechazar clientes nuevos, que dejaría sin servicio a todos ante
+  un atacante con muchas IP.
+- IPv6 se agrupa por `/64`; una IPv4 mapeada en IPv6 cuenta como IPv4.
+- Se limita todo el prefijo `/api/v1/publico`, existan o no las rutas (también
+  los 404).
+- La ruta pública se agrega POR NOMBRE a `RUTAS_PUBLICAS` de
+  `test_ca05_sin_rol_todas_las_rutas.py`; así un endpoint nuevo bajo
+  `/publico` no queda exento por prefijo y hay que decidirlo a propósito.
+
+**Limitaciones conocidas:**
+
+- El límite es **por proceso**: con N procesos el tope real por cliente es N
+  veces el configurado. Hoy el Dockerfile arranca un solo `uvicorn`.
+- **SUPUESTO a verificar en el despliegue (tarjeta [DEV]):** que en Render el
+  proxy agregue la IP del cliente como última entrada de `X-Forwarded-For` y
+  que baste `PUBLICO_PROXIES_CONFIABLES=1`. Con un valor mayor al real, el
+  cliente puede falsificar su IP; con uno menor, todos comparten la IP del
+  proxy y comparten el mismo contador.
+
+**Verificación:** `tests/test_router_publico_plan_accion.py` (200 sin token,
+lista blanca, sin datos del contrato, 404/409, parámetros ignorados, una sola
+ruta pública, y 401 sin token en las demás rutas leídas del OpenAPI),
+`tests/test_limite_peticiones.py` (429, `X-Forwarded-For` con 0 y 1 proxy,
+IPv6, memoria acotada) y las excepciones explícitas en
+`test_ca05_sin_rol_todas_las_rutas.py` y
+`test_gestor_sin_modulos_todas_las_rutas.py`.
+
+**Pendiente:** parte frontend de la tarjeta (pantalla pública y entrada sin
+login); verificar el supuesto de proxies en Render.
+
+**Estado:** DECIDIDA por el PO (decisiones 1 a 7 y valores del límite);
+detalles técnicos pendientes de revisión del equipo en el PR.
+
+**Registrado:** 2026-11-16.
+
+**Riesgos conocidos (revisión del Agente 2):**
+
+- Sin caché: cada petición pública ejecuta el pipeline completo del corte. El
+  corte REGISTRADO no cambia, así que una caché en memoria por `corte.id` con
+  TTL corto es la mejora natural; queda fuera de este PR. Mientras tanto el
+  límite por cliente es la única defensa y un atacante con muchas IP la
+  multiplica.
+- `PUBLICO_PROXIES_CONFIABLES=0` en producción hace que todos compartan un
+  contador (auto-bloqueo); el arranque registra un WARNING en ese caso.
+  Debe fijarse en el despliegue (tarjeta [DEV]).
+- Todo el prefijo cuenta, también los 404 y la redirección 307 por barra final.
+- `router_publico.py` importa `_obtener_filas_filtradas` (privado de
+  `router.py`); renombrarlo toca el router protegido y se difiere.
+
+## D39 · Keycloak en producción: Web Service Docker en Render, esquema `keycloak` de la misma base
+
+**Clasificación:** Decisión técnica de infraestructura (cierra la pregunta
+abierta de D23 punto 1: dónde corre Keycloak en producción).
+
+**Decisión:** Keycloak se despliega como Web Service Docker de Render
+(self-host, no gestionado), construido desde `keycloak/Dockerfile` e importando
+`keycloak/import/govsync-realm.json`. Comparte la única base gratis de Render
+con el backend, en el esquema `keycloak`. El frontend sigue en Vercel, con
+`frontend/vercel.json` para el fallback de SPA.
+
+**Motivo:** el plan gratis solo permite una base por cuenta y la release del
+Sprint 3 no tiene presupuesto para un Keycloak gestionado.
+
+**Consecuencias:** `docs/DESPLIEGUE.md` §"Keycloak en Render" (pasos, variables,
+renovación de la base, límites). La URL del frontend entra al realm por el
+placeholder `${GOVSYNC_FRONTEND_URL:http://localhost:5173}`; los 3 usuarios de
+prueba conservan su contraseña pública y deben cambiarse en la consola tras el
+primer arranque. El plan gratis se duerme a los 15 min y la base expira: ambos
+caen a la vez. Alternativa descartada: Keycloak gestionado por un tercero.
+
+**Decisiones del PO tras la revisión (2026-11-18):** los usuarios de prueba se
+mantienen pero su contraseña sale de `GOVSYNC_CLAVE_*` (obligatorias en Render);
+`directAccessGrantsEnabled=false` en `govsync-backend`; el backend exige
+`https://` en `KEYCLOAK_ISSUER` en producción y normaliza la barra final; `/admin`
+público aceptado por ahora (contraseña fuerte por variable). Pendientes
+explícitos: job de CI que construya la imagen y 503 cuando Keycloak está dormido.
+
+**Revisión de Juan Esteban (2026-11-18):** la imagen falla cerrada si en producción
+falta alguna `GOVSYNC_CLAVE_*` o `KC_BOOTSTRAP_ADMIN_PASSWORD` o son las claves
+públicas (`keycloak/entrypoint.sh`). Verificado en Render: JDBC interno, puerto
+8080, https tras el proxy, issuer, import, tema y clave pública rechazada. Sin
+verificar: tope de conexiones. Cabeceras de seguridad en Vercel y restringir
+`/admin`, pendientes.
+
+**Estado:** PROPUESTA — pendiente de validar con un despliegue real en Render.
+
+**Registrado:** 2026-11-18.

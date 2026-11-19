@@ -96,6 +96,27 @@ class RepositorioCortes(ABC):
         """
 
     @abstractmethod
+    def eliminar(self, corte_id: uuid.UUID) -> None:
+        """Elimina el corte y, en cascada, todos sus datos (archivos, metas,
+        proyectos, presupuesto, historial). El dominio ya validó el estado
+        (`Corte.verificar_descartable()`), pero la implementación debe
+        re-verificarlo en el propio DELETE (carrera con `registrar`):
+        `RecursoNoEncontrado` si ya no existe, `OperacionNoPermitida`
+        (`corte_no_es_borrador`) si dejó de ser BORRADOR.
+        """
+
+    @abstractmethod
+    def confirmar_referencia(self, corte: Corte) -> None:
+        """[E02-HU08][CA04]: persiste `corte.es_referencia`.
+
+        Si el corte queda marcado, quita la marca del corte de referencia
+        anterior de la MISMA vigencia en la misma transacción ("marcar otro
+        corte de la vigencia mueve la estrella"). Si otra petición marcó otro
+        corte de esa vigencia al mismo tiempo, lanza `OperacionNoPermitida`
+        (409) en vez de dejar pasar el error crudo del índice único.
+        """
+
+    @abstractmethod
     def registrar_historial_reemplazo(self, historial: HistorialReemplazoArchivo) -> None:
         """[E02-HU05][CA06]: persiste un registro de auditoría de reemplazo.
 
@@ -137,6 +158,16 @@ class RepositorioDatosCorte(ABC):
     def listar_codigos_metas(self, corte_id: uuid.UUID) -> set[str]:
         """[E02-HU05][CA07]: códigos de indicador de producto de las metas
         que el corte tiene hoy cargadas (`set()` si no tiene ninguna)."""
+
+    @abstractmethod
+    def contar_metas_por_corte(self) -> dict[uuid.UUID, int]:
+        """[E02-HU08][CA03]: cantidad de metas DISTINTAS (por código de
+        indicador de producto) de cada corte, en UNA sola consulta agrupada
+        para todo el histórico (nunca una consulta por corte).
+
+        Es la misma población que el Plan de Acción agrega por meta
+        (`agregar_por_meta`): todas las metas del corte, sin filtrar. Un
+        corte sin metas no aparece en el diccionario."""
 
     @abstractmethod
     def copiar_datos(

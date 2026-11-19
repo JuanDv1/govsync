@@ -39,6 +39,7 @@ Checklist de esa tarjeta:
 
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import date
 from typing import TYPE_CHECKING
@@ -50,6 +51,7 @@ from app.modules.cortes.application.validacion_archivos import (
 from app.modules.cortes.domain.entidades import (
     ArchivoFuente,
     Corte,
+    EstadoCorte,
     HistorialReemplazoArchivo,
     TipoArchivoFuente,
 )
@@ -58,6 +60,9 @@ from app.shared.errors import OperacionNoPermitida, RecursoNoEncontrado
 
 if TYPE_CHECKING:
     from app.modules.ingesta.domain.contratos import LectorArchivoFuente, ResultadoLectura
+
+
+_log = logging.getLogger("govsync")
 
 
 class ServicioCortes:
@@ -429,8 +434,84 @@ class ServicioCortes:
             raise
         return corte
 
+    def descartar_corte(self, corte_id, usuario: str) -> None:
+        """Descarta (elimina) un corte en BORRADOR, para poder empezar de
+        nuevo cuando se creó con una vigencia/fecha equivocada y D11 impide
+        crear otro borrador mientras éste exista.
+
+        Un corte REGISTRADO se rechaza en el dominio
+        (`Corte.verificar_descartable()`).
+
+        D36: el descarte no tiene tabla de auditoría; deja una línea en el
+        log de la aplicación (quién, qué corte), escrita solo cuando el
+        borrado ya se confirmó.
+        """
+        corte = self._cortes.obtener(corte_id)
+        if corte is None:
+            raise RecursoNoEncontrado(f"No existe un corte con id {corte_id}.")
+        corte.verificar_descartable()
+        try:
+            self._cortes.eliminar(corte_id)
+            self._commit()
+        except Exception:
+            self._rollback()
+            raise
+        _log.info(
+            "Corte descartado: id=%s vigencia=%s fecha_corte=%s usuario=%s",
+            corte_id,
+            corte.vigencia,
+            corte.fecha_corte.isoformat(),
+            usuario,
+        )
+
+    def marcar_como_referencia(self, corte_id) -> Corte:
+        """[E02-HU08][CA04]: marca el corte como el de referencia de su
+        vigencia. El dominio exige que esté REGISTRADO; el repositorio quita
+        la marca del anterior de la misma vigencia en la misma transacción.
+        Marcar un corte que ya es el de referencia no cambia nada."""
+        corte = self._obtener_o_404(corte_id)
+        corte.marcar_como_referencia()
+        return self._persistir_referencia(corte)
+
+    def desmarcar_referencia(self, corte_id) -> Corte:
+        """[E02-HU08][CA04]: quita la marca. Idempotente: un corte sin marca
+        queda igual."""
+        corte = self._obtener_o_404(corte_id)
+        corte.desmarcar_referencia()
+        return self._persistir_referencia(corte)
+
+    def _obtener_o_404(self, corte_id) -> Corte:
+        corte = self._cortes.obtener(corte_id)
+        if corte is None:
+            raise RecursoNoEncontrado(f"No existe un corte con id {corte_id}.")
+        return corte
+
+    def _persistir_referencia(self, corte: Corte) -> Corte:
+        try:
+            self._cortes.confirmar_referencia(corte)
+            self._commit()
+        except Exception:
+            self._rollback()
+            raise
+        return corte
+
     def listar_cortes(self) -> list[Corte]:
         return self._cortes.listar()
+
+    def listar_cortes_con_cantidad_metas(self) -> list[tuple[Corte, int | None]]:
+        """[E02-HU08][CA03]: histórico de cortes con la cantidad de metas de
+        cada uno. Dos consultas en total sin importar cuántos cortes haya
+        (la lista y un conteo agrupado), nunca una por corte.
+
+        Regla (decisión del PO del 2026-11-11, tarjeta HU08-CA03): un corte
+        que aún no está finalizado (BORRADOR) no tiene cantidad -> `None`,
+        que el frontend muestra como "—" (no 0: sus metas pueden cambiar
+        todavía). Un corte REGISTRADO sin metas -> 0."""
+        conteos = self._datos.contar_metas_por_corte()
+        return [
+            (corte, conteos.get(corte.id, 0) if corte.estado is EstadoCorte.REGISTRADO else None)
+            for corte in self._cortes.listar()
+        ]
 
     def obtener_corte(self, corte_id) -> Corte:
         """[HU-01][FE-01] GET /cortes/{id}: detalle de un corte.

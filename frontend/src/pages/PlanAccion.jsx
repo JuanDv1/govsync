@@ -93,6 +93,19 @@
  * botón está deshabilitado con el aviso "Se necesitan al menos 2 cortes de la
  * vigencia" visible a su lado. Si esa consulta falla, el botón queda
  * deshabilitado con su propio aviso y el resto de la pantalla sigue igual.
+ *
+ * TARJETA: [E-01/HU-01] FE - Acceso como visitante sin credenciales
+ * MODO PÚBLICO (`publico`): la misma pantalla, montada fuera de
+ * `RutaProtegida` por `PlanAccionPublico.jsx`. Cambia SOLO esto: pide los
+ * datos a `api.planAccionPublicoActual` (sin token, ver api/cliente.js); no
+ * muestra "Exportar a Excel" ni "Comparar cortes" y no consulta
+ * `cortesDisponibles` (requiere sesión); el detalle no lleva el aviso de
+ * "objeto, valor y estado del contrato" (el DTO público nunca los trae, así
+ * que no se promete); y los errores no muestran `mensaje`, `codigo` ni
+ * `detalles` del backend (en una pantalla abierta no se exponen datos
+ * internos como los archivos que faltan) y sus textos no hablan de cargar ni
+ * de pedir acceso. Los filtros,
+ * la tabla y el detalle son los mismos. Un 429 dice "Demasiadas consultas".
  */
 import {
   ArrowLeftRight,
@@ -103,7 +116,7 @@ import {
   Info,
 } from "lucide-react";
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from "react";
-import { api } from "../api/cliente.js";
+import { api, ErrorApi } from "../api/cliente.js";
 import { IconoCargando } from "../components/BotonExportarExcel.jsx";
 import { Cargando, EstadoError, Vacio } from "../components/Estados.jsx";
 import FiltrosPlanAccion from "../components/FiltrosPlanAccion.jsx";
@@ -220,7 +233,7 @@ function estadoDeCruce(fila) {
   );
 }
 
-function FilaPlan({ fila, indice, abierta, onAlternar }) {
+function FilaPlan({ fila, indice, abierta, publico, onAlternar }) {
   const estado = estadoDeCruce(fila);
   const codigo = fila.cod_indicador_producto;
   const idDetalle = `detalle-${codigo}`;
@@ -297,7 +310,7 @@ function FilaPlan({ fila, indice, abierta, onAlternar }) {
           <StateBadge texto={estado.texto} tono={estado.tono} tamano="grande" />
         </td>
       </tr>
-      {abierta && <DetalleMeta fila={fila} id={idDetalle} />}
+      {abierta && <DetalleMeta fila={fila} id={idDetalle} publico={publico} />}
     </Fragment>
   );
 }
@@ -377,7 +390,7 @@ function Cifra({ etiqueta, valor, formato, barra = false }) {
  * tabla, y sin eso el panel se iría con el scroll horizontal. El orden visual
  * (meta y BPIN, luego rubros y contratos) sigue la cadena de CA03.
  */
-function DetalleMeta({ fila, id }) {
+function DetalleMeta({ fila, id, publico }) {
   const estado = estadoDeCruce(fila);
   const codigo = fila.cod_indicador_producto;
 
@@ -455,18 +468,20 @@ function DetalleMeta({ fila, id }) {
             </Card>
           </div>
 
-          <p className="mt-4 flex items-start gap-2 text-campo text-gray-600">
-            <Info
-              size={16}
-              aria-hidden="true"
-              className="mt-0.5 shrink-0 text-azul"
-            />
-            <span>
-              Por ahora se muestran los números de contrato y los códigos de
-              rubro. El detalle de cada contrato (objeto, valor y estado) se
-              agregará más adelante.
-            </span>
-          </p>
+          {!publico && (
+            <p className="mt-4 flex items-start gap-2 text-campo text-gray-600">
+              <Info
+                size={16}
+                aria-hidden="true"
+                className="mt-0.5 shrink-0 text-azul"
+              />
+              <span>
+                Por ahora se muestran los números de contrato y los códigos de
+                rubro. El detalle de cada contrato (objeto, valor y estado) se
+                agregará más adelante.
+              </span>
+            </p>
+          )}
         </div>
       </td>
     </tr>
@@ -498,7 +513,7 @@ function Leyenda() {
   );
 }
 
-function TablaPlan({ filas }) {
+function TablaPlan({ filas, publico }) {
   // Filas abiertas, por código de meta: pueden estar abiertas varias a la vez.
   const [abiertas, setAbiertas] = useState(() => new Set());
 
@@ -577,6 +592,7 @@ function TablaPlan({ filas }) {
             fila={fila}
             indice={indice}
             abierta={abiertas.has(fila.cod_indicador_producto)}
+            publico={publico}
             onAlternar={alternar}
           />
         ))}
@@ -585,8 +601,47 @@ function TablaPlan({ filas }) {
   );
 }
 
+//: Modo público: todos los errores llevan texto fijo; ninguno muestra el
+//: `mensaje`, el `codigo` ni los `detalles` del backend (ver el comentario del
+//: módulo).
+const MENSAJE_429 = "Demasiadas consultas, intente en un momento";
+const MENSAJE_409_PUBLICO = "El Plan de Acción todavía no está disponible";
+const MENSAJE_GENERICO_PUBLICO = "No se pudo cargar el Plan de Acción";
+
+function ErrorPlanPublico({ error, onReintentar }) {
+  if (error.estado === 429) {
+    return (
+      <EstadoError
+        error={{ message: MENSAJE_429, detalles: {} }}
+        accionSugerida="Espere unos segundos y pulse «Reintentar»."
+        onReintentar={onReintentar}
+      />
+    );
+  }
+  if (error.estado === 409) {
+    return (
+      <EstadoError
+        error={{ message: MENSAJE_409_PUBLICO, detalles: {} }}
+        accionSugerida="Intente de nuevo más tarde."
+        onReintentar={onReintentar}
+      />
+    );
+  }
+  // Lista blanca: del backend no se muestra ni `mensaje` ni `codigo` ni
+  // `detalles`. Solo el mensaje LOCAL de `error_red` (lo escribe el cliente).
+  const mensaje =
+    error.codigo === "error_red" ? error.message : MENSAJE_GENERICO_PUBLICO;
+  return (
+    <EstadoError
+      error={{ message: mensaje, detalles: {} }}
+      accionSugerida="Intente de nuevo. Si el problema continúa, comuníquese con la Alcaldía."
+      onReintentar={onReintentar}
+    />
+  );
+}
+
 /** Qué mostrar según el error del backend (CA09 y CA10). */
-function ErrorPlan({ error, onReintentar }) {
+function ErrorPlan({ error, publico, onReintentar }) {
   if (error.estado === 404) {
     return (
       <Vacio
@@ -594,6 +649,9 @@ function ErrorPlan({ error, onReintentar }) {
         descripcion="El Plan de Acción se arma con el corte registrado más reciente."
       />
     );
+  }
+  if (publico) {
+    return <ErrorPlanPublico error={error} onReintentar={onReintentar} />;
   }
   if (error.estado === 403) {
     return (
@@ -654,7 +712,7 @@ function BotonCompararCortes({ vigencia, cortes, error }) {
   );
 }
 
-function ContenidoPlan({ datos }) {
+function ContenidoPlan({ datos, publico }) {
   const [filtros, setFiltros] = useState(FILTROS_PLAN_VACIOS);
   // Lo que la persona escribe en "Meta". `filtros.busqueda` guarda solo el
   // texto ya aplicable (3 o más caracteres, recortado).
@@ -683,6 +741,9 @@ function ContenidoPlan({ datos }) {
   });
 
   useEffect(() => {
+    // Modo público: no hay sesión, y esta consulta la exige.
+    if (publico) return undefined;
+
     const clave = datos.vigencia;
     let vigente = true;
 
@@ -698,7 +759,7 @@ function ContenidoPlan({ datos }) {
     return () => {
       vigente = false;
     };
-  }, [datos.vigencia]);
+  }, [datos.vigencia, publico]);
 
   const cortesListos = cortes.clave === datos.vigencia;
 
@@ -784,7 +845,7 @@ function ContenidoPlan({ datos }) {
   // `try` para que un fallo al guardar también caiga en el mensaje de error
   // (CA08); el `finally` baja el cerrojo y `exportando` pase lo que pase.
   async function exportar() {
-    if (sinResultados || refExportando.current) return;
+    if (publico || sinResultados || refExportando.current) return;
     refExportando.current = true;
     setExportando(true);
     // Un intento nuevo borra el mensaje anterior: nunca quedan juntos un
@@ -839,24 +900,28 @@ function ContenidoPlan({ datos }) {
               botón. El estado deshabilitado no depende solo del color: borde
               discontinuo, cursor de "no permitido" y, al exportar, el texto
               cambia y gira un icono (solo si la persona acepta animaciones). */}
-          <Boton
-            variante="secundario"
-            icono={exportando ? IconoCargando : Download}
-            onClick={exportar}
-            deshabilitado={sinResultados}
-            aria-disabled={exportando || undefined}
-            aria-busy={exportando}
-            title={sinResultados ? "No hay metas para exportar" : undefined}
-            className="aria-disabled:cursor-progress aria-disabled:bg-gray-50"
-          >
-            {exportando ? "Generando archivo…" : "Exportar a Excel"}
-          </Boton>
+          {!publico && (
+            <>
+              <Boton
+                variante="secundario"
+                icono={exportando ? IconoCargando : Download}
+                onClick={exportar}
+                deshabilitado={sinResultados}
+                aria-disabled={exportando || undefined}
+                aria-busy={exportando}
+                title={sinResultados ? "No hay metas para exportar" : undefined}
+                className="aria-disabled:cursor-progress aria-disabled:bg-gray-50"
+              >
+                {exportando ? "Generando archivo…" : "Exportar a Excel"}
+              </Boton>
 
-          <BotonCompararCortes
-            vigencia={datos.vigencia}
-            cortes={cortesListos ? cortes.datos : null}
-            error={cortesListos ? cortes.error : null}
-          />
+              <BotonCompararCortes
+                vigencia={datos.vigencia}
+                cortes={cortesListos ? cortes.datos : null}
+                error={cortesListos ? cortes.error : null}
+              />
+            </>
+          )}
 
           {/* La región live existe SIEMPRE: una región que se monta ya con
               el texto no se anuncia. */}
@@ -930,7 +995,7 @@ function ContenidoPlan({ datos }) {
           sus filas abiertas. */}
       <Card padding="p-0" className="overflow-hidden" hidden={sinResultados}>
         <div ref={refScroll} className="max-h-[70vh] overflow-auto">
-          <TablaPlan filas={filasVisibles} />
+          <TablaPlan filas={filasVisibles} publico={publico} />
         </div>
         <p className="border-t border-gray-200 px-4 py-3 text-campo font-medium text-gray-700">
           Total: {resumen.total} | Completo: {resumen.completo} | Parcial:{" "}
@@ -941,7 +1006,7 @@ function ContenidoPlan({ datos }) {
   );
 }
 
-export default function PlanAccion() {
+export default function PlanAccion({ publico = false }) {
   const [intento, setIntento] = useState(0);
   // `clave` identifica a qué intento pertenece lo guardado: mientras no
   // coincida con `intento`, la petición sigue en curso. El único setState del
@@ -955,9 +1020,23 @@ export default function PlanAccion() {
   useEffect(() => {
     let vigente = true;
 
-    api
-      .planAccionActual()
+    const consulta = publico
+      ? api.planAccionPublicoActual()
+      : api.planAccionActual();
+
+    consulta
       .then((datos) => {
+        // Un 200 con cuerpo vacío, HTML o sin `filas` (proxy, CDN) dejaría la
+        // pantalla en blanco al renderizar: se trata como error con Reintentar.
+        if (
+          !datos ||
+          !Array.isArray(datos.filas) ||
+          typeof datos.fecha_corte !== "string"
+        ) {
+          throw new ErrorApi("La respuesta del servidor no es válida.", {
+            codigo: "respuesta_invalida",
+          });
+        }
         if (vigente) setResultado({ clave: intento, datos, error: null });
       })
       .catch((error) => {
@@ -967,7 +1046,7 @@ export default function PlanAccion() {
     return () => {
       vigente = false;
     };
-  }, [intento]);
+  }, [intento, publico]);
 
   const cargando = resultado.clave !== intento;
   const { datos, error } = resultado;
@@ -985,6 +1064,7 @@ export default function PlanAccion() {
       <section className="mx-auto max-w-4xl">
         <ErrorPlan
           error={error}
+          publico={publico}
           onReintentar={() => setIntento((n) => n + 1)}
         />
       </section>
@@ -1009,7 +1089,7 @@ export default function PlanAccion() {
           descripcion="El corte actual no registra ninguna meta en el Plan de Acción."
         />
       ) : (
-        <ContenidoPlan datos={datos} />
+        <ContenidoPlan datos={datos} publico={publico} />
       )}
     </section>
   );

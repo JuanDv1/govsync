@@ -58,7 +58,7 @@ curl -s http://localhost:8080/realms/master > /dev/null && echo "Keycloak listo"
 
 El paso 2 (`docker compose up -d`) ya deja todo listo: el realm `govsync`, los dos clients
 (`govsync-backend`/`govsync-frontend`, con su audience mapper), los 3 roles, el theme de login, el
-bloqueo por intentos fallidos (3 intentos → 15 min) y 3 usuarios de prueba se importan solos desde
+bloqueo por intentos fallidos (3 intentos → 5 min) y 3 usuarios de prueba se importan solos desde
 [`keycloak/import/govsync-realm.json`](./keycloak/import/govsync-realm.json) la primera vez que
 Keycloak arranca sobre un volumen nuevo. Usuarios listos para probar (contraseña `GovSync2026!`
 para los tres — **solo para desarrollo local, nunca producción**):
@@ -70,8 +70,41 @@ para los tres — **solo para desarrollo local, nunca producción**):
 | `visitante.prueba`     | `visitante`     |
 
 Si `datos_keycloak` ya tenía un realm `govsync` de una corrida anterior, la importación no se
-repite ni lo sobreescribe — para forzarla de nuevo: `docker compose down && docker volume rm
-govsync_datos_keycloak && docker compose up -d`.
+repite ni lo sobreescribe. Para forzarla de nuevo sin detener Postgres (`docker compose down`
+detendría también la base de datos):
+
+```bash
+docker compose stop keycloak
+docker compose rm -f keycloak
+docker volume rm govsync_datos_keycloak
+docker compose up -d
+```
+
+Esto borra los usuarios y la configuración de Keycloak, no los datos de Postgres.
+
+> **Cambios en `govsync-realm.json` y volúmenes existentes.** Lo importado en la primera
+> arrancada no se actualiza solo. Volver a importar con `docker volume rm` **borra** los
+> usuarios y la configuración que hayas creado a mano en Keycloak (no los datos de
+> Postgres). El theme (`keycloak/themes/govsync/`) sí se lee en caliente: basta reiniciar
+> Keycloak. Para el idioma del login ([E-01/HU-01] CA02, `Usuario o contraseña incorrectos`)
+> sin borrar el volumen: consola de Keycloak → realm `govsync` → _Realm settings_ →
+> _Localization_ → activar _Internationalization_, idioma admitido y por defecto
+> _Español_.
+
+#### Tema de login de Keycloak (CSS generado)
+
+El login de Keycloak (`keycloak/themes/govsync/`) usa los mismos tokens y clases de Tailwind que
+`Login.jsx`. Su CSS (`resources/css/govsync.css`) se **genera** a partir de las plantillas `.ftl`
+y se versiona, porque el contenedor de Keycloak no ejecuta Node. Si cambias una `.ftl` o un token
+de `frontend/tailwind.config.js`, regéneralo desde la raíz y súbelo junto con el cambio:
+
+```bash
+npm run build:tema-keycloak
+```
+
+Una prueba de Vitest (`frontend/src/tema-keycloak/`) falla si alguna clase de las plantillas no
+está en el CSS. El tema se lee en caliente: tras regenerar basta reiniciar Keycloak
+(`docker compose restart keycloak`).
 
 ### 4. Backend
 
@@ -101,7 +134,7 @@ Abre `http://localhost:5173` → te recibe `Login.jsx`; el botón "Ingresar" red
 entra con cualquiera de los usuarios de prueba de la tabla del paso 3. Ya autenticado, la app parte
 en el histórico de cortes
 (`/cortes`); desde ahí se crea un corte nuevo (`/cortes/nuevo`, solo visible para
-`administrador`/`gestor`), se cargan los tres archivos, se registra, y se navega a su matriz de
+`administrador`), se cargan los tres archivos, se registra, y se navega a su matriz de
 relación (`/matriz/:corteId`).
 
 ### Apagar todo
@@ -145,7 +178,7 @@ npm run build           # build de producción del frontend
 | [docs/specs/](./docs/specs/_plantilla.md)                                | Una spec por Historia de Usuario (criterios de aceptación, reglas de negocio, contrato, errores). Plantilla sin specs reales todavía.                                                              |
 | [docs/ESPECIFICACIONES_TECNICAS.md](./docs/ESPECIFICACIONES_TECNICAS.md) | Contrato técnico ya entregado de E02-HU01..04 y E02-HU07; las HU nuevas usan `docs/specs/`.                                                                                                        |
 | [docs/SEGURIDAD.md](./docs/SEGURIDAD.md)                                 | Consideraciones de seguridad (OWASP), manejo de secretos, validación de archivos cargados.                                                                                                         |
-| [docs/DESPLIEGUE.md](./docs/DESPLIEGUE.md)                               | Cómo aplicar migraciones manualmente contra la base de datos de producción (Render).                                                                                                               |
+| [docs/DESPLIEGUE.md](./docs/DESPLIEGUE.md)                               | Despliegue: migraciones manuales contra Render, Keycloak en Render, variables de Vercel y renovación de la base gratis.                                                                            |
 | [docs/DESIGN_SPEC.md](./docs/DESIGN_SPEC.md)                             | Especificación de estilo visual (tokens, layout, componentes) usada como referencia para el frontend — ver D18/D19 en `docs/DECISIONES.md` para qué parte se adaptó realmente.                     |
 | [docs/archivo/sprint-1/](./docs/archivo/sprint-1/)                       | Documentos históricos del Sprint 1 (plan de trabajo, trazabilidad CA, casos de prueba, convención de Swagger) — no se mantienen.                                                                   |
 
