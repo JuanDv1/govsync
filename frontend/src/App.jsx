@@ -19,6 +19,7 @@ import MatrizRelacion from "./pages/MatrizRelacion.jsx";
 import PlanAccion from "./pages/PlanAccion.jsx";
 import PlanAccionPublico from "./pages/PlanAccionPublico.jsx";
 import CompararCortes from "./pages/CompararCortes.jsx";
+import MetasEnRiesgo from "./pages/MetasEnRiesgo.jsx";
 import { Vacio } from "./components/Estados.jsx";
 import Card from "./components/shared/Card.jsx";
 import PantallaSinAcceso from "./components/shared/PantallaSinAcceso.jsx";
@@ -197,6 +198,17 @@ export default function App() {
           element={
             <RutaConPlanAccion>
               <CompararCortes />
+            </RutaConPlanAccion>
+          }
+        />
+        {/* [E04-HU07] Metas con menos del 50 % de avance financiero; mismo
+            permiso que el Plan de Acción (la ruta ya cae en
+            `RUTA_PLAN_ACCION` de `auth/roles.js`). */}
+        <Route
+          path="/plan-accion/riesgo"
+          element={
+            <RutaConPlanAccion>
+              <MetasEnRiesgo />
             </RutaConPlanAccion>
           }
         />

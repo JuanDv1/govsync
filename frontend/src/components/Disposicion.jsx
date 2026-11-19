@@ -84,8 +84,13 @@ export default function Disposicion() {
             Matriz
           </NavLink>
           {puedeVerPlanAccion && (
-            <NavLink to="/plan-accion" className={enlaceClase}>
+            <NavLink to="/plan-accion" end className={enlaceClase}>
               Plan de Acción
+            </NavLink>
+          )}
+          {puedeVerPlanAccion && (
+            <NavLink to="/plan-accion/riesgo" className={enlaceClase}>
+              Metas en riesgo
             </NavLink>
           )}
         </nav>
