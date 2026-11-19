@@ -97,7 +97,9 @@ function simular({ registros, cortes, exportar } = {}) {
       const r = typeof registros === "function" ? registros(url) : registros;
       return r ?? json(200, pagina());
     }
-    if (url === "/api/v1/cortes") return json(200, cortes ?? []);
+    if (url === "/api/v1/cortes") {
+      return typeof cortes === "function" ? cortes() : json(200, cortes ?? []);
+    }
     throw new Error(`URL no simulada: ${url}`);
   });
 }
@@ -439,6 +441,35 @@ describe("Registros no relacionados", () => {
         (u) => u.includes("borrador-1") || u.includes("viejo-1"),
       ),
     ).toBe(false);
+  });
+
+  it("si falla la búsqueda del corte actual, Reintentar vuelve a pedir GET /cortes", async () => {
+    let llamadas = 0;
+    simular({
+      cortes: () => {
+        llamadas += 1;
+        return llamadas === 1
+          ? new Response(
+              JSON.stringify({ codigo: "error_interno", mensaje: "Falló." }),
+              { status: 500 },
+            )
+          : new Response(
+              JSON.stringify([
+                { id: CORTE, estado: "REGISTRADO", es_corte_actual: true },
+              ]),
+              { status: 200 },
+            );
+      },
+    });
+    const usuario = userEvent.setup();
+
+    abrir("/registros-no-relacionados");
+    await usuario.click(
+      await screen.findByRole("button", { name: /Reintentar/ }),
+    );
+
+    expect(await screen.findByText("Sedes dotadas")).toBeInTheDocument();
+    expect(urlsPedidas().filter((u) => u === "/api/v1/cortes")).toHaveLength(2);
   });
 
   it("sin corte registrado muestra el aviso y no consulta registros", async () => {

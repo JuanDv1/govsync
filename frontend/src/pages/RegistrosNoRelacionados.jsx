@@ -398,8 +398,13 @@ function Contenido({ corteId }) {
 
 /** Sin `:corteId`, usa el corte actual: el REGISTRADO más reciente. */
 function CorteActual() {
-  const cortes = useCarga("cortes", () => api.listarCortes(), Array.isArray);
   const [reintento, setReintento] = useState(0);
+  // `reintento` va en la clave: sin él, Reintentar no repite GET /cortes.
+  const cortes = useCarga(
+    `cortes:${reintento}`,
+    () => api.listarCortes(),
+    Array.isArray,
+  );
   if (cortes.error) {
     return (
       <section className="mx-auto max-w-4xl">
@@ -431,7 +436,7 @@ function CorteActual() {
       </section>
     );
   }
-  return <Contenido key={`${actual.id}:${reintento}`} corteId={actual.id} />;
+  return <Contenido key={actual.id} corteId={actual.id} />;
 }
 
 export default function RegistrosNoRelacionados() {
