@@ -211,8 +211,11 @@ Decisiones del PO tras la revisión del despliegue en Render
 
 - **Contraseñas de los usuarios de prueba por variable.** El realm las lee de
   `GOVSYNC_CLAVE_ADMINISTRADOR`/`_GESTOR`/`_VISITANTE`; sin variable queda la
-  clave local pública (`GovSync2026!`). En Render las 3 son **obligatorias**:
-  omitir una deja ese usuario con la clave pública, sin aviso. Nunca se
+  clave local pública (`GovSync2026!`). En Render las 3 son **obligatorias** y la
+  imagen lo impone (falla cerrada): `keycloak/entrypoint.sh` aborta el arranque
+  (código 1, mensaje con el nombre de la variable, sin imprimir valores) si con
+  `KC_HOSTNAME` definido falta o está vacía alguna, o vale `GovSync2026!`; igual
+  con `KC_BOOTSTRAP_ADMIN_PASSWORD` ausente o con la de local. Nunca se
   versionan valores reales.
 - **Sin password grant.** `directAccessGrantsEnabled` es `false` en los dos
   clientes: todo inicio de sesión pasa por Authorization Code + PKCE. Lo fija
@@ -228,7 +231,9 @@ Decisiones del PO tras la revisión del despliegue en Render
   fuerte y única, definida por `KC_BOOTSTRAP_ADMIN_PASSWORD` y nunca la de local
   (`admin`). Mitigaciones no aplicadas: `KC_HOSTNAME_ADMIN` o un proxy delante.
 - **Proxy:** `KC_PROXY_HEADERS=xforwarded` + `KC_HTTP_ENABLED=true` solo son
-  seguros si Render sobrescribe `X-Forwarded-*` (**[CONFIRMAR]**); por eso no
+  seguros si Render sobrescribe `X-Forwarded-*` (el login con https funciona en
+  Render, verificado 2026-11-18; la sobrescritura no se probó con cabeceras
+  falsificadas: **[CONFIRMAR]**); por eso no
   están fijados en la imagen.
 
 ## Rutas públicas sin token y límite de peticiones (D38)

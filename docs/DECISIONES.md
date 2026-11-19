@@ -2206,6 +2206,13 @@ mantienen pero su contraseña sale de `GOVSYNC_CLAVE_*` (obligatorias en Render)
 público aceptado por ahora (contraseña fuerte por variable). Pendientes
 explícitos: job de CI que construya la imagen y 503 cuando Keycloak está dormido.
 
+**Revisión de Juan Esteban (2026-11-18):** la imagen falla cerrada si en producción
+falta alguna `GOVSYNC_CLAVE_*` o `KC_BOOTSTRAP_ADMIN_PASSWORD` o son las claves
+públicas (`keycloak/entrypoint.sh`). Verificado en Render: JDBC interno, puerto
+8080, https tras el proxy, issuer, import, tema y clave pública rechazada. Sin
+verificar: tope de conexiones. Cabeceras de seguridad en Vercel y restringir
+`/admin`, pendientes.
+
 **Estado:** PROPUESTA — pendiente de validar con un despliegue real en Render.
 
 **Registrado:** 2026-11-18.

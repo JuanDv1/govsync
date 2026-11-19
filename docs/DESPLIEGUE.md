@@ -148,9 +148,15 @@ construido desde [`keycloak/Dockerfile`](../keycloak/Dockerfile). Usa la
 **misma base de datos gratis de Render que el backend**, en un esquema aparte
 (`keycloak`): el plan gratis solo permite una base por cuenta.
 
-> Lo verificado con la imagen en local está dicho como tal; lo que depende de
+> Lo verificado con la imagen en local está dicho como tal. Lo que depende de
 > los paneles de Render o Vercel y no se pudo comprobar desde el repositorio
-> está marcado **[CONFIRMAR]**.
+> está marcado **[CONFIRMAR]**. **VERIFICADO EN RENDER (2026-11-18)**, en la
+> revisión de Juan Esteban sobre un despliegue real: host JDBC interno y puerto
+> 5432; puerto 8080 detectado por Render; HTTPS detrás del proxy (el login
+> funcionó); issuer correcto (el backend validó el token); import del realm;
+> tema en español; y `GovSync2026!` rechazada en los 3 usuarios de prueba.
+> Sigue sin verificar el tope de conexiones de la base. D39 sigue en
+> **PROPUESTA** hasta probar en producción tras la release.
 
 ### Cómo es la imagen
 
@@ -219,22 +225,22 @@ ya está importado y el servidor listo.
 
 **4. Variables de entorno del servicio de Keycloak.**
 
-| Variable                      | Valor                                                                      |
-| ----------------------------- | -------------------------------------------------------------------------- |
-| `KC_DB_URL`                   | `jdbc:postgresql://<host interno>:5432/<base>` (host de la _Internal_ URL) |
-| `KC_DB_USERNAME`              | usuario de la base                                                         |
-| `KC_DB_PASSWORD`              | contraseña de la base (**secret**)                                         |
-| `KC_DB_SCHEMA`                | `keycloak` (ya es el valor de la imagen; se deja explícito)                |
-| `KC_HOSTNAME`                 | URL pública con https, p. ej. `https://govsync-keycloak.onrender.com`      |
-| `KC_PROXY_HEADERS`            | `xforwarded` (Render termina el TLS y manda `X-Forwarded-*`)               |
-| `KC_HTTP_ENABLED`             | `true` (el proxy de Render habla HTTP con el contenedor)                   |
-| `KC_HTTP_PORT`                | `8080` (ya es el valor de la imagen)                                       |
-| `KC_BOOTSTRAP_ADMIN_USERNAME` | usuario administrador de Keycloak (no `admin`)                             |
-| `KC_BOOTSTRAP_ADMIN_PASSWORD` | contraseña larga y única (**secret**), NUNCA la de local (`admin`)         |
-| `GOVSYNC_CLAVE_ADMINISTRADOR` | contraseña de `administrador.prueba` (**secret, obligatoria**)             |
-| `GOVSYNC_CLAVE_GESTOR`        | contraseña de `gestor.prueba` (**secret, obligatoria**)                    |
-| `GOVSYNC_CLAVE_VISITANTE`     | contraseña de `visitante.prueba` (**secret, obligatoria**)                 |
-| `GOVSYNC_FRONTEND_URL`        | URL de Vercel **sin barra final**, p. ej. `https://govsync.vercel.app`     |
+| Variable                      | Valor                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| `KC_DB_URL`                   | `jdbc:postgresql://<host interno>:5432/<base>` (host de la _Internal_ URL)     |
+| `KC_DB_USERNAME`              | usuario de la base                                                             |
+| `KC_DB_PASSWORD`              | contraseña de la base (**secret**)                                             |
+| `KC_DB_SCHEMA`                | `keycloak` (ya es el valor de la imagen; se deja explícito)                    |
+| `KC_HOSTNAME`                 | URL pública con https, p. ej. `https://govsync-keycloak.onrender.com`          |
+| `KC_PROXY_HEADERS`            | `xforwarded` (Render termina el TLS y manda `X-Forwarded-*`)                   |
+| `KC_HTTP_ENABLED`             | `true` (el proxy de Render habla HTTP con el contenedor)                       |
+| `KC_HTTP_PORT`                | `8080` (ya es el valor de la imagen; Render lo detecta, verificado 2026-11-18) |
+| `KC_BOOTSTRAP_ADMIN_USERNAME` | usuario administrador de Keycloak (no `admin`)                                 |
+| `KC_BOOTSTRAP_ADMIN_PASSWORD` | contraseña larga y única (**secret**), NUNCA la de local (`admin`)             |
+| `GOVSYNC_CLAVE_ADMINISTRADOR` | contraseña de `administrador.prueba` (**secret, obligatoria**)                 |
+| `GOVSYNC_CLAVE_GESTOR`        | contraseña de `gestor.prueba` (**secret, obligatoria**)                        |
+| `GOVSYNC_CLAVE_VISITANTE`     | contraseña de `visitante.prueba` (**secret, obligatoria**)                     |
+| `GOVSYNC_FRONTEND_URL`        | URL de Vercel **sin barra final**, p. ej. `https://govsync.vercel.app`         |
 
 Auto-Deploy: cada push a la rama reconstruye y reinicia Keycloak; es inocuo
 para los datos (el import no sobrescribe) pero corta el login unos minutos.
@@ -246,12 +252,15 @@ Notas:
   panel de Render: nunca van en el repo ni en los logs.
 - La _Internal Database URL_ de Render es `postgresql://usuario:clave@host/base`;
   para `KC_DB_URL` se arma en formato JDBC y usuario y clave van **separados**
-  en `KC_DB_USERNAME`/`KC_DB_PASSWORD`. **[CONFIRMAR]** el host y el puerto
-  exactos en el panel.
+  en `KC_DB_USERNAME`/`KC_DB_PASSWORD`. **VERIFICADO EN RENDER (2026-11-18):**
+  funciona con el host interno y el puerto 5432.
 - `KC_PROXY_HEADERS=xforwarded` solo es seguro detrás de un proxy que
-  **sobrescribe** esas cabeceras (la documentación de Keycloak lo exige; Render
-  lo hace, **[CONFIRMAR]**). Por eso no está fijado en la imagen: nadie debería
-  ejecutarla expuesta con esa confianza.
+  **sobrescribe** esas cabeceras (la documentación de Keycloak lo exige).
+  **VERIFICADO EN RENDER (2026-11-18):** con `xforwarded` y `KC_HOSTNAME` https
+  el login funciona y el issuer sale con https; que Render sobrescriba las
+  cabeceras entrantes no se probó con una petición falsificada (**[CONFIRMAR]**).
+  Por eso no está fijado en la imagen: nadie debería ejecutarla expuesta con esa
+  confianza.
 - `KC_HOSTNAME` define el `issuer` de los tokens: tiene que ser exactamente la
   URL pública, y es la que el backend compara.
 - `KC_BOOTSTRAP_ADMIN_*` solo se usan al crear el realm `master` (primer
@@ -286,8 +295,18 @@ con ella, Keycloak usa la de la variable y la clave local deja de servir
 (comprobado en la imagen: con las 3 variables definidas cada usuario inicia
 sesión con la suya y `GovSync2026!` es rechazada).
 
-**Las 3 variables son OBLIGATORIAS en Render.** Si se omite una, ese usuario
-queda con la clave pública y el servicio arranca igual, sin ningún aviso. Por eso:
+**Las 3 variables son OBLIGATORIAS en Render, y la imagen lo impone** (falla
+cerrada): el script de arranque `keycloak/entrypoint.sh` es el `ENTRYPOINT` y,
+si `KC_HOSTNAME` está definido (producción), termina con código 1 y un mensaje
+en el log que nombra la variable —sin imprimir ningún valor— cuando alguna de
+`GOVSYNC_CLAVE_ADMINISTRADOR`, `GOVSYNC_CLAVE_GESTOR` o `GOVSYNC_CLAVE_VISITANTE`
+falta, está vacía o es `GovSync2026!`, o cuando `KC_BOOTSTRAP_ADMIN_PASSWORD`
+falta, está vacía o es la clave de desarrollo del compose. El servicio no llega
+a _Live_ y en el log aparece, p. ej.:
+`ERROR: GOVSYNC_CLAVE_GESTOR falta o está vacía.` En local (sin `KC_HOSTNAME`,
+como el compose) no cambia nada. El script se comprueba en **cada** arranque,
+no solo el primero: las variables deben seguir definidas aunque el realm ya
+exista. Pasos:
 
 1. Definir las 3 variables (**secret**, largas y distintas entre sí) ANTES del
    primer arranque, y no reutilizar la clave local.
@@ -298,11 +317,21 @@ queda con la clave pública y el servicio arranca igual, sin ningún aviso. Por 
    `master`; cambiarla después en la consola (Users → administrador →
    Credentials) no la cambia en el panel, y viceversa.
 
-El import ocurre una sola vez: cambiar luego una variable de clave NO cambia la
-contraseña ya guardada (hay que cambiarla en la consola: Realm **govsync** →
-Users → usuario → Credentials → _Reset password_, **Temporary = Off**). Lo mismo
-al renovar la base: con el esquema vacío se reimporta y vuelven a leerse las
-variables, que deben seguir definidas.
+### Rotar las claves de los usuarios de prueba
+
+El import ocurre **una sola vez**: la contraseña se lee de la variable cuando se
+crea el realm y queda guardada en la base de datos. Para cambiar una clave ya
+importada:
+
+1. Entrar a `https://<keycloak>/admin` como administrador de `master`.
+2. Realm **govsync** → Users → el usuario → Credentials → _Reset password_,
+   escribir la nueva clave y **no** marcar _Temporary_.
+
+Cambiar solo la variable en Render **no** cambia la clave ya guardada: solo sirve
+para un realm nuevo (base nueva o esquema `keycloak` vacío, p. ej. al renovar la
+base gratis; ahí vuelven a leerse las variables, que deben seguir definidas).
+Mantener la variable de Render igual a la clave real evita confusiones, pero no
+es lo que la hace válida.
 
 **Riesgo aceptado (H3): la consola `/admin` queda pública** en la misma URL que
 el login. La única barrera es la contraseña del administrador de `master` (y que
@@ -388,7 +417,7 @@ Repetir hasta ver `200` y hacer un login de prueba completo.
   El arranque en frío en Render puede ser más lento que los ~25 s medidos en local.
 - Una sola base gratis por cuenta, con conexiones compartidas entre Keycloak y
   el backend; por eso el pool de Keycloak se limita a 10. **[CONFIRMAR]** el tope de
-  conexiones de la base gratis en el panel: Keycloak (hasta 10) + backend +
+  conexiones de la base gratis en el panel (**sigue sin verificar**): Keycloak (hasta 10) + backend +
   migraciones de CI deben caber.
 
 ### Prueba local de la imagen
@@ -418,4 +447,10 @@ el puerto 8080.
 - **503 cuando Keycloak está dormido o inalcanzable:** hoy el backend responde
   401 (`credenciales_invalidas`) si no puede descargar el JWKS, y el frontend lo
   ve como sesión inválida. Distinguirlo (503) queda pendiente.
-- Restringir `/admin` (ver "Riesgo aceptado (H3)").
+- Restringir `/admin` (ver "Riesgo aceptado (H3)"): `KC_HOSTNAME_ADMIN` en otra
+  URL o una restricción delante.
+- **Cabeceras de seguridad en `frontend/vercel.json`** (CSP, etc.): hoy solo
+  tiene el rewrite SPA. Hay que armarla con cuidado de no romper el login: la CSP
+  debe permitir el origen de Keycloak en `connect-src`, `frame-src`
+  (`silent-check-sso.html` se carga en un iframe) y `form-action`/`frame-ancestors`
+  según corresponda.
