@@ -229,11 +229,29 @@ Evidencia: `test_validacion_archivos.py` (16 pruebas), 170 passed en local
 - [ ] **El límite es por proceso**: con N procesos el tope real por cliente es
       N veces el configurado (hoy el Dockerfile arranca uno solo). Si se
       activan varios procesos, hay que pasar a un almacén compartido.
+- [x] La documentación interactiva (`/docs`, `/redoc`, `/openapi.json`) no se
+      sirve en producción (`ENVIRONMENT=production`), salvo
+      `DOCS_API_EN_PRODUCCION=true` (hallazgo de QA, 2026-11-17;
+      `test_docs_api_en_produccion.py`).
+- [ ] **ALERTA sobre el supuesto siguiente (QA, 2026-11-17):** un reporte de la
+      comunidad de Render indica que su proxy AGREGA su propia IP al final de
+      `X-Forwarded-For`, de modo que la del cliente sería la penúltima entrada
+      y no la última ([hilo](https://community.render.com/t/accessing-client-ips-in-a-node-express-app/36282);
+      no es documentación oficial). Si es así, `PUBLICO_PROXIES_CONFIABLES=1`
+      haría que todos compartan el contador (la IP del proxy) y el valor
+      correcto sería 2. No se cambió el valor por defecto: hay que medirlo en
+      el servicio real (ver el procedimiento en el ítem siguiente).
 - [ ] **SUPUESTO a verificar en el despliegue (tarjeta [DEV]):** que Render
       agregue la IP del cliente como última entrada de `X-Forwarded-For` y que
       `PUBLICO_PROXIES_CONFIABLES=1` sea el valor correcto. Un valor mayor al
       real permite falsificar la IP; uno menor hace que todos compartan
       contador.
+      **Cómo verificarlo:** con el límite en `PUBLICO_LIMITE_PETICIONES=3`,
+      pedir 4 veces `/api/v1/publico/plan-accion/actual` desde dos redes
+      distintas (por ejemplo, el computador y el celular con datos móviles). Si
+      la red B recibe 429 por las peticiones de la red A, el valor es menor al
+      real; si una red puede evadir el 429 enviando `X-Forwarded-For` falso,
+      es mayor. Restaurar el límite en 60 después.
 - [ ] Ventana fija: permite una ráfaga de hasta 2x el límite al cambiar de
       ventana. Aceptado por simplicidad.
 - [ ] **`PUBLICO_PROXIES_CONFIABLES` > 0 exige que el backend NO sea

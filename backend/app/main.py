@@ -36,10 +36,16 @@ def crear_app() -> FastAPI:
             "PUBLICO_PROXIES_CONFIABLES=0 en producción: el límite de las rutas "
             "públicas usa la IP del proxy. Ver docs/DECISIONES.md D38."
         )
+    # Sin token, /docs y /openapi.json describen toda la API: en producción se
+    # apagan salvo `DOCS_API_EN_PRODUCCION=true`.
+    docs_apagadas = settings.environment == "production" and not settings.docs_api_en_produccion
     app = FastAPI(
         title="GovSync API",
         version="0.1.0",
         description="Seguimiento al Plan de Desarrollo Territorial · Santa Rosa, Cauca",
+        docs_url=None if docs_apagadas else "/docs",
+        redoc_url=None if docs_apagadas else "/redoc",
+        openapi_url=None if docs_apagadas else "/openapi.json",
     )
 
     # [SEC-03] Respaldo autoritativo del tamaño máximo de subida (docs/
