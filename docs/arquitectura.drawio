@@ -1,0 +1,191 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="govsync-arq" name="GovSync - Arquitectura tecnica">
+    <mxGraphModel dx="3662" dy="1219" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1900" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="L1" parent="1" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=14;startSize=30;" value="CAPA 1 · FRONTEND (React + Vite · Vercel)" vertex="1">
+          <mxGeometry height="560" width="520" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="F0" parent="L1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;" value="Navegador (usuario: administrador / gestor / visitante)" vertex="1">
+          <mxGeometry height="60" width="30" x="40" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="F1" parent="L1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" value="App.jsx · Router&#xa;/login · /cortes · /cortes/nuevo&#xa;/cortes/:corteId · /matriz/:corteId?" vertex="1">
+          <mxGeometry height="60" width="340" x="150" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="F2" parent="L1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="RutaProtegida&#xa;(sin sesion activa -&gt; redirige a /login)" vertex="1">
+          <mxGeometry height="50" width="340" x="150" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="F3" parent="L1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" value="auth/ProveedorAutenticacion.jsx + keycloak.js&#xa;useAutenticacion(): usuario, estaAutenticado,&#xa;puedeEscribir, iniciarSesion, cerrarSesion&#xa;(keycloak-js · PKCE · silent-check-sso)" vertex="1">
+          <mxGeometry height="95" width="230" x="30" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="F4" parent="L1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" value="pages/&#xa;Login · Cortes · NuevoCorte&#xa;EditarArchivosCorteActual · MatrizRelacion" vertex="1">
+          <mxGeometry height="95" width="210" x="280" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="F5" parent="L1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" value="components/&#xa;Disposicion (sidebar, oculta acciones&#xa;si !puedeEscribir) · CargaDeArchivo&#xa;(drag&amp;drop) · Estados (loading/error/vacio)" vertex="1">
+          <mxGeometry height="95" width="230" x="30" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="F6" parent="L1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6c8ebf;" value="api/cliente.js  [UX-01]&#xa;solicitar() + api.* (crearCorte, listarCortes,&#xa;cargarArchivo, matriz...)&#xa;Authorization: Bearer &lt;token&gt;&#xa;ErrorApi.detalles (columnas/pestanas faltantes)" vertex="1">
+          <mxGeometry height="95" width="210" x="280" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="F7" parent="L1" style="shape=cloud;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="Hosting: Vercel (preview deploy por PR)&#xa;Build: npm run build (CI job Build)" vertex="1">
+          <mxGeometry height="80" width="230" x="145" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="L2" parent="1" style="swimlane;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=14;startSize=30;" value="CAPA 2 · BACKEND (FastAPI · Python 3.12 · Render Web Service) — monolito modular de 5 capas" vertex="1">
+          <mxGeometry height="900" width="660" x="600" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="B1" parent="L2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" value="main.py · crear_app()&#xa;1) CORS (outermost)  2) RequestBodyLimitMiddleware (25 MB)  3) registrar_manejadores&#xa;GET /health · /api/v1/salud" vertex="1">
+          <mxGeometry height="60" width="620" x="20" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="B2" parent="L2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="core/dependencias.py&#xa;UsuarioActualDep (authN) · exigir_roles(*roles) (authZ -&gt; 403 PermisoInsuficiente)" vertex="1">
+          <mxGeometry height="50" width="620" x="20" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="B3" parent="L2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" value="CAPA API (routers /api/v1) — solo traducen HTTP, no consultan datos&#xa;cortes/api · trazabilidad/api · plan_accion/api · core/errores.py (GovSyncError -&gt; HTTP)" vertex="1">
+          <mxGeometry height="65" width="620" x="20" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="B4" parent="L2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" value="CAPA APLICACION — casos de uso (sin FastAPI/Starlette)&#xa;cortes/casos_uso.py (orquesta ETL, reglas SEC-03) · validacion_archivos.py [SEC-03]&#xa;trazabilidad · plan_accion" vertex="1">
+          <mxGeometry height="75" width="620" x="20" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="B5" parent="L2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" value="CAPA DOMINIO — Python puro (sin FastAPI/SQLAlchemy/pandas/Pydantic)&#xa;entidades · value objects · puertos · excepciones ·&#xa;shared/codigos.py: CodigoIndicadorProducto (9 digitos, SIEMPRE texto) · shared/errors.py" vertex="1">
+          <mxGeometry height="75" width="620" x="20" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="B6" parent="L2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;" value="CAPA PERSISTENCIA (implementa los puertos del dominio)&#xa;SQLAlchemy 2 + psycopg · repositorios · Alembic · lectores Excel (openpyxl read_only, pandas)&#xa;SOLO aqui se permite pandas/openpyxl" vertex="1">
+          <mxGeometry height="75" width="620" x="20" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="B7" parent="L2" style="swimlane;fillColor=#f5f5f5;strokeColor=#666666;startSize=22;" value="Modulos" vertex="1">
+          <mxGeometry height="130" width="620" x="20" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="M1" parent="B7" style="rounded=1;whiteSpace=wrap;html=1;" value="cortes&#xa;(agregado raiz)" vertex="1">
+          <mxGeometry height="40" width="105" x="10" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="M2" parent="B7" style="rounded=1;whiteSpace=wrap;html=1;" value="ingesta&#xa;(lectores Excel)" vertex="1">
+          <mxGeometry height="40" width="105" x="125" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="M3" parent="B7" style="rounded=1;whiteSpace=wrap;html=1;" value="trazabilidad&#xa;(matriz cruzada)" vertex="1">
+          <mxGeometry height="40" width="105" x="240" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="M4" parent="B7" style="rounded=1;whiteSpace=wrap;html=1;" value="identidad&#xa;(Rol/Usuario/JWT)" vertex="1">
+          <mxGeometry height="40" width="105" x="355" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="M5" parent="B7" style="rounded=1;whiteSpace=wrap;html=1;" value="plan_accion" vertex="1">
+          <mxGeometry height="40" width="105" x="470" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="M6" parent="B7" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;" value="alertas · avance_fisico (placeholders vacios, futuras epicas)" vertex="1">
+          <mxGeometry height="30" width="565" x="10" y="85" as="geometry" />
+        </mxCell>
+        <mxCell id="B8" parent="L2" style="shape=note;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;align=left;" value="Regla de dependencias (tests/test_arquitectura.py rompe el build si se viola):&#xa;api -&gt; application -&gt; domain &lt;- persistence.  cortes puede importar ingesta (unica excepcion).&#xa;Ningun modulo accede a la persistencia de otro." vertex="1">
+          <mxGeometry height="75" width="620" x="20" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="L3" parent="1" style="swimlane;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;fontSize=14;startSize=30;" value="CAPA 3 · BASE DE DATOS / INFRAESTRUCTURA" vertex="1">
+          <mxGeometry height="900" width="540" x="1320" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="D1" parent="L3" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fillColor=#ffffff;strokeColor=#d79b00;" value="PostgreSQL 16&#xa;(Render Postgres en prod · postgres:16-alpine en local/CI)&#xa;Esquema versionado con Alembic" vertex="1">
+          <mxGeometry height="110" width="230" x="30" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="D2" parent="L3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#d79b00;" value="Keycloak 26.7 (OIDC)&#xa;Realm govsync: roles administrador / gestor / visitante&#xa;Importado de keycloak/import/govsync-realm.json&#xa;Tema keycloak/themes/govsync/&#xa;(prod: hosting abierto, D23 — hoy solo local)" vertex="1">
+          <mxGeometry height="110" width="230" x="290" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="D3" parent="L3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" value="docker-compose.yml (desarrollo local)&#xa;Postgres 16 + Keycloak; backend y frontend corren en host con hot reload" vertex="1">
+          <mxGeometry height="55" width="490" x="30" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="G0" parent="L3" style="swimlane;fillColor=#f5f5f5;strokeColor=#666666;startSize=24;" value="GitHub Actions — .github/workflows/ci.yml" vertex="1">
+          <mxGeometry height="400" width="490" x="30" y="275" as="geometry" />
+        </mxCell>
+        <mxCell id="G1" parent="G0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;" value="Disparo: PR a main/develop (opened, synchronize, reopened, edited) · push a main/develop" vertex="1">
+          <mxGeometry height="35" width="470" x="10" y="35" as="geometry" />
+        </mxCell>
+        <mxCell id="G2" parent="G0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Lint &amp; Format · Tests · Build (front)&#xa;backend-calidad (ruff + pytest, cobertura &gt;= 70 %)" vertex="1">
+          <mxGeometry height="60" width="230" x="10" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="G3" parent="G0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="backend-migraciones (Postgres 16 efimero)&#xa;upgrade -&gt; downgrade base -&gt; upgrade&#xa;backend-keycloak (smoke) · commitlint" vertex="1">
+          <mxGeometry height="60" width="230" x="250" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="G4" parent="G0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="migrate-render  (needs: backend-calidad + backend-migraciones)&#xa;if: push a main · concurrency produccion-render (sin cancelar)&#xa;1) alembic upgrade head -&gt; RENDER_DATABASE_URL (secret)" vertex="1">
+          <mxGeometry height="65" width="470" x="10" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="G5" parent="G0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="2) curl POST RENDER_DEPLOY_HOOK (secret, 3 reintentos)&#xa;Render con Auto-Deploy = OFF: el hook del CI es el unico disparador" vertex="1">
+          <mxGeometry height="55" width="470" x="10" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="G6" parent="G0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;dashed=1;" value="codeql.yml · SonarCloud (cobertura) · Dependabot" vertex="1">
+          <mxGeometry height="30" width="470" x="10" y="355" as="geometry" />
+        </mxCell>
+        <mxCell id="E2" edge="1" parent="1" source="F6" style="endArrow=classic;html=1;strokeColor=#0050ef;strokeWidth=2;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="B1" value="2. HTTPS /api/v1/* + Bearer JWT">
+          <mxGeometry relative="1" x="0.1617" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="560" y="422.5" />
+              <mxPoint x="560" y="115" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="E3" edge="1" parent="1" source="B2" style="endArrow=classic;html=1;strokeColor=#b85450;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.25;entryDx=0;entryDy=0;" target="D2" value="3. JWKS (RS256) valida firma/exp/roles">
+          <mxGeometry relative="1" x="-0.1739" as="geometry">
+            <Array as="points">
+              <mxPoint x="1270" y="190" />
+              <mxPoint x="1270" y="20" />
+              <mxPoint x="1890" y="20" />
+              <mxPoint x="1890" y="120" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="E4" edge="1" parent="1" source="B6" style="endArrow=classic;html=1;strokeColor=#d79b00;strokeWidth=2;" target="D1" value="4. SQLAlchemy / psycopg (DATABASE_URL)">
+          <mxGeometry relative="1" x="0.1449" y="10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1290" y="568" />
+              <mxPoint x="1290" y="140" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="E5" edge="1" parent="1" source="G4" style="endArrow=classic;html=1;strokeColor=#d79b00;dashed=1;entryX=0;entryY=0;entryDx=0;entryDy=75.00000000000001;entryPerimeter=0;" target="D1" value="alembic upgrade head">
+          <mxGeometry relative="1" x="0.5715" y="-10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1300" y="545" />
+              <mxPoint x="1300" y="165" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="E6" edge="1" parent="1" source="G5" style="endArrow=classic;html=1;strokeColor=#666666;dashed=1;" value="Deploy Hook">
+          <mxGeometry relative="1" x="0.1881" as="geometry">
+            <Array as="points">
+              <mxPoint x="1280" y="622.5" />
+              <mxPoint x="1280" y="790" />
+            </Array>
+            <mxPoint x="1260" y="790" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="E7" edge="1" parent="1" source="F7" style="endArrow=classic;html=1;strokeColor=#666666;dashed=1;" value="CORS orígenes permitidos">
+          <mxGeometry relative="1" x="-0.0002" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="860" />
+            </Array>
+            <mxPoint x="600" y="860" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="N1" parent="1" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;spacing=8;" value="&lt;b&gt;NOTA 1 · Autenticacion y proteccion de rutas&lt;/b&gt;&lt;br&gt;1. Usuario entra a cualquier ruta; ProveedorAutenticacion inicializa keycloak-js una sola vez con silent-check-sso (recargar no pierde la sesion).&lt;br&gt;2. RutaProtegida: sin sesion -&gt; /login; el boton redirige al login de Keycloak (Authorization Code + PKCE). El front nunca ve ni guarda contrasenas.&lt;br&gt;3. Keycloak devuelve un JWT (RS256) con rol realm: administrador | gestor | visitante.&lt;br&gt;4. api/cliente.js adjunta Authorization: Bearer en cada llamada.&lt;br&gt;5. Backend: UsuarioActualDep verifica firma/expiracion contra el JWKS del realm (no firma ni guarda nada). exigir_roles(...) -&gt; 403 si el rol no alcanza.&lt;br&gt;6. Lecturas: cualquier rol autenticado. Escrituras en cortes/trazabilidad: administrador o gestor (D24). El front solo oculta botones con puedeEscribir; la autoridad es el backend." vertex="1">
+          <mxGeometry height="300" width="600" x="-720" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="N2" parent="1" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;spacing=8;" value="&lt;b&gt;NOTA 2 · Validacion de .xlsx con corte por streaming (SEC-03)&lt;/b&gt;&lt;br&gt;1. Middleware RequestBodyLimitMiddleware envuelve receive() de ASGI: cuenta los bytes reales y corta con 413 al pasar max_upload_bytes (25 MB), aunque Content-Length falte (chunked) o mienta. No bufferea el body completo antes de rechazar.&lt;br&gt;2. Router cargar_archivo (async, Request crudo): si Content-Length declarado &gt; limite rechaza sin leer nada con 422 ArchivoInvalido estructurado; si no, extrae el archivo con request.form().&lt;br&gt;3. validacion_archivos.py (solo zipfile+io): extension .xlsx, firma ZIP PK\x03\x04, rechaza .xlsm y xl/vbaProject.bin aunque este renombrado, sanitiza el nombre (path traversal), exige hojas obligatorias. Archivo invalido = rechazo total, nunca datos parciales.&lt;br&gt;4. Lectores (persistence): openpyxl read_only=True + data_only=True, iter_rows perezoso (sin formulas ni estilos). Aclaracion: el contenido aceptado (&lt;= 25 MB) queda en memoria como BytesIO; lo &quot;streaming&quot; es la recepcion/corte por tamano y la lectura fila a fila." vertex="1">
+          <mxGeometry height="300" width="620" x="-730" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="N3" parent="1" style="shape=note;whiteSpace=wrap;html=1;align=left;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;spacing=8;" value="&lt;b&gt;NOTA 3 · Despliegue automatico (GitHub Actions -&gt; Render)&lt;/b&gt;&lt;br&gt;1. PR a develop/main: corren Lint, Tests, Build, backend-calidad (ruff + pytest &gt;= 70 %), backend-migraciones (upgrade/downgrade/upgrade en Postgres 16 efimero), backend-keycloak y commitlint.&lt;br&gt;2. Solo en push a main, migrate-render (needs: backend-calidad + backend-migraciones) corre alembic upgrade head contra la BD de Render. Nunca downgrade en produccion; NO hace respaldo previo (tomarlo a mano, ver DESPLIEGUE.md).&lt;br&gt;3. Solo despues de migrar, hace POST al Deploy Hook (3 reintentos). Orden garantizado: pruebas -&gt; migracion -&gt; despliegue; el codigo nuevo nunca arranca sobre un esquema viejo.&lt;br&gt;4. Render Auto-Deploy = OFF; concurrency produccion-render evita dos despliegues simultaneos sin cancelar migraciones en curso.&lt;br&gt;5. Si el hook falla tras migrar: job en rojo -&gt; Plan B, Manual Deploy en Render. El frontend se despliega por separado en Vercel." vertex="1">
+          <mxGeometry height="300" width="560" x="-700" y="805" as="geometry" />
+        </mxCell>
+        <mxCell id="E1" edge="1" parent="1" source="F3" style="endArrow=classic;startArrow=classic;html=1;strokeColor=#b85450;strokeWidth=2;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="D2" value="1. Login OIDC Auth Code + PKCE">
+          <mxGeometry relative="1" x="-0.392" y="4" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="-40" y="297.5" />
+              <mxPoint x="-40" y="1030" />
+              <mxPoint x="1880" y="1030" />
+              <mxPoint x="1880" y="145" />
+            </Array>
+            <mxPoint x="102.91970802919741" y="325" as="sourcePoint" />
+            <mxPoint x="1662.2222222222226" y="180" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
