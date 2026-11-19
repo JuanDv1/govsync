@@ -322,24 +322,23 @@ def _construir_consulta_base(
         ),
     )
 
-    if estado_cruce == "completo":
-        consulta = consulta.where(
+    sin_proyecto = proyectos_del_corte.c.bpin.is_(None)
+    sin_ejecucion = RubroORM.cod_indicador_producto.is_(None)
+    sin_contrato = ContratoORM.numero_contrato.is_(None)
+    # Un valor desconocido de `estado_cruce` no agrega condición (igual que
+    # antes: `None` = todas).
+    condiciones_por_estado = {
+        "completo": (
             proyectos_del_corte.c.bpin.is_not(None),
             RubroORM.cod_indicador_producto.is_not(None),
             ContratoORM.numero_contrato.is_not(None),
-        )
-    elif estado_cruce == "sin_proyecto":
-        consulta = consulta.where(proyectos_del_corte.c.bpin.is_(None))
-    elif estado_cruce == "sin_ejecucion":
-        consulta = consulta.where(RubroORM.cod_indicador_producto.is_(None))
-    elif estado_cruce == "sin_contrato":
-        consulta = consulta.where(ContratoORM.numero_contrato.is_(None))
-    elif estado_cruce == "sin_cruce":
-        consulta = consulta.where(
-            proyectos_del_corte.c.bpin.is_(None),
-            RubroORM.cod_indicador_producto.is_(None),
-            ContratoORM.numero_contrato.is_(None),
-        )
+        ),
+        "sin_proyecto": (sin_proyecto,),
+        "sin_ejecucion": (sin_ejecucion,),
+        "sin_contrato": (sin_contrato,),
+        "sin_cruce": (sin_proyecto, sin_ejecucion, sin_contrato),
+    }
+    consulta = consulta.where(*condiciones_por_estado.get(estado_cruce, ()))
 
     if busqueda:
         patron = f"%{busqueda.strip()}%"
@@ -353,18 +352,18 @@ def _construir_consulta_base(
 
     # HU-10/CA-2, CA-4 a CA-7, CA-16: un IN por criterio, AND entre criterios
     # distintos (CA-9), OR dentro del mismo criterio (CA-8) vía `in_()`.
-    if bpin:
-        consulta = consulta.where(proyectos_del_corte.c.bpin.in_(bpin))
-    if cod_indicador_producto:
-        consulta = consulta.where(MetaORM.cod_indicador_producto.in_(cod_indicador_producto))
-    if producto:
-        consulta = consulta.where(MetaORM.nombre_producto.in_(producto))
-    if numero_contrato:
-        consulta = consulta.where(ContratoORM.numero_contrato.in_(numero_contrato))
-    if sector:
-        consulta = consulta.where(MetaORM.sector.in_(sector))
-    if programa:
-        consulta = consulta.where(MetaORM.programa.in_(programa))
+    # Listas vacías o `None` no agregan condición.
+    criterios = (
+        (proyectos_del_corte.c.bpin, bpin),
+        (MetaORM.cod_indicador_producto, cod_indicador_producto),
+        (MetaORM.nombre_producto, producto),
+        (ContratoORM.numero_contrato, numero_contrato),
+        (MetaORM.sector, sector),
+        (MetaORM.programa, programa),
+    )
+    for columna, valores in criterios:
+        if valores:
+            consulta = consulta.where(columna.in_(valores))
 
     return consulta
 
