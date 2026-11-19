@@ -226,8 +226,9 @@ never do. An account with a role keeps using `/plan-accion` (with login).
 - Real shape of the three source Excel files: [docs/DATOS.md](docs/DATOS.md).
 - Security/OWASP: [docs/SEGURIDAD.md](docs/SEGURIDAD.md). Deployment: [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 - Keycloak login theme source: `keycloak/themes/govsync/` (mounted read-only into the `keycloak`
-  service by `docker-compose.yml`). Production hosting for Keycloak is an open decision (D23) —
-  local-only for now.
+  service by `docker-compose.yml`). In production Keycloak runs on Render from `keycloak/Dockerfile`
+  (D39, [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md) §"Keycloak en Render"; pending validation with a real
+  deploy); `docker-compose.yml` is local-only.
 - Sprint 1 historical docs (plan, CA traceability, test cases) no longer maintained:
   `docs/archivo/sprint-1/`.
 

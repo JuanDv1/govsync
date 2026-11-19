@@ -1083,6 +1083,9 @@ elegir Keycloak.
   despliegue en producción todavía pendiente (Keycloak propio vs
   gestionado).
 
+**Nota (2026-11-18):** el punto 1 (dónde corre Keycloak en producción) queda
+resuelto por **D39** (Render, Web Service Docker).
+
 **Las 4 preguntas pendientes, resueltas (2026-10-02):**
 
 1. **Infraestructura:** solo local por ahora (`docker-compose.yml`), sin
@@ -2174,3 +2177,42 @@ detalles técnicos pendientes de revisión del equipo en el PR.
 - Todo el prefijo cuenta, también los 404 y la redirección 307 por barra final.
 - `router_publico.py` importa `_obtener_filas_filtradas` (privado de
   `router.py`); renombrarlo toca el router protegido y se difiere.
+
+## D39 · Keycloak en producción: Web Service Docker en Render, esquema `keycloak` de la misma base
+
+**Clasificación:** Decisión técnica de infraestructura (cierra la pregunta
+abierta de D23 punto 1: dónde corre Keycloak en producción).
+
+**Decisión:** Keycloak se despliega como Web Service Docker de Render
+(self-host, no gestionado), construido desde `keycloak/Dockerfile` e importando
+`keycloak/import/govsync-realm.json`. Comparte la única base gratis de Render
+con el backend, en el esquema `keycloak`. El frontend sigue en Vercel, con
+`frontend/vercel.json` para el fallback de SPA.
+
+**Motivo:** el plan gratis solo permite una base por cuenta y la release del
+Sprint 3 no tiene presupuesto para un Keycloak gestionado.
+
+**Consecuencias:** `docs/DESPLIEGUE.md` §"Keycloak en Render" (pasos, variables,
+renovación de la base, límites). La URL del frontend entra al realm por el
+placeholder `${GOVSYNC_FRONTEND_URL:http://localhost:5173}`; los 3 usuarios de
+prueba conservan su contraseña pública y deben cambiarse en la consola tras el
+primer arranque. El plan gratis se duerme a los 15 min y la base expira: ambos
+caen a la vez. Alternativa descartada: Keycloak gestionado por un tercero.
+
+**Decisiones del PO tras la revisión (2026-11-18):** los usuarios de prueba se
+mantienen pero su contraseña sale de `GOVSYNC_CLAVE_*` (obligatorias en Render);
+`directAccessGrantsEnabled=false` en `govsync-backend`; el backend exige
+`https://` en `KEYCLOAK_ISSUER` en producción y normaliza la barra final; `/admin`
+público aceptado por ahora (contraseña fuerte por variable). Pendientes
+explícitos: job de CI que construya la imagen y 503 cuando Keycloak está dormido.
+
+**Revisión de Juan Esteban (2026-11-18):** la imagen falla cerrada si en producción
+falta alguna `GOVSYNC_CLAVE_*` o `KC_BOOTSTRAP_ADMIN_PASSWORD` o son las claves
+públicas (`keycloak/entrypoint.sh`). Verificado en Render: JDBC interno, puerto
+8080, https tras el proxy, issuer, import, tema y clave pública rechazada. Sin
+verificar: tope de conexiones. Cabeceras de seguridad en Vercel y restringir
+`/admin`, pendientes.
+
+**Estado:** PROPUESTA — pendiente de validar con un despliegue real en Render.
+
+**Registrado:** 2026-11-18.

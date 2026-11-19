@@ -24,9 +24,10 @@ class Settings(BaseSettings):
 
     # --- Seguridad (Keycloak, [HU-E01-01] / D23) --------------------------
     # El backend no firma tokens: valida los que emite Keycloak contra su
-    # JWKS (RS256). "localhost" es el valor de desarrollo (Keycloak corre
-    # solo local por ahora, D23) — nunca usable en producción, igual que el
-    # resto de defaults de esta sección.
+    # JWKS (RS256). "localhost" es el valor de desarrollo (el Keycloak de
+    # docker-compose.yml). En producción Keycloak corre en Render (D39,
+    # docs/DESPLIEGUE.md) y el valor debe ser su URL pública https; el valor
+    # local nunca es usable allí, igual que el resto de defaults de esta sección.
     keycloak_issuer: str = "http://localhost:8080/realms/govsync"
     keycloak_audience: str = "govsync-backend"
 
@@ -81,9 +82,19 @@ class Settings(BaseSettings):
 
     @field_validator("keycloak_issuer")
     @classmethod
-    def _no_default_keycloak_en_produccion(cls, v: str, info):
-        if info.data.get("environment") == "production" and "localhost" in v:
-            raise ValueError("KEYCLOAK_ISSUER debe definirse explícitamente en producción")
+    def _validar_issuer_de_keycloak(cls, v: str, info):
+        # PyJWT compara `iss` por igualdad exacta y arma la URL del JWKS con
+        # `{issuer}/protocol/...`: una barra final haría fallar TODOS los tokens
+        # (401) y dejaría `//` en la URL. Se normaliza en cualquier entorno.
+        v = v.strip().rstrip("/")
+        if info.data.get("environment") == "production":
+            if "localhost" in v:
+                raise ValueError("KEYCLOAK_ISSUER debe definirse explícitamente en producción")
+            if not v.startswith("https://"):
+                raise ValueError(
+                    "KEYCLOAK_ISSUER debe empezar por https:// en producción "
+                    "(la URL pública de Keycloak, igual a KC_HOSTNAME + /realms/<realm>)"
+                )
         return v
 
 

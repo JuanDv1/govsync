@@ -1,0 +1,2 @@
+# El script de arranque de Keycloak se ejecuta en Linux: con CRLF fallaría el shebang.
+keycloak/entrypoint.sh text eol=lf
