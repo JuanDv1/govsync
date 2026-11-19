@@ -13,6 +13,10 @@
 # ---- Etapa 1: build -------------------------------------------------------
 FROM quay.io/keycloak/keycloak:26.7 AS builder
 
+# Keycloak oficial corre como uid 1000; se declara explícito para no depender de
+# la imagen base (OWASP A05, docker:S6471).
+USER 1000
+
 # Opciones de BUILD (cambiarlas exige reconstruir la imagen):
 #   KC_DB=postgres          vendor de base de datos (comparte el Postgres de Render)
 #   KC_HEALTH_ENABLED=true  endpoints /health/* (en el puerto de gestión 9000,
@@ -25,14 +29,18 @@ ENV KC_DB=postgres \
 
 # Tema de login de GovSync e importación del realm. Van dentro de la imagen
 # porque Render no permite montar carpetas del repo como hace docker-compose.
-COPY --chown=keycloak:keycloak themes/govsync /opt/keycloak/themes/govsync
-COPY --chown=keycloak:keycloak import /opt/keycloak/data/import
+COPY --chown=1000:0 themes/govsync /opt/keycloak/themes/govsync
+COPY --chown=1000:0 import /opt/keycloak/data/import
 
 RUN /opt/keycloak/bin/kc.sh build
 
 # ---- Etapa 2: imagen final --------------------------------------------------
 FROM quay.io/keycloak/keycloak:26.7
-COPY --from=builder /opt/keycloak/ /opt/keycloak/
+COPY --from=builder --chown=1000:0 /opt/keycloak/ /opt/keycloak/
+
+# Keycloak oficial corre como uid 1000; se declara explícito para no depender de
+# la imagen base (OWASP A05, docker:S6471). Nunca root (0).
+USER 1000
 
 # Valores NO secretos y estables. Todo lo demás (credenciales, URLs, proxy)
 # se define en las variables de entorno del servicio, nunca aquí:

@@ -104,6 +104,22 @@ describe("keycloak/Dockerfile", () => {
     expect(etapaFinal).toContain("KC_DB_POOL_MAX_SIZE=10");
   });
 
+  it("la etapa final declara un usuario no root (docker:S6471, OWASP A05)", () => {
+    const usuarios = [...etapaFinal.matchAll(/^USER\s+(\S+)\s*$/gm)].map(
+      (m) => m[1],
+    );
+    expect(usuarios.length).toBeGreaterThan(0);
+    // El último USER es el que rige al ejecutar la imagen.
+    const efectivo = usuarios.at(-1).split(":")[0];
+    expect(efectivo).not.toBe("root");
+    expect(efectivo).not.toBe("0");
+    expect(efectivo).toMatch(/^[1-9]\d*$/);
+  });
+
+  it("lo copiado de la etapa de build es legible por ese usuario (--chown=1000:0)", () => {
+    expect(etapaFinal).toMatch(/^COPY --from=builder --chown=1000:0 /m);
+  });
+
   it("no hornea secretos ni la confianza en proxies en la imagen", () => {
     for (const nombre of [
       "KC_DB_PASSWORD",
