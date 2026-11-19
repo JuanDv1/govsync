@@ -82,6 +82,11 @@ Los de la hoja «HU_E04_05», con CA03 y CA05 ajustados en el refinamiento.
   `conteos_por_fuente` (siempre las tres fuentes), `pagina`,
   `tamano_pagina` y `filas` con `fuente`, `fuente_etiqueta`, `codigo`,
   `descripcion`, `valor`, `motivo` y `motivo_etiqueta`.
+- `GET /api/v1/registros-no-relacionados/opciones-filtro` — mismos roles.
+  Entrega el catálogo cerrado `{ fuentes, motivos }`, cada uno con
+  `{ valor, etiqueta }`, para que el frontend arme los filtros (CA03/CA04)
+  sin duplicar ni traducir las etiquetas. No depende del corte. Se agregó al
+  construir la pantalla (el catálogo solo existía como enum en el OpenAPI).
 - `GET /api/v1/registros-no-relacionados/{corte_id}/exportar` — mismos
   permisos y filtros, sin paginar. Archivo
   `No_Relacionados_<vigencia>_Corte_<AAAA-MM-DD>.xlsx`.

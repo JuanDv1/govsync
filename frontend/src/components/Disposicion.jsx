@@ -93,6 +93,9 @@ export default function Disposicion() {
               Metas en riesgo
             </NavLink>
           )}
+          <NavLink to="/registros-no-relacionados" className={enlaceClase}>
+            No relacionados
+          </NavLink>
         </nav>
 
         <div className="border-t border-white/10 p-3">

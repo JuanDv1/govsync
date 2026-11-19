@@ -22,6 +22,8 @@ import pytest
 
 from app.core.dependencias import obtener_usuario_actual
 from app.modules.alertas.domain.registros_no_relacionados import (
+    ETIQUETAS_FUENTE,
+    ETIQUETAS_MOTIVO,
     FiltrosNoRelacionados,
     Fuente,
     Motivo,
@@ -599,6 +601,47 @@ class TestEndpoint:
         cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _GESTOR
 
         assert cliente.get(_url(corte, sufijo)).status_code == 403
+
+
+class TestOpcionesFiltro:
+    URL = "/api/v1/registros-no-relacionados/opciones-filtro"
+
+    def test_entrega_el_catalogo_cerrado_con_las_etiquetas_del_backend(self, cliente_admin) -> None:
+        respuesta = cliente_admin.get(self.URL)
+
+        assert respuesta.status_code == 200
+        cuerpo = respuesta.json()
+        assert [o["valor"] for o in cuerpo["fuentes"]] == [f.value for f in Fuente]
+        assert [o["valor"] for o in cuerpo["motivos"]] == [m.value for m in Motivo]
+        assert len(cuerpo["motivos"]) == 9
+        assert {o["etiqueta"] for o in cuerpo["motivos"]} == set(ETIQUETAS_MOTIVO.values())
+        assert {o["etiqueta"] for o in cuerpo["fuentes"]} == set(ETIQUETAS_FUENTE.values())
+
+    def test_cada_valor_es_aceptado_por_los_filtros_del_listado(
+        self, cliente_admin, sesion, corte
+    ) -> None:
+        """Lo que ofrece el catálogo es exactamente lo que el endpoint acepta."""
+        sesion.commit()
+        cuerpo = cliente_admin.get(self.URL).json()
+        params = [("fuente", o["valor"]) for o in cuerpo["fuentes"]] + [
+            ("motivo", o["valor"]) for o in cuerpo["motivos"]
+        ]
+
+        assert cliente_admin.get(_url(corte), params=params).status_code == 200
+
+    def test_no_se_confunde_con_un_corte(self, cliente_admin) -> None:
+        """Declarada antes de `/{corte_id}`: no responde 422 por id inválido."""
+        assert cliente_admin.get(self.URL).status_code != 422
+
+    def test_sin_token_401_y_gestor_403(self, cliente) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _GESTOR
+        assert cliente.get(self.URL).status_code == 403
+        cliente.app.dependency_overrides.pop(obtener_usuario_actual)
+        assert cliente.get(self.URL).status_code == 401
+
+    def test_el_visitante_puede_consultarlo(self, cliente) -> None:
+        cliente.app.dependency_overrides[obtener_usuario_actual] = lambda: _VISITANTE
+        assert cliente.get(self.URL).status_code == 200
 
 
 class TestExportar:

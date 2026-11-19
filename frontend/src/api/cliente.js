@@ -204,6 +204,19 @@ async function descargarExcel(ruta) {
   };
 }
 
+// [E04-HU05] Arma el query string de registros no relacionados: cada valor de
+// `fuente` y `motivo` es un parámetro repetido; `extra` lleva la paginación.
+function consultaNoRelacionados(filtros, extra = {}) {
+  const parametros = new URLSearchParams();
+  for (const [clave, valor] of Object.entries(extra)) {
+    parametros.set(clave, String(valor));
+  }
+  for (const clave of ["fuente", "motivo"]) {
+    for (const valor of filtros?.[clave] ?? []) parametros.append(clave, valor);
+  }
+  return parametros.toString();
+}
+
 export const api = {
   /**
    * HU-01/CA-1, CA-2. Crea un corte en estado BORRADOR.
@@ -482,6 +495,45 @@ export const api = {
    * le falta una fuente); 403 (rol sin acceso).
    */
   metasEnRiesgo: () => solicitar("/api/v1/plan-accion/riesgo"),
+
+  /**
+   * [E04-HU05] `GET /api/v1/registros-no-relacionados/opciones-filtro`: el
+   * catálogo cerrado `{ fuentes, motivos }` (cada uno `{ valor, etiqueta }`).
+   * Las etiquetas las entrega el backend; el frontend no las duplica.
+   */
+  opcionesNoRelacionados: () =>
+    solicitar("/api/v1/registros-no-relacionados/opciones-filtro"),
+
+  /**
+   * [E04-HU05] `GET /api/v1/registros-no-relacionados/{corteId}`: registros
+   * que no pudieron relacionarse en el cruce, paginados. `filtros` =
+   * `{ fuente: [...], motivo: [...] }`; cada valor viaja como query param
+   * repetido (OR dentro del criterio, AND entre criterios; lo resuelve el
+   * backend). La respuesta trae `total` y `conteos_por_fuente` con los filtros
+   * ya aplicados: no se recalculan aquí.
+   *
+   * Errores (`ErrorApi`): 404 (corte inexistente); 409 (corte en BORRADOR o
+   * sin todas las fuentes); 403 (rol sin acceso); 422 (parámetro inválido).
+   */
+  registrosNoRelacionados: (
+    corteId,
+    filtros = {},
+    pagina = 1,
+    tamanoPagina = 50,
+  ) =>
+    solicitar(
+      `/api/v1/registros-no-relacionados/${encodeURIComponent(corteId)}?${consultaNoRelacionados(filtros, { pagina, tamano_pagina: tamanoPagina })}`,
+    ),
+
+  /**
+   * [E04-HU05] `GET /api/v1/registros-no-relacionados/{corteId}/exportar`: el
+   * mismo resultado en Excel con los mismos filtros y sin paginar. Devuelve
+   * `{ blob, nombre }` (ver `descargarExcel`).
+   */
+  exportarNoRelacionados: (corteId, filtros = {}) =>
+    descargarExcel(
+      `/api/v1/registros-no-relacionados/${encodeURIComponent(corteId)}/exportar?${consultaNoRelacionados(filtros)}`,
+    ),
 
   /**
    * [E04-HU03] `GET /api/v1/plan-accion/exportar`: el Plan de Acción como

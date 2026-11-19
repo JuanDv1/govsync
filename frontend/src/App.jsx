@@ -20,6 +20,7 @@ import PlanAccion from "./pages/PlanAccion.jsx";
 import PlanAccionPublico from "./pages/PlanAccionPublico.jsx";
 import CompararCortes from "./pages/CompararCortes.jsx";
 import MetasEnRiesgo from "./pages/MetasEnRiesgo.jsx";
+import RegistrosNoRelacionados from "./pages/RegistrosNoRelacionados.jsx";
 import { Vacio } from "./components/Estados.jsx";
 import Card from "./components/shared/Card.jsx";
 import PantallaSinAcceso from "./components/shared/PantallaSinAcceso.jsx";
@@ -211,6 +212,14 @@ export default function App() {
               <MetasEnRiesgo />
             </RutaConPlanAccion>
           }
+        />
+        {/* [E-04/HU-05] Registros no relacionados del cruce. Ruta protegida,
+            sin la tarjeta de "solo Plan de Acción": el backend permite
+            administrador y visitante, los mismos que pasan `RutaProtegida`.
+            Sin `:corteId` usa el corte actual. */}
+        <Route
+          path="/registros-no-relacionados/:corteId?"
+          element={<RegistrosNoRelacionados />}
         />
         <Route path="*" element={<Pendiente />} />
       </Route>
