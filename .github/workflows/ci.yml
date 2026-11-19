@@ -295,7 +295,7 @@ jobs:
     # reporta cobertura 0 %. Si las pruebas fallan, este job queda "skipped" a
     # propósito: correrlo igual (`if: always()`) publicaría una cobertura 0 %
     # engañosa. La señal del fallo es el job backend-calidad en rojo.
-    needs: [backend-calidad]
+    needs: [backend-calidad, test]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -305,6 +305,15 @@ jobs:
         with:
           name: cobertura-backend
           path: backend
+      - name: Descarga el reporte de cobertura del frontend
+        uses: actions/download-artifact@v8
+        with:
+          name: cobertura-frontend
+          path: frontend/coverage
+      # El lcov trae rutas relativas a frontend/ ("src/...", "../keycloak/..."); Sonar las
+      # busca desde la raíz del repo y, si no coinciden, ignora el archivo sin avisar.
+      - name: Reescribe las rutas del lcov a la raíz del repo
+        run: sed -i -e 's#^SF:src/#SF:frontend/src/#' -e 's#^SF:\.\./keycloak/#SF:keycloak/#' frontend/coverage/lcov.info
       - uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

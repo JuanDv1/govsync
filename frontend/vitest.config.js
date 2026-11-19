@@ -22,8 +22,14 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "lcov"],
-      include: ["src/**/*.{js,jsx}"],
-      exclude: ["src/main.jsx", "src/test/**"],
+      // El tema de login de Keycloak vive fuera de frontend/ pero sus pruebas
+      // están aquí (src/tema-keycloak): se incluye para que Sonar lo mida.
+      include: [
+        "src/**/*.{js,jsx}",
+        "../keycloak/themes/govsync/login/resources/js/**/*.js",
+      ],
+      exclude: ["src/main.jsx", "src/test/**", "**/*.test.{js,jsx}"],
+      allowExternal: true,
     },
   },
 });
