@@ -75,8 +75,15 @@ ENV KC_DB=postgres \
     JAVA_OPTS_KC_HEAP="-XX:InitialRAMPercentage=20 -XX:MinRAMPercentage=20 -XX:MaxRAMPercentage=40" \
     JAVA_OPTS_APPEND="-XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=48m -Xss512k"
 
+COPY --chown=1000:0 --chmod=0755 entrypoint.sh /opt/keycloak/govsync-entrypoint.sh
+
 EXPOSE 8080
 
+# Script de arranque: se niega a iniciar en producción (KC_HOSTNAME definido) si
+# falta alguna GOVSYNC_CLAVE_* o KC_BOOTSTRAP_ADMIN_PASSWORD, o si son las claves
+# públicas de desarrollo; después hace `exec` de kc.sh con los mismos argumentos.
+# Sigue corriendo como el usuario no root declarado arriba (USER 1000).
+#
 # `--import-realm` solo importa si el realm "govsync" NO existe (no sobrescribe).
-ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
+ENTRYPOINT ["/opt/keycloak/govsync-entrypoint.sh"]
 CMD ["start", "--optimized", "--import-realm"]

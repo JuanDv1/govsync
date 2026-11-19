@@ -120,6 +120,77 @@ describe("keycloak/Dockerfile", () => {
     expect(etapaFinal).toMatch(/^COPY --from=builder --chown=1000:0 /m);
   });
 
+  it("el ENTRYPOINT es el script de arranque, no kc.sh directo", () => {
+    expect(etapaFinal).toContain(
+      'ENTRYPOINT ["/opt/keycloak/govsync-entrypoint.sh"]',
+    );
+    expect(etapaFinal).toMatch(
+      /^COPY --chown=1000:0 --chmod=0755 entrypoint\.sh \/opt\/keycloak\/govsync-entrypoint\.sh$/m,
+    );
+    expect(etapaFinal).toContain(
+      'CMD ["start", "--optimized", "--import-realm"]',
+    );
+  });
+});
+
+describe("keycloak/entrypoint.sh (falla cerrada de las claves)", () => {
+  const script = leer("keycloak/entrypoint.sh");
+  // Sin comentarios: mencionan las variables y taparían una mutación.
+  const codigo = script
+    .split("\n")
+    .filter((linea) => !linea.trimStart().startsWith("#"))
+    .join("\n");
+
+  it("solo comprueba en producción (KC_HOSTNAME definido)", () => {
+    expect(codigo).toContain('if [[ -n "${KC_HOSTNAME:-}" ]]; then');
+  });
+
+  it("verifica las 3 claves de los usuarios y la del administrador", () => {
+    for (const variable of [
+      "GOVSYNC_CLAVE_ADMINISTRADOR",
+      "GOVSYNC_CLAVE_GESTOR",
+      "GOVSYNC_CLAVE_VISITANTE",
+    ]) {
+      expect(codigo).toContain(variable);
+    }
+    expect(codigo).toContain("KC_BOOTSTRAP_ADMIN_PASSWORD");
+  });
+
+  it("rechaza la clave pública, la de local y la vacía, y termina con error", () => {
+    expect(codigo).toContain("CLAVE_PUBLICA='GovSync2026!'");
+    expect(codigo).toContain('== "$CLAVE_PUBLICA"');
+    expect(codigo).toContain('== "admin"');
+    expect(codigo).toContain("esta_vacia");
+    expect(codigo).toContain("exit 1");
+  });
+
+  it("nunca imprime el valor de una clave, solo su nombre", () => {
+    const mensajes = codigo.split("\n").filter((l) => l.includes("echo"));
+    expect(mensajes.length).toBeGreaterThan(0);
+    for (const linea of mensajes) {
+      expect(linea).not.toMatch(/\$\{?(valor|admin)\b/);
+      expect(linea).not.toMatch(/\$\{?!/);
+    }
+  });
+
+  it("termina haciendo exec de kc.sh con los mismos argumentos", () => {
+    expect(codigo.trimEnd().endsWith('exec /opt/keycloak/bin/kc.sh "$@"')).toBe(
+      true,
+    );
+  });
+
+  it("se versiona con fin de línea LF (si no, falla el shebang en Linux)", () => {
+    expect(script).not.toContain("\r");
+    expect(script.startsWith("#!/bin/bash\n")).toBe(true);
+    expect(leer(".gitattributes")).toContain(
+      "keycloak/entrypoint.sh text eol=lf",
+    );
+  });
+});
+
+describe("keycloak/Dockerfile (seguridad de la imagen)", () => {
+  const dockerfile = leer("keycloak/Dockerfile");
+
   it("no hornea secretos ni la confianza en proxies en la imagen", () => {
     for (const nombre of [
       "KC_DB_PASSWORD",
