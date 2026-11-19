@@ -40,7 +40,8 @@ documenta lo que la interfaz y el realm hacen alrededor de la sesión.
 - **Destino tras el login (CA07).** `rutaDestinoSegura` acepta únicamente rutas
   internas (una sola `/`, sin `\`, sin caracteres de control, no `/login`); el
   `redirectUri` siempre se arma con `window.location.origin`, y el client de
-  Keycloak solo acepta `http://localhost:5173/*`.
+  Keycloak solo acepta la URL del frontend (`GOVSYNC_FRONTEND_URL`, por defecto
+  `http://localhost:5173`; en producción la de Vercel, ver D39).
 - **Bloqueo por intentos (CA03, cambia la decisión #22).** El bloqueo REAL es del
   servidor y es por usuario: en el realm (`keycloak/import/govsync-realm.json`)
   `bruteForceProtected`, `failureFactor` 3, `waitIncrementSeconds` y
@@ -202,6 +203,33 @@ Evidencia: `test_validacion_archivos.py` (16 pruebas), 170 passed en local
       por `CORS_ORIGINS` (por defecto solo `http://localhost:5173` en desarrollo)
 - [ ] Confirmar el dominio real de producción cuando `[DEV-07]` despliegue
       (hoy solo se verificó el valor de desarrollo local)
+
+## Keycloak en producción (D39)
+
+Decisiones del PO tras la revisión del despliegue en Render
+(`docs/DESPLIEGUE.md` §"Keycloak en Render"):
+
+- **Contraseñas de los usuarios de prueba por variable.** El realm las lee de
+  `GOVSYNC_CLAVE_ADMINISTRADOR`/`_GESTOR`/`_VISITANTE`; sin variable queda la
+  clave local pública (`GovSync2026!`). En Render las 3 son **obligatorias**:
+  omitir una deja ese usuario con la clave pública, sin aviso. Nunca se
+  versionan valores reales.
+- **Sin password grant.** `directAccessGrantsEnabled` es `false` en los dos
+  clientes: todo inicio de sesión pasa por Authorization Code + PKCE. Lo fija
+  `despliegueKeycloak.test.js`.
+- **Redirecciones sin comodines abiertos.** Solo `${GOVSYNC_FRONTEND_URL}/*`
+  (host exacto); nunca `*`. Una variable mal escrita rompe el login pero no abre
+  redirecciones a otros hosts.
+- **Issuer validado al arrancar.** En producción `KEYCLOAK_ISSUER` debe empezar
+  por `https://` (si no, el backend no arranca) y la barra final se normaliza
+  (`config.py`, `tests/test_config_keycloak_issuer.py`).
+- **Riesgo aceptado: la consola `/admin` es pública** (misma URL que el login).
+  Solo la protege la contraseña del administrador de `master`, que debe ser
+  fuerte y única, definida por `KC_BOOTSTRAP_ADMIN_PASSWORD` y nunca la de local
+  (`admin`). Mitigaciones no aplicadas: `KC_HOSTNAME_ADMIN` o un proxy delante.
+- **Proxy:** `KC_PROXY_HEADERS=xforwarded` + `KC_HTTP_ENABLED=true` solo son
+  seguros si Render sobrescribe `X-Forwarded-*` (**[CONFIRMAR]**); por eso no
+  están fijados en la imagen.
 
 ## Rutas públicas sin token y límite de peticiones (D38)
 

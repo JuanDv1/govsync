@@ -149,7 +149,7 @@
       "consentRequired": false,
       "standardFlowEnabled": true,
       "implicitFlowEnabled": false,
-      "directAccessGrantsEnabled": true,
+      "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
       "publicClient": true,
       "frontchannelLogout": true,
@@ -207,8 +207,8 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "redirectUris": ["http://localhost:5173/*"],
-      "webOrigins": ["http://localhost:5173"],
+      "redirectUris": ["${GOVSYNC_FRONTEND_URL:http://localhost:5173}/*"],
+      "webOrigins": ["${GOVSYNC_FRONTEND_URL:http://localhost:5173}"],
       "notBefore": 0,
       "bearerOnly": false,
       "consentRequired": false,
@@ -221,7 +221,7 @@
       "protocol": "openid-connect",
       "attributes": {
         "realm_client": "false",
-        "post.logout.redirect.uris": "http://localhost:5173/*",
+        "post.logout.redirect.uris": "${GOVSYNC_FRONTEND_URL:http://localhost:5173}/*",
         "pkce.code.challenge.method": "S256"
       },
       "authenticationFlowBindingOverrides": {},
@@ -2011,7 +2011,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "GovSync2026!",
+          "value": "${GOVSYNC_CLAVE_ADMINISTRADOR:GovSync2026!}",
           "temporary": false
         }
       ],
@@ -2027,7 +2027,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "GovSync2026!",
+          "value": "${GOVSYNC_CLAVE_GESTOR:GovSync2026!}",
           "temporary": false
         }
       ],
@@ -2043,7 +2043,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "GovSync2026!",
+          "value": "${GOVSYNC_CLAVE_VISITANTE:GovSync2026!}",
           "temporary": false
         }
       ],
