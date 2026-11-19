@@ -28,8 +28,9 @@ def test_produccion_normaliza_la_barra_final():
 
 
 def test_produccion_rechaza_http_con_mensaje_claro():
+    issuer_http = ISSUER.replace("https", "http")
     with pytest.raises(ValidationError, match="https://"):
-        _ajustes(environment="production", keycloak_issuer=ISSUER.replace("https", "http"))
+        _ajustes(environment="production", keycloak_issuer=issuer_http)
 
 
 def test_produccion_sigue_rechazando_localhost():

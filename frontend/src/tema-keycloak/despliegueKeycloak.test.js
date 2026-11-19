@@ -125,7 +125,7 @@ describe("keycloak/Dockerfile", () => {
       'ENTRYPOINT ["/opt/keycloak/govsync-entrypoint.sh"]',
     );
     expect(etapaFinal).toMatch(
-      /^COPY --chown=1000:0 --chmod=0755 entrypoint\.sh \/opt\/keycloak\/govsync-entrypoint\.sh$/m,
+      /^COPY --chmod=0755 entrypoint\.sh \/opt\/keycloak\/govsync-entrypoint\.sh$/m,
     );
     expect(etapaFinal).toContain(
       'CMD ["start", "--optimized", "--import-realm"]',

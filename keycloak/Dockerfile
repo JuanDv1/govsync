@@ -53,7 +53,7 @@ USER 1000
 # la etapa 2, y si `start --optimized` no las ve, Keycloak vuelve al valor por
 # defecto (comprobado: sin esto arrancaba con caché en clúster, JGroups).
 #
-# Memoria (plan gratis de Render: 512 MB en total para TODO el proceso).
+# Memoria (plan gratis de Render: 512 MB en total para el proceso completo).
 # Medido con `docker run --memory=512m`: con los valores por defecto de
 # Keycloak (heap 70 %) el proceso llegaba a 477 MiB reales, sin margen; con los
 # de abajo, ~352 MiB (pico 359) tras importar el realm y atender peticiones.
@@ -75,7 +75,10 @@ ENV KC_DB=postgres \
     JAVA_OPTS_KC_HEAP="-XX:InitialRAMPercentage=20 -XX:MinRAMPercentage=20 -XX:MaxRAMPercentage=40" \
     JAVA_OPTS_APPEND="-XX:TieredStopAtLevel=1 -XX:ReservedCodeCacheSize=48m -Xss512k"
 
-COPY --chown=1000:0 --chmod=0755 entrypoint.sh /opt/keycloak/govsync-entrypoint.sh
+# Propiedad de root (sin --chown) y 0755: el uid 1000 lo lee y lo ejecuta, pero no
+# puede modificarlo (docker:S6504): el script que decide si arranca no debe ser
+# reescribible por el proceso que ejecuta.
+COPY --chmod=0755 entrypoint.sh /opt/keycloak/govsync-entrypoint.sh
 
 EXPOSE 8080
 
