@@ -219,8 +219,30 @@ export const api = {
       cuerpo: { vigencia, fecha_corte: fechaCorte },
     }),
 
-  /** HU-01/CA-8. Histórico completo de cortes. */
+  /**
+   * HU-01/CA-8. Histórico completo de cortes.
+   *
+   * [E02-HU08] Cada corte trae además `cantidad_metas` (`number | null`:
+   * `null` si está en BORRADOR) y `es_referencia` (`boolean`).
+   */
   listarCortes: () => solicitar("/api/v1/cortes"),
+
+  /**
+   * [E02-HU08/CA04] `PUT /cortes/{id}/referencia`: marca el corte como el de
+   * referencia de su vigencia; si otro de la misma vigencia lo era, el
+   * backend le quita la marca. Responde con el corte marcado (no con la
+   * lista: quien llama debe recargar). Solo administrador. 404 si no existe;
+   * 409 si no está REGISTRADO o hubo una marca simultánea.
+   */
+  marcarCorteReferencia: (id) =>
+    solicitar(`/api/v1/cortes/${id}/referencia`, { metodo: "PUT" }),
+
+  /**
+   * [E02-HU08/CA04] `DELETE /cortes/{id}/referencia`: quita la marca
+   * (idempotente). Responde con el corte, no con 204. Solo administrador.
+   */
+  desmarcarCorteReferencia: (id) =>
+    solicitar(`/api/v1/cortes/${id}/referencia`, { metodo: "DELETE" }),
 
   /**
    * HU-01/CA-8. Detalle de un corte. Un id inexistente devuelve 404 con

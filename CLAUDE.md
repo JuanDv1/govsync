@@ -145,7 +145,7 @@ An invalid file is rejected **in full** — never partial data.
 
 Frontend (`frontend/src/`): `api/cliente.js` is the shared HTTP client (`[UX-01]`), implemented —
 `solicitar()` and the `api` methods (`crearCorte`, `listarCortes`, `obtenerCorte`, `registrarCorte`,
-`cargarArchivo`, `matriz`, `opcionesFiltro`, `reemplazarArchivoCorteActual`, `historialCorte`, `corregirCorte`, `descartarCorte`) are
+`cargarArchivo`, `matriz`, `opcionesFiltro`, `reemplazarArchivoCorteActual`, `historialCorte`, `corregirCorte`, `descartarCorte`, `marcarCorteReferencia`, `desmarcarCorteReferencia`) are
 wired to the backend, and it attaches `Authorization: Bearer` from
 whatever `establecerProveedorToken()` last set (called once by `ProveedorAutenticacion.jsx`). It
 preserves `error.detalles` from failed requests (carries `columnas_faltantes`, `pestanas_faltantes`,
@@ -173,7 +173,7 @@ its header — hides "Nuevo corte" unless `puedeEscribir`, same role gate `Corte
 carga"; `FiltrosMatriz.jsx` and `shared/SelectorConBusqueda.jsx`, the matrix filter panel with its
 active tags and the accessible combobox it uses, `[E02-HU10]`; `shared/ModalConfirmacion.jsx`, a
 generic confirmation dialog, `[E02-HU05]`), `pages/` holds route-level screens (`NuevoCorte.jsx`,
-`Cortes.jsx`, `MatrizRelacion.jsx`, `EditarArchivosCorteActual.jsx`, `Login.jsx` — redirects to
+`Cortes.jsx` (histórico with the "Metas" column and the per-vigencia reference star, E02-HU08 CA03/CA04), `MatrizRelacion.jsx`, `EditarArchivosCorteActual.jsx`, `Login.jsx` — redirects to
 Keycloak on click, no longer a form) wired into `App.jsx`'s router (`/login`, `/` → initial view, `/cortes`,
 `/cortes/nuevo`, `/cortes/:corteId`, `/cortes/:corteId/editar`, `/matriz/:corteId?`); every route
 except `/login` and `/publico/plan-accion` (see below) is wrapped in `RutaProtegida`, which redirects to `/login` without an active session.
