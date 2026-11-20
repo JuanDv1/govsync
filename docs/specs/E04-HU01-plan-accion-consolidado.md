@@ -65,10 +65,10 @@ INVERSIÓN), `RegistroPresupuestalORM` como puente.
 - `GET /api/v1/plan-accion/actual` — autenticación/permisos:
   `administrador` o `visitante`.
 
-### Desglose de trazabilidad (CA03) — propuesta, pendiente de acordar con FE
+### Desglose de trazabilidad (CA03) — implementado en BE y FE
 
 Campos **nuevos** en cada fila (aditivos: `cod_bpin`, `rubros` y `contratos`
-se conservan sin cambios para no romper la pantalla actual):
+se conservan sin cambios; la tabla colapsada sigue usándolos):
 
 - `bpins: string[]` — todos los BPIN distintos de la meta, ordenados.
   `cod_bpin` queda como el primero de esa lista (corrige H-027: antes se
@@ -83,17 +83,36 @@ Regla que garantiza CA03/CA08: los totales de la meta
 (`presupuesto_definitivo`, `ejecucion`) son la suma de los rubros de
 `desglose`; un rubro cuenta una sola vez aunque tenga varios contratos.
 
+Cómo lo muestra el frontend (`PlanAccion.jsx`, subfila "Ver detalle"):
+
+- Todos los BPIN de la meta (`bpins`; `cod_bpin` solo de respaldo si
+  `bpins` no llega) a nivel de meta, o "Sin BPIN". No hay árbol BPIN → Rubro.
+- Debajo de las tres cifras de la meta, la lista de rubros del `desglose`:
+  código, presupuesto definitivo y ejecución de cada uno y, dentro, sus
+  contratos (número, objeto, valor y valor pagado). Los primeros 5 rubros (y
+  los primeros 5 contratos de cada rubro) se ven de entrada; "Ver los N
+  rubros/contratos" despliega el resto.
+- `objeto`, `valor`, `valor_pagado` y los montos del rubro pueden ser `null`:
+  se muestra "—" con el resaltado ámbar de las celdas sin dato.
+- La pantalla no suma valores de contrato en ningún total; una nota en el
+  detalle lo explica.
+- Modo público (D38): el contrato solo trae `numero_contrato`; se muestra solo
+  ese número, sin etiquetas ni columnas para lo demás.
+
 Pendiente (no se inventó):
 
 - **Estado del contrato:** la tarjeta lo pide, pero ninguna de las fuentes
   cargadas trae ese dato. Se entrega `valor` y `valor_pagado`; definir con
-  la clienta qué es "estado" y de dónde sale.
+  la clienta qué es "estado" y de dónde sale. El frontend no lo muestra y
+  deja el punto marcado en `ContratoDesglose` (`PlanAccion.jsx`).
 - **Relación BPIN → Rubro:** en los datos, BPIN y rubros cuelgan de la meta
   por separado (ambos por el código de indicador). La cadena
   "Meta → BPIN → Rubro → Contrato" del CA no se puede armar como jerarquía
   sin una regla que diga qué rubro pertenece a qué BPIN.
 - **Contrato en varios rubros:** aparece bajo cada rubro con su valor
   completo. Los valores de contrato no se suman en ningún total.
+- **Columna "BPIN" de la tabla colapsada:** sigue mostrando solo `cod_bpin`
+  (el primero); con varios BPIN el resto se ve únicamente en el detalle.
 - Decisión #24 (regla de agregación) sigue abierta: aquí se expone el
   detalle de la regla que ya estaba implementada (D26), no una regla nueva.
 

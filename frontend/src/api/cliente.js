@@ -448,10 +448,17 @@ export const api = {
    *         cod_bpin, rubros: string[], presupuesto_definitivo, ejecucion,
    *         contratos: string[], avance_fisico_pct, avance_financiero_pct,
    *         estado_cruce: "completo" | "parcial" | "sin_informacion",
+   *         bpins: string[],            // todos los BPIN de la meta, ordenados
+   *         desglose: [{                // un elemento por rubro, ordenado
+   *           codigo_rubro, presupuesto_definitivo, ejecucion,
+   *           contratos: [{ numero_contrato, objeto, valor, valor_pagado }],
+   *         }],
    *       }],
    *       resumen: { total, completo, parcial, sin_informacion },
    *     }
    *
+   * `desglose` (E04-HU01-CA03) es lo que pinta el detalle de la meta. Los
+   * totales de la fila ya son la suma de sus rubros: no sumar contratos.
    * Una fila por meta, ordenada por `cod_indicador_producto`. Los montos, la
    * meta programada y los porcentajes llegan como TEXTO (Decimal del
    * backend): convertir con `Number()` antes de formatear. Cualquier campo
@@ -475,7 +482,8 @@ export const api = {
    * del corte actual SIN autenticación ni `Authorization` (ver `solicitar`,
    * `publico`). Misma forma que `planAccionActual`, salvo que el
    * `desglose` de cada fila trae por contrato solo `numero_contrato` (sin
-   * `objeto`, `valor` ni `valor_pagado`). La pantalla no usa `desglose`.
+   * `objeto`, `valor` ni `valor_pagado`); la pantalla, en modo público, pinta
+   * solo ese número.
    *
    * Errores (`ErrorApi`): 404 (ningún corte REGISTRADO); 409 (al corte
    * actual le falta una fuente); 429 (límite de consultas por tiempo);
