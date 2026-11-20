@@ -25,13 +25,18 @@
  * (el backend lo manda siempre `null` hasta que exista E-03): muestra "—" en
  * gris y la leyenda lo aclara. Un "0.00" es un dato ($ 0), no un vacío.
  *
- * CA03 (versión plana): cada fila tiene un botón "Ver detalle" en la celda de
- * "Código meta" que abre una subfila con la meta, su estado y su BPIN, las
- * tres cifras de la meta y las listas de rubros y contratos. Solo muestra lo
- * que la respuesta ya trae: las listas completas y UN BPIN. No puede mostrar
- * el monto de cada rubro ni el objeto, valor o estado de cada contrato (eso
- * requiere ampliar el backend, y la pantalla lo avisa en lenguaje llano).
- * Varias filas pueden estar abiertas a la vez.
+ * CA03 (desglose): cada fila tiene un botón "Ver detalle" en la celda de
+ * "Código meta" que abre una subfila con la meta, su estado y todos sus BPIN
+ * (`bpins`; `cod_bpin` solo de respaldo), las tres cifras de la meta y el
+ * `desglose`: por rubro su código, presupuesto definitivo y ejecución y, debajo,
+ * sus contratos (número, objeto, valor y valor pagado). BPIN y rubros no forman
+ * jerarquía en los datos: los BPIN van a nivel de meta, sin árbol BPIN → rubro.
+ * La pantalla NUNCA suma valores de contrato: los totales vienen del backend (un
+ * rubro cuenta una vez) y un contrato ligado a varios rubros aparece bajo cada
+ * uno con su valor completo (la nota del detalle lo dice). El "estado" del
+ * contrato que pide la tarjeta no se muestra: ninguna fuente lo trae (ver
+ * `ContratoDesglose`). Con `null` en objeto, valor o valor pagado se muestra
+ * "—" resaltado. Varias filas pueden estar abiertas a la vez.
  *
  * LEGIBILIDAD: esta pantalla se aparta a propósito de la escala compacta de
  * docs/DESIGN_SPEC.md §3 (encabezados de 10px en `gray-400`, celdas de 12px).
@@ -99,9 +104,9 @@
  * `RutaProtegida` por `PlanAccionPublico.jsx`. Cambia SOLO esto: pide los
  * datos a `api.planAccionPublicoActual` (sin token, ver api/cliente.js); no
  * muestra "Exportar a Excel" ni "Comparar cortes" y no consulta
- * `cortesDisponibles` (requiere sesión); el detalle no lleva el aviso de
- * "objeto, valor y estado del contrato" (el DTO público nunca los trae, así
- * que no se promete); y los errores no muestran `mensaje`, `codigo` ni
+ * `cortesDisponibles` (requiere sesión); el desglose del detalle muestra por
+ * contrato solo su número (el DTO público nunca trae objeto ni valores, así
+ * que no se pintan columnas ni etiquetas para ellos); y los errores no muestran `mensaje`, `codigo` ni
  * `detalles` del backend (en una pantalla abierta no se exponen datos
  * internos como los archivos que faltan) y sus textos no hablan de cargar ni
  * de pedir acceso. Los filtros,
@@ -316,29 +321,31 @@ function FilaPlan({ fila, indice, abierta, publico, onAlternar }) {
 }
 
 /**
- * Lista de rubros o contratos del detalle: una por línea, completa. Muestra
- * los primeros `VISIBLES` y un botón "Ver los N …" que despliega el resto en
- * la misma página, sin caja con scroll interno.
+ * Lista del detalle (rubros de la meta o contratos de un rubro): una por
+ * línea, completa. Muestra los primeros `VISIBLES` y un botón "Ver los N …"
+ * que despliega el resto en la misma página, sin caja con scroll interno.
+ * `renderizar(elemento)` pinta el contenido de cada `<li>`; `clave(elemento)`
+ * da su clave estable.
  */
-function ListaDetalle({ id, valores, plural, vacio }) {
+function ListaDetalle({ id, elementos, plural, vacio, clave, renderizar }) {
   const [todos, setTodos] = useState(false);
 
-  if (valores.length === 0) {
+  if (elementos.length === 0) {
     return <p className="text-campo text-gray-500">{vacio}</p>;
   }
 
-  const mostrados = todos ? valores : valores.slice(0, VISIBLES);
+  const mostrados = todos ? elementos : elementos.slice(0, VISIBLES);
 
   return (
     <>
-      <ul id={id} className="divide-y divide-gray-100 font-mono text-campo">
-        {mostrados.map((valor) => (
-          <li key={valor} className="break-all py-1.5">
-            {valor}
+      <ul id={id} className="divide-y divide-gray-100 text-campo">
+        {mostrados.map((elemento) => (
+          <li key={clave(elemento)} className="py-2">
+            {renderizar(elemento)}
           </li>
         ))}
       </ul>
-      {valores.length > VISIBLES && (
+      {elementos.length > VISIBLES && (
         <Boton
           variante="secundario"
           onClick={() => setTodos((actual) => !actual)}
@@ -346,9 +353,114 @@ function ListaDetalle({ id, valores, plural, vacio }) {
           aria-controls={id}
           className="mt-2"
         >
-          {todos ? "Ver menos" : `Ver los ${valores.length} ${plural}`}
+          {todos ? "Ver menos" : `Ver los ${elementos.length} ${plural}`}
         </Boton>
       )}
+    </>
+  );
+}
+
+/**
+ * Monto del desglose. `null` es "—" con el mismo fondo ámbar tenue que una
+ * celda sin dato de la tabla (CA06); un "0.00" es un dato.
+ */
+function Monto({ valor }) {
+  if (valor == null) {
+    return (
+      <span className="bg-amber-50 px-1 text-gray-500" title="Sin dato">
+        —
+      </span>
+    );
+  }
+  return <span className="font-mono">{cop(Number(valor))}</span>;
+}
+
+/** Texto libre del desglose (objeto del contrato); `null` es "—". */
+function TextoOpcional({ valor }) {
+  if (valor == null || valor === "") {
+    return <span className="bg-amber-50 px-1 text-gray-500">—</span>;
+  }
+  return <span className="break-words">{valor}</span>;
+}
+
+/**
+ * Contrato dentro de un rubro. En modo público el backend solo manda
+ * `numero_contrato` (D38): no se pinta nada más, ni siquiera etiquetas vacías.
+ *
+ * PENDIENTE (con la clienta/PO): el "estado" del contrato que pide la tarjeta.
+ * Ninguna fuente lo trae y el backend no lo entrega (spec E04-HU01, CA03), así
+ * que no se inventó una regla. Cuando exista, va aquí como un dato más de
+ * `<dl>`, junto a "Valor pagado".
+ */
+function ContratoDesglose({ contrato, publico }) {
+  return (
+    <>
+      <p className="break-all font-mono text-gray-800">
+        {contrato.numero_contrato}
+      </p>
+      {!publico && (
+        <>
+          <p className="mt-0.5 text-gray-700">
+            <TextoOpcional valor={contrato.objeto} />
+          </p>
+          <dl className="mt-1 flex flex-wrap gap-x-6 gap-y-0.5 text-gray-700">
+            <div className="flex gap-1.5">
+              <dt className="text-gray-600">Valor:</dt>
+              <dd>
+                <Monto valor={contrato.valor} />
+              </dd>
+            </div>
+            <div className="flex gap-1.5">
+              <dt className="text-gray-600">Valor pagado:</dt>
+              <dd>
+                <Monto valor={contrato.valor_pagado} />
+              </dd>
+            </div>
+          </dl>
+        </>
+      )}
+    </>
+  );
+}
+
+/** Un rubro de la meta con su monto y, debajo, sus contratos. */
+function RubroDesglose({ rubro, id, publico }) {
+  const contratos = rubro.contratos ?? [];
+
+  return (
+    <>
+      <p className="break-all font-mono font-semibold text-gray-800">
+        {rubro.codigo_rubro}
+      </p>
+      <dl className="mt-1 flex flex-wrap gap-x-6 gap-y-0.5 text-gray-700">
+        <div className="flex gap-1.5">
+          <dt className="text-gray-600">Presupuesto definitivo:</dt>
+          <dd>
+            <Monto valor={rubro.presupuesto_definitivo} />
+          </dd>
+        </div>
+        <div className="flex gap-1.5">
+          <dt className="text-gray-600">Ejecución:</dt>
+          <dd>
+            <Monto valor={rubro.ejecucion} />
+          </dd>
+        </div>
+      </dl>
+      <div className="mt-2 border-l-2 border-gray-200 pl-3">
+        <h4 className="mb-1 text-campo font-semibold text-gray-700">
+          Contratos ({contratos.length})
+        </h4>
+        <ListaDetalle
+          id={id}
+          elementos={contratos}
+          plural="contratos"
+          vacio="Sin contratos"
+          clave={(contrato) => contrato.numero_contrato}
+          renderizar={(contrato) => (
+            <ContratoDesglose contrato={contrato} publico={publico} />
+          )}
+        />
+      </div>
     </>
   );
 }
@@ -393,6 +505,9 @@ function Cifra({ etiqueta, valor, formato, barra = false }) {
 function DetalleMeta({ fila, id, publico }) {
   const estado = estadoDeCruce(fila);
   const codigo = fila.cod_indicador_producto;
+  // `bpins` trae todos (ya ordenados); `cod_bpin` es el respaldo si no llega.
+  const bpins = fila.bpins ?? (fila.cod_bpin == null ? [] : [fila.cod_bpin]);
+  const desglose = fila.desglose ?? [];
 
   return (
     <tr id={id}>
@@ -414,11 +529,14 @@ function DetalleMeta({ fila, id, publico }) {
                 tono={estado.tono}
                 tamano="grande"
               />
-              {fila.cod_bpin == null ? (
+              {bpins.length === 0 ? (
                 <span className="text-gray-500">Sin BPIN</span>
               ) : (
                 <span className="text-gray-700">
-                  BPIN <span className="font-mono">{fila.cod_bpin}</span>
+                  {bpins.length === 1 ? "BPIN" : "BPIN:"}{" "}
+                  <span className="break-all font-mono">
+                    {bpins.join(", ")}
+                  </span>
                 </span>
               )}
             </div>
@@ -443,45 +561,38 @@ function DetalleMeta({ fila, id, publico }) {
             />
           </div>
 
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <Card padding="p-4">
-              <h3 className="mb-2 text-campo font-semibold text-gray-800">
-                Rubros ({fila.rubros.length})
-              </h3>
-              <ListaDetalle
-                id={`rubros-${codigo}`}
-                valores={fila.rubros}
-                plural="rubros"
-                vacio="Sin rubros"
-              />
-            </Card>
-            <Card padding="p-4">
-              <h3 className="mb-2 text-campo font-semibold text-gray-800">
-                Contratos ({fila.contratos.length})
-              </h3>
-              <ListaDetalle
-                id={`contratos-${codigo}`}
-                valores={fila.contratos}
-                plural="contratos"
-                vacio="Sin contratos"
-              />
-            </Card>
-          </div>
+          <Card padding="p-4" className="mt-3">
+            <h3 className="mb-2 text-campo font-semibold text-gray-800">
+              Rubros ({desglose.length})
+            </h3>
+            <ListaDetalle
+              id={`rubros-${codigo}`}
+              elementos={desglose}
+              plural="rubros"
+              vacio="Sin rubros"
+              clave={(rubro) => rubro.codigo_rubro}
+              renderizar={(rubro) => (
+                <RubroDesglose
+                  rubro={rubro}
+                  id={`contratos-${codigo}-${rubro.codigo_rubro}`}
+                  publico={publico}
+                />
+              )}
+            />
+          </Card>
 
-          {!publico && (
-            <p className="mt-4 flex items-start gap-2 text-campo text-gray-600">
-              <Info
-                size={16}
-                aria-hidden="true"
-                className="mt-0.5 shrink-0 text-azul"
-              />
-              <span>
-                Por ahora se muestran los números de contrato y los códigos de
-                rubro. El detalle de cada contrato (objeto, valor y estado) se
-                agregará más adelante.
-              </span>
-            </p>
-          )}
+          <p className="mt-4 flex items-start gap-2 text-campo text-gray-600">
+            <Info
+              size={16}
+              aria-hidden="true"
+              className="mt-0.5 shrink-0 text-azul"
+            />
+            <span>
+              {publico
+                ? "Un contrato ligado a varios rubros aparece bajo cada uno."
+                : "Un contrato ligado a varios rubros aparece bajo cada uno con su valor completo. Los valores de los contratos no se suman: los totales de la meta salen de sus rubros, una vez cada uno."}
+            </span>
+          </p>
         </div>
       </td>
     </tr>
@@ -506,9 +617,7 @@ function Leyenda() {
         </span>
         <span>% Avance físico: pendiente de E-03, todavía no hay datos.</span>
       </li>
-      <li>
-        Pulse «Ver detalle» para ver la lista completa de rubros y contratos.
-      </li>
+      <li>Pulse «Ver detalle» para ver el desglose de rubros y contratos.</li>
     </ul>
   );
 }
