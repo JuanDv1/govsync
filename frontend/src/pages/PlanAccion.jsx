@@ -542,7 +542,10 @@ function DetalleMeta({ fila, id, publico }) {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          {/* `xl`, no `sm`: el panel mide `min(960px, 100vw - 320px)`; con tres
+              columnas en un panel de ~420 px (pantalla de 768) las cifras de
+              miles de millones se cortaban. */}
+          <div className="grid gap-3 xl:grid-cols-3">
             <Cifra
               etiqueta="Presupuesto definitivo"
               valor={fila.presupuesto_definitivo}
